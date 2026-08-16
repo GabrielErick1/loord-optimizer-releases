@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.log
+FFOptimizer-win32-x64/
+Loord Optimizer-win32-x64/
+FFOptimizer_Novo/
+BlueStacks_nxt/
+BlueStacks_msi5/
+.tempmediaStorage/
+.system_generated/
+*.tmp
