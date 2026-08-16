@@ -1,0 +1,62 @@
+{
+  "name": "loord-optimizer",
+  "version": "1.0.0",
+  "author": "Loord Optimizer",
+  "description": "Loord Optimizer - Otimizador Gamer de Sensibilidade e Emulador",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "package": "electron-packager . \"Loord Optimizer\" --platform=win32 --arch=x64 --overwrite --win32metadata.requested-execution-level=requireAdministrator --ignore=FFOptimizer-win32-x64 --ignore=\"Loord Optimizer-win32-x64\" --ignore=FFOptimizer_Novo --ignore=BlueStacks_nxt --ignore=BlueStacks_msi5 --ignore=dist",
+    "dist": "electron-builder --win",
+    "publish": "electron-builder --win --publish always"
+  },
+  "build": {
+    "appId": "com.loord.optimizer",
+    "productName": "Loord Optimizer",
+    "asar": true,
+    "asarUnpack": [
+      "regis/**/*",
+      "lord-sense/**/*",
+      "*.ps1",
+      "*.bat"
+    ],
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer.js",
+      "index.html",
+      "style.css",
+      "package.json",
+      "lord-sense/**/*",
+      "regis/**/*",
+      "*.bat",
+      "*.ps1"
+    ],
+    "win": {
+      "target": "nsis",
+      "requestedExecutionLevel": "requireAdministrator"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "GabrielErick1",
+        "repo": "loord-optimizer-releases",
+        "releaseType": "release"
+      }
+    ]
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^26.15.3",
+    "electron-packager": "^17.1.2"
+  },
+  "dependencies": {
+    "electron-updater": "6.3.9"
+  }
+}
