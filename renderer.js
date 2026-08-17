@@ -726,20 +726,27 @@ function startLicenseHeartbeat(uuid, key) {
         clearInterval(activeLicenseCheckTimer);
         localStorage.removeItem('activation_key');
         localStorage.removeItem('client_name');
+        localStorage.removeItem('ffopt_applied_tweaks');
         
+        // Reverter 100% de todos os tweaks, registros, DNS e emulador de volta ao padrão do Windows
+        try {
+          await window.api.revertAllTweaksOnRevoke();
+        } catch (_) {}
+
         updateLicenseBadge(false);
         if (activationError) {
           activationError.textContent = `❌ ${data?.error || 'Sua licença foi deslogada, revogada ou expirou.'}`;
           activationError.style.display = 'block';
         }
         activationScreen.style.display = 'flex';
-        alert(`❌ ATENÇÃO: Seu acesso foi bloqueado!\n\n${data?.error || 'Sua licença foi revogada, deslogada ou expirou no painel.'}`);
+        alert(`❌ ATENÇÃO: Seu acesso ao Loord Optimizer expirou ou foi revogado!\n\n• Todas as otimizações, registros e configurações aplicadas foram REVERTIDAS e restauradas ao estado original do seu computador.`);
       } else {
         updateLicenseBadge(true, data.clientName, data.licenseType, data.timeRemainingStr);
       }
     } catch (e) {}
   }, 25000); // Checa a cada 25 segundos
 }
+
 
 function updateLicenseBadge(isActivated, clientName, licenseType, timeRemainingStr) {
   const versionLabel = document.querySelector('.version-label');

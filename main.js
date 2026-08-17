@@ -1351,6 +1351,65 @@ ipcMain.handle('restore-backup', async () => {
   }
 });
 
+// Reversão total automática ao expirar ou ser revogado no painel (Anti-Leak Rollback)
+ipcMain.handle('revert-all-tweaks-on-revoke', async () => {
+  try {
+    // 1. Parar macros e cleaners em execução
+    await killMacroProcess().catch(() => {});
+
+    // 2. Restaurar backups do registro (.reg) e bluestacks.conf
+    try {
+      if (fs.existsSync(backupDir)) {
+        const files = fs.readdirSync(backupDir);
+        for (const file of files) {
+          if (file.endsWith('.reg')) {
+            await runCmd(`reg import "${path.join(backupDir, file)}"`);
+          }
+        }
+      }
+    } catch (_) {}
+
+    // 3. Reverter DNS para DHCP Automático do Windows
+    await runCmd('powershell -NoProfile -Command "Get-NetAdapter | Where-Object Status -eq Up | ForEach-Object { netsh interface ip set dns name=\\\"$($_.Name)\\\" source=dhcp; netsh interface ip set wins name=\\\"$($_.Name)\\\" source=dhcp }"').catch(() => {});
+    await runCmd('ipconfig /flushdns').catch(() => {});
+
+    // 4. Reverter Plano de Energia para o padrão Equilibrado
+    await runCmd('powercfg -setactive 381b4222-f694-41f0-9685-ff5bb260df2e').catch(() => {});
+
+    // 5. Reverter Tweaks de Registro e Prioridades
+    const resetCmds = [
+      'reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "GPU Priority" /f',
+      'reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Priority" /f',
+      'reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Scheduling Category" /f',
+      'reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /f',
+      'bcdedit /deletevalue useplatformtick',
+      'bcdedit /deletevalue disabledynamictick'
+    ];
+    for (const cmd of resetCmds) {
+      await runCmd(cmd).catch(() => {});
+    }
+
+    // 6. Reverter Tweaks do Android se ADB estiver ativo
+    const adb = findAdb();
+    if (adb) {
+      const PORTS = [5555, 5554, 5565, 5575, 5585, 21503, 62001, 7555];
+      for (const p of PORTS) {
+        try {
+          await runCmd(`"${adb}" -s 127.0.0.1:${p} shell settings put global window_animation_scale 1.0`);
+          await runCmd(`"${adb}" -s 127.0.0.1:${p} shell settings put global transition_animation_scale 1.0`);
+          await runCmd(`"${adb}" -s 127.0.0.1:${p} shell settings put global animator_duration_scale 1.0`);
+          await runCmd(`"${adb}" -s 127.0.0.1:${p} shell settings put global background_process_limit -1`);
+        } catch (_) {}
+      }
+    }
+
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+
 ipcMain.handle('reboot-computer', async () => {
   try {
     await runCmd('shutdown /r /t 5');

@@ -19,6 +19,8 @@ contextBridge.exposeInMainWorld('api', {
   getUuid: () => ipcRenderer.invoke('get-uuid'),
   getMachineUUID: () => ipcRenderer.invoke('get-uuid'),
   verifyKey: (key) => ipcRenderer.invoke('verify-key', key),
+  revertAllTweaksOnRevoke: () => ipcRenderer.invoke('revert-all-tweaks-on-revoke'),
+
 
   // ─── Auto-Update ─────────────────────────────────────────────────
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
