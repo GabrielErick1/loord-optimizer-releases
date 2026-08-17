@@ -1709,7 +1709,21 @@ if (btnGameBooster) {
       const htInfo = hw.hasHT   ? 'Sim (HyperThreading)' : 'Não (físicos puros)';
       const ramGB  = hw.totalRamMB ? (hw.totalRamMB / 1024).toFixed(1) : '?';
       const tierPT = { ultra: '🏆 ULTRA', high: '🥇 HIGH', medium: '🥈 MÉDIO', low: '🥉 BÁSICO' }[hw.tier] || '?';
-      const emuStr = res.emuCores ? `Núcleos ${res.emuCores.join(', ')}` : res.affinityMask;
+
+      // Mostrar corretamente: núcleos físicos (pares) vs lógicos (ímpares)
+      let emuStr, bgStr;
+      if (res.emuCores && res.emuCores.length > 0) {
+        emuStr = `Núcleos Físicos [${res.emuCores.join(', ')}]`;
+      } else {
+        emuStr = res.affinityMask || '?';
+      }
+      if (hw.hasHT && res.emuCores) {
+        const allLogical = Array.from({ length: hw.logicalCount }, (_, i) => i);
+        const bgCores = allLogical.filter(c => !res.emuCores.includes(c));
+        bgStr = `Lógicos HT [${bgCores.join(', ')}]`;
+      } else {
+        bgStr = 'Núcleo 0 (SO)';
+      }
 
       alert(
         `🔥 GAME BOOSTER ATIVADO!\n` +
@@ -1717,15 +1731,15 @@ if (btnGameBooster) {
         `── Hardware Detectado ───────────\n` +
         `🖥  CPU: ${hw.cpuModel || 'Desconhecido'}\n` +
         `📦 Marca: ${brand}\n` +
-        `🔢 Físicos: ${hw.physicalCores} | Lógicos: ${hw.logicalCount}\n` +
+        `🔢 Físicos: ${hw.physicalCores} | Lógicos totais: ${hw.logicalCount}\n` +
         `⚡ HyperThreading: ${htInfo}\n` +
         `💾 RAM: ${ramGB} GB\n` +
         `🎮 GPU: ${hw.gpuName || '?'}\n` +
         `📊 Perfil: ${tierPT}\n\n` +
-        `── Configuração Aplicada ────────\n` +
-        `✅ HD-Player → ${emuStr} (Alta prioridade)\n` +
-        `✅ BlueStacks → Núcleos principais (Alta)\n` +
-        `✅ Discord/Chrome → Núcleos BG (Abaixo Normal)\n` +
+        `── Afinidade de CPU Aplicada ────\n` +
+        `✅ HD-Player/BS  → ${emuStr} (Alta prioridade)\n` +
+        `✅ Discord/Chrome → ${bgStr} (Abaixo Normal)\n\n` +
+        `── Outras Otimizações ───────────\n` +
         `✅ I/O Priority HD-Player/BS: 3 (High)\n` +
         `✅ GPU Priority: ${hw.tier === 'ultra' || hw.tier === 'high' ? 8 : 6}\n` +
         `✅ Win32PrioritySeparation: 26\n` +
