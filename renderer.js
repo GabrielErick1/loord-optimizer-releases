@@ -241,30 +241,14 @@ if (btnApplyAllModules) {
 const btnApplyMouse = document.getElementById('btn-apply-mouse');
 if (btnApplyMouse) {
   btnApplyMouse.addEventListener('click', async () => {
-    if (!appIsAdmin) {
-      alert('Erro: Requer privilégios de Administrador!');
-      return;
-    }
-    await saveEmulatorSettings();
-    const reboot = confirm('Configurações de sensibilidade aplicadas e atualizadas em tempo real!\n\nDeseja REINICIAR o computador agora para garantir que todas as alterações do sistema entrem em vigor?');
-    if (reboot) {
-      await window.api.rebootComputer();
-    }
+    await applyMouseSettingsOnly();
   });
 }
 
 const btnApplyEmulator = document.getElementById('btn-apply-emulator');
 if (btnApplyEmulator) {
   btnApplyEmulator.addEventListener('click', async () => {
-    if (!appIsAdmin) {
-      alert('Erro: Requer privilégios de Administrador!');
-      return;
-    }
-    await saveEmulatorSettings();
-    const reboot = confirm('Configurações do emulador salvas com sucesso!\n\nDeseja REINICIAR o computador agora para limpar temporizadores e aplicar prioridades de CPU?');
-    if (reboot) {
-      await window.api.rebootComputer();
-    }
+    await saveEmulatorSettingsOnly();
   });
 }
 
@@ -398,8 +382,38 @@ const toggleFps = document.getElementById('toggle-fps');
 const toggleRog2 = document.getElementById('toggle-rog2');
 const selectPolling = document.getElementById('mouse-polling');
 
-// Save config when emulator settings change
-async function saveEmulatorSettings() {
+// ── Aplicar apenas a Regedit de Sensibilidade (Mouse) ──────────────────────
+async function applyMouseSettingsOnly() {
+  if (!appIsAdmin) {
+    alert('Erro: Requer privilégios de Administrador!');
+    return;
+  }
+
+  const selectedMouseModeEl = document.querySelector('input[name="mouse-mode"]:checked');
+  const mouseMode = selectedMouseModeEl ? selectedMouseModeEl.value : 'loord-3-sense-full-red';
+  const pollingRate = selectPolling ? selectPolling.value : '1000';
+
+  if (tweakStatusText) tweakStatusText.textContent = 'Aplicando Regedit de sensibilidade no Windows...';
+  const res = await window.api.applyOptimizations({
+    mouseMode,
+    pollingRate,
+    scope: 'mouse-only'
+  });
+
+  if (res && res.success) {
+    const regTitle = res.regName || 'Sensibilidade';
+    if (tweakStatusText) tweakStatusText.textContent = `Regedit (${regTitle}) aplicada com sucesso no Windows!`;
+    const reboot = confirm(`⚡ Regedit (${regTitle}) aplicada com sucesso!\n\nForam aplicadas exclusivamente as otimizações de sensibilidade selecionadas (o emulador não foi alterado).\n\nDeseja REINICIAR o computador agora para que as alterações do sistema entrem em vigor?`);
+    if (reboot) {
+      await window.api.rebootComputer();
+    }
+  } else {
+    alert(`Erro ao aplicar regedit: ${res ? res.error : 'Desconhecido'}`);
+  }
+}
+
+// ── Aplicar apenas as Configurações do Emulador ───────────────────────────
+async function saveEmulatorSettingsOnly() {
   if (!appIsAdmin) {
     if (tweakStatusText) tweakStatusText.textContent = 'Aviso: Requer Administrador para alterar BlueStacks!';
     return;
@@ -408,31 +422,31 @@ async function saveEmulatorSettings() {
   const dpi = customDpiInput ? (parseInt(customDpiInput.value) || 480) : 480;
   const maxFps = (toggleFps && toggleFps.checked) ? 240 : 60;
   const forceRog2 = toggleRog2 ? toggleRog2.checked : true;
-  const selectedMouseModeEl = document.querySelector('input[name="mouse-mode"]:checked');
-  const mouseMode = selectedMouseModeEl ? selectedMouseModeEl.value : 'linear';
-  const pollingRate = selectPolling ? selectPolling.value : '1000';
   const selectEngine = document.getElementById('select-engine');
   const selectAstc = document.getElementById('select-astc');
   const engine = selectEngine ? selectEngine.value : 'opengl';
   const astc = selectAstc ? selectAstc.value : 'disabled';
 
-  if (tweakStatusText) tweakStatusText.textContent = 'Aplicando configurações de mouse e otimizações...';
+  if (tweakStatusText) tweakStatusText.textContent = 'Aplicando configurações do emulador...';
   const res = await window.api.applyOptimizations({
     dpi,
     maxFps,
     forceRog2,
-    mouseMode,
-    pollingRate,
     engine,
-    astc
+    astc,
+    scope: 'emulator-only'
   });
 
   const status = await window.api.checkBlueStacksStatus();
   if (status && status.running) {
-    if (tweakStatusText) tweakStatusText.textContent = 'Regedit aplicada no Windows! (Para alterar bluestacks.conf, feche o emulador).';
+    if (tweakStatusText) tweakStatusText.textContent = 'Aviso: Para aplicar no bluestacks.conf, feche o emulador.';
   } else {
     if (res && res.success) {
-      if (tweakStatusText) tweakStatusText.textContent = 'Configuração de registro e emulador aplicadas com sucesso!';
+      if (tweakStatusText) tweakStatusText.textContent = 'Configurações do emulador salvas com sucesso!';
+      const reboot = confirm('Configurações do emulador salvas com sucesso!\n\nDeseja REINICIAR o computador agora para limpar temporizadores e aplicar prioridades de CPU?');
+      if (reboot) {
+        await window.api.rebootComputer();
+      }
     } else {
       if (tweakStatusText) tweakStatusText.textContent = `Erro ao aplicar: ${res ? res.error : 'Desconhecido'}`;
     }
@@ -915,11 +929,10 @@ function bindSaveListeners() {
     }
   });
 
-  // Radio button changes - apply immediately when clicked
+  // Radio button changes - save selection
   document.querySelectorAll('input[name="mouse-mode"]').forEach(radio => {
-    radio.addEventListener('change', async () => {
+    radio.addEventListener('change', () => {
       saveAllSettings();
-      await saveEmulatorSettings();
     });
   });
 

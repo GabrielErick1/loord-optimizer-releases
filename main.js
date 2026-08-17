@@ -1284,11 +1284,11 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
     return { success: false, error: "Privilégios de Administrador requeridos." };
   }
 
-  const { dpi, maxFps, forceRog2, mouseMode, pollingRate, engine, astc } = config;
+  const { dpi, maxFps, forceRog2, mouseMode, pollingRate, engine, astc, scope } = config || {};
+  const isMouseOnly = scope === 'mouse-only';
+  const isEmulatorOnly = scope === 'emulator-only';
 
   try {
-    // Initial Backup
-    const backupStatus = fs.readdirSync(backupDir).length > 0;
     const allPaths = [
       { key: 'bluestacks_msi.conf.bak', path: 'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf' },
       { key: 'bluestacks_msi5.conf.bak', path: 'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf' },
@@ -1298,36 +1298,23 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
       { key: 'bluestacks_bgp.conf.bak', path: 'C:\\ProgramData\\BlueStacks_bgp\\bluestacks.conf' }
     ];
 
-    if (!backupStatus) {
-      await runCmd('powershell -Command "Enable-ComputerRestore -Drive C:\\; Checkpoint-Computer -Description OtimizacaoSensApp -RestorePointType MODIFY_SETTINGS"');
-      await runCmd(`reg export "HKCU\\Control Panel\\Mouse" "${path.join(backupDir, 'Mouse_Original.reg')}" /y`);
-      await runCmd(`reg export "HKCU\\Control Panel\\Accessibility" "${path.join(backupDir, 'Accessibility_Original.reg')}" /y`);
-      await runCmd(`reg export "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" "${path.join(backupDir, 'PriorityControl_Original.reg')}" /y`);
-      await runCmd(`reg export "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" "${path.join(backupDir, 'SystemProfile_Original.reg')}" /y`);
-      await runCmd(`reg export "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters" "${path.join(backupDir, 'Mouclass_Original.reg')}" /y`);
-      await runCmd(`reg export "HKLM\\SYSTEM\\CurrentControlSet\\Services\\kbdclass\\Parameters" "${path.join(backupDir, 'Kbdclass_Original.reg')}" /y`);
-      await runCmd(`reg export "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\kernel" "${path.join(backupDir, 'Kernel_Original.reg')}" /y`);
-      await runCmd(`reg export "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\HD-Player.exe" "${path.join(backupDir, 'HDPlayer_Original.reg')}" /y`);
-      
+    // ── 1. Se for apenas configuração do Emulador (ou all) ─────────────────
+    if (!isMouseOnly && (dpi || maxFps || forceRog2 !== undefined || engine || astc)) {
       for (const item of allPaths) {
         if (fs.existsSync(item.path)) {
-          fs.copyFileSync(item.path, path.join(backupDir, item.key));
+          updateConfFile(item.path, dpi, maxFps, forceRog2, engine, astc);
         }
       }
-    }
-
-    // Apply BlueStacks conf (Background)
-    for (const item of allPaths) {
-      if (fs.existsSync(item.path)) {
-        updateConfFile(item.path, dpi, maxFps, forceRog2, engine, astc);
+      if (isEmulatorOnly) {
+        return { success: true, message: 'Configurações do emulador aplicadas com sucesso!' };
       }
     }
 
-    // Import embedded registry definitions (works natively in dev, packaged ASAR, and installer setups)
+    // ── 2. Se for configuração de Regedit de Mouse (mouse-only ou all) ─────
     const embeddedRegData = require('./regis/embedded_reg_data.js');
-    const selectedRegConfig = embeddedRegData[mouseMode];
+    const selectedRegConfig = embeddedRegData[mouseMode || 'loord-3-sense-full-red'];
 
-    // Clean up previous/custom keys first so regedits never mix or overlap
+    // Limpar chaves anteriores para não misturar regedits
     const keysToClean = [
       'Active', 'ActiveAC', 'ActiveDeveloped', 'ActiveDevoloped', 'ActiveFix', 'ActiveUser',
       'Beep2', 'DoubleClickSpeed2', 'DoubleClickWidth2', 'Fov', 'MouseCl', 'Mousecontroslub',
@@ -1342,6 +1329,7 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
       } catch (e) {}
     }
 
+    // Aplicar as chaves exatas da Regedit selecionada
     if (selectedRegConfig && Array.isArray(selectedRegConfig.keys)) {
       for (const item of selectedRegConfig.keys) {
         try {
@@ -1362,96 +1350,33 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
       } catch (e) {}
     }
 
-    // Force MouseHoverTime to Hexadecimal 29 (REG_DWORD 41) for all regedits
+    // MouseHoverTime 41 (Hex 29)
     try {
       execSync('reg add "HKCU\\Control Panel\\Mouse" /v MouseHoverTime /t REG_DWORD /d 41 /f', { stdio: 'ignore' });
       execSync('reg add "HKU\\.DEFAULT\\Control Panel\\Mouse" /v MouseHoverTime /t REG_DWORD /d 41 /f', { stdio: 'ignore' });
     } catch (e) {}
 
-    // Reload mouse curve and sensitivity in Windows RAM in real-time
+    // Polling Rate buffer
+    let mouseQueueSize = 100;
+    if (pollingRate === '8000') mouseQueueSize = 300;
+    else if (pollingRate === '1000') mouseQueueSize = 150;
+    else if (pollingRate === '500') mouseQueueSize = 100;
+    else if (pollingRate === '125-250') mouseQueueSize = 50;
+
     try {
-      execSync(`powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Add-Type '[DllImport(\\"user32.dll\\")] public static extern bool SystemParametersInfo(int a,int b,IntPtr c,int d);' -Name U -Namespace W -PassThru | ForEach-Object { $null = $_::SystemParametersInfo(0x0004,0,[IntPtr]::Zero,0x0003); $null = $_::SystemParametersInfo(0x0071,10,[IntPtr]::Zero,0x0003) }"`, { stdio: 'ignore' });
+      execSync(`reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters" /v MouseDataQueueSize /t REG_DWORD /d ${mouseQueueSize} /f /reg:64`, { stdio: 'ignore' });
+    } catch (_) {}
+
+    // Atualizar sensibilidade e curva de mouse no Windows em tempo real
+    try {
+      execSync(`powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Add-Type '[DllImport(\\"user32.dll\\")] public static extern bool SystemParametersInfo(int a,int b,IntPtr c,int d);' -Name U -Namespace W -PassThru | ForEach-Object { $null = $_::SystemParametersInfo(0x0004,0,[IntPtr]::Zero,0x0003); $null = $_::SystemParametersInfo(0x0071,10,[IntPtr]::Zero,0x0003); $null = $_::SystemParametersInfo(0x0017,0,[IntPtr]::Zero,0x0003); $null = $_::SystemParametersInfo(0x000B,31,[IntPtr]::Zero,0x0003) }"`, { stdio: 'ignore' });
     } catch (e) {}
 
-    const currentRegInfo = selectedRegConfig ? { name: selectedRegConfig.name, fix: selectedRegConfig.fix } : { name: 'CUSTOM REGEDIT', fix: '1.0' };
-
-    let mouseBatSection = `echo [*] Aplicando Registro de Sensibilidade (${currentRegInfo.name} - v${currentRegInfo.fix})...\necho [OK] Registro de Sensibilidade configurado nativamente.\necho.`;
-
-    // Generate batch script content
-    const tempDir = app.getPath('temp');
-    const batPath = path.join(tempDir, 'apply_tweaks.bat');
-
-    const batContent = `@echo off
-chcp 65001 >nul
-title FFOptimizer - Aplicando Otimizacoes
-color 0C
-echo ========================================================
-echo           FFOPTIMIZER - APLICANDO OTIMIZACOES
-echo ========================================================
-echo.
-
-echo [*] Configurando Prioridade de Processo (HD-Player.exe)...
-reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\HD-Player.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f /reg:64 >nul 2>&1
-reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\HD-Player.exe\\PerfOptions" /v IoPriority /t REG_DWORD /d 3 /f /reg:64 >nul 2>&1
-echo.
-
-${mouseBatSection}
-
-echo [*] Configurando Prioridade do Sistema (Win32PrioritySeparation)...
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 26 /f /reg:64 >nul 2>&1
-reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 10 /f /reg:64 >nul 2>&1
-echo.
-
-echo [*] Desativando USB Selective Suspend (Latency USB)...
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\USB" /v DisableSelectiveSuspend /t REG_DWORD /d 1 /f /reg:64 >nul 2>&1
-powercfg -setacvalueindex SCHEME_CURRENT SUB_USB USBSELECTIVE 0 >nul 2>&1
-powercfg -setdcvalueindex SCHEME_CURRENT SUB_USB USBSELECTIVE 0 >nul 2>&1
-powercfg -setactive SCHEME_CURRENT >nul 2>&1
-echo.
-
-echo [*] Configurando Filas de Input e Acessibilidade...
-reg add "HKCU\\Control Panel\\Accessibility\\Keyboard Response" /v Flags /t REG_SZ /d 0 /f >nul 2>&1
-reg add "HKCU\\Control Panel\\Accessibility\\ToggleKeys" /v Flags /t REG_SZ /d 0 /f >nul 2>&1
-reg add "HKCU\\Control Panel\\Accessibility\\StickyKeys" /v Flags /t REG_SZ /d 0 /f >nul 2>&1
-reg add "HKCU\\Control Panel\\Accessibility\\MouseKeys" /v Flags /t REG_SZ /d 0 /f >nul 2>&1
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters" /v MouseDataQueueSize /t REG_DWORD /d ${mouseQueueSize} /f /reg:64 >nul 2>&1
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters" /v MouseResolution /t REG_DWORD /d 1 /f /reg:64 >nul 2>&1
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters" /v MouseTicks /t REG_DWORD /d 1 /f /reg:64 >nul 2>&1
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\kbdclass\\Parameters" /v KeyboardDataQueueSize /t REG_DWORD /d 20 /f /reg:64 >nul 2>&1
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\kbdclass\\Parameters" /v KeyboardResolution /t REG_DWORD /d 1 /f /reg:64 >nul 2>&1
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\kbdclass\\Parameters" /v KeyboardTicks /t REG_DWORD /d 1 /f /reg:64 >nul 2>&1
-echo.
-
-echo [*] Otimizando Resposta de Input do DWM (SuperLowLatency)...
-reg add "HKCU\\Software\\Microsoft\\Windows\\DWM" /v SuperLowLatency /t REG_DWORD /d 1 /f >nul 2>&1
-echo.
-
-echo [*] Otimizando Temporizadores do Kernel (Timer de Alta Precisao)...
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\kernel" /v GlobalTimerResolutionRequests /t REG_DWORD /d 1 /f /reg:64 >nul 2>&1
-bcdedit /set useplatformtick yes >nul 2>&1
-bcdedit /set disabledynamictick yes >nul 2>&1
-echo.
-
-echo [*] Atualizando configuracoes de sensibilidade do mouse em tempo real...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$sig = '[DllImport(\"user32.dll\")] public static extern bool SystemParametersInfo(int uAction, int uParam, IntPtr lpvParam, int fuWinIni);'; $type = Add-Type -MemberDefinition $sig -Name Win32Utils -Namespace Win32 -PassThru; $type::SystemParametersInfo(0x0004, 0, [IntPtr]::Zero, 0x0003); $type::SystemParametersInfo(0x0071, 10, [IntPtr]::Zero, 0x0003); $type::SystemParametersInfo(0x0017, 0, [IntPtr]::Zero, 0x0003); $type::SystemParametersInfo(0x000B, 31, [IntPtr]::Zero, 0x0003)" >nul 2>&1
-echo.
-
-echo ========================================================
-echo          OTIMIZACOES APLICADAS COM SUCESSO!
-echo ========================================================
-echo.
-echo As configuracoes de sensibilidade foram aplicadas e atualizadas!
-echo.
-timeout /t 5
-`;
-
-    // Write with UTF-8 BOM so reg.exe accepts special chars
-    fs.writeFileSync(batPath, '\uFEFF' + batContent, 'utf8');
-    
-    // Run silently - app already runs as Administrator, no need to spawn visible windows
-    execSync(`cmd.exe /c "${batPath}"`, { stdio: 'ignore' });
-
-    return { success: true };
+    return { 
+      success: true, 
+      regName: selectedRegConfig ? selectedRegConfig.name : 'Regedit Customizada',
+      message: 'Regedit de sensibilidade aplicada com sucesso no Windows!'
+    };
   } catch (e) {
     return { success: false, error: e.message };
   }
