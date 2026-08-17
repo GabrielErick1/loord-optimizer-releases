@@ -22,8 +22,11 @@ contextBridge.exposeInMainWorld('api', {
 
   // ─── Auto-Update ─────────────────────────────────────────────────
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  downloadUpdateProgress: (url) => ipcRenderer.invoke('download-update-progress', url),
   installUpdate: () => ipcRenderer.send('install-update'),
+  installUpdateNow: () => ipcRenderer.invoke('install-update-now'),
   onUpdateAvailable: (cb) => ipcRenderer.on('update-available', (_e, info) => cb(info)),
+  onUpdateDownloadProgress: (cb) => ipcRenderer.on('update-download-progress', (_e, data) => cb(data)),
   onUpdateDownloaded: (cb) => ipcRenderer.on('update-downloaded', (_e, info) => cb(info)),
   onUpdateNotAvailable: (cb) => ipcRenderer.on('update-not-available', () => cb()),
   onUpdateError: (cb) => ipcRenderer.on('update-error', (_e, msg) => cb(msg)),

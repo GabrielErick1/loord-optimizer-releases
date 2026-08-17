@@ -1043,128 +1043,104 @@ if (window.api.onUpdateAvailable) {
   const btnCheckUpdate  = document.getElementById('btn-check-update');
   const btnInstallNow   = document.getElementById('btn-install-now');
 
-  // Manual Check Button
-  if (btnCheckUpdate) {
-    btnCheckUpdate.addEventListener('click', async () => {
+  let activeDownloadUrl = null;
+
+  async function handleCheckUpdates(manual = false) {
+    if (btnCheckUpdate) {
       btnCheckUpdate.disabled = true;
       btnCheckUpdate.textContent = 'Verificando...';
-      if (cardStatusTitle) cardStatusTitle.textContent = '🔍 Buscando Atualizações';
-      if (cardStatusDesc) cardStatusDesc.textContent = 'Conectando ao GitHub para verificar nova versão...';
+    }
+    if (manual && cardStatusTitle) cardStatusTitle.textContent = '🔍 Buscando Atualizações...';
+    if (manual && cardStatusDesc) cardStatusDesc.textContent = 'Conectando ao GitHub para verificar nova versão...';
 
-      try {
-        const res = await window.api.checkForUpdates();
+    try {
+      const res = await window.api.checkForUpdates();
+      
+      const badge = document.getElementById('app-version-badge');
+      if (badge && res && res.currentVersion) {
+        badge.textContent = `v${res.currentVersion}`;
+      }
+
+      if (btnCheckUpdate) {
         btnCheckUpdate.disabled = false;
         btnCheckUpdate.textContent = '🔍 Verificar Agora';
+      }
 
-        if (res && res.hasUpdate) {
-          if (cardStatusTitle) cardStatusTitle.textContent = `🚀 Nova Versão v${res.latestVersion} Encontrada!`;
-          if (cardStatusDesc) cardStatusDesc.textContent = `Atualização disponível no GitHub. Clique abaixo para baixar!`;
-          if (btnInstallNow) {
-            btnInstallNow.style.display = 'inline-block';
-            btnInstallNow.textContent = '⚡ Baixar Atualização v' + res.latestVersion;
-            btnInstallNow.onclick = () => {
-              window.open(res.downloadUrl || 'https://github.com/GabrielErick1/loord-optimizer-releases/releases/latest');
-            };
-          }
-          alert(`🚀 Nova Atualização Disponível!\n\n• Sua Versão: v${res.currentVersion}\n• Nova Versão: v${res.latestVersion}\n\nClique no botão "Instalar Atualização" para aplicar.`);
-        } else {
-          if (cardStatusTitle) cardStatusTitle.textContent = '✔️ Você está na versão mais recente';
-          if (cardStatusDesc) cardStatusDesc.textContent = `Seu aplicativo está 100% atualizado (v${res?.currentVersion || '1.0.2'}).`;
-          alert(`✔️ Seu Loord Optimizer já está na versão mais recente (v${res?.currentVersion || '1.0.2'})!`);
+      const hasNewVersion = res && (res.updateAvailable || res.hasUpdate);
+
+      if (hasNewVersion) {
+        activeDownloadUrl = res.downloadUrl;
+        if (cardStatusTitle) cardStatusTitle.textContent = `🚀 Nova Versão v${res.latestVersion} Disponível!`;
+        if (cardStatusDesc) cardStatusDesc.textContent = `Clique abaixo para baixar e atualizar automaticamente estilo Play Store.`;
+        
+        if (btnInstallNow) {
+          btnInstallNow.style.display = 'inline-block';
+          btnInstallNow.textContent = `⚡ Baixar e Atualizar (v${res.latestVersion})`;
+          btnInstallNow.onclick = async () => {
+            btnInstallNow.disabled = true;
+            btnInstallNow.textContent = '⏳ Baixando Atualização (0%)...';
+            if (cardStatusDesc) cardStatusDesc.textContent = 'Baixando nova versão em segundo plano...';
+
+            const dlRes = await window.api.downloadUpdateProgress(activeDownloadUrl);
+            if (dlRes && dlRes.success) {
+              btnInstallNow.disabled = false;
+              btnInstallNow.textContent = '🚀 Reiniciar e Atualizar Agora';
+              btnInstallNow.onclick = () => {
+                btnInstallNow.disabled = true;
+                btnInstallNow.textContent = 'Iniciando Atualização...';
+                window.api.installUpdateNow();
+              };
+              if (cardStatusTitle) cardStatusTitle.textContent = '✅ Download Concluído!';
+              if (cardStatusDesc) cardStatusDesc.textContent = 'Clique no botão para reiniciar e aplicar a nova versão.';
+              alert(`✅ Download da v${res.latestVersion} concluído com sucesso!\n\nClique em "Reiniciar e Atualizar Agora" para aplicar a atualização.`);
+            } else {
+              btnInstallNow.disabled = false;
+              btnInstallNow.textContent = 'Tentar Novamente';
+              alert(`Erro no download da atualização:\n${dlRes?.error || 'Verifique sua conexão de internet.'}`);
+            }
+          };
         }
-      } catch (e) {
-        if (cardStatusTitle) cardStatusTitle.textContent = 'Erro ao verificar';
-        if (cardStatusDesc) cardStatusDesc.textContent = e.message;
+
+        if (manual) {
+          alert(`🚀 Nova Atualização Encontrada!\n\n• Sua Versão Atual: v${res.currentVersion}\n• Nova Versão Disponível: v${res.latestVersion}\n\nClique no botão "Baixar e Atualizar" para instalar.`);
+        }
+      } else {
+        if (btnInstallNow) btnInstallNow.style.display = 'none';
+        if (cardStatusTitle) cardStatusTitle.textContent = '✔️ Você está na versão mais recente';
+        if (cardStatusDesc) cardStatusDesc.textContent = `Seu Loord Optimizer está 100% atualizado (v${res?.currentVersion || '1.0.6'}).`;
+        if (manual) {
+          alert(`✔️ Seu Loord Optimizer já está na versão mais recente (v${res?.currentVersion || '1.0.6'})!`);
+        }
+      }
+    } catch (e) {
+      if (btnCheckUpdate) {
         btnCheckUpdate.disabled = false;
         btnCheckUpdate.textContent = '🔍 Verificar Agora';
-        alert('Não foi possível conectar ao servidor de atualizações. Verifique sua conexão.');
+      }
+      if (manual) {
+        alert('Não foi possível verificar atualizações. Verifique sua conexão.');
+      }
+    }
+  }
+
+  // Progress listener
+  if (window.api.onUpdateDownloadProgress) {
+    window.api.onUpdateDownloadProgress((data) => {
+      if (btnInstallNow && data && data.percent !== undefined) {
+        btnInstallNow.textContent = `⏳ Baixando (${data.percent}%)...`;
       }
     });
   }
 
-  // Set App Version Badge on Startup
-  window.api.checkForUpdates().then(res => {
-    const badge = document.getElementById('app-version-badge');
-    if (badge && res && res.currentVersion) {
-      badge.textContent = `v${res.currentVersion}`;
-    }
-  }).catch(() => {});
-
-  // Install Now Button in Card
-  if (btnInstallNow) {
-    btnInstallNow.addEventListener('click', () => {
-      btnInstallNow.disabled = true;
-      btnInstallNow.textContent = 'Reiniciando...';
-      window.api.installUpdate();
-    });
+  // Manual Check Button
+  if (btnCheckUpdate) {
+    btnCheckUpdate.addEventListener('click', () => handleCheckUpdates(true));
   }
 
-  // Update available — starts downloading silently
-  window.api.onUpdateAvailable((info) => {
-    const vText = `Nova versão ${info.version || ''} encontrada!`;
-    updTitle.textContent = vText;
-    updSub.textContent   = 'Baixando atualização em segundo plano...';
-    updBtn.textContent   = 'Baixando...';
-    updBtn.disabled      = true;
-    updateBanner.classList.remove('hidden');
-    updateBanner.style.display = 'flex';
-
-    if (cardStatusTitle) cardStatusTitle.textContent = `🚀 ${vText}`;
-    if (cardStatusDesc) cardStatusDesc.textContent = 'Baixando nova versão automaticamente em segundo plano...';
-  });
-
-  // Update downloaded — ready to install
-  window.api.onUpdateDownloaded((info) => {
-    const readyText = `✅ Versão ${info.version || ''} pronta para instalar!`;
-    updTitle.textContent = readyText;
-    updSub.textContent   = 'Clique em Instalar para aplicar a nova versão agora.';
-    updBtn.textContent   = 'Instalar';
-    updBtn.disabled      = false;
-    updBtn.onclick       = () => {
-      updBtn.textContent  = 'Reiniciando...';
-      updBtn.disabled     = true;
-      window.api.installUpdate();
-    };
-
-    if (cardStatusTitle) cardStatusTitle.textContent = readyText;
-    if (cardStatusDesc) cardStatusDesc.textContent = 'A atualização já foi baixada com sucesso. Clique em Instalar para aplicar!';
-    if (btnInstallNow) {
-      btnInstallNow.style.display = 'inline-block';
-    }
-  });
-
-  // No update available (manual check)
-  window.api.onUpdateNotAvailable(() => {
-    if (btnCheckUpdate) {
-      btnCheckUpdate.disabled = false;
-      btnCheckUpdate.textContent = '🔍 Verificar Agora';
-    }
-    if (cardStatusTitle) cardStatusTitle.textContent = '✔️ Você está na versão mais recente';
-    if (cardStatusDesc) cardStatusDesc.textContent = 'Nenhuma atualização pendente no momento.';
-
-    if (!updateBanner.classList.contains('hidden')) {
-      updTitle.textContent = '✔️ App atualizado!';
-      updSub.textContent   = 'Você já possui a versão mais recente.';
-      updBtn.textContent   = 'OK';
-      updBtn.disabled      = false;
-      updBtn.onclick       = () => {
-        updateBanner.classList.add('hidden');
-        updateBanner.style.display = 'none';
-      };
-    }
-  });
-
-  // Error
-  window.api.onUpdateError((msg) => {
-    console.warn('[Updater] erro:', msg);
-    if (btnCheckUpdate) {
-      btnCheckUpdate.disabled = false;
-      btnCheckUpdate.textContent = '🔍 Verificar Agora';
-    }
-    if (cardStatusTitle) cardStatusTitle.textContent = 'Status do Auto-Update';
-    if (cardStatusDesc) cardStatusDesc.textContent = 'Aplicativo configurado para receber atualizações do GitHub.';
-  });
+  // Auto Check on App Startup
+  handleCheckUpdates(false);
 }
+// ═══════════════════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════════════
