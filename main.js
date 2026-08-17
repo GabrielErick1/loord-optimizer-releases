@@ -741,6 +741,143 @@ function buildAdaptiveAffinityMap(hw) {
 
 
 
+// ── Configurar Process Lasso automaticamente (se instalado) ───────────────
+function configureProcessLasso(hw, emuCores) {
+  const possiblePaths = [
+    'C:\\ProgramData\\ProcessLasso\\config\\prolasso.ini',
+    'C:\\Program Files\\Process Lasso\\config\\prolasso.ini',
+    'C:\\Program Files\\Process Lasso\\prolasso.ini',
+    path.join(process.env.APPDATA || '', 'ProcessLasso', 'config', 'prolasso.ini'),
+    path.join(process.env.APPDATA || '', 'ProcessLasso', 'prolasso.ini')
+  ];
+
+  let configured = false;
+
+  for (const iniPath of possiblePaths) {
+    try {
+      if (!fs.existsSync(iniPath)) continue;
+
+      const rawBuffer = fs.readFileSync(iniPath);
+      let encoding = 'utf16le';
+      let text = '';
+
+      if (rawBuffer[0] === 0xff && rawBuffer[1] === 0xfe) {
+        encoding = 'utf16le';
+        text = rawBuffer.toString('utf16le');
+      } else if (rawBuffer[0] === 0xef && rawBuffer[1] === 0xbb && rawBuffer[2] === 0xbf) {
+        encoding = 'utf8';
+        text = rawBuffer.toString('utf8');
+      } else {
+        const utf16Str = rawBuffer.toString('utf16le');
+        if (utf16Str.includes('[') && utf16Str.includes(']')) {
+          encoding = 'utf16le';
+          text = utf16Str;
+        } else {
+          encoding = 'utf8';
+          text = rawBuffer.toString('utf8');
+        }
+      }
+
+      function updateIniKey(fullText, section, key, value) {
+        const sectionHeader = `[${section}]`;
+        const sectionIdx = fullText.indexOf(sectionHeader);
+
+        if (sectionIdx === -1) {
+          return fullText + `\r\n\r\n[${section}]\r\n${key}=${value}\r\n`;
+        }
+
+        const nextSectionIdx = fullText.indexOf('[', sectionIdx + sectionHeader.length);
+        const sectionBody = nextSectionIdx === -1 
+          ? fullText.substring(sectionIdx) 
+          : fullText.substring(sectionIdx, nextSectionIdx);
+
+        const keyRegex = new RegExp(`^(${key}\\s*=)(.*)$`, 'm');
+        let newSectionBody = '';
+
+        if (keyRegex.test(sectionBody)) {
+          newSectionBody = sectionBody.replace(keyRegex, `${key}=${value}`);
+        } else {
+          newSectionBody = sectionBody.trimEnd() + `\r\n${key}=${value}\r\n`;
+        }
+
+        if (nextSectionIdx === -1) {
+          return fullText.substring(0, sectionIdx) + newSectionBody;
+        } else {
+          return fullText.substring(0, sectionIdx) + newSectionBody + fullText.substring(nextSectionIdx);
+        }
+      }
+
+      function appendUniqueCSV(existing, toAdd) {
+        const list = (existing || '').split(',').map(s => s.trim()).filter(Boolean);
+        for (const item of toAdd) {
+          if (!list.some(x => x.toLowerCase() === item.toLowerCase())) {
+            list.push(item);
+          }
+        }
+        return list.join(',');
+      }
+
+      function getIniKey(fullText, section, key) {
+        const sectionHeader = `[${section}]`;
+        const sectionIdx = fullText.indexOf(sectionHeader);
+        if (sectionIdx === -1) return '';
+        const nextSectionIdx = fullText.indexOf('[', sectionIdx + sectionHeader.length);
+        const sectionBody = nextSectionIdx === -1 
+          ? fullText.substring(sectionIdx) 
+          : fullText.substring(sectionIdx, nextSectionIdx);
+        const match = sectionBody.match(new RegExp(`^${key}\\s*=(.*)$`, 'm'));
+        return match ? match[1].trim() : '';
+      }
+
+      const emuProcesses = ['HD-Player.exe', 'BlueStacks.exe', 'BlueStacksHelper.exe', 'hd-player.exe'];
+
+      // 1. Excluir do ProBalance (Anti-Throttling)
+      const currOoc = getIniKey(text, 'OutOfControlProcessRestraint', 'OocExclusions');
+      const newOoc = appendUniqueCSV(currOoc, emuProcesses);
+      text = updateIniKey(text, 'OutOfControlProcessRestraint', 'OocExclusions', newOoc);
+
+      // 2. Induzir o Modo de Desempenho (Gaming Mode)
+      text = updateIniKey(text, 'GamingMode', 'GamingModeEnabled', 'true');
+      text = updateIniKey(text, 'GamingMode', 'GamingChangePowerPlan', 'true');
+      const currGaming = getIniKey(text, 'GamingMode', 'AutomaticGamingModeProcessPaths');
+      const newGaming = appendUniqueCSV(currGaming, emuProcesses);
+      text = updateIniKey(text, 'GamingMode', 'AutomaticGamingModeProcessPaths', newGaming);
+
+      // 3. SmartTrim
+      text = updateIniKey(text, 'SmartTrim', 'SmartTrimIsEnabled', 'true');
+      text = updateIniKey(text, 'SmartTrim', 'SmartTrimClearStandbyList', 'true');
+      text = updateIniKey(text, 'SmartTrim', 'SmartTrimWorkingSetTrims', 'true');
+      const currTrimEx = getIniKey(text, 'SmartTrim', 'SmartTrimExclusions');
+      const newTrimEx = appendUniqueCSV(currTrimEx, emuProcesses);
+      text = updateIniKey(text, 'SmartTrim', 'SmartTrimExclusions', newTrimEx);
+
+      // 4. Prioridade de CPU (3 = High) e Prioridade de E/S (3 = High)
+      text = updateIniKey(text, 'ProcessDefaults', 'DefaultPriorities', 'HD-Player.exe,3,BlueStacks.exe,3,BlueStacksHelper.exe,3');
+      text = updateIniKey(text, 'ProcessDefaults', 'DefaultIOPriorities', 'HD-Player.exe,3,BlueStacks.exe,3,BlueStacksHelper.exe,3');
+
+      // 5. Afinidade com Núcleos Físicos (Pares)
+      if (emuCores && emuCores.length > 0) {
+        const coresStr = emuCores.join(',');
+        text = updateIniKey(text, 'ProcessDefaults', 'DefaultAffinitiesEx', `hd-player.exe,0,${coresStr},BlueStacks.exe,0,${coresStr}`);
+      }
+
+      fs.writeFileSync(iniPath, Buffer.from(text, encoding));
+      configured = true;
+    } catch (e) {
+      console.warn('Erro ao atualizar Process Lasso ini:', e);
+    }
+  }
+
+  // Notificar / recarregar Process Governor se estiver rodando
+  if (configured) {
+    try {
+      execSync('powershell -NoProfile -Command "Get-Process ProcessGovernor -ErrorAction SilentlyContinue | ForEach-Object { try { Stop-Process -Id $_.Id -Force; Start-Sleep -Milliseconds 300; Start-Process $_.Path -WindowStyle Hidden } catch {} }"', { stdio: 'ignore', timeout: 4000 });
+    } catch (_) {}
+  }
+
+  return configured;
+}
+
 ipcMain.handle('boost-game-turbo', async () => {
   try {
     // ── 0. Detect Hardware ─────────────────────────────────────────────────
@@ -757,19 +894,25 @@ ipcMain.handle('boost-game-turbo', async () => {
                           : totalRamMB >= 8192  ? 3000
                           : 1500;
 
-    // ── 1. Power Plan ─────────────────────────────────────────────────────
+    // ── 1. Power Plan (Ultimate / Highest Performance) ────────────────────
     try { execSync('powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61', { stdio: 'ignore' }); } catch (_) {}
     try { execSync('powercfg -setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c', { stdio: 'ignore' }); } catch (_) {}
 
-    // ── 2. Core Parking OFF ───────────────────────────────────────────────
+    // ── 2. Core Parking OFF + Desempenho Máximo da CPU ───────────────────
     try {
       execSync('powercfg -setacvalueindex SCHEME_CURRENT 54533251-82be-4824-96c1-47b60b740d00 0cc5b647-c1df-4637-891a-dec35c318583 0', { stdio: 'ignore' });
       execSync('powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMINCORES 100', { stdio: 'ignore' });
       execSync('powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMAXCORES 100', { stdio: 'ignore' });
+      execSync('powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PERFEPP 0', { stdio: 'ignore' });
       execSync('powercfg -setactive SCHEME_CURRENT', { stdio: 'ignore' });
     } catch (_) {}
 
-    // ── 3. IFEO Registry Priority ─────────────────────────────────────────
+    // ── 3. Induzir Modo de Desempenho no Windows (Power Throttling OFF) ──
+    try {
+      execSync('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerThrottling" /v PowerThrottlingOff /t REG_DWORD /d 1 /f', { stdio: 'ignore' });
+    } catch (_) {}
+
+    // ── 4. IFEO Registry Priority (Excluir de Throttling) ─────────────────
     const IFEO = 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options';
     for (const exe of ['HD-Player.exe', 'BlueStacks.exe', 'BlueStacksHelper.exe']) {
       try { execSync(`reg add "${IFEO}\\${exe}\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f /reg:64`, { stdio: 'ignore' }); } catch (_) {}
@@ -780,30 +923,29 @@ ipcMain.handle('boost-game-turbo', async () => {
       try { execSync(`reg add "${IFEO}\\${exe}\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 2 /f /reg:64`, { stdio: 'ignore' }); } catch (_) {}
     }
 
-    // ── 4. Win32 & Memory Registry ────────────────────────────────────────
+    // ── 5. Win32 & Memory Registry (Excluir do ProBalance / Foco Total) ──
     try { execSync('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 26 /f', { stdio: 'ignore' }); } catch (_) {}
     try { execSync('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v DisablePagingExecutive /t REG_DWORD /d 1 /f', { stdio: 'ignore' }); } catch (_) {}
     try { execSync('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v LargeSystemCache /t REG_DWORD /d 0 /f', { stdio: 'ignore' }); } catch (_) {}
 
-    // ── 5. GPU & Multimedia Priority ─────────────────────────────────────
+    // ── 6. GPU & Multimedia Priority ─────────────────────────────────────
     const GPUREG = 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games';
-    // On high-tier hardware, max GPU priority
     const gpuPri = tier === 'ultra' ? 8 : tier === 'high' ? 8 : 6;
     try { execSync(`reg add "${GPUREG}" /v "GPU Priority" /t REG_DWORD /d ${gpuPri} /f`, { stdio: 'ignore' }); } catch (_) {}
     try { execSync(`reg add "${GPUREG}" /v Priority /t REG_DWORD /d 6 /f`, { stdio: 'ignore' }); } catch (_) {}
     try { execSync(`reg add "${GPUREG}" /v "Scheduling Category" /t REG_SZ /d "High" /f`, { stdio: 'ignore' }); } catch (_) {}
     try { execSync(`reg add "${GPUREG}" /v "SFIO Priority" /t REG_SZ /d "High" /f`, { stdio: 'ignore' }); } catch (_) {}
 
-    // ── 6. Timer Resolution ───────────────────────────────────────────────
+    // ── 7. Timer Resolution ───────────────────────────────────────────────
     try { execSync('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\kernel" /v GlobalTimerResolutionRequests /t REG_DWORD /d 1 /f', { stdio: 'ignore' }); } catch (_) {}
 
-    // ── 7. Network / TCP No-Nagle ─────────────────────────────────────────
+    // ── 8. Network / TCP No-Nagle ─────────────────────────────────────────
     try {
       const tcpPS = `Get-ChildItem -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces" | ForEach-Object { Set-ItemProperty -Path $_.PSPath -Name "TcpAckFrequency" -Value 1 -ErrorAction SilentlyContinue; Set-ItemProperty -Path $_.PSPath -Name "TCPNoDelay" -Value 1 -ErrorAction SilentlyContinue }`;
       execSync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${tcpPS.replace(/"/g, '\\"')}"`, { stdio: 'ignore', timeout: 8000 });
     } catch (_) {}
 
-    // ── 8. Apply Affinity + Priority to running processes ─────────────────
+    // ── 9. Apply Affinity + Priority to running processes ─────────────────
     const psLines = Object.entries(affinityMapClean).map(([name, maskVal]) => {
       const isHigh = ['HD-Player', 'BlueStacks', 'BlueStacksHelper'].includes(name);
       const priClass = isHigh ? 'High' : 'BelowNormal';
@@ -813,16 +955,19 @@ ipcMain.handle('boost-game-turbo', async () => {
       execSync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${psLines.join('; ').replace(/"/g, '\\"')}"`, { stdio: 'ignore', timeout: 12000 });
     } catch (_) {}
 
-    // ── 9. SmartTrim: clear standby list + working sets ───────────────────
+    // ── 10. SmartTrim: clear standby list + working sets ──────────────────
     try {
       execSync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "Clear-DnsClientCache; [System.GC]::Collect(); Get-Process | Where-Object { $_.WorkingSet64 -gt 150MB -and $_.Name -notmatch 'HD-Player|BlueStacks' } | ForEach-Object { try { $_.MinWorkingSet = 4096 } catch {} }"`, { stdio: 'ignore', timeout: 8000 });
     } catch (_) {}
 
-    // ── 10. Windows Game Mode + No Xbox DVR ──────────────────────────────
+    // ── 11. Windows Game Mode + No Xbox DVR ─────────────────────────────
     try { execSync('reg add "HKCU\\Software\\Microsoft\\GameBar" /v AllowAutoGameMode /t REG_DWORD /d 1 /f', { stdio: 'ignore' }); } catch (_) {}
     try { execSync('reg add "HKCU\\Software\\Microsoft\\GameBar" /v AutoGameModeEnabled /t REG_DWORD /d 1 /f', { stdio: 'ignore' }); } catch (_) {}
     try { execSync('reg add "HKCU\\System\\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f', { stdio: 'ignore' }); } catch (_) {}
     try { execSync('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v AllowGameDVR /t REG_DWORD /d 0 /f', { stdio: 'ignore' }); } catch (_) {}
+
+    // ── 12. Integração Automática com Process Lasso (se presente) ────────
+    const processLassoConfigured = configureProcessLasso(hw, _meta.emuCores);
 
     return {
       success: true,
@@ -832,7 +977,8 @@ ipcMain.handle('boost-game-turbo', async () => {
       affinityMap: Object.fromEntries(
         Object.entries(affinityMapClean).map(([k, v]) => [k, '0x' + v.toString(16).toUpperCase()])
       ),
-      emuCores: _meta.emuCores
+      emuCores: _meta.emuCores,
+      processLassoConfigured
     };
   } catch (e) {
     return { success: false, error: e.message };

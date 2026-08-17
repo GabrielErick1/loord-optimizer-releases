@@ -1725,6 +1725,17 @@ if (btnGameBooster) {
         bgStr = 'Núcleo 0 (SO)';
       }
 
+      const lassoText = res.processLassoConfigured 
+        ? `── Process Lasso Integrado ──────\n` +
+          `✅ Induzir Modo de Desempenho: ATIVADO\n` +
+          `✅ Excluir do ProBalance: ATIVADO (Anti-Lag)\n` +
+          `✅ SmartTrim (RAM Standby Purge): ATIVADO\n` +
+          `✅ Afinidade Pares (Físicos): APLICADA\n\n`
+        : `── Otimizações do Sistema ───────\n` +
+          `✅ Modo de Desempenho: ATIVADO\n` +
+          `✅ Throttling do Windows: DESATIVADO\n` +
+          `✅ SmartTrim de RAM: ATIVADO\n\n`;
+
       alert(
         `🔥 GAME BOOSTER ATIVADO!\n` +
         `Configuração adaptada ao seu PC\n\n` +
@@ -1739,6 +1750,7 @@ if (btnGameBooster) {
         `── Afinidade de CPU Aplicada ────\n` +
         `✅ HD-Player/BS  → ${emuStr} (Alta prioridade)\n` +
         `✅ Discord/Chrome → ${bgStr} (Abaixo Normal)\n\n` +
+        lassoText +
         `── Outras Otimizações ───────────\n` +
         `✅ I/O Priority HD-Player/BS: 3 (High)\n` +
         `✅ GPU Priority: ${hw.tier === 'ultra' || hw.tier === 'high' ? 8 : 6}\n` +
@@ -1749,7 +1761,7 @@ if (btnGameBooster) {
         `✅ RAM threshold SmartTrim: ${res.standbyThreshMB} MB\n` +
         `✅ Xbox DVR: desabilitado\n` +
         `✅ Modo Jogo Windows: ativado\n\n` +
-        `Reinicie o emulador para aplicar\na afinidade de CPU.`
+        `Reinicie o emulador para aplicar\ntodas as alterações com máxima performance.`
       );
     } else {
       btnGameBooster.textContent = '🔥 Ativar Game Booster';
