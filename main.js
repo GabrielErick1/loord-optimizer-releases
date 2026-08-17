@@ -284,20 +284,49 @@ function generateKeyForUuid(uuid) {
 
 // ─── ADB Helpers ──────────────────────────────────────────────────────────────
 function findAdb() {
-  // Tenta adb no PATH primeiro, depois caminhos comuns do BlueStacks/Android SDK
+  // 1. Tenta achar o HD-Adb diretamente na pasta do processo do emulador que está rodando
+  try {
+    const procPath = execSync(
+      'powershell -NoProfile -Command "(Get-Process HD-Player,dnplayer,Nox,MEmu -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path)"',
+      { encoding: 'utf8', timeout: 3000 }
+    ).trim();
+
+    if (procPath && fs.existsSync(procPath)) {
+      const procDir = path.dirname(procPath);
+      for (const exeName of ['HD-Adb.exe', 'adb.exe', 'nox_adb.exe']) {
+        const candidate = path.join(procDir, exeName);
+        if (fs.existsSync(candidate)) return candidate;
+      }
+    }
+  } catch (_) {}
+
+  // 2. Lista completa de caminhos padrão de todos os emuladores (MSI App Player 4/5, BlueStacks 4/5, LDPlayer, Nox, MEmu)
   const candidates = [
-    'adb',
+    'C:\\Program Files\\BlueStacks_msi5\\HD-Adb.exe',
+    'C:\\Program Files\\BlueStacks_msi2\\HD-Adb.exe',
     'C:\\Program Files\\BlueStacks_nxt\\HD-Adb.exe',
-    'C:\\Program Files (x86)\\BlueStacks\\HD-Adb.exe',
     'C:\\Program Files\\BlueStacks\\HD-Adb.exe',
+    'C:\\Program Files (x86)\\BlueStacks_msi5\\HD-Adb.exe',
+    'C:\\Program Files (x86)\\BlueStacks_msi2\\HD-Adb.exe',
+    'C:\\Program Files (x86)\\BlueStacks\\HD-Adb.exe',
+    'C:\\Program Files (x86)\\BlueStacks_nxt\\HD-Adb.exe',
+    'C:\\Program Files\\LDPlayer\\LDPlayer9\\adb.exe',
+    'C:\\LDPlayer\\LDPlayer9\\adb.exe',
+    'C:\\Program Files\\LDPlayer\\LDPlayer4.0\\adb.exe',
+    'C:\\Program Files\\Nox\\bin\\nox_adb.exe',
+    'C:\\Program Files\\Microvirt\\MEmu\\adb.exe',
+    'adb',
     path.join(process.env['LOCALAPPDATA'] || '', 'Android', 'Sdk', 'platform-tools', 'adb.exe'),
     path.join(process.env['APPDATA'] || '', '..', 'Local', 'Android', 'Sdk', 'platform-tools', 'adb.exe'),
   ];
+
   for (const c of candidates) {
-    try {
-      execSync(`"${c}" version`, { stdio: 'ignore' });
-      return c;
-    } catch (_) {}
+    if (c === 'adb' || fs.existsSync(c)) {
+      try {
+        execSync(`"${c}" version`, { stdio: 'ignore' });
+        return c;
+      } catch (_) {}
+    }
   }
   return null;
 }
@@ -305,7 +334,7 @@ function findAdb() {
 function runAdb(args) {
   return new Promise((resolve, reject) => {
     const adb = findAdb();
-    if (!adb) return reject(new Error('ADB não encontrado. Instale o Android SDK Platform Tools ou use o BlueStacks.'));
+    if (!adb) return reject(new Error('ADB não encontrado. Verifique se o MSI App Player ou BlueStacks está instalado.'));
     exec(`"${adb}" ${args}`, { timeout: 15000 }, (err, stdout, stderr) => {
       if (err) return reject(new Error(stderr || err.message));
       resolve(stdout.trim());
@@ -324,13 +353,36 @@ ipcMain.handle('adb-connect', async (event, port) => {
   }
 });
 
-// Auto-detect: tenta portas comuns dos emuladores
+// Auto-detect: detecta portas no bluestacks.conf ou tenta portas comuns
 ipcMain.handle('adb-autodetect', async () => {
-  const PORTS = [5555, 5565, 5575, 5585, 5595, 21503, 62001, 5554, 5556, 7555];
   const adb = findAdb();
-  if (!adb) return { success: false, error: 'ADB não encontrado.' };
+  if (!adb) return { success: false, error: 'ADB não encontrado. Abra o emulador primeiro.' };
 
-  for (const p of PORTS) {
+  // 1. Tenta ler porta real configurada nos arquivos bluestacks.conf do MSI ou BlueStacks
+  const confPaths = [
+    'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_msi2\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks\\bluestacks.conf'
+  ];
+
+  const foundPorts = new Set();
+  for (const cp of confPaths) {
+    if (fs.existsSync(cp)) {
+      try {
+        const content = fs.readFileSync(cp, 'utf8');
+        const matches = content.matchAll(/status\.adb_port="(\d+)"/g);
+        for (const m of matches) {
+          foundPorts.add(parseInt(m[1]));
+        }
+      } catch (_) {}
+    }
+  }
+
+  // Lista de portas prioritárias
+  const priorityPorts = [...foundPorts, 5555, 5554, 5565, 5575, 5585, 21503, 62001, 7555];
+
+  for (const p of priorityPorts) {
     try {
       const out = execSync(`"${adb}" connect 127.0.0.1:${p}`, { encoding: 'utf8', timeout: 3000 });
       if (out.includes('connected') || out.includes('already connected')) {
@@ -338,8 +390,9 @@ ipcMain.handle('adb-autodetect', async () => {
       }
     } catch (_) {}
   }
-  return { success: false, error: 'Nenhum emulador encontrado nas portas padrão.' };
+  return { success: false, error: 'Nenhum emulador com ADB ativo encontrado. Ative o ADB nas Configurações do Emulador.' };
 });
+
 
 ipcMain.handle('adb-shell', async (event, cmd, port) => {
   const p = port || 5555;
