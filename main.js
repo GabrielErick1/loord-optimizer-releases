@@ -1,8 +1,11 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
+const crypto = require('crypto');
 const { exec, execSync } = require('child_process');
 const { autoUpdater } = require('electron-updater');
+
 
 // Enforce single instance lock
 const gotTheLock = app.requestSingleInstanceLock();
@@ -1849,18 +1852,20 @@ function performAppUpdate() {
 
   if (fs.existsSync(targetPath)) {
     try {
-      const { spawn } = require('child_process');
-      // Spawn installer detached so it runs even after app quits
-      const child = spawn(targetPath, [], {
-        detached: true,
-        stdio: 'ignore'
+      const { spawn, exec } = require('child_process');
+      
+      // Execute installer with elevated shell
+      exec(`start "" "${targetPath}"`, (err) => {
+        if (err) {
+          const child = spawn(targetPath, [], { detached: true, stdio: 'ignore' });
+          child.unref();
+        }
       });
-      child.unref();
 
       setTimeout(() => {
         app.isQuitting = true;
         app.exit(0);
-      }, 500);
+      }, 600);
 
       return { success: true };
     } catch (e) {
@@ -1868,16 +1873,16 @@ function performAppUpdate() {
       try {
         const { shell } = require('electron');
         shell.openPath(targetPath);
-        app.exit(0);
+        setTimeout(() => app.exit(0), 600);
       } catch (_) {}
       return { success: false, error: e.message };
     }
   } else {
-    // Open releases page if installer not downloaded
     const { shell } = require('electron');
     shell.openExternal('https://github.com/GabrielErick1/loord-optimizer-releases/releases/latest');
     return { success: false, error: 'Arquivo do instalador não encontrado.' };
   }
 }
+
 
 
