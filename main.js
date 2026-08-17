@@ -1773,8 +1773,7 @@ function compareSemver(v1, v2) {
 
 ipcMain.handle('download-update-progress', async (event, downloadUrl) => {
   try {
-    if (!downloadUrl || !downloadUrl.startsWith('http')) {
-      // Fetch latest release asset url
+    if (!downloadUrl || !downloadUrl.startsWith('http') || downloadUrl.includes('/tag/')) {
       const res = await fetch('https://api.github.com/repos/GabrielErick1/loord-optimizer-releases/releases/latest', {
         headers: { 'User-Agent': 'LoordOptimizer-AutoUpdater' }
       });
@@ -1783,29 +1782,39 @@ ipcMain.handle('download-update-progress', async (event, downloadUrl) => {
       if (exeAsset) downloadUrl = exeAsset.browser_download_url;
     }
 
-    if (!downloadUrl) return { success: false, error: 'URL de download não encontrada.' };
+    if (!downloadUrl) return { success: false, error: 'URL de download do instalador não encontrada.' };
 
     const targetPath = path.join(os.tmpdir(), 'LoordOptimizer_Update_Setup.exe');
     downloadedInstallerPath = targetPath;
 
-    const response = await fetch(downloadUrl);
+    const response = await fetch(downloadUrl, {
+      redirect: 'follow',
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
+    });
     if (!response.ok) throw new Error(`HTTP ${response.status} ao baixar arquivo.`);
 
-    const totalBytes = Number(response.headers.get('content-length')) || 0;
+    const totalBytes = Number(response.headers.get('content-length')) || 76000000;
     let receivedBytes = 0;
 
     const fileStream = fs.createWriteStream(targetPath);
     const reader = response.body.getReader();
 
+    let lastSent = 0;
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       receivedBytes += value.length;
       fileStream.write(Buffer.from(value));
 
-      if (totalBytes > 0 && mainWindow && !mainWindow.isDestroyed()) {
-        const percent = Math.round((receivedBytes / totalBytes) * 100);
-        mainWindow.webContents.send('update-download-progress', { percent, receivedBytes, totalBytes });
+      const now = Date.now();
+      if (now - lastSent > 100) {
+        lastSent = now;
+        const percent = Math.min(99, Math.round((receivedBytes / totalBytes) * 100));
+        const receivedMB = (receivedBytes / (1024 * 1024)).toFixed(1);
+        const totalMB = (totalBytes / (1024 * 1024)).toFixed(1);
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('update-download-progress', { percent, receivedMB, totalMB });
+        }
       }
     }
 
@@ -1813,6 +1822,11 @@ ipcMain.handle('download-update-progress', async (event, downloadUrl) => {
     await new Promise((resolve) => fileStream.on('finish', resolve));
 
     if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-download-progress', {
+        percent: 100,
+        receivedMB: (receivedBytes / (1024 * 1024)).toFixed(1),
+        totalMB: (receivedBytes / (1024 * 1024)).toFixed(1)
+      });
       mainWindow.webContents.send('update-downloaded', { path: targetPath });
     }
 
@@ -1822,6 +1836,7 @@ ipcMain.handle('download-update-progress', async (event, downloadUrl) => {
     return { success: false, error: e.message };
   }
 });
+
 
 ipcMain.on('install-update', () => {
   performAppUpdate();

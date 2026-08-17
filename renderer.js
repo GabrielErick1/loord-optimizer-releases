@@ -1078,20 +1078,22 @@ if (window.api.onUpdateAvailable) {
           btnInstallNow.textContent = `⚡ Baixar e Atualizar (v${res.latestVersion})`;
           btnInstallNow.onclick = async () => {
             btnInstallNow.disabled = true;
-            btnInstallNow.textContent = '⏳ Baixando Atualização (0%)...';
-            if (cardStatusDesc) cardStatusDesc.textContent = 'Baixando nova versão em segundo plano...';
+            btnInstallNow.textContent = '⏳ Conectando e baixando...';
+            if (cardStatusDesc) cardStatusDesc.textContent = 'Baixando nova versão em segundo plano (Play Store Style)...';
 
             const dlRes = await window.api.downloadUpdateProgress(activeDownloadUrl);
             if (dlRes && dlRes.success) {
               btnInstallNow.disabled = false;
-              btnInstallNow.textContent = '🚀 Reiniciar e Atualizar Agora';
+              btnInstallNow.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+              btnInstallNow.style.boxShadow = '0 0 20px rgba(16, 185, 129, 0.5)';
+              btnInstallNow.textContent = `🚀 Reiniciar e Atualizar Agora (v${res.latestVersion})`;
               btnInstallNow.onclick = () => {
                 btnInstallNow.disabled = true;
                 btnInstallNow.textContent = 'Iniciando Atualização...';
                 window.api.installUpdateNow();
               };
-              if (cardStatusTitle) cardStatusTitle.textContent = '✅ Download Concluído!';
-              if (cardStatusDesc) cardStatusDesc.textContent = 'Clique no botão para reiniciar e aplicar a nova versão.';
+              if (cardStatusTitle) cardStatusTitle.textContent = '✅ Download Concluído (100%)!';
+              if (cardStatusDesc) cardStatusDesc.textContent = 'Clique no botão verde para reiniciar e aplicar a nova versão.';
               alert(`✅ Download da v${res.latestVersion} concluído com sucesso!\n\nClique em "Reiniciar e Atualizar Agora" para aplicar a atualização.`);
             } else {
               btnInstallNow.disabled = false;
@@ -1107,9 +1109,9 @@ if (window.api.onUpdateAvailable) {
       } else {
         if (btnInstallNow) btnInstallNow.style.display = 'none';
         if (cardStatusTitle) cardStatusTitle.textContent = '✔️ Você está na versão mais recente';
-        if (cardStatusDesc) cardStatusDesc.textContent = `Seu Loord Optimizer está 100% atualizado (v${res?.currentVersion || '1.0.6'}).`;
+        if (cardStatusDesc) cardStatusDesc.textContent = `Seu Loord Optimizer está 100% atualizado (v${res?.currentVersion || '1.0.8'}).`;
         if (manual) {
-          alert(`✔️ Seu Loord Optimizer já está na versão mais recente (v${res?.currentVersion || '1.0.6'})!`);
+          alert(`✔️ Seu Loord Optimizer já está na versão mais recente (v${res?.currentVersion || '1.0.8'})!`);
         }
       }
     } catch (e) {
@@ -1126,11 +1128,14 @@ if (window.api.onUpdateAvailable) {
   // Progress listener
   if (window.api.onUpdateDownloadProgress) {
     window.api.onUpdateDownloadProgress((data) => {
-      if (btnInstallNow && data && data.percent !== undefined) {
-        btnInstallNow.textContent = `⏳ Baixando (${data.percent}%)...`;
+      if (btnInstallNow && data) {
+        const p = data.percent || 0;
+        const mb = data.receivedMB ? ` (${data.receivedMB} MB)` : '';
+        btnInstallNow.textContent = `⏳ Baixando ${p}%${mb}...`;
       }
     });
   }
+
 
   // Manual Check Button
   if (btnCheckUpdate) {
