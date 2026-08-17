@@ -30,39 +30,45 @@ async function parseRequestBody(req) {
 }
 
 function getKvConfig() {
-  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = process.env.KV_REST_API_URL || 
+              process.env.STORAGE_REST_API_URL ||
+              process.env.UPSTASH_REDIS_REST_URL ||
+              process.env.KV_URL;
+  const token = process.env.KV_REST_API_TOKEN || 
+                process.env.STORAGE_REST_API_TOKEN ||
+                process.env.UPSTASH_REDIS_REST_TOKEN;
   return (url && token) ? { url: url.replace(/\/+$/, ''), token } : null;
 }
 
 async function kvGet(key) {
   const config = getKvConfig();
   if (!config) return null;
+
+  const serializedKey = String(key);
   try {
-    const res = await fetch(`${config.url}/get/${key}`, {
-      headers: { 'Authorization': `Bearer ${config.token}` }
+    const res = await fetch(`${config.url}/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${config.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(["GET", serializedKey])
     });
     const data = await res.json();
-    if (data && data.result) {
-      return typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
+    if (data && data.result !== undefined && data.result !== null) {
+      let val = data.result;
+      while (typeof val === 'string') {
+        try {
+          const parsed = JSON.parse(val);
+          val = parsed;
+        } catch (e) {
+          break;
+        }
+      }
+      return val;
     }
   } catch (e) {
-    try {
-      const res = await fetch(`${config.url}/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${config.token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(["GET", key])
-      });
-      const data = await res.json();
-      if (data && data.result) {
-        return typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
-      }
-    } catch (err) {
-      console.error('Error fetching from KV/Redis:', err);
-    }
+    console.error('Error fetching from Upstash KV:', e);
   }
   return null;
 }
@@ -70,34 +76,25 @@ async function kvGet(key) {
 async function kvSet(key, value) {
   const config = getKvConfig();
   if (!config) return false;
+
+  const serializedKey = String(key);
+  const valStr = typeof value === 'string' ? value : JSON.stringify(value);
+
   try {
-    const res = await fetch(`${config.url}/set/${key}`, {
+    const res = await fetch(`${config.url}/`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${config.token}`,
         'Content-Type': 'application/json'
       },
-      body: typeof value === 'string' ? value : JSON.stringify(value)
+      body: JSON.stringify(["SET", serializedKey, valStr])
     });
     const data = await res.json();
-    if (data && data.result === 'OK') return true;
+    return data && data.result === 'OK';
   } catch (e) {
-    try {
-      const res = await fetch(`${config.url}/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${config.token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(["SET", key, JSON.stringify(value)])
-      });
-      const data = await res.json();
-      return data && data.result === 'OK';
-    } catch (err) {
-      console.error('Error saving to KV/Redis:', err);
-    }
+    console.error('Error saving to Upstash KV:', e);
+    return false;
   }
-  return false;
 }
 
 async function getUsers() {
