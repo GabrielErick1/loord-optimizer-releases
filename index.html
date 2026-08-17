@@ -1010,6 +1010,18 @@
 
   <!-- Lock screen / Activation system -->
   <div id="activation-screen" class="activation-overlay" style="display: none;">
+    <!-- Titlebar controls on Lock screen -->
+    <div class="activation-topbar">
+      <div class="activation-brand">
+        <span class="logo-white" style="font-size: 0.85rem; font-weight: 700; color: #88888b; letter-spacing: 0.5px;">Loord Optimizer</span>
+      </div>
+      <div class="window-controls">
+        <div class="circle-btn btn-min" id="btn-lock-min" title="Minimizar"></div>
+        <div class="circle-btn btn-max" id="btn-lock-max" title="Maximizar / Restaurar"></div>
+        <div class="circle-btn btn-cls" id="btn-lock-cls" title="Fechar"></div>
+      </div>
+    </div>
+
     <div class="activation-card">
       <div class="lock-header">
         <span class="lock-badge">🔒 SISTEMA BLOQUEADO</span>
@@ -1034,6 +1046,7 @@
       <button id="btn-activate" class="btn btn-primary" style="width: 100%; margin-top: 10px;">⚡ Ativar Loord Optimizer</button>
     </div>
   </div>
+
   
   <script src="renderer.js"></script>
 </body>

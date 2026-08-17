@@ -2,12 +2,22 @@
 const btnMinimize = document.getElementById('btn-minimize');
 const btnMaximize = document.getElementById('btn-maximize');
 const btnClose = document.getElementById('btn-close');
+
+const btnLockMin = document.getElementById('btn-lock-min');
+const btnLockMax = document.getElementById('btn-lock-max');
+const btnLockCls = document.getElementById('btn-lock-cls');
+
 const navItems = document.querySelectorAll('.nav-item');
 const tabContents = document.querySelectorAll('.tab-content');
 
 if (btnMinimize) btnMinimize.addEventListener('click', () => window.api.windowControl('minimize'));
 if (btnMaximize) btnMaximize.addEventListener('click', () => window.api.windowControl('maximize'));
 if (btnClose) btnClose.addEventListener('click', () => window.api.windowControl('close'));
+
+if (btnLockMin) btnLockMin.addEventListener('click', () => window.api.windowControl('minimize'));
+if (btnLockMax) btnLockMax.addEventListener('click', () => window.api.windowControl('maximize'));
+if (btnLockCls) btnLockCls.addEventListener('click', () => window.api.windowControl('close'));
+
 
 // Tab System
 navItems.forEach(item => {
