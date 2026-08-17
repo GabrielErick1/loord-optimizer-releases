@@ -170,67 +170,6 @@ ipcMain.on('install-update', () => {
   } catch (_) {}
 });
 
-function isNewerVersion(latest, current) {
-  const l = (latest || '').split('.').map(n => parseInt(n, 10) || 0);
-  const c = (current || '').split('.').map(n => parseInt(n, 10) || 0);
-  for (let i = 0; i < Math.max(l.length, c.length); i++) {
-    const lPart = l[i] || 0;
-    const cPart = c[i] || 0;
-    if (lPart > cPart) return true;
-    if (lPart < cPart) return false;
-  }
-  return false;
-}
-
-// Auto-updater: verificar manualmente
-ipcMain.handle('check-for-updates', async () => {
-  const currentVersion = app.getVersion();
-  try {
-    const https = require('https');
-    const latestRelease = await new Promise((resolve) => {
-      const req = https.get('https://api.github.com/repos/GabrielErick1/loord-optimizer-releases/releases/latest', {
-        headers: { 'User-Agent': 'Loord-Optimizer' },
-        timeout: 6000
-      }, (res) => {
-        let data = '';
-        res.on('data', chunk => data += chunk);
-        res.on('end', () => {
-          try {
-            resolve(JSON.parse(data));
-          } catch (_) { resolve(null); }
-        });
-      });
-      req.on('error', () => resolve(null));
-      req.on('timeout', () => { req.destroy(); resolve(null); });
-    });
-
-    if (latestRelease && latestRelease.tag_name) {
-      const rawTag = latestRelease.tag_name.replace(/^v/, '');
-      const hasNewer = isNewerVersion(rawTag, currentVersion);
-
-      if (app.isPackaged) {
-        try {
-          const { autoUpdater } = require('electron-updater');
-          autoUpdater.checkForUpdates();
-        } catch (_) {}
-      }
-
-      return {
-        success: true,
-        currentVersion,
-        latestVersion: rawTag,
-        hasUpdate: hasNewer,
-        releaseName: latestRelease.name || rawTag,
-        downloadUrl: (latestRelease.assets && latestRelease.assets.length > 0)
-          ? (latestRelease.assets.find(a => a.name && a.name.endsWith('.exe'))?.browser_download_url || latestRelease.html_url)
-          : latestRelease.html_url
-      };
-    }
-  } catch (err) {}
-
-  return { success: true, currentVersion, latestVersion: currentVersion, hasUpdate: false };
-});
-
 const crypto = require('crypto');
 
 ipcMain.handle('get-uuid', async () => {
