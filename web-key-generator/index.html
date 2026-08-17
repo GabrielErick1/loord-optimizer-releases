@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Admin - FFOptimizer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Login Section -->
+  <div id="login-container" class="auth-container">
+    <div class="auth-card">
+      <div class="header">
+        <span class="logo-badge">🔑 PAINEL ADMINISTRATIVO</span>
+        <h1>Loord Optimizer</h1>
+        <p class="desc">Faça login para gerenciar chaves e usuários.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="login-username">Usuário:</label>
+        <input type="text" id="login-username" placeholder="Digite seu usuário..." autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label for="login-password">Senha:</label>
+        <input type="password" id="login-password" placeholder="Digite sua senha...">
+      </div>
+
+      <div id="login-error" class="error-text" style="display: none;">❌ Credenciais incorretas!</div>
+
+      <button id="btn-login" class="btn">Entrar no Painel</button>
+    </div>
+  </div>
+
+  <!-- Dashboard Section -->
+  <div id="dashboard-container" class="app-layout" style="display: none;">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="title-main">Loord Optimizer</div>
+        <div class="title-sub">Web Admin</div>
+      </div>
+      
+      <div class="user-badge-container">
+        <span class="user-avatar">👤</span>
+        <div class="user-info">
+          <span id="display-username" class="username">gabriel</span>
+          <span id="display-role" class="role">Administrador</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <button class="nav-item active" data-tab="generator">
+          <span class="nav-icon">🎯</span> Gerador de Keys
+        </button>
+        <button class="nav-item" data-tab="licenses">
+          <span class="nav-icon">🔑</span> Chaves Ativas
+        </button>
+        <button class="nav-item" id="nav-users" data-tab="users">
+          <span class="nav-icon">👥</span> Gerenciar Usuários
+        </button>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <button id="btn-logout" class="btn btn-logout">🚪 Sair do Painel</button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content-area">
+      <!-- TAB: KEY GENERATOR -->
+      <section id="tab-generator" class="tab-content active">
+        <h2>Gerador de Keys</h2>
+        <p class="subtitle">Gere chaves permanentes (vitalícias) ou temporárias com validade configurável.</p>
+        
+        <div class="card">
+          <h3>Geração de Licença</h3>
+          
+          <div class="form-group" style="margin-top: 15px;">
+            <label for="client-name">Nome do Cliente:</label>
+            <input type="text" id="client-name" placeholder="Ex: Gabriel Silva" autocomplete="off">
+          </div>
+
+          <div class="form-group">
+            <label for="license-type">Tipo de Licença:</label>
+            <select id="license-type" style="width: 100%; padding: 12px 14px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); border-radius: 8px; color: white; font-family: inherit; font-size: 0.95rem;">
+              <option value="permanent-unlimited" selected>👑 Vitalícia - Reativação Ilimitada no Mesmo PC (UUID Vinculado)</option>
+              <option value="permanent-single">👑 Vitalícia - 1 Ativação Única (Chave Descartável pós-uso)</option>
+              <option value="temporary-1">⏳ Temporária - 1 Dia (24 Horas)</option>
+              <option value="temporary-7">⏳ Temporária - 7 Dias (Semanal)</option>
+              <option value="temporary-15">⏳ Temporária - 15 Dias (Quinzenal)</option>
+              <option value="temporary-30">⏳ Temporária - 30 Dias (Mensal)</option>
+              <option value="temporary-custom">⏳ Temporária - Personalizada (Dias)</option>
+            </select>
+          </div>
+
+          <div id="custom-days-container" class="form-group" style="display: none;">
+            <label for="custom-days">Dias de Validade:</label>
+            <input type="number" id="custom-days" placeholder="Ex: 60" min="1" max="365" value="30">
+          </div>
+
+          <div class="form-group">
+            <label for="client-uuid">UUID do Cliente (Opcional se for gerar chave avulsa):</label>
+            <input type="text" id="client-uuid" placeholder="Cole o UUID do cliente ou deixe em branco para chave pré-paga" autocomplete="off">
+          </div>
+
+          <button id="btn-generate" class="btn btn-primary">⚡ Gerar Chave de Ativação</button>
+        </div>
+
+        <div id="result-box" class="card result-card" style="display: none;">
+          <h3 id="result-title">Chave Gerada com Sucesso!</h3>
+          <div class="result-display">
+            <span id="key-output" class="key-value">XXXX-XXXX-XXXX-XXXX</span>
+            <button id="btn-copy" class="btn-copy">Copiar</button>
+          </div>
+          <div id="result-details" style="font-size: 0.85rem; color: #94a3b8; margin-top: 10px; line-height: 1.4;"></div>
+        </div>
+      </section>
+
+      <!-- TAB: LICENSES -->
+      <section id="tab-licenses" class="tab-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h2>Chaves e Ativações</h2>
+            <p class="subtitle">Acompanhe quem ativou, o tipo de licença (permanente/temporária) e dias restantes.</p>
+          </div>
+          <button id="btn-refresh-licenses" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem;">🔄 Atualizar Chaves</button>
+        </div>
+        
+        <!-- STATS CARDS GRID -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+          <div class="card" style="padding: 15px; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid var(--primary);">
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-gray); text-transform: uppercase; letter-spacing: 0.5px;">Total de Chaves</span>
+              <h3 id="stat-total" style="font-size: 1.6rem; font-weight: 700; color: white; margin-top: 4px;">0</h3>
+            </div>
+            <span style="font-size: 1.8rem;">🔑</span>
+          </div>
+
+          <div class="card" style="padding: 15px; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid #10b981;">
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-gray); text-transform: uppercase; letter-spacing: 0.5px;">Clientes Ativos</span>
+              <h3 id="stat-active" style="font-size: 1.6rem; font-weight: 700; color: #10b981; margin-top: 4px;">0</h3>
+            </div>
+            <span style="font-size: 1.8rem;">🟢</span>
+          </div>
+
+          <div class="card" style="padding: 15px; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid #f59e0b;">
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-gray); text-transform: uppercase; letter-spacing: 0.5px;">Pendentes / Inativos</span>
+              <h3 id="stat-pending" style="font-size: 1.6rem; font-weight: 700; color: #f59e0b; margin-top: 4px;">0</h3>
+            </div>
+            <span style="font-size: 1.8rem;">🟡</span>
+          </div>
+
+          <div class="card" style="padding: 15px; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid #ef4444;">
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-gray); text-transform: uppercase; letter-spacing: 0.5px;">Revogados / Expirados</span>
+              <h3 id="stat-revoked" style="font-size: 1.6rem; font-weight: 700; color: #ef4444; margin-top: 4px;">0</h3>
+            </div>
+            <span style="font-size: 1.8rem;">🔴</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h3>Histórico de Chaves</h3>
+              <p style="font-size: 0.8rem; color: var(--text-gray); margin-top: 2px;">Veja todas as chaves geradas e filtre por vendedor específico.</p>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+              <select id="filter-seller" style="padding: 8px 12px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: 6px; color: white; font-size: 0.85rem;">
+                <option value="">👤 Todos os Vendedores</option>
+              </select>
+              <input type="text" id="search-licenses" placeholder="🔍 Buscar cliente, chave ou UUID..." style="max-width: 260px; padding: 8px 12px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: 6px; color: white; font-size: 0.85rem;">
+            </div>
+          </div>
+          <div class="table-container" style="margin-top: 15px;">
+            <table class="users-table">
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Tipo</th>
+                  <th>Vendedor</th>
+                  <th>UUID</th>
+                  <th>Chave</th>
+                  <th>Status</th>
+                  <th>Criação</th>
+                  <th>Validade</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="licenses-list-body">
+                <!-- JS injects rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: MANAGE USERS -->
+      <section id="tab-users" class="tab-content">
+        <h2>Gerenciar Usuários & Vendedores</h2>
+        <p class="subtitle">Crie novos acessos, altere senhas, inative ou ative vendedores e acompanhe as vendas de cada um.</p>
+        
+        <div class="users-grid">
+          <!-- Create User Form -->
+          <div class="card">
+            <h3>Cadastrar Novo Usuário / Vendedor</h3>
+            <div class="form-group" style="margin-top: 15px;">
+              <label for="new-username">Nome de Usuário (Login):</label>
+              <input type="text" id="new-username" placeholder="Ex: vendedor_marcos" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label for="new-password">Senha de Acesso:</label>
+              <input type="password" id="new-password" placeholder="Defina uma senha segura...">
+            </div>
+            <div class="form-group checkbox-row">
+              <input type="checkbox" id="new-is-admin">
+              <label for="new-is-admin" style="display: inline; margin: 0; text-transform: none; letter-spacing: 0;">Privilégios de Administrador (Acesso total)</label>
+            </div>
+            
+            <div id="create-user-error" class="error-text" style="display: none; margin-bottom: 12px;"></div>
+            <div id="create-user-success" class="success-text" style="display: none; margin-bottom: 12px;">✔️ Usuário criado com sucesso!</div>
+
+            <button id="btn-create-user" class="btn btn-primary">➕ Cadastrar Usuário</button>
+          </div>
+
+          <!-- Users List -->
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h3>Usuários & Vendedores Cadastrados</h3>
+                <p style="font-size: 0.8rem; color: var(--text-gray); margin-top: 2px;">Altere senhas, inative/ative acessos ou exclua vendedores.</p>
+              </div>
+              <button id="btn-refresh-users" class="btn btn-primary" style="padding: 4px 10px; font-size: 0.75rem;">🔄 Atualizar</button>
+            </div>
+            <div class="table-container" style="margin-top: 15px;">
+              <table class="users-table">
+                <thead>
+                  <tr>
+                    <th>Usuário</th>
+                    <th>Cargo</th>
+                    <th>Status</th>
+                    <th>Criado Por</th>
+                    <th>Keys (Vendas)</th>
+                    <th>Criação</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="users-list-body">
+                  <!-- JS injects rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

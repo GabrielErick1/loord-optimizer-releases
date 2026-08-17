@@ -1,6 +1,5 @@
 {
-  "rewrites": [
-    { "source": "/((?!api/|public/).*)", "destination": "/public/$1" }
-  ]
+  "cleanUrls": true
 }
+
 
