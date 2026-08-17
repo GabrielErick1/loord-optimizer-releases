@@ -165,19 +165,10 @@ ipcMain.handle('check-admin', async () => {
   return systemIsAdmin;
 });
 
-// Auto-updater: instalar atualização quando o usuário clicar no botão
-ipcMain.on('install-update', () => {
-  try {
-    const { autoUpdater } = require('electron-updater');
-    autoUpdater.quitAndInstall(false, true);
-  } catch (_) {}
-});
-
-const crypto = require('crypto');
-
 ipcMain.handle('get-uuid', async () => {
   return getMachineUuid();
 });
+
 
 ipcMain.handle('verify-key', async (event, key) => {
   try {
