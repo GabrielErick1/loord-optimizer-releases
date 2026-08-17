@@ -698,19 +698,12 @@ function detectHardwareProfile() {
 }
 
 // ── Build adaptive affinity map based on hardware ─────────────────────────
-// Intel HyperThreading layout (Windows NUMA ordering):
-//   Physical core N → logical N  and  logical N+physicalCores
-//   e.g. 6C/12T: Core0={0,6} Core1={1,7} Core2={2,8} ...
-//   → Secondary (HT) threads = indices physicalCores … logicalCount-1
-//      For 6C/12T  → threads 6,7,8,9,10,11  for emulator
-//      For 4C/8T   → threads 4,5,6,7         for emulator
-//      For 8C/16T  → threads 8..15            for emulator
-//
-// AMD / no-HT CPUs (physical = logical):
-//   Reserve core 0 (and 1 on high-core) for OS, give the rest to emulator
-//   e.g. 6C/6T  → emulator gets cores 2,3,4,5
-//        4C/4T  → emulator gets cores 1,2,3
-//        8C/8T  → emulator gets cores 2,3,4,5,6,7
+// Rule: emulator always gets the PHYSICAL cores (indices 0..physicalCores-1)
+//   6C/12T → emuCores = [0,1,2,3,4,5]   bgCores = [6,7,8,9,10,11]
+//   4C/8T  → emuCores = [0,1,2,3]        bgCores = [4,5,6,7]
+//   8C/16T → emuCores = [0,1,2,3,4,5,6,7] bgCores = [8..15]
+//   AMD 6C/6T (no HT) → emuCores = [1,2,3,4,5]  bgCores = [0]
+//   AMD 4C/4T (no HT) → emuCores = [1,2,3]       bgCores = [0]
 function buildAdaptiveAffinityMap(hw) {
   const { logicalCount, physicalCores, hasHT } = hw;
   const cap = Math.min(logicalCount, 32);
@@ -725,26 +718,20 @@ function buildAdaptiveAffinityMap(hw) {
   let emuCores, bgCores, midCores;
 
   if (hasHT) {
-    // ── Intel HyperThreading: give emulator the secondary HT threads ──
-    // Secondary threads start at index = physicalCores
-    // e.g. 6C/12T → emuCores=[6,7,8,9,10,11]
-    //      4C/8T  → emuCores=[4,5,6,7]
-    //      8C/16T → emuCores=[8,9,10,11,12,13,14,15]
-    emuCores = all.filter(c => c >= physicalCores);
-    // BG apps: primary threads of lowest physical cores (core 0 and 1)
-    bgCores  = all.filter(c => c < Math.min(2, physicalCores));
-    // Mid (RTSS, Chrome): primary threads of upper-half physical cores
-    const midStart = Math.floor(physicalCores / 2);
-    midCores = all.filter(c => c >= midStart && c < physicalCores);
+    // Intel HyperThreading:
+    // Physical threads = indices 0..physicalCores-1
+    // HT sibling threads = indices physicalCores..logicalCount-1
+    // → Emulator gets the PHYSICAL cores (0..physicalCores-1)
+    // → BG apps get the HT siblings (physicalCores..logicalCount-1)
+    emuCores = all.filter(c => c < physicalCores);         // e.g. 6C/12T → [0,1,2,3,4,5]
+    bgCores  = all.filter(c => c >= physicalCores);        // e.g. 6C/12T → [6,7,8,9,10,11]
+    midCores = all.filter(c => c >= Math.floor(physicalCores / 2) && c < physicalCores);
   } else {
-    // ── AMD/No-HT: physical cores are sequential ──────────────────────
-    // Reserve core 0 for OS (1 core on ≤4C, 2 cores on ≥6C)
-    const osReserve = physicalCores <= 4 ? 1 : 2;
-    emuCores = all.filter(c => c >= osReserve);
-    bgCores  = all.filter(c => c < osReserve);
-    // Mid: lower half of emulator cores
-    const midEnd = osReserve + Math.floor((cap - osReserve) / 2);
-    midCores = all.filter(c => c >= osReserve && c < midEnd);
+    // AMD / No HT: physical = logical, reserve core 0 for OS
+    const osReserve = physicalCores <= 2 ? 0 : 1;
+    emuCores = all.filter(c => c >= osReserve);            // e.g. 6C/6T → [1,2,3,4,5]
+    bgCores  = all.filter(c => c < osReserve);             // e.g. → [0]
+    midCores = all.filter(c => c >= osReserve && c < osReserve + Math.ceil((cap - osReserve) / 2));
   }
 
   // Safety fallbacks
@@ -764,6 +751,7 @@ function buildAdaptiveAffinityMap(hw) {
     _meta: { emuCores, bgCores, midCores }
   };
 }
+
 
 
 ipcMain.handle('boost-game-turbo', async () => {
