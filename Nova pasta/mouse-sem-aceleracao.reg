@@ -1,0 +1,13 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\Control Panel\Mouse]
+"MouseSpeed"="0"
+"MouseThreshold1"="0"
+"MouseThreshold2"="0"
+"MouseSensitivity"="10"
+"MouseTrails"="0"
+"SnapToDefaultButton"="0"
+"SmoothMouseXCurve"=hex:00,00,00,00,00,00,00,00,00,40,06,00,00,00,00,00,00,80,\
+  0c,00,00,00,00,00,00,c0,12,00,00,00,00,00,00,00,19,00,00,00,00,00
+"SmoothMouseYCurve"=hex:00,00,00,00,00,00,00,00,66,06,00,00,00,00,00,00,cd,0c,\
+  00,00,00,00,00,00,34,13,00,00,00,00,00,00,9a,19,00,00,00,00,00

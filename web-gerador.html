@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerador de Licenças - FFOptimizer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #060608;
+      --bg-card: #101014;
+      --text-white: #ffffff;
+      --text-gray: #88888b;
+      --text-muted: #4e4e54;
+      --primary: #38bdf8;
+      --primary-hover: #0ea5e9;
+      --border: rgba(255, 255, 255, 0.08);
+      --green: #28c385;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-white);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: linear-gradient(135deg, #101014 0%, #15151b 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 480px;
+      padding: 40px 30px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .container::before {
+      content: '';
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 150px;
+      height: 150px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+      pointer-events: none;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .logo-badge {
+      display: inline-block;
+      background-color: rgba(56, 189, 248, 0.1);
+      color: var(--primary);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      padding: 6px 14px;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+
+    .desc {
+      font-size: 0.85rem;
+      color: var(--text-gray);
+      line-height: 1.5;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+      text-align: left;
+    }
+
+    label {
+      display: block;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-gray);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      background-color: #0b0b0e;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-white);
+      padding: 12px 14px;
+      font-size: 0.95rem;
+      font-family: monospace;
+      outline: none;
+      transition: all 0.25s ease;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
+    }
+
+    button.btn {
+      width: 100%;
+      background-color: var(--primary);
+      color: #060608;
+      border: none;
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+    }
+
+    button.btn:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    button.btn:active {
+      transform: translateY(0);
+    }
+
+    /* Result Card */
+    .result-container {
+      margin-top: 30px;
+      background-color: #0b0b0e;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--text-gray);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .key-display {
+      font-family: monospace;
+      font-size: 1.4rem;
+      color: var(--green);
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      background-color: rgba(40, 195, 133, 0.05);
+      border: 1px dashed rgba(40, 195, 133, 0.2);
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    .btn-copy {
+      background-color: #18181c;
+      color: var(--text-white);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-copy:hover {
+      background-color: #24242b;
+    }
+
+    .footer-notes {
+      margin-top: 30px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <span class="logo-badge">KEY GENERATOR</span>
+      <h1>Loord Optimizer Admin</h1>
+      <p class="desc">Gere chaves de licença seguras baseadas no hardware do cliente.</p>
+    </div>
+
+    <div class="form-group">
+      <label for="uuid-input">UUID do Cliente:</label>
+      <input type="text" id="uuid-input" placeholder="Cole o UUID do cliente aqui..." autocomplete="off">
+    </div>
+
+    <button id="btn-generate" class="btn">⚡ Gerar Chave de Ativação</button>
+
+    <div id="result-box" class="result-container">
+      <div class="result-label">Chave Gerada com Sucesso</div>
+      <div id="key-output" class="key-display">XXXX-XXXX-XXXX-XXXX</div>
+      <button id="btn-copy" class="btn-copy">📋 Copiar Chave</button>
+    </div>
+  </div>
+
+  <div class="footer-notes">
+    Loord Optimizer Key Generator &bull; Roda localmente e 100% offline.<br>
+    Hospede gratuitamente no <strong>GitHub Pages</strong>, <strong>Vercel</strong> ou <strong>Netlify</strong>.
+  </div>
+
+  <script>
+    const salt = 'FFOptimizerSecure2026';
+
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await window.crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      return hashHex;
+    }
+
+    async function generateKeyForUuid(uuid) {
+      const input = uuid.trim().toLowerCase() + salt;
+      const hash = await sha256(input);
+      const part1 = hash.substring(0, 4);
+      const part2 = hash.substring(4, 8);
+      const part3 = hash.substring(8, 12);
+      const part4 = hash.substring(12, 16);
+      return `${part1}-${part2}-${part3}-${part4}`.toUpperCase();
+    }
+
+    const uuidInput = document.getElementById('uuid-input');
+    const btnGenerate = document.getElementById('btn-generate');
+    const resultBox = document.getElementById('result-box');
+    const keyOutput = document.getElementById('key-output');
+    const btnCopy = document.getElementById('btn-copy');
+
+    btnGenerate.addEventListener('click', async () => {
+      const uuid = uuidInput.value.trim();
+      if (!uuid) {
+        alert('Por favor, insira o UUID do cliente!');
+        return;
+      }
+
+      const key = await generateKeyForUuid(uuid);
+      keyOutput.textContent = key;
+      resultBox.style.display = 'block';
+    });
+
+    btnCopy.addEventListener('click', () => {
+      const key = keyOutput.textContent;
+      navigator.clipboard.writeText(key);
+      btnCopy.textContent = 'Copiado!';
+      setTimeout(() => {
+        btnCopy.textContent = '📋 Copiar Chave';
+      }, 2000);
+    });
+  </script>
+</body>
+</html>

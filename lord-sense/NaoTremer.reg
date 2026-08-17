@@ -1,0 +1,61 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\Control Panel\Mouse]
+"MouseSensitivity"="10"
+"MouseHoverTime"="8"
+"MouseTrails"="0"
+"DoubleClickSpeed"="500"
+"DoubleClickHeight"="4"
+"DoubleClickWidth"="4"
+"MouseHoverHeight"="4"
+"MouseHoverWidth"="4"
+"SnapToDefaultButton"="0"
+"SwapMouseButtons"="0"
+"SmoothMouseXCurve"=hex:\
+	00,00,00,00,00,00,00,00,\
+	C0,CC,0C,00,00,00,00,00,\
+	80,99,19,00,00,00,00,00,\
+	40,66,26,00,00,00,00,00,\
+	00,33,33,00,00,00,00,00
+"SmoothMouseYCurve"=hex:\
+	00,00,00,00,00,00,00,00,\
+	00,00,38,00,00,00,00,00,\
+	00,00,70,00,00,00,00,00,\
+	00,00,A8,00,00,00,00,00,\
+	00,00,E0,00,00,00,00,00
+
+[HKEY_USERS\.DEFAULT\Control Panel\Mouse]
+"MouseSpeed"="0"
+"MouseThreshold1"="0"
+"MouseThreshold2"="0"
+"MouseHoverTime"="8"
+"MouseTrails"="0"
+
+[HKEY_CURRENT_USER\Control Panel\Accessibility\MouseKeys]
+"Flags"="0"
+
+[HKEY_CURRENT_USER\Control Panel\Accessibility\StickyKeys]
+"Flags"="0"
+
+[HKEY_CURRENT_USER\Control Panel\Accessibility\ToggleKeys]
+"Flags"="0"
+
+[HKEY_CURRENT_USER\Control Panel\Accessibility\Keyboard Response]
+"Flags"="0"
+"DelayBeforeAcceptance"="0"
+"AutoRepeatDelay"="200"
+"AutoRepeatRate"="15"
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\mouclass\Parameters]
+"MouseDataQueueSize"=dword:00000064
+"MouseResolution"=dword:00000001
+"MouseTicks"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\kbdclass\Parameters]
+"KeyboardDataQueueSize"=dword:00000014
+"KeyboardResolution"=dword:00000001
+"KeyboardTicks"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile]
+"SystemResponsiveness"=dword:00000000
+"NetworkThrottlingIndex"=dword:ffffffff

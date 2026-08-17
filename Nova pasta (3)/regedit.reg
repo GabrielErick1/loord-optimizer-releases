@@ -1,0 +1,27 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\Control Panel\Mouse]
+"ActiveWindowTracking"=dword:00000000
+"Beep"="No"
+"DoubleClickHeight"="4"
+"DoubleClickSpeed"="480"
+"DoubleClickWidth"="4"
+"ExtendedSounds"="No"
+"MouseHoverHeight"="4"
+"MouseHoverTime"=dword:00000029
+"MouseHoverWidth"="4"
+"MouseSensitivity"="10"
+"MouseSpeed"="0"
+"MouseThreshold1"="0"
+"MouseThreshold2"="0"
+"MouseTrails"="0"
+"SmoothMouseXCurve"=hex:00,00,00,00,00,00,00,00,15,6e,00,00,00,00,00,00,00,40,01,00,00,00,00,00,29,dc,03,00,00,00,00,00,00,00,28,00,00,00,00,00
+"SmoothMouseYCurve"=hex:00,00,00,00,00,00,00,00,fd,11,01,00,00,00,00,00,00,24,04,00,00,00,00,00,00,fc,12,00,00,00,00,00,00,c0,bb,01,00,00,00,00
+"SnapToDefaultButton"="0"
+"SwapMouseButtons"="0"
+@=""
+"Active"="Regedit V1"
+"ActiveAC"="Regedit V1"
+"ActiveDevoloped"="Ted Exe#0001"
+"ActiveFix"="Regedit V1"
+"ActiveUser"="tedexe"

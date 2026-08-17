@@ -1,0 +1,47 @@
+Windows Registry Editor Version 5.00
+
+; ====================================================================
+; AJUSTES DE MOUSE E SISTEMA PARA GAMING - VERSAO CORRIGIDA
+; ====================================================================
+
+; --------------------------------------------------------------------
+; 1. MOUSE: ZERO ACELERACAO, CURVA LINEAR 1:1 (curva real e testada)
+; --------------------------------------------------------------------
+[HKEY_CURRENT_USER\Control Panel\Mouse]
+"MouseSensitivity"="10"
+"MouseSpeed"="0"
+"MouseThreshold1"="0"
+"MouseThreshold2"="0"
+"MouseHoverTime"=dword:00000029
+"MouseTrails"="0"
+"SnapToDefaultButton"="0"
+"SmoothMouseXCurve"=hex:00,00,00,00,00,00,00,00,00,40,06,00,00,00,00,00,00,80,\
+  0c,00,00,00,00,00,00,c0,12,00,00,00,00,00,00,00,19,00,00,00,00,00
+"SmoothMouseYCurve"=hex:00,00,00,00,00,00,00,00,66,06,00,00,00,00,00,00,cd,0c,\
+  00,00,00,00,00,00,34,13,00,00,00,00,00,00,9a,19,00,00,00,00,00
+
+; --------------------------------------------------------------------
+; 2. RESPONSIVIDADE DO SISTEMA (reduz a chance de tarefas em segundo
+;    plano roubarem ciclos de CPU durante o jogo)
+; --------------------------------------------------------------------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile]
+"SystemResponsiveness"=dword:00000000
+"NetworkThrottlingIndex"=dword:ffffffff
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games]
+"GPU Priority"=dword:00000008
+"Priority"=dword:00000006
+"Scheduling Category"="High"
+"SFIO Priority"="High"
+
+; --------------------------------------------------------------------
+; 3. DESATIVA GAME DVR / BARRA DE JOGOS (menos overhead em background)
+; --------------------------------------------------------------------
+[HKEY_CURRENT_USER\System\GameConfigStore]
+"GameDVR_Enabled"=dword:00000000
+"GameDVR_FSEBehaviorMode"=dword:00000002
+"GameDVR_HonorUserFSEBehaviorMode"=dword:00000001
+"GameDVR_DXGIHonorFSEWindowsMode"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\GameDVR]
+"AllowGameDVR"=dword:00000000

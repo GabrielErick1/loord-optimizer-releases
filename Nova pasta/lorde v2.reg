@@ -1,0 +1,53 @@
+Windows Registry Editor Version 5.00
+
+; ====================================================================
+; REGEDIT PRO GAMING SUPREME - OTIMIZAÇÃO DE SENSIBILIDADE E LATÊNCIA
+; ====================================================================
+
+; --------------------------------------------------------------------
+; 1. SENSIBILIDADE E ZERO ACELERAÇÃO DE MOUSE (CURVA MARK C 100% 1:1)
+; --------------------------------------------------------------------
+[HKEY_CURRENT_USER\Control Panel\Mouse]
+"MouseSensitivity"="10"
+"MouseSpeed"="0"
+"MouseThreshold1"="0"
+"MouseThreshold2"="0"
+"MouseTrails"="0"
+"SnapToDefaultButton"="0"
+"SwapMouseButtons"="0"
+"MouseHoverTime"="8"
+"SmoothMouseXCurve"=hex:00,00,00,00,00,00,00,00,c0,cc,0c,00,00,00,00,00,80,99,19,00,00,00,00,00,40,66,26,00,00,00,00,00,00,33,33,00,00,00,00,00
+"SmoothMouseYCurve"=hex:00,00,00,00,00,00,00,00,00,00,38,00,00,00,00,00,00,00,70,00,00,00,00,00,00,00,a0,00,00,00,00,00,00,00,e0,00,00,00,00,00
+
+; --------------------------------------------------------------------
+; 2. OTIMIZAÇÃO DE RESPOSTA DO SISTEMA (PRIORIDADE PROCESSADOR / GPU)
+; --------------------------------------------------------------------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile]
+"SystemResponsiveness"=dword:00000000
+"NetworkThrottlingIndex"=dword:ffffffff
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games]
+"GPU Priority"=dword:00000008
+"Priority"=dword:00000006
+"Scheduling Category"="High"
+"SFIO Priority"="High"
+
+; --------------------------------------------------------------------
+; 3. REMOÇÃO DE INPUT LAG DE VÍDEO (DESATIVAR GAME DVR E BARRA DE JOGOS)
+; --------------------------------------------------------------------
+[HKEY_CURRENT_USER\System\GameConfigStore]
+"GameDVR_Enabled"=dword:00000000
+"GameDVR_FSEBehaviorMode"=dword:00000002
+"GameDVR_HonorUserFSEBehaviorMode"=dword:00000001
+"GameDVR_DXGIHonorFSEWindowsMode"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\GameDVR]
+"AllowGameDVR"=dword:00000000
+
+; --------------------------------------------------------------------
+; 4. REDUÇÃO DE LATÊNCIA DE REDE / PING (DESATIVAR ALGORITMO DE NAGLE REAL)
+; --------------------------------------------------------------------
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters]
+"TcpAckFrequency"=dword:00000001
+"TCPNoDelay"=dword:00000001
+"TcpDelAckTicks"=dword:00000000

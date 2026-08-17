@@ -1,0 +1,41 @@
+Windows Registry Editor Version 5.00
+
+; FFOptimizer - Regedit Completa Mira Clean / Impossivel & Pesadinho 1:1
+; Combinacao exata de todos os arquivos da pasta Nova pasta (2)
+
+[HKEY_CURRENT_USER\Control Panel\Mouse]
+"ActiveWindowTracking"=dword:00000000
+"Beep"="No"
+"DoubleClickHeight"="4"
+"DoubleClickSpeed"="500"
+"DoubleClickWidth"="4"
+"ExtendedSounds"="No"
+"MouseHoverHeight"="4"
+"MouseHoverWidth"="4"
+"MouseHoverTime"="8"
+"MouseSensitivity"="10"
+"MouseSpeed"="0"
+"MouseThreshold1"="0"
+"MouseThreshold2"="0"
+"MouseTrails"="0"
+"SnapToDefaultButton"="0"
+"SwapMouseButtons"="0"
+"SmoothMouseXCurve"=hex:\
+	00,00,00,00,00,00,00,00,\
+	C0,CC,0C,00,00,00,00,00,\
+	80,99,19,00,00,00,00,00,\
+	40,66,26,00,00,00,00,00,\
+	00,33,33,00,00,00,00,00
+"SmoothMouseYCurve"=hex:\
+	00,00,00,00,00,00,00,00,\
+	00,00,38,00,00,00,00,00,\
+	00,00,70,00,00,00,00,00,\
+	00,00,A8,00,00,00,00,00,\
+	00,00,E0,00,00,00,00,00
+
+[HKEY_USERS\.DEFAULT\Control Panel\Mouse]
+"Beep"="No"
+"ExtendedSounds"="No"
+"MouseSpeed"="0"
+"MouseThreshold1"="0"
+"MouseThreshold2"="0"

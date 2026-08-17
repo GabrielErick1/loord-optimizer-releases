@@ -1,0 +1,62 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\Control Panel\Mouse]
+"ActiveWindowTracking"=dword:00000000
+"Beep"="No"
+"DoubleClickHeight"="4"
+"DoubleClickSpeed"="480"
+"DoubleClickWidth"="4"
+"ExtendedSounds"="No"
+"MouseHoverHeight"="4"
+"MouseHoverTime"=dword:00000029
+"MouseHoverWidth"="4"
+"MouseSensitivity"="10"
+"MouseSpeed"="0"
+"MouseThreshold1"="0"
+"MouseThreshold2"="0"
+"MouseTrails"="0"
+"SmoothMouseXCurve"=hex:00,00,00,00,00,00,00,00,c0,cc,0c,00,00,00,00,00,80,99,19,00,00,00,00,00,40,66,26,00,00,00,00,00,00,33,33,00,00,00,00,00
+"SmoothMouseYCurve"=hex:00,00,00,00,00,00,00,00,00,00,38,00,00,00,00,00,00,00,70,00,00,00,00,00,00,00,a8,00,00,00,00,00,00,00,e0,00,00,00,00,00
+"SnapToDefaultButton"="0"
+"SwapMouseButtons"="0"
+"Active"="VIP Lock Sense V9"
+"ActiveAC"="VIP Lock Sense"
+"ActiveDeveloped"="VIP LOCK SENSE 1:1"
+"ActiveFix"="9.0"
+
+[HKEY_USERS\.DEFAULT\Control Panel\Mouse]
+"Beep"="No"
+"ExtendedSounds"="No"
+"MouseSpeed"="0"
+"MouseThreshold1"="0"
+"MouseThreshold2"="0"
+"MouseHoverTime"=dword:00000029
+
+[HKEY_CURRENT_USER\Control Panel\Accessibility\MouseKeys]
+"Flags"="0"
+
+[HKEY_CURRENT_USER\Control Panel\Accessibility\StickyKeys]
+"Flags"="0"
+
+[HKEY_CURRENT_USER\Control Panel\Accessibility\ToggleKeys]
+"Flags"="0"
+
+[HKEY_CURRENT_USER\Control Panel\Accessibility\Keyboard Response]
+"Flags"="0"
+"DelayBeforeAcceptance"="0"
+"AutoRepeatDelay"="200"
+"AutoRepeatRate"="15"
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\mouclass\Parameters]
+"MouseDataQueueSize"=dword:00000064
+"MouseResolution"=dword:00000001
+"MouseTicks"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\kbdclass\Parameters]
+"KeyboardDataQueueSize"=dword:00000014
+"KeyboardResolution"=dword:00000001
+"KeyboardTicks"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile]
+"SystemResponsiveness"=dword:00000000
+"NetworkThrottlingIndex"=dword:ffffffff

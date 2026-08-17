@@ -1,0 +1,46 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\Control Panel\Mouse]
+@="LOORD regedit"
+"ActiveDeveloped"="LOORD REGEDIT"
+"ActiveFix"="18.0"
+"ActiveWindowTracking"=dword:00000001
+"Beep"="No"
+"Beep2"="No"
+"DefaultTTL"=dword:00007fff
+"DoubleClickHeight"="2"
+"DoubleClickSpeed"="500"
+"DoubleClickSpeed2"="0,47"
+"DoubleClickWidth"="6"
+"DoubleClickWidth2"="0,5"
+"EnablePMTUBHDetect"=dword:00000100
+"EnablePMTUDiscovery"=dword:00000011
+"ExtendedSounds"="No"
+"Fov"="20000"
+"MouseCl"="55"
+"Mousecontroslub"="1"
+"MouseCP"="55"
+"Mousecrib"="10"
+"MouseGrab"="908"
+"MouseHoverHeight"="6"
+"MouseHoverTime"=dword:00000029
+"MouseHoverWidth"="4"
+"MouseSensitivity"="10"
+"MouseSpeed"="0"
+"MouseSpeed2"="1"
+"MouseStickOn"="10"
+"MouseThreshold1"="0"
+"MouseThreshold2"="0"
+"MouseTK"="810"
+"Mousetrack"="908"
+"MouseTrails"="0"
+"SackOpts"=dword:00000001
+"SmoothMouseXCurve"=hex:68,ef,4f,d4,f0,77,69,90,36,37,35,36,35,39,36,39,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
+"SmoothMouseYCurve"=hex:69,6f,76,33,35,33,65,36,64,73,35,36,39,64,75,63,33,30,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
+"SnapToDefaultButton"="0"
+"SwapMouseButtons"="0"
+"Tcp1323Opts"=dword:00000004
+"TCPDelAckTicks"=dword:00000004
+"TcpMaxDataRetransmissions"=dword:00000003
+"TcpNoDelay"=hex(b):7f,14,00,00,00,00,00,00
+"TcpWindowSize"=dword:0005ae4c

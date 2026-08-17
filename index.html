@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loord Optimizer</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Titlebar Custom (Frame-less look) -->
+    <header class="titlebar">
+      <div class="logo">
+        <span class="logo-white">Loord Optimizer</span>
+      </div>
+      <div class="window-controls">
+        <div class="circle-btn btn-min" id="btn-minimize" title="Minimizar"></div>
+        <div class="circle-btn btn-max" id="btn-maximize" title="Maximizar / Restaurar"></div>
+        <div class="circle-btn btn-cls" id="btn-close" title="Fechar"></div>
+      </div>
+    </header>
+
+    <div class="main-layout">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <div class="title-main">Loord Optimizer</div>
+          <div class="title-sub">LoordOpt</div>
+        </div>
+
+        <nav class="nav-menu">
+          <button class="nav-item" data-tab="calculadora">
+            <span class="nav-icon">🎯</span> Calculadora Sense
+          </button>
+          <button class="nav-item" data-tab="mouse-config">
+            <span class="nav-icon">🖱️</span> Config do Mouse
+          </button>
+          <button class="nav-item active" data-tab="otimizar-pc">
+            <span class="nav-icon">⚡</span> Otimizar PC
+          </button>
+          <button class="nav-item" data-tab="rede-latencia">
+            <span class="nav-icon">🌐</span> Rede & Latência
+          </button>
+          <button class="nav-item" data-tab="emulador">
+            <span class="nav-icon">🎮</span> Emulador
+          </button>
+          <button class="nav-item" data-tab="minha-config">
+            <span class="nav-icon">💾</span> Minha Config
+          </button>
+        </nav>
+        
+        <div class="sidebar-footer">
+          <div class="version-label">💎 VERSÃO VIP</div>
+          <div class="version-sub">👤 Cliente VIP</div>
+        </div>
+      </aside>
+
+      <!-- Content Area -->
+      <main class="content-area">
+        
+        <!-- TAB: CALCULADORA SENSE -->
+        <section id="tab-calculadora" class="tab-content">
+          <h2>Calculadora Sense</h2>
+          <p class="subtitle">Descubra a sensibilidade ideal para subir capa no emulador</p>
+          
+          <div class="card">
+            <h3>Entradas de DPI</h3>
+            <div class="inputs-grid">
+              <div class="input-field">
+                <label for="calc-mouse-dpi">DPI do seu Mouse físico:</label>
+                <input type="number" id="calc-mouse-dpi" value="800" min="200" max="25600">
+              </div>
+              <div class="input-field">
+                <label for="calc-emu-dpi">DPI do Emulador:</label>
+                <input type="number" id="calc-emu-dpi" value="480" min="100" max="2000">
+              </div>
+            </div>
+            <button class="btn btn-primary" id="btn-calculate" style="margin-top: 16px; width: 100%;">📐 Calcular Sensibilidade</button>
+          </div>
+
+          <div class="card result-card" id="calc-result" style="display: none;">
+            <h3>Sensibilidade Recomendada</h3>
+            <div class="result-grid">
+              <div class="result-box">
+                <span class="label">Sensibilidade X (Lateral)</span>
+                <span class="value" id="res-x">1.25</span>
+              </div>
+              <div class="result-box">
+                <span class="label">Sensibilidade Y (Vertical / Capa)</span>
+                <span class="value" id="res-y">1.75</span>
+              </div>
+              <div class="result-box">
+                <span class="label">Ajuste recomendado (Tweak)</span>
+                <span class="value" id="res-tweak">16450</span>
+              </div>
+            </div>
+            <p id="res-note" style="font-size: 0.8rem; color: #38bdf8; margin-top: 12px; text-align: center; line-height: 1.4; display: none; font-weight: 600;"></p>
+            <p style="font-size: 0.8rem; color: var(--text-gray); margin-top: 12px; text-align: center;">*Ajuste esses valores nas configurações de mapeamento de teclas dentro do BlueStacks.</p>
+          </div>
+        </section>
+
+        <!-- TAB: CONFIG DO MOUSE -->
+        <section id="tab-mouse-config" class="tab-content">
+          <h2>Config do Mouse</h2>
+          <p class="subtitle">Ajuste o comportamento do cursor e a curva de aceleração</p>
+          
+          <div class="card">
+            <h3>Curva de Sensibilidade (Registry)</h3>
+            <div class="radio-group">
+              <label class="radio-card" style="border: 1px solid rgba(239, 68, 68, 0.8); background: linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(0,0,0,0.6)); box-shadow: 0 0 18px rgba(239, 68, 68, 0.25);">
+                <input type="radio" name="mouse-mode" value="loord-3-sense-full-red" checked>
+                <div class="radio-content">
+                  <span class="title" style="color: #ff6b6b; font-weight: 800; display: flex; align-items: center; gap: 6px;">⚡ LOORD 3.0 SENSE FULL RED (Ultra Sense + BCD + USB Boost) <span style="background: linear-gradient(90deg, #ef4444, #f97316); color: #fff; font-size: 0.65rem; padding: 2px 7px; border-radius: 4px; font-weight: 900;">SUPREMA 🔥</span></span>
+                  <span class="desc">Aplica todas as otimizações supremas: Buffer de Mouse/HID 20, USB sem suspensão, Teclado 0ms, Win32Priority 26, BCD timer 0.5ms e curva 1:1 calibrada para full capa.</span>
+                </div>
+              </label>
+
+              <label class="radio-card" style="border: 1px solid rgba(239, 68, 68, 0.6); background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(0,0,0,0.5));">
+                <input type="radio" name="mouse-mode" value="vip-lock-sense">
+                <div class="radio-content">
+                  <span class="title" style="color: #f87171; font-weight: 700; display: flex; align-items: center; gap: 6px;">👑 VIP LOCK SENSE 1:1 (Anti-Tremer & Head Lock Supremo) <span style="background: #ef4444; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">TOP 1</span></span>
+                  <span class="desc">Curva 1:1 balanceada com estabilização no eixo Y (trava na cabeça), zero tremores ao disparar e latência ultrabaixa de input.</span>
+                </div>
+              </label>
+
+              <label class="radio-card" style="border: 1px solid rgba(239, 68, 68, 0.4); background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(0,0,0,0.4));">
+                <input type="radio" name="mouse-mode" value="full-red-ump">
+                <div class="radio-content">
+                  <span class="title" style="color: #f87171; font-weight: 700; display: flex; align-items: center; gap: 6px;">🎯 REGEDIT FULL RED UMP (Precisão & Disparo Rápido) <span style="background: #dc2626; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">NOVO 🔥</span></span>
+                  <span class="desc">Ajuste de sensibilidade 10, DoubleClick 500ms, curva SmoothMouseX/Y calibrada para UMP/SMG e tempo de resposta otimizado.</span>
+                </div>
+              </label>
+
+              <label class="radio-card">
+                <input type="radio" name="mouse-mode" value="kant-v1">
+                <div class="radio-content">
+                  <span class="title">KANT REGEDIT V1 (Curva Customizada & Precisão)</span>
+                  <span class="desc">Aplica todas as otimizações exatas da regedit Kant V1 da pasta (3) (SmoothMouseX/Y Curve Ted Exe, DoubleClick 480ms).</span>
+                </div>
+              </label>
+
+              <label class="radio-card">
+                <input type="radio" name="mouse-mode" value="mira-clean-pesadinho">
+                <div class="radio-content">
+                  <span class="title">REGEDIT MIRA CLEAN / IMPOSSÍVEL & PESADINHO (1:1 Head)</span>
+                  <span class="desc">Aplica todas as otimizações exatas da pasta (2) (Mira Clean, NaoTremer, Head, Impossivel e Pesadinho).</span>
+                </div>
+              </label>
+
+              <label class="radio-card">
+                <input type="radio" name="mouse-mode" value="mouse-sem-aceleracao">
+                <div class="radio-content">
+                  <span class="title">Mouse Sem Aceleração Real 1:1</span>
+                  <span class="desc">Remove 100% da aceleração do cursor do Windows, garantindo movimentos idênticos à física do mouse (curva linear MarkC).</span>
+                </div>
+              </label>
+
+              <label class="radio-card">
+                <input type="radio" name="mouse-mode" value="loord-v3">
+                <div class="radio-content">
+                  <span class="title">LOORD REGEDIT V3 (Anti-Tremor Suprema)</span>
+                  <span class="desc">Ajuste avançado de precisão linear com redução de tremores na mira e desativação completa do Game DVR/Barra de Jogos.</span>
+                </div>
+              </label>
+
+              <label class="radio-card">
+                <input type="radio" name="mouse-mode" value="lorde-v2">
+                <div class="radio-content">
+                  <span class="title">LORDE REGEDIT V2 (Supreme Gaming)</span>
+                  <span class="desc">Aceleração linear 1:1, otimização de latência de rede (TcpNoDelay), prioridade de CPU/GPU e remoção de input lag de vídeo (desativa Game DVR).</span>
+                </div>
+              </label>
+
+              <label class="radio-card">
+                <input type="radio" name="mouse-mode" value="lord-v1">
+                <div class="radio-content">
+                  <span class="title">LORD REGEDIT V1 (Miras Médias)</span>
+                  <span class="desc">Curva suavizada e latência otimizada ideal para rifles e combates a média distância.</span>
+                </div>
+              </label>
+
+              <label class="radio-card">
+                <input type="radio" name="mouse-mode" value="loord-v0">
+                <div class="radio-content">
+                  <span class="title">LOORD REGEDIT V0 (Básico)</span>
+                  <span class="desc">Aplica os ajustes de estabilidade do cursor e otimizações básicas de sensibilidade do Loord V0.</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Taxa de Polling do Mouse</h3>
+            <p>Selecione a frequência do seu mouse gamer físico para ajustar o buffer do driver:</p>
+            <div class="select-container" style="margin-top: 10px;">
+              <select id="mouse-polling">
+                <option value="8000">4000Hz - 8000Hz (Superlight 2, HyperPolling, etc.)</option>
+                <option value="1000" selected>1000Hz (Logitech G, Razer Padrão)</option>
+                <option value="500">500Hz (Mouse gamer intermediário)</option>
+                <option value="125-250">125Hz - 250Hz (Mouse padrão de escritório)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Macro de Capa (Assistente de Puxada Y)</h3>
+            <p>Simula um arrasto suave do mouse para cima no instante do disparo, auxiliando a mira a fixar na cabeça do oponente.</p>
+            
+            <div class="toggle-row" style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; margin-bottom: 12px;">
+              <div class="toggle-info" style="max-width: 80%;">
+                <h4 style="margin: 0; font-size: 1rem; color: var(--text-color);">Ativar Macro de Capa</h4>
+                <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: var(--text-gray);">Ativa automaticamente ao <strong>segurar o botão esquerdo do mouse</strong>. Atalho: <span style="color:#f97316;font-weight:600;">[ F2 / F3 / F6 / F7 ]</span> Liga/Desliga em tempo real (com sinal sonoro).</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="toggle-macro">
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="input-field" id="macro-force-container" style="display: none; margin-top: 12px;">
+              <label for="macro-force" style="display: block; font-size: 0.85rem; margin-bottom: 6px; color: var(--text-color);">Força da Puxada Y (Sensibilidade de Subida): <strong id="macro-force-val" style="color: #38bdf8;">4</strong></label>
+              <input type="range" id="macro-force" min="1" max="10" value="4" style="width: 100%; cursor: pointer;">
+            </div>
+          </div>
+
+          <button class="btn btn-primary btn-apply-all" id="btn-apply-mouse" style="margin-top: 10px;">⚡ Aplicar Configurações</button>
+        </section>
+
+        <!-- TAB: OTIMIZAR PC (SCREENSHOT REPLICADO) -->
+        <section id="tab-otimizar-pc" class="tab-content active">
+          <h2>Otimizar PC</h2>
+          <p class="subtitle">Ative os módulos para tirar lag de teclado, mouse, latência de rede e otimizar o Windows para jogos.</p>
+          
+          <div class="card section-card" style="padding: 24px;">
+            <!-- Actions Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px; flex-wrap: wrap;">
+              <button class="btn btn-primary" id="btn-master-win-opt" style="flex-grow: 1.2; max-width: 320px; background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 700; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">🚀 Otimizar Windows (Super Boost)</button>
+              <button class="btn btn-primary" id="btn-apply-all-modules" style="flex-grow: 1; max-width: 250px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2); font-weight: 700;">⚡ Aplicar Módulos</button>
+              <div class="dual-buttons" style="margin: 0; display: flex; gap: 8px; flex-grow: 1; max-width: 340px;">
+                <button class="btn btn-outline btn-ram" id="btn-clean-ram" style="flex: 1; padding: 10px 12px; font-size: 0.82rem;">🧹 Limpar RAM</button>
+                <button class="btn btn-outline btn-process" id="btn-optimize-proc" style="flex: 1; padding: 10px 12px; font-size: 0.82rem;">⚡ Otimizar Processos</button>
+              </div>
+            </div>
+
+            <!-- Game Booster Turbo Card -->
+            <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(249, 115, 22, 0.08)); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 8px; padding: 14px 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <div style="font-weight: 800; color: #f87171; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                  <span>🔥 Modo Turbo Game Booster (Prioridade de CPU + GPU + RAM)</span>
+                </div>
+                <div style="font-size: 0.8rem; color: #cbd5e1; margin-top: 3px;">
+                  Ativa o Plano de Energia Máxima do Windows, eleva o BlueStacks (HD-Player) para prioridade de Tempo Real e purga toda a RAM em espera.
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="btn btn-primary btn-sm" id="btn-game-booster" style="background: linear-gradient(135deg, #ef4444, #f97316); font-weight: 800;">🚀 Ativar Game Booster</button>
+                <span class="adb-applied-badge" id="badge-game-booster" style="display:none; color:#28c385; font-size:12px;">✔ Booster Ativo!</span>
+              </div>
+            </div>
+
+            <!-- Auto RAM Cleaner Monitor -->
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <div style="font-weight: 700; color: #10b981; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                  <span>🧠 Auto Limpador de Cache de RAM (Standby List Cleaner)</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-gray); margin-top: 3px;">
+                  Purga automaticamente a memória em espera (cache) e processos em segundo plano a cada 45 segundos para manter o FPS estável.
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span id="auto-ram-status" style="font-size: 0.78rem; color: #94a3b8; font-weight: 600;">Desativado</span>
+                <label class="switch">
+                  <input type="checkbox" id="toggle-auto-ram">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- DESEMPENHO E INPUT -->
+            <div class="opt-section-title">DESEMPENHO E INPUT</div>
+            <div class="opt-grid">
+              <div class="opt-card" id="card-remove-kbd-delay">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Remover Delay do Teclado</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('remove-kbd-delay')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-mouse-default">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Mouse Precision (Default)</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('mouse-default')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-mouse-current">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Mouse Precision (Current)</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('mouse-current')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-mouse-no-accel">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Remover Aceleração Total</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('mouse-no-accel')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-display-input-tweak">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Display Input Tweak</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('display-input-tweak')">APLICAR</button>
+              </div>
+            </div>
+
+            <!-- JOGOS E ALTO IMPACTO -->
+            <div class="opt-section-title">JOGOS E ALTO IMPACTO</div>
+            <div class="opt-grid">
+              <div class="opt-card" id="card-disable-overlays">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Desativar Overlays & Bloat</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('disable-overlays')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-disable-gamedvr">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Desativar Xbox Game Bar & DVR</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('disable-gamedvr')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-game-mode-toggle">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Modo Jogo do Windows (Max FPS)</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('game-mode-toggle')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-game-priority">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Otimizar Prioridade de Jogos</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('game-priority')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-freefire-delay">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Tirar Delay do Free Fire</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('freefire-delay')">APLICAR</button>
+              </div>
+            </div>
+
+            <!-- SERVIÇOS E INICIALIZAÇÃO (ALTO IMPACTO) -->
+            <div class="opt-section-title">SERVIÇOS E INICIALIZAÇÃO</div>
+            <div class="opt-grid">
+              <div class="opt-card" id="card-clean-startup-apps">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Otimizar Inicialização (Boot)</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('clean-startup-apps')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-disable-telemetry">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Desativar Telemetria & Rastreio</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('disable-telemetry')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-disable-prefetch">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Desativar Prefetch & SysMain</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('disable-prefetch')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-disable-background-apps">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Desativar Apps em Background</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('disable-background-apps')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-pause-windows-update">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Pausar Windows Update em Jogo</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('pause-windows-update')">APLICAR</button>
+              </div>
+            </div>
+
+            <!-- HARDWARE & CPU/GPU -->
+            <div class="opt-section-title">HARDWARE & CPU/GPU</div>
+            <div class="opt-grid">
+              <div class="opt-card" id="card-disable-core-parking">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Desativar Core Parking CPU</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('disable-core-parking')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-gpu-max-power">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">GPU Maximum Performance</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('gpu-max-power')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-enable-hags">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Agendamento GPU Hardware (HAGS)</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('enable-hags')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-ultimate-power">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Plano Energia Desempenho Máximo</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('ultimate-power')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-disable-throttling">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Desativar Power Throttling</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('disable-throttling')">APLICAR</button>
+              </div>
+            </div>
+
+            <!-- SISTEMA E LATÊNCIA -->
+            <div class="opt-section-title">SISTEMA E LATÊNCIA</div>
+            <div class="opt-grid">
+              <div class="opt-card" id="card-timestamp-0ms">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">TimeStamp Interval 0ms</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('timestamp-0ms')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-disable-fse">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Desativar Otimização Tela Cheia</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('disable-fse')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-csrss-priority">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Aumentar Prioridade CSRSS</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('csrss-priority')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-disable-hpet">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Desativar HPET</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('disable-hpet')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-win32-priority">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Otimizar Win32 Priority</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('win32-priority')">APLICAR</button>
+              </div>
+            </div>
+
+            <!-- REDE, CACHE E OTIMIZAÇÕES AVANÇADAS -->
+            <div class="opt-section-title">REDE, CACHE E MEMÓRIA</div>
+            <div class="opt-grid">
+              <div class="opt-card" id="card-disable-nagle">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Desativar Nagle's Algorithm (TCP)</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('disable-nagle')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-qos-game-priority">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Priorizar Jogo na Rede (QoS)</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('qos-game-priority')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-network-adapter">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Otimizar Adaptador de Rede</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('network-adapter')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-flush-dns-cache">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Limpar Shaders DirectX & DNS</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('flush-dns-cache')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-disable-hibernation">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Desativar Hibernação & Kernel</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('disable-hibernation')">APLICAR</button>
+              </div>
+            </div>
+
+            <!-- EFEITOS & PROCESSOS -->
+            <div class="opt-section-title">EFEITOS & PROCESSOS</div>
+            <div class="opt-grid">
+              <div class="opt-card" id="card-visual-performance">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Efeitos Visuais no Mínimo</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('visual-performance')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-disable-notifications">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Desativar Notificações</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('disable-notifications')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-boost-processes">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Redução Extrema de Processos</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('boost-processes')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-svchost-split">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Otimizar SvcHost Split</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('svchost-split')">APLICAR</button>
+              </div>
+              <div class="opt-card" id="card-clean-standbylist">
+                <div class="opt-card-header">
+                  <span class="opt-bullet"></span>
+                  <span class="opt-title">Purgar Standby List (RAM Pura)</span>
+                </div>
+                <button class="opt-btn-apply" onclick="applySingleTweak('clean-standbylist')">APLICAR</button>
+              </div>
+            </div>
+
+            <!-- Status Indicator -->
+            <div class="status-footer" id="tweak-status-line" style="margin-top: 20px;">
+              <span class="bullet">•</span> <span class="status-text">Selecione um módulo para otimizar.</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB: REDE & LATÊNCIA -->
+        <section id="tab-rede-latencia" class="tab-content">
+          <h2>Rede & Latência</h2>
+          <p class="subtitle">Otimize a conexão e reduza o input lag ao extremo</p>
+          
+          <div class="card section-card">
+            <h3>OTIMIZAÇÕES AVANÇADAS</h3>
+            <div class="toggles-grid">
+              
+              <div class="toggle-card">
+                <div class="t-info">
+                  <span class="t-title">Otimização de Ping (TCP)</span>
+                  <span class="t-desc">Aplica TcpAckFrequency e TCPNoDelay para registrar dano na hora (sem dano fantasma)</span>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" class="system-toggle" data-tweak="network" checked>
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              <div class="toggle-card">
+                <div class="t-info">
+                  <span class="t-title">Timer Resolution 0.5ms</span>
+                  <span class="t-desc">Força o kernel do Windows a responder a cada 0.5 milissegundo (mira não pina)</span>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" class="system-toggle" data-tweak="timer">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              <div class="toggle-card">
+                <div class="t-info">
+                  <span class="t-title">Forçar GPU (HD-Player)</span>
+                  <span class="t-desc">Injeta Alta Performance do DirectX no BlueStacks e desativa timers dinâmicos</span>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" class="system-toggle" data-tweak="gpu-hpet">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- DNS Gamer & Testador de Ping -->
+          <div class="card section-card" style="border: 1px solid rgba(59, 130, 246, 0.4); background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(0,0,0,0.45));">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <div>
+                <h3 style="margin:0 0 4px 0; color:#60a5fa;">🌐 DNS Gamer & Teste de Ping em Tempo Real</h3>
+                <p style="color:#94a3b8; font-size:12px; margin:0;">Testa o ping da sua conexão contra servidores de jogos e aplica o melhor DNS com 1 clique.</p>
+              </div>
+              <span class="badge" style="background:#3b82f6; color:#fff; font-weight:800;">LOW PING</span>
+            </div>
+
+            <!-- Ping Results Display -->
+            <div id="ping-results-grid" style="margin-top:14px; display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
+              <div style="background:rgba(0,0,0,0.4); padding:10px; border-radius:6px; border:1px solid var(--border-color); text-align:center;">
+                <span style="font-size:11px; color:#94a3b8; display:block;">Cloudflare Gaming (1.1.1.1)</span>
+                <strong id="ping-cf" style="font-size:1.1rem; color:#10b981;">-- ms</strong>
+              </div>
+              <div style="background:rgba(0,0,0,0.4); padding:10px; border-radius:6px; border:1px solid var(--border-color); text-align:center;">
+                <span style="font-size:11px; color:#94a3b8; display:block;">Google DNS (8.8.8.8)</span>
+                <strong id="ping-google" style="font-size:1.1rem; color:#38bdf8;">-- ms</strong>
+              </div>
+              <div style="background:rgba(0,0,0,0.4); padding:10px; border-radius:6px; border:1px solid var(--border-color); text-align:center;">
+                <span style="font-size:11px; color:#94a3b8; display:block;">Servidor Free Fire SP</span>
+                <strong id="ping-ff" style="font-size:1.1rem; color:#f59e0b;">-- ms</strong>
+              </div>
+            </div>
+
+            <div style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <button class="btn btn-outline" id="btn-test-ping" style="padding:6px 14px; font-size:12px;">🔍 Testar Ping Agora</button>
+              
+              <div style="display:flex; align-items:center; gap:6px;">
+                <label style="font-size:12px; color:#cbd5e1; font-weight:600;">Aplicar DNS:</label>
+                <select id="select-gamer-dns" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-size:12px;">
+                  <option value="cloudflare">Cloudflare 1.1.1.1 (Recomendado)</option>
+                  <option value="google">Google 8.8.8.8</option>
+                  <option value="opendns">OpenDNS 208.67.222.222</option>
+                </select>
+                <button class="btn btn-primary btn-sm" id="btn-apply-dns">⚡ Aplicar DNS</button>
+              </div>
+              <span class="adb-applied-badge" id="badge-dns-applied" style="display:none; color:#28c385; font-size:12px;">✔ DNS Aplicado!</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB: EMULADOR (ADB) -->
+        <section id="tab-emulador" class="tab-content">
+          <h2>⚙️ Otimizar Emulador</h2>
+          <p class="subtitle">Otimização via ADB — deixa o emulador leve só para jogar Free Fire</p>
+
+          <!-- ADB Status Card -->
+          <div class="card" style="border: 1px solid rgba(99,202,183,0.3);">
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+              <div>
+                <h3 style="margin:0 0 4px 0;">🔌 Conexão ADB</h3>
+                <p style="margin:0; font-size:12px; color:#94a3b8;">Informe a porta do emulador ou detecte automaticamente</p>
+              </div>
+              <span id="adb-status-badge" class="badge badge-error">Desconectado</span>
+            </div>
+
+            <!-- Porta + Presets -->
+            <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <label style="font-size:12px; color:#94a3b8; white-space:nowrap;">127.0.0.1 :</label>
+                <input type="number" id="adb-port-input" value="5555" min="1000" max="65535"
+                  style="width:80px; padding:5px 8px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-color); font-size:13px; font-weight:600;">
+              </div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button class="btn btn-secondary btn-sm adb-port-preset" data-port="5555" title="BlueStacks / LDPlayer">BS/LD :5555</button>
+                <button class="btn btn-secondary btn-sm adb-port-preset" data-port="21503" title="MEmu">MEmu :21503</button>
+                <button class="btn btn-secondary btn-sm adb-port-preset" data-port="62001" title="Nox Player">Nox :62001</button>
+                <button class="btn btn-secondary btn-sm adb-port-preset" data-port="5565" title="BlueStacks instância 2">BS2 :5565</button>
+              </div>
+            </div>
+
+            <!-- Botões de ação -->
+            <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn btn-primary btn-sm" id="btn-adb-connect">⚡ Conectar</button>
+              <button class="btn btn-secondary btn-sm" id="btn-adb-autodetect">🔍 Auto-Detectar Porta</button>
+            </div>
+
+            <div id="adb-log" style="margin-top:12px; background:#0a0f1a; border-radius:8px; padding:10px; font-family:monospace; font-size:11px; color:#63cab7; max-height:100px; overflow-y:auto; display:none;"></div>
+          </div>
+
+          <!-- Transformar em Android Verdadeiro -->
+          <div class="card" style="border: 1px solid rgba(236, 72, 153, 0.4); background: linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(0,0,0,0.45)); box-shadow: 0 0 15px rgba(236, 72, 153, 0.1);">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <div>
+                <h3 style="margin:0 0 4px 0; color:#f472b6;">🤖 Transformar em Android Verdadeiro (Pure Android / AOSP)</h3>
+                <p style="color:#94a3b8; font-size:12px; margin:0;">Remove anúncios e telas do BlueStacks, injeta Fingerprint de celular físico real e ativa a interface limpa do Android.</p>
+              </div>
+              <span class="badge" style="background:#ec4899; color:#fff; font-weight:800;">REAL ANDROID ✨</span>
+            </div>
+
+            <div style="margin-top:10px; padding:8px 12px; background:rgba(0,0,0,0.3); border-radius:6px; border:1px solid rgba(255,255,255,0.05); font-size:11px; color:#cbd5e1; line-height:1.5;">
+              ✔ <strong>Sem Anúncios:</strong> Desativa com.bluestacks.home e serviços now.gg<br>
+              ✔ <strong>Homologação Real:</strong> Mascara SafetyNet e Play Store como smartphone ASUS ROG original<br>
+              ✔ <strong>Aceleração Nativa:</strong> Libera pipeline gráfico direto da GPU (Zero emulação pesada)
+            </div>
+
+            <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <button class="btn btn-primary btn-sm" id="btn-convert-real-android" style="background: linear-gradient(135deg, #ec4899, #8b5cf6);">🚀 Ativar Modo Android Verdadeiro</button>
+              <button class="btn btn-secondary btn-sm" id="btn-restore-default-android">🔄 Restaurar Padrão</button>
+              <span class="adb-applied-badge" id="badge-real-android" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Android Real Ativado!</span>
+            </div>
+          </div>
+
+          <!-- Trocar Modelo do Celular -->
+          <div class="card" style="border: 1px solid rgba(168, 85, 247, 0.4); background: linear-gradient(135deg, rgba(168, 85, 247, 0.06), rgba(0,0,0,0.4));">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <div>
+                <h3 style="margin:0 0 4px 0;">📱 Trocar Modelo do Celular (Device Profiles & FPS Unlock)</h3>
+                <p style="color:#94a3b8; font-size:12px; margin:0;">Muda a identidade do emulador para celulares topo de linha que liberam 90/120/240 FPS no Free Fire.</p>
+              </div>
+              <span class="badge" style="background:#a855f7; color:#fff; font-weight:800;">DEVICE PROFILE</span>
+            </div>
+
+            <div style="margin-top:10px; padding:6px 10px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); border-radius:6px; font-size:11px; color:#fca5a5;">
+              ⚠️ <strong>Importante:</strong> Feche o emulador antes de aplicar o modelo de celular.
+            </div>
+
+            <div style="margin-top:12px; display:flex; flex-direction:column; gap:10px;">
+              <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <label style="font-size:12px; color:#cbd5e1; font-weight:600;">Selecione o Modelo:</label>
+                <select id="device-profile-select" style="flex:1; min-width:240px; padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-size:12px; font-weight:700;">
+                  <option value="asus_rog_8">🔥 ASUS ROG Phone 8 Pro (Recomendado 240 FPS)</option>
+                  <option value="asus_rog_6">⚡ ASUS ROG Phone 6 (165 FPS Estável)</option>
+                  <option value="asus_rog_5">🎮 ASUS ROG Phone 5 (144 FPS Padrão)</option>
+                  <option value="samsung_s24">📱 Samsung Galaxy S24 Ultra</option>
+                  <option value="samsung_s23">📱 Samsung Galaxy S23 Ultra</option>
+                  <option value="blackshark_5">🦈 Xiaomi Black Shark 5 Pro</option>
+                  <option value="redmagic_9">🔴 RedMagic 9 Pro</option>
+                  <option value="oneplus_12">🚀 OnePlus 12</option>
+                  <option value="custom">⚙️ Personalizado (Digitar Manual)</option>
+                </select>
+              </div>
+
+              <!-- Campos manuais opcionais -->
+              <div id="custom-device-fields" style="display:none; gap:8px; flex-wrap:wrap; padding:10px; background:rgba(0,0,0,0.3); border-radius:6px; border:1px solid var(--border-color);">
+                <div style="flex:1; min-width:110px;">
+                  <label style="font-size:11px; color:#94a3b8; display:block;">Marca:</label>
+                  <input type="text" id="cust-brand" value="asus" placeholder="Ex: asus" style="width:100%; padding:4px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff;">
+                </div>
+                <div style="flex:1; min-width:110px;">
+                  <label style="font-size:11px; color:#94a3b8; display:block;">Fabricante:</label>
+                  <input type="text" id="cust-manuf" value="asus" placeholder="Ex: asus" style="width:100%; padding:4px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff;">
+                </div>
+                <div style="flex:1.5; min-width:140px;">
+                  <label style="font-size:11px; color:#94a3b8; display:block;">Modelo (Model):</label>
+                  <input type="text" id="cust-model" value="ASUS_AI2401_D" placeholder="Ex: ASUS_AI2401_D" style="width:100%; padding:4px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff;">
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
+              <button class="btn btn-primary btn-sm" id="btn-apply-device">⚡ Aplicar Modelo no Emulador</button>
+              <span class="adb-applied-badge" id="badge-device-profile" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Modelo Aplicado!</span>
+            </div>
+          </div>
+
+          <!-- Flasher de Sistema & ROM Tweaks -->
+          <div class="card" style="border: 1px solid rgba(16, 185, 129, 0.4); background: linear-gradient(135deg, rgba(16, 185, 129, 0.06), rgba(0,0,0,0.4));">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <div>
+                <h3 style="margin:0 0 4px 0;">🚀 Flasher de Tweaks de Sistema & ROM Gamer (via ADB)</h3>
+                <p style="color:#94a3b8; font-size:12px; margin:0;">Injeta aceleração direta de GPU (EGL/HW), Dalvik VM 512MB e desativa boot anim no Android.</p>
+              </div>
+              <span class="badge" style="background:#10b981; color:#000; font-weight:800;">ROM TWEAKS</span>
+            </div>
+
+            <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
+              <button class="btn btn-primary btn-sm" id="btn-flash-rom-tweaks">⚡ Flashear Tweaks Gamer no Android</button>
+              <span class="adb-applied-badge" id="badge-flash-rom" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Sistema Flasheado!</span>
+            </div>
+          </div>
+
+          <!-- Desbloquear FPS -->
+          <div class="card" style="border: 1px solid rgba(245, 158, 11, 0.4); background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(0,0,0,0.4));">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <div>
+                <h3 style="margin:0 0 4px 0;">⚡ Desbloquear FPS (Hz da Tela Personalizado)</h3>
+                <p style="color:#94a3b8; font-size:12px; margin:0;">Destrava o FPS do BlueStacks/MSI (max_fps 999) e sincroniza com a taxa de atualização (Hz) do seu monitor.</p>
+              </div>
+              <span class="badge" style="background:#f59e0b; color:#000; font-weight:800;">999 FPS</span>
+            </div>
+
+            <div style="margin-top:10px; padding:6px 10px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); border-radius:6px; font-size:11px; color:#fca5a5;">
+              ⚠️ <strong>Importante:</strong> Feche o emulador antes de aplicar para que o BlueStacks salve as novas configurações.
+            </div>
+
+            <div style="margin-top:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <label style="font-size:12px; color:#cbd5e1; font-weight:600;">Hz da Tela:</label>
+                <input type="number" id="input-screen-hz" value="240" min="60" max="500" style="width:80px; padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-size:13px; font-weight:700;">
+              </div>
+
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="60" style="padding:4px 7px; font-size:11px;">60Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="75" style="padding:4px 7px; font-size:11px;">75Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="120" style="padding:4px 7px; font-size:11px;">120Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="144" style="padding:4px 7px; font-size:11px;">144Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="165" style="padding:4px 7px; font-size:11px;">165Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="240" style="padding:4px 7px; font-size:11px;">240Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="260" style="padding:4px 7px; font-size:11px;">260Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="360" style="padding:4px 7px; font-size:11px;">360Hz</button>
+              </div>
+            </div>
+
+            <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
+              <button class="btn btn-primary btn-sm" id="btn-unlock-fps">⚡ Desbloquear FPS no Emulador</button>
+              <span class="adb-applied-badge" id="badge-unlock-fps" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ FPS Desbloqueado!</span>
+            </div>
+          </div>
+
+          <!-- Remover Delay do Free Fire -->
+          <div class="card" style="border: 1px solid rgba(59, 130, 246, 0.4); background: linear-gradient(135deg, rgba(59, 130, 246, 0.06), rgba(0,0,0,0.4));">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <div>
+                <h3 style="margin:0 0 4px 0;">🎯 Remover Delay do Free Fire (ExclusiveDelay 1ms)</h3>
+                <p style="color:#94a3b8; font-size:12px; margin:0;">Reduz o ExclusiveDelay de 200ms para 1ms no mapeamento de teclas do Free Fire e Free Fire MAX.</p>
+              </div>
+              <span class="badge" style="background:#3b82f6; color:#fff; font-weight:800;">1ms INPUT</span>
+            </div>
+
+            <div style="margin-top:10px; padding:6px 10px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); border-radius:6px; font-size:11px; color:#fca5a5;">
+              ⚠️ <strong>Importante:</strong> Feche o emulador antes de aplicar para não sobrescrever o arquivo de controle.
+            </div>
+
+            <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
+              <button class="btn btn-primary btn-sm" id="btn-remove-ff-delay">🚀 Aplicar Delay 1ms no Free Fire</button>
+              <span class="adb-applied-badge" id="badge-ff-delay" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Delay 1ms Aplicado!</span>
+            </div>
+          </div>
+
+          <!-- Otimização Rápida -->
+          <div class="card">
+            <h3>🚀 Otimização Completa (1 Clique)</h3>
+            <p style="color:#94a3b8; font-size:12px; margin-bottom:12px;">Aplica todas as otimizações abaixo de uma vez — animações, cache, processos e DPI ideal para Free Fire.</p>
+            <button class="btn btn-primary btn-apply-all" id="btn-adb-full-optimize">⚡ Aplicar Tudo Agora</button>
+          </div>
+
+          <!-- Seções individuais -->
+          <div class="card">
+            <h3>🎞️ Desativar Animações do Sistema</h3>
+            <p style="color:#94a3b8; font-size:12px; margin-bottom:12px;">Zera todas as animações do Android — ganho imediato de responsividade e FPS.</p>
+            <button class="btn btn-secondary btn-sm adb-action-btn" id="btn-adb-anims" data-applied="false">Aplicar</button>
+            <span class="adb-applied-badge" id="badge-adb-anims" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Aplicado</span>
+          </div>
+
+          <div class="card">
+            <h3>🔇 Limitar Processos em Background</h3>
+            <p style="color:#94a3b8; font-size:12px; margin-bottom:12px;">Limita apps rodando em segundo plano a 1 processo — libera RAM para o jogo.</p>
+            <button class="btn btn-secondary btn-sm adb-action-btn" id="btn-adb-bg" data-applied="false">Aplicar</button>
+            <span class="adb-applied-badge" id="badge-adb-bg" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Aplicado</span>
+          </div>
+
+          <div class="card">
+            <h3>🧹 Limpar Cache dos Apps</h3>
+            <p style="color:#94a3b8; font-size:12px; margin-bottom:12px;">Remove cache acumulado — libera armazenamento e reduz stuttering.</p>
+            <button class="btn btn-secondary btn-sm adb-action-btn" id="btn-adb-cache" data-applied="false">Limpar</button>
+            <span class="adb-applied-badge" id="badge-adb-cache" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Aplicado</span>
+          </div>
+
+          <div class="card" style="border: 1px solid rgba(99, 202, 183, 0.3);">
+            <h3>🎯 DPI Personalizada do Android (wm density)</h3>
+            <p style="color:#94a3b8; font-size:12px; margin-bottom:12px;">Altere a DPI interna do Android via ADB. Digite qualquer valor numérico ou use os atalhos rápidos.</p>
+            
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <label style="font-size:12px; color:#cbd5e1; font-weight:600;">DPI:</label>
+                <input type="number" id="custom-adb-dpi" value="240" min="100" max="1500" style="width:90px; padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-size:13px; font-weight:700;">
+              </div>
+
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button type="button" class="btn btn-secondary btn-sm preset-dpi-btn" data-dpi="240" style="padding:4px 8px; font-size:11px;">240 (Padrão)</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-dpi-btn" data-dpi="320" style="padding:4px 8px; font-size:11px;">320 (Média)</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-dpi-btn" data-dpi="440" style="padding:4px 8px; font-size:11px;">440 (Alta)</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-dpi-btn" data-dpi="600" style="padding:4px 8px; font-size:11px;">600 (Ultra)</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-dpi-btn" data-dpi="1000" style="padding:4px 8px; font-size:11px;">1000 (Máxima)</button>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:8px; align-items:center;">
+              <button class="btn btn-primary btn-sm" id="btn-apply-custom-dpi">⚡ Aplicar DPI</button>
+              <button class="btn btn-secondary btn-sm" id="btn-reset-custom-dpi">🔄 Resetar Padrão</button>
+              <span class="adb-applied-badge" id="badge-adb-dpi" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Aplicado</span>
+            </div>
+          </div>
+
+          <div class="card" style="border-color: rgba(239,68,68,0.3);">
+            <h3>🗑️ Desinstalar Apps Inúteis</h3>
+            <p style="color:#94a3b8; font-size:12px; margin-bottom:6px;">Remove bloatware do emulador — mantém só o essencial para instalar e jogar Free Fire.</p>
+            <p style="color:#ef4444; font-size:11px; margin-bottom:12px;">⚠️ Irreversível — use apenas se quiser emulador limpo só para Free Fire.</p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox" id="uninst-browser" checked> Chrome & Navegadores</label>
+              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox" id="uninst-ads" checked> Ads & Promos do Emulador</label>
+              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox" id="uninst-files" checked> Gerenciador de Arquivos</label>
+              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox" id="uninst-telephony" checked> Telefonia / Contatos</label>
+              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox" id="uninst-email" checked> Email & Calendário</label>
+              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox" id="uninst-media" checked> YouTube, Maps & Música</label>
+              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox" id="uninst-docs" checked> Drive & Play Games</label>
+            </div>
+            <button class="btn btn-danger btn-sm" id="btn-adb-uninstall">🗑️ Desinstalar Selecionados</button>
+            <span class="adb-applied-badge" id="badge-adb-uninstall" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Concluído</span>
+          </div>
+
+        </section>
+
+        <!-- TAB: MINHA CONFIG -->
+        <section id="tab-minha-config" class="tab-content">
+          <h2>Minha Config & Atualizações</h2>
+          <p class="subtitle">Gerencie suas configurações, restaure backups e mantenha seu app atualizado</p>
+
+          <!-- Update Card -->
+          <div class="card" style="border: 1px solid rgba(99, 202, 183, 0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h3 style="margin: 0 0 4px 0;">🔄 Atualizações do Sistema</h3>
+                <p style="margin: 0; font-size: 12px; color: #94a3b8;">Verifique e receba novas versões e otimizações automaticamente</p>
+              </div>
+              <span id="app-version-badge" class="badge badge-success">v1.0.2</span>
+            </div>
+
+            <div style="margin-top: 14px; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 14px; border: 1px solid var(--border-color);">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div>
+                  <div id="update-status-title" style="font-weight: 700; font-size: 13px; color: #fff;">Status da Versão</div>
+                  <div id="update-status-desc" style="font-size: 12px; color: #94a3b8; margin-top: 2px;">Você está usando a versão mais recente do Loord Optimizer.</div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <button class="btn btn-primary btn-sm" id="btn-check-update">🔍 Verificar Agora</button>
+                  <button class="btn btn-sm" id="btn-install-now" style="display: none; background: #10b981; color: #fff; font-weight: 700;">⚡ Instalar Atualização</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Backup do Registro</h3>
+            <p>Se você encontrar qualquer instabilidade no mouse ou teclado, reverta todo o registro para o estado padrão original.</p>
+            
+            <div class="restore-panel" style="margin-top: 16px;">
+              <div class="restore-status" style="margin-bottom: 12px;">
+                <span>Status do Backup:</span>
+                <strong id="restore-backup-status" class="text-error">Não Encontrado</strong>
+              </div>
+              <div class="btn-group">
+                <button class="btn btn-secondary" id="btn-create-backup">Criar Backup Novo</button>
+                <button class="btn btn-danger" id="btn-restore-backup" disabled>Restaurar Backup</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="border: 1px solid rgba(168, 85, 247, 0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h3 style="margin: 0 0 4px 0; color: #c084fc;">💾 Salvar & Carregar Meu Perfil (Backup Geral)</h3>
+                <p style="margin: 0; font-size: 12px; color: #94a3b8;">Exporte sua sensibilidade e configurações completas para um arquivo .json e restaure quando quiser.</p>
+              </div>
+              <span class="badge" style="background:#a855f7; color:#fff; font-weight:800;">PROFILE</span>
+            </div>
+
+            <div style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap;">
+              <button class="btn btn-secondary btn-sm" id="btn-export-profile">📤 Salvar Meu Perfil (.json)</button>
+              <button class="btn btn-outline btn-sm" id="btn-import-profile">📥 Carregar Perfil Salvo</button>
+              <span class="adb-applied-badge" id="badge-profile-action" style="display:none; color:#28c385; font-size:12px;">✔ Perfil Carregado!</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Status do Sistema</h3>
+            <div class="status-list">
+              <div class="status-item">
+                <span>MSI App Player:</span>
+                <span id="status-msi" class="badge badge-error">Não Detetado</span>
+              </div>
+              <div class="status-item">
+                <span>BlueStacks 5:</span>
+                <span id="status-nxt" class="badge badge-error">Não Detetado</span>
+              </div>
+              <div class="status-item">
+                <span>Emulador ativo no momento:</span>
+                <span id="status-running" class="badge badge-neutral">Não</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <!-- Muted bottom bar -->
+    <footer class="statusbar">
+      <span id="status-message">Pronto para otimizar. Execute o aplicativo como Administrador.</span>
+    </footer>
+
+  </div>
+
+  <!-- Lock screen / Activation system -->
+  <div id="activation-screen" class="activation-overlay" style="display: none;">
+    <div class="activation-card">
+      <div class="lock-header">
+        <span class="lock-badge">🔒 SISTEMA BLOQUEADO</span>
+      </div>
+      <h2>Ativação Requerida</h2>
+      <p class="activation-desc">Este computador não possui uma licença ativa para o Loord Optimizer. Envie o UUID abaixo para o administrador para receber sua chave de ativação.</p>
+      
+      <div class="uuid-container">
+        <label>Seu UUID de Hardware:</label>
+        <div class="uuid-row">
+          <input type="text" id="display-uuid" readonly value="Carregando UUID...">
+          <button id="btn-copy-uuid">Copiar</button>
+        </div>
+      </div>
+
+      <div class="key-container">
+        <label for="input-key">Insira sua Chave de Ativação (Key):</label>
+        <input type="text" id="input-key" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off">
+        <div id="activation-error" class="error-text" style="display: none;">❌ Chave inválida para esta máquina!</div>
+      </div>
+
+      <button id="btn-activate" class="btn btn-primary" style="width: 100%; margin-top: 10px;">⚡ Ativar Loord Optimizer</button>
+    </div>
+  </div>
+  
+  <script src="renderer.js"></script>
+</body>
+</html>
