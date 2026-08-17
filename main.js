@@ -684,12 +684,13 @@ function detectHardwareProfile() {
 }
 
 // ── Build adaptive affinity map based on hardware ─────────────────────────
-// Rule: emulator always gets the PHYSICAL cores (indices 0..physicalCores-1)
-//   6C/12T → emuCores = [0,1,2,3,4,5]   bgCores = [6,7,8,9,10,11]
-//   4C/8T  → emuCores = [0,1,2,3]        bgCores = [4,5,6,7]
-//   8C/16T → emuCores = [0,1,2,3,4,5,6,7] bgCores = [8..15]
-//   AMD 6C/6T (no HT) → emuCores = [1,2,3,4,5]  bgCores = [0]
-//   AMD 4C/4T (no HT) → emuCores = [1,2,3]       bgCores = [0]
+// No Windows com HyperThreading (Intel):
+//   Núcleos FÍSICOS  = índices PARES:   0, 2, 4, 6, 8, 10...
+//   Threads LÓGICOS (HT) = índices ÍMPARES: 1, 3, 5, 7, 9, 11...
+// → Emulador recebe SOMENTE os núcleos físicos (pares)
+// → BG apps recebem os threads lógicos HT (ímpares)
+//
+// AMD sem HT: físico = lógico, reservar núcleo 0 para SO
 function buildAdaptiveAffinityMap(hw) {
   const { logicalCount, physicalCores, hasHT } = hw;
   const cap = Math.min(logicalCount, 32);
@@ -705,18 +706,17 @@ function buildAdaptiveAffinityMap(hw) {
 
   if (hasHT) {
     // Intel HyperThreading:
-    // Physical threads = indices 0..physicalCores-1
-    // HT sibling threads = indices physicalCores..logicalCount-1
-    // → Emulator gets the PHYSICAL cores (0..physicalCores-1)
-    // → BG apps get the HT siblings (physicalCores..logicalCount-1)
-    emuCores = all.filter(c => c < physicalCores);         // e.g. 6C/12T → [0,1,2,3,4,5]
-    bgCores  = all.filter(c => c >= physicalCores);        // e.g. 6C/12T → [6,7,8,9,10,11]
-    midCores = all.filter(c => c >= Math.floor(physicalCores / 2) && c < physicalCores);
+    // Núcleos físicos  = índices PARES  (0, 2, 4, 6, ...)
+    // Threads lógicos  = índices ÍMPARES (1, 3, 5, 7, ...)
+    emuCores = all.filter(c => c % 2 === 0);   // ex: 6C/12T → [0,2,4,6,8,10]
+    bgCores  = all.filter(c => c % 2 !== 0);   // ex: 6C/12T → [1,3,5,7,9,11]
+    // Metade superior dos núcleos físicos para apps intermediários
+    midCores = emuCores.filter(c => c >= emuCores[Math.floor(emuCores.length / 2)]);
   } else {
     // AMD / No HT: physical = logical, reserve core 0 for OS
     const osReserve = physicalCores <= 2 ? 0 : 1;
-    emuCores = all.filter(c => c >= osReserve);            // e.g. 6C/6T → [1,2,3,4,5]
-    bgCores  = all.filter(c => c < osReserve);             // e.g. → [0]
+    emuCores = all.filter(c => c >= osReserve);            // ex: 6C/6T → [1,2,3,4,5]
+    bgCores  = all.filter(c => c < osReserve);             // ex: → [0]
     midCores = all.filter(c => c >= osReserve && c < osReserve + Math.ceil((cap - osReserve) / 2));
   }
 
@@ -737,6 +737,7 @@ function buildAdaptiveAffinityMap(hw) {
     _meta: { emuCores, bgCores, midCores }
   };
 }
+
 
 
 
