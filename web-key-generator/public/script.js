@@ -247,41 +247,42 @@ function initDashboard(username, isAdmin) {
   }
 })();
 
+const customValContainer = document.getElementById('custom-val-container');
+const customValLabel = document.getElementById('custom-val-label');
+const customValInput = document.getElementById('custom-val');
+
+// Exibir campo customizado quando selecionar personalizado
+licenseTypeSelect.addEventListener('change', () => {
+  const val = licenseTypeSelect.value;
+  if (val === 'temp-custom-hours') {
+    customValContainer.style.display = 'block';
+    customValLabel.textContent = 'Horas de Validade:';
+    customValInput.placeholder = 'Ex: 3';
+    customValInput.value = '3';
+    customValInput.min = '1';
+    customValInput.max = '8760';
+  } else if (val === 'temp-custom-days') {
+    customValContainer.style.display = 'block';
+    customValLabel.textContent = 'Dias de Validade:';
+    customValInput.placeholder = 'Ex: 45';
+    customValInput.value = '45';
+    customValInput.min = '1';
+    customValInput.max = '365';
+  } else {
+    customValContainer.style.display = 'none';
+  }
+});
+
 // Ação de Gerar Key
 btnGenerate.addEventListener('click', async () => {
   const uuid = clientUuidInput.value.trim();
   const clientName = clientNameInput.value.trim() || 'Cliente VIP';
   const typeVal = licenseTypeSelect.value;
-  
-  let licenseType = 'permanent-unlimited';
-  let durationDays = null;
-
-  if (typeVal === 'permanent-single') {
-    licenseType = 'permanent-single';
-  } else if (typeVal === 'permanent-unlimited' || typeVal === 'permanent') {
-    licenseType = 'permanent-unlimited';
-  } else if (typeVal === 'temporary-1') {
-    licenseType = 'temporary';
-    durationDays = 1;
-  } else if (typeVal === 'temporary-7') {
-    licenseType = 'temporary';
-    durationDays = 7;
-  } else if (typeVal === 'temporary-15') {
-    licenseType = 'temporary';
-    durationDays = 15;
-  } else if (typeVal === 'temporary-30') {
-    licenseType = 'temporary';
-    durationDays = 30;
-  } else if (typeVal === 'temporary-custom') {
-    licenseType = 'temporary';
-    durationDays = parseInt(customDaysInput.value, 10) || 30;
-  }
+  const customVal = customValInput ? parseInt(customValInput.value, 10) : 0;
 
   btnGenerate.disabled = true;
   btnGenerate.textContent = 'Gerando...';
   resultBox.style.display = 'none';
-
-  const currentLoggedInUser = localStorage.getItem('admin_username') || 'gabriel';
 
   try {
     const res = await fetch(`${API_URL}/api/generate`, {
@@ -290,28 +291,37 @@ btnGenerate.addEventListener('click', async () => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${userToken}`
       },
-      body: JSON.stringify({ uuid, clientName, licenseType, durationDays })
+      body: JSON.stringify({
+        uuid,
+        clientName,
+        licenseType: typeVal,
+        customVal
+      })
     });
     const data = await res.json();
 
     if (data.success) {
       keyOutput.textContent = data.key;
-      let typeLabel = '👑 Vitalícia - Reativação Ilimitada no Mesmo PC (UUID)';
-      if (licenseType === 'permanent-single') {
-        typeLabel = '👑 Vitalícia - 1 Ativação Única (Chave Descartável pós-uso)';
-      } else if (licenseType === 'temporary') {
-        typeLabel = `⏳ Temporária (${durationDays} Dias de Validade após ativação)`;
-      }
+      let typeLabel = '👑 Vitalícia (UUID Vinculado)';
+      if (typeVal === 'permanent-single') typeLabel = '👑 Vitalícia (1 Uso Único / Descartável)';
+      else if (typeVal === 'temp-1h') typeLabel = '⏳ Temporária - 1 Hora (Teste Rápido)';
+      else if (typeVal === 'temp-2h') typeLabel = '⏳ Temporária - 2 Horas';
+      else if (typeVal === 'temp-6h') typeLabel = '⏳ Temporária - 6 Horas';
+      else if (typeVal === 'temp-12h') typeLabel = '⏳ Temporária - 12 Horas';
+      else if (typeVal === 'temp-24h') typeLabel = '⏳ Temporária - 24 Horas (1 Dia)';
+      else if (typeVal === 'temp-7d') typeLabel = '⏳ Temporária - 7 Dias (Semanal)';
+      else if (typeVal === 'temp-15d') typeLabel = '⏳ Temporária - 15 Dias (Quinzenal)';
+      else if (typeVal === 'temp-30d') typeLabel = '⏳ Temporária - 30 Dias (Mensal)';
+      else if (typeVal === 'temp-custom-hours') typeLabel = `⏳ Temporária - ${customVal || data.durationHours} Horas`;
+      else if (typeVal === 'temp-custom-days') typeLabel = `⏳ Temporária - ${customVal || data.durationDays} Dias`;
 
       resultDetails.innerHTML = `
         <strong>Cliente:</strong> ${escapeHtml(data.clientName)}<br>
         <strong>Tipo:</strong> ${typeLabel}<br>
-        <strong>Vendedor:</strong> 👤 ${escapeHtml(currentLoggedInUser)}<br>
-        <strong>Vínculo UUID:</strong> ${data.uuid && data.uuid !== 'Aguardando Ativação' ? escapeHtml(data.uuid) : 'Chave Avulsa (Vinculará ao primeiro PC que ativar)'}
+        <strong>UUID Vinculado:</strong> ${data.uuid || 'Qualquer PC (Ativação Pendente)'}<br>
+        <strong>Criado por:</strong> ${escapeHtml(localStorage.getItem('admin_username') || 'Você')}
       `;
       resultBox.style.display = 'block';
-
-      // Save locally to cache immediately
       const cached = getLocalLicensesCache();
       const newEntry = {
         uuid: data.uuid !== 'Aguardando Ativação' ? data.uuid : null,

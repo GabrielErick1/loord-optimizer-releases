@@ -590,6 +590,7 @@ const btnCopyUuid = document.getElementById('btn-copy-uuid');
 const inputKey = document.getElementById('input-key');
 const btnActivate = document.getElementById('btn-activate');
 const activationError = document.getElementById('activation-error');
+let activeLicenseCheckTimer = null;
 
 async function checkActivation() {
   if (!activationScreen) return true;
@@ -627,26 +628,21 @@ async function checkActivation() {
       const data = await response.json();
       
       if (data && data.success) {
-        updateLicenseBadge(true, data.clientName, data.licenseType, data.daysRemaining);
+        updateLicenseBadge(true, data.clientName, data.licenseType, data.timeRemainingStr);
         activationScreen.style.display = 'none';
+        startLicenseHeartbeat(uuid, savedKey);
         return true;
       } else {
-        // Licença inválida, expirada, revogada ou de outra máquina
+        // Licença inválida, expirada, revogada, deletada ou deslogada pelo administrador
         localStorage.removeItem('activation_key');
         localStorage.removeItem('client_name');
         if (activationError) {
-          activationError.textContent = `❌ ${data.error || 'Licença expirada ou inválida.'}`;
+          activationError.textContent = `❌ ${data.error || 'Licença expirada, revogada ou não encontrada no sistema.'}`;
           activationError.style.display = 'block';
         }
       }
     } catch (e) {
-      // Fallback offline (se servidor estiver fora ou sem internet)
-      const localIsValid = await window.api.verifyKey(savedKey);
-      if (localIsValid || localStorage.getItem('client_name')) {
-        updateLicenseBadge(true, localStorage.getItem('client_name') || 'Cliente VIP');
-        activationScreen.style.display = 'none';
-        return true;
-      }
+      console.warn('Erro ao conectar ao servidor de validação:', e);
     }
   }
 
@@ -657,10 +653,16 @@ async function checkActivation() {
   if (btnActivate) {
     btnActivate.onclick = async () => {
       const key = inputKey.value.trim().toUpperCase();
-      if (!key) return;
+      if (!key) {
+        if (activationError) {
+          activationError.textContent = '❌ Por favor, digite uma chave de ativação.';
+          activationError.style.display = 'block';
+        }
+        return;
+      }
       
       btnActivate.disabled = true;
-      btnActivate.textContent = 'Verificando...';
+      btnActivate.textContent = 'Verificando na Nuvem...';
       if (activationError) activationError.style.display = 'none';
 
       try {
@@ -677,40 +679,28 @@ async function checkActivation() {
           if (webData.clientName) {
             localStorage.setItem('client_name', webData.clientName);
           }
-          updateLicenseBadge(true, webData.clientName, webData.licenseType, webData.daysRemaining);
+          updateLicenseBadge(true, webData.clientName, webData.licenseType, webData.timeRemainingStr);
           activationScreen.style.display = 'none';
+          startLicenseHeartbeat(myUuid, key);
           
           await loadAllSettings();
           restoreAppliedTweaks();
           bindSaveListeners();
         } else {
           if (activationError) {
-            activationError.textContent = `❌ ${webData ? webData.error : 'Erro na ativação.'}`;
+            activationError.textContent = `❌ ${webData ? webData.error : 'Chave inválida ou não encontrada no banco de dados.'}`;
             activationError.style.display = 'block';
           }
           btnActivate.disabled = false;
           btnActivate.textContent = '⚡ Ativar Loord Optimizer';
         }
       } catch (e) {
-        // Offline / Direct cryptographic verification fallback
-        const myUuid = await window.api.getUuid();
-        const localIsValid = await window.api.verifyKey(key);
-        if (localIsValid) {
-          localStorage.setItem('activation_key', key);
-          updateLicenseBadge(true, 'Cliente VIP');
-          activationScreen.style.display = 'none';
-          
-          await loadAllSettings();
-          restoreAppliedTweaks();
-          bindSaveListeners();
-        } else {
-          if (activationError) {
-            activationError.textContent = '❌ Chave inválida para esta máquina!';
-            activationError.style.display = 'block';
-          }
-          btnActivate.disabled = false;
-          btnActivate.textContent = '⚡ Ativar Loord Optimizer';
+        if (activationError) {
+          activationError.textContent = '❌ Erro ao conectar ao servidor de ativação. Verifique sua internet.';
+          activationError.style.display = 'block';
         }
+        btnActivate.disabled = false;
+        btnActivate.textContent = '⚡ Ativar Loord Optimizer';
       }
     };
   }
@@ -718,7 +708,40 @@ async function checkActivation() {
   return false;
 }
 
-function updateLicenseBadge(isActivated, clientName, licenseType, daysRemaining) {
+// Monitoramento em tempo real (Auto-Kick se chave for revogada, deletada ou deslogada no painel)
+function startLicenseHeartbeat(uuid, key) {
+  if (activeLicenseCheckTimer) clearInterval(activeLicenseCheckTimer);
+
+  activeLicenseCheckTimer = setInterval(async () => {
+    try {
+      const response = await fetch('https://web-key-generator.vercel.app/api/client-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uuid, key })
+      });
+      const data = await response.json();
+
+      if (!data || !data.success) {
+        // Chave foi revogada, deletada ou deslogada pelo administrador!
+        clearInterval(activeLicenseCheckTimer);
+        localStorage.removeItem('activation_key');
+        localStorage.removeItem('client_name');
+        
+        updateLicenseBadge(false);
+        if (activationError) {
+          activationError.textContent = `❌ ${data?.error || 'Sua licença foi deslogada, revogada ou expirou.'}`;
+          activationError.style.display = 'block';
+        }
+        activationScreen.style.display = 'flex';
+        alert(`❌ ATENÇÃO: Seu acesso foi bloqueado!\n\n${data?.error || 'Sua licença foi revogada, deslogada ou expirou no painel.'}`);
+      } else {
+        updateLicenseBadge(true, data.clientName, data.licenseType, data.timeRemainingStr);
+      }
+    } catch (e) {}
+  }, 25000); // Checa a cada 25 segundos
+}
+
+function updateLicenseBadge(isActivated, clientName, licenseType, timeRemainingStr) {
   const versionLabel = document.querySelector('.version-label');
   const versionSub = document.querySelector('.version-sub');
   
@@ -729,8 +752,8 @@ function updateLicenseBadge(isActivated, clientName, licenseType, daysRemaining)
   
   if (isActivated) {
     if (versionLabel) {
-      if (licenseType === 'temporary' && daysRemaining !== null && daysRemaining !== undefined) {
-        versionLabel.innerHTML = `⏳ VIP (${daysRemaining}d restantes)`;
+      if (licenseType === 'temporary' && timeRemainingStr) {
+        versionLabel.innerHTML = `⏳ VIP (${timeRemainingStr})`;
         versionLabel.style.color = '#f59e0b';
       } else {
         versionLabel.innerHTML = '💎 VERSÃO VIP';
@@ -738,18 +761,14 @@ function updateLicenseBadge(isActivated, clientName, licenseType, daysRemaining)
       }
     }
     if (versionSub) {
-      versionSub.innerHTML = `👤 ${name}`;
-      versionSub.style.color = '#28c385';
-      versionSub.style.fontWeight = '700';
+      versionSub.textContent = `👤 ${name}`;
     }
   } else {
     if (versionLabel) {
-      versionLabel.innerHTML = '🔒 NÃO ATIVADO';
+      versionLabel.innerHTML = '🔒 BLOQUEADO';
       versionLabel.style.color = '#ef4444';
     }
     if (versionSub) {
-      versionSub.innerHTML = '👤 Aguardando Key';
-      versionSub.style.color = 'var(--text-muted)';
       versionSub.style.fontWeight = 'normal';
     }
   }

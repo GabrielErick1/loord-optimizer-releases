@@ -88,18 +88,24 @@
             <select id="license-type" style="width: 100%; padding: 12px 14px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); border-radius: 8px; color: white; font-family: inherit; font-size: 0.95rem;">
               <option value="permanent-unlimited" selected>👑 Vitalícia - Reativação Ilimitada no Mesmo PC (UUID Vinculado)</option>
               <option value="permanent-single">👑 Vitalícia - 1 Ativação Única (Chave Descartável pós-uso)</option>
-              <option value="temporary-1">⏳ Temporária - 1 Dia (24 Horas)</option>
-              <option value="temporary-7">⏳ Temporária - 7 Dias (Semanal)</option>
-              <option value="temporary-15">⏳ Temporária - 15 Dias (Quinzenal)</option>
-              <option value="temporary-30">⏳ Temporária - 30 Dias (Mensal)</option>
-              <option value="temporary-custom">⏳ Temporária - Personalizada (Dias)</option>
+              <option value="temp-1h">⏳ Temporária - 1 Hora (Teste Rápido)</option>
+              <option value="temp-2h">⏳ Temporária - 2 Horas</option>
+              <option value="temp-6h">⏳ Temporária - 6 Horas</option>
+              <option value="temp-12h">⏳ Temporária - 12 Horas</option>
+              <option value="temp-24h">⏳ Temporária - 24 Horas (1 Dia)</option>
+              <option value="temp-7d">⏳ Temporária - 7 Dias (Semanal)</option>
+              <option value="temp-15d">⏳ Temporária - 15 Dias (Quinzenal)</option>
+              <option value="temp-30d">⏳ Temporária - 30 Dias (Mensal)</option>
+              <option value="temp-custom-hours">⏳ Temporária - Personalizada (em Horas)</option>
+              <option value="temp-custom-days">⏳ Temporária - Personalizada (em Dias)</option>
             </select>
           </div>
 
-          <div id="custom-days-container" class="form-group" style="display: none;">
-            <label for="custom-days">Dias de Validade:</label>
-            <input type="number" id="custom-days" placeholder="Ex: 60" min="1" max="365" value="30">
+          <div id="custom-val-container" class="form-group" style="display: none;">
+            <label id="custom-val-label" for="custom-val">Tempo de Validade:</label>
+            <input type="number" id="custom-val" placeholder="Ex: 3" min="1" max="1000" value="1">
           </div>
+
 
           <div class="form-group">
             <label for="client-uuid">UUID do Cliente (Opcional se for gerar chave avulsa):</label>

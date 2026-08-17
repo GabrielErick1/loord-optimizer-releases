@@ -23,20 +23,33 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { uuid, clientName, licenseType, durationDays } = await parseRequestBody(req);
+    const { uuid, clientName, licenseType, durationHours, durationDays, customVal } = await parseRequestBody(req);
     
     const key = generateActivationKey(uuid);
     const licenses = await getLicenses();
     const formattedClientName = (clientName && clientName.trim()) ? clientName.trim() : 'Cliente VIP';
     
     let resolvedType = 'permanent-unlimited';
-    let days = null;
+    let hours = null;
 
-    if (licenseType === 'temporary') {
-      resolvedType = 'temporary';
-      days = parseInt(durationDays, 10) || 30;
-    } else if (licenseType === 'permanent-single') {
+    if (licenseType === 'permanent-single') {
       resolvedType = 'permanent-single';
+    } else if (licenseType && (licenseType.startsWith('temp-') || licenseType === 'temporary')) {
+      resolvedType = 'temporary';
+      
+      if (licenseType === 'temp-1h') hours = 1;
+      else if (licenseType === 'temp-2h') hours = 2;
+      else if (licenseType === 'temp-6h') hours = 6;
+      else if (licenseType === 'temp-12h') hours = 12;
+      else if (licenseType === 'temp-24h') hours = 24;
+      else if (licenseType === 'temp-7d') hours = 7 * 24;
+      else if (licenseType === 'temp-15d') hours = 15 * 24;
+      else if (licenseType === 'temp-30d') hours = 30 * 24;
+      else if (licenseType === 'temp-custom-hours') hours = Math.max(1, parseInt(customVal || durationHours, 10) || 1);
+      else if (licenseType === 'temp-custom-days') hours = Math.max(1, (parseInt(customVal || durationDays, 10) || 1) * 24);
+      else if (durationHours) hours = Math.max(1, parseInt(durationHours, 10));
+      else if (durationDays) hours = Math.max(1, parseInt(durationDays, 10) * 24);
+      else hours = 24 * 30; // 30 days default
     } else {
       resolvedType = 'permanent-unlimited';
     }
@@ -49,8 +62,9 @@ module.exports = async (req, res) => {
       clientName: formattedClientName,
       licenseType: resolvedType,
       activationMode: (resolvedType === 'permanent-single') ? 'single' : 'unlimited',
-      durationDays: days,
-      expiresAt: null, // Set on first activation if temporary
+      durationHours: hours,
+      durationDays: hours ? Math.round(hours / 24) : null,
+      expiresAt: null, // Definido na primeira ativação pela máquina do cliente
       createdBy: user.username,
       createdAt: Date.now(),
       status: 'pending',
@@ -79,6 +93,7 @@ module.exports = async (req, res) => {
       clientName: formattedClientName,
       licenseType: newLicense.licenseType,
       activationMode: newLicense.activationMode,
+      durationHours: newLicense.durationHours,
       durationDays: newLicense.durationDays
     });
   } catch (e) {
@@ -86,3 +101,4 @@ module.exports = async (req, res) => {
     res.status(500).json({ success: false, error: 'Erro interno.' });
   }
 };
+
