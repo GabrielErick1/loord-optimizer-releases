@@ -971,15 +971,9 @@ ipcMain.handle('boost-game-turbo', async () => {
       execSync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${tcpPS.replace(/"/g, '\\"')}"`, { stdio: 'ignore', timeout: 8000 });
     } catch (_) {}
 
-    // ── 9. Apply Affinity + Priority to running processes ─────────────────
-    const psLines = Object.entries(affinityMapClean).map(([name, maskVal]) => {
-      const isHigh = ['HD-Player', 'BlueStacks', 'BlueStacksHelper'].includes(name);
-      const priClass = isHigh ? 'High' : 'BelowNormal';
-      return `Get-Process -Name '${name}' -ErrorAction SilentlyContinue | ForEach-Object { try { $_.ProcessorAffinity = ${maskVal}; $_.PriorityClass = [System.Diagnostics.ProcessPriorityClass]::${priClass} } catch {} }`;
-    });
-    try {
-      execSync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${psLines.join('; ').replace(/"/g, '\\"')}"`, { stdio: 'ignore', timeout: 12000 });
-    } catch (_) {}
+    // ── 9. Configurações de afinidade viva ignoradas conforme solicitação ───
+    // O usuário solicitou não alterar a afinidade "Atual" dos processos em execução,
+    // deixando a afinidade viva como está e definindo somente a regra "Sempre" no Process Lasso.
 
     // ── 10. SmartTrim: clear standby list + working sets ──────────────────
     try {
