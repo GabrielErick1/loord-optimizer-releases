@@ -1698,12 +1698,19 @@ if (btnApplyDns) {
 // ─── Modo Turbo Game Booster ────────────────────────────────────────
 const btnGameBooster = document.getElementById('btn-game-booster');
 const badgeGameBooster = document.getElementById('badge-game-booster');
-let isGameBoosterActive = false;
+let isGameBoosterActive = sessionStorage.getItem('game_booster_active') === 'true';
 
 if (btnGameBooster) {
+  if (isGameBoosterActive) {
+    btnGameBooster.textContent = '✅ Game Booster Ativo';
+    btnGameBooster.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+    btnGameBooster.style.boxShadow = '0 0 12px rgba(16, 185, 129, 0.4)';
+    btnGameBooster.style.fontWeight = '800';
+  }
+
   btnGameBooster.addEventListener('click', async () => {
     if (isGameBoosterActive) {
-      alert('⚠️ ATENÇÃO:\n\nO Game Booster já foi ativado nesta sessão!\n\nClicar repetidamente duas vezes seguidas pode sobrecarregar as otimizações do sistema. As otimizações para HD-Player (BlueStacks e MSI App Player) já estão 100% ativas!');
+      alert('⚠️ ATENÇÃO:\n\nO Game Booster já está ATIVADO nesta sessão!\n\nAs otimizações para HD-Player (BlueStacks e MSI App Player) já estão 100% aplicadas. Não é necessário clicar novamente.');
       return;
     }
 
@@ -1718,9 +1725,11 @@ if (btnGameBooster) {
 
     if (res && res.success) {
       isGameBoosterActive = true;
+      sessionStorage.setItem('game_booster_active', 'true');
       btnGameBooster.disabled = false;
       btnGameBooster.textContent = '✅ Game Booster Ativo';
       btnGameBooster.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+      btnGameBooster.style.boxShadow = '0 0 12px rgba(16, 185, 129, 0.4)';
 
       if (badgeGameBooster) {
         badgeGameBooster.style.display = 'inline';
