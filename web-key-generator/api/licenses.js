@@ -17,18 +17,20 @@ module.exports = async (req, res) => {
     return;
   }
 
+  const isMasterAdmin = user.isAdmin || (user.username && user.username.toLowerCase() === 'gabriel');
+
   if (req.method === 'GET') {
     try {
       const licenses = await getLicenses();
-      const filteredLicenses = user.isAdmin 
-        ? licenses 
+      const filteredLicenses = isMasterAdmin
+        ? licenses
         : licenses.filter(l => l.createdBy && l.createdBy.toLowerCase() === user.username.toLowerCase());
       res.status(200).json({ success: true, licenses: filteredLicenses });
     } catch (e) {
       console.error(e);
       res.status(500).json({ success: false, error: 'Erro interno.' });
     }
-  } 
+  }
   else if (req.method === 'POST') {
     // Sync / Merge licenses from admin client cache
     try {
@@ -37,7 +39,7 @@ module.exports = async (req, res) => {
         let serverLicenses = await getLicenses();
         const map = new Map();
         serverLicenses.forEach(l => map.set(l.key, l));
-        
+
         clientLicenses.forEach(l => {
           if (!map.has(l.key)) {
             map.set(l.key, l);
@@ -55,17 +57,17 @@ module.exports = async (req, res) => {
 
         const merged = Array.from(map.values());
         await saveLicenses(merged);
-        
-        const returnLicenses = user.isAdmin 
-          ? merged 
+
+        const returnLicenses = isMasterAdmin
+          ? merged
           : merged.filter(l => l.createdBy && l.createdBy.toLowerCase() === user.username.toLowerCase());
 
         res.status(200).json({ success: true, licenses: returnLicenses });
         return;
       }
       const licenses = await getLicenses();
-      const returnLicenses = user.isAdmin 
-        ? licenses 
+      const returnLicenses = isMasterAdmin
+        ? licenses
         : licenses.filter(l => l.createdBy && l.createdBy.toLowerCase() === user.username.toLowerCase());
       res.status(200).json({ success: true, licenses: returnLicenses });
     } catch (e) {
@@ -83,10 +85,13 @@ module.exports = async (req, res) => {
         return;
       }
 
+      const cleanSearchKey = key ? key.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
+      const cleanSearchUuid = uuid ? uuid.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() : '';
+
       let licenses = await getLicenses();
       const index = licenses.findIndex(l => {
-        if (key && l.key && l.key.toUpperCase() === key.trim().toUpperCase()) return true;
-        if (uuid && l.uuid && l.uuid.toLowerCase() === uuid.trim().toLowerCase()) return true;
+        if (cleanSearchKey && l.key && l.key.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() === cleanSearchKey) return true;
+        if (cleanSearchUuid && l.uuid && l.uuid.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() === cleanSearchUuid) return true;
         return false;
       });
 
@@ -98,7 +103,7 @@ module.exports = async (req, res) => {
       const lic = licenses[index];
 
       // Non-admins can only renew licenses they created
-      if (!user.isAdmin && lic.createdBy && lic.createdBy.toLowerCase() !== user.username.toLowerCase()) {
+      if (!isMasterAdmin && lic.createdBy && lic.createdBy.toLowerCase() !== user.username.toLowerCase()) {
         res.status(403).json({ success: false, error: 'Você só pode renovar licenças criadas por você.' });
         return;
       }
@@ -124,26 +129,23 @@ module.exports = async (req, res) => {
         newActivationMode = 'temporary';
 
         let durationHours = 0;
-        if (licenseType === 'temp-1h')   durationHours = 1;
-        else if (licenseType === 'temp-2h')  durationHours = 2;
-        else if (licenseType === 'temp-6h')  durationHours = 6;
+        if (licenseType === 'temp-1h') durationHours = 1;
+        else if (licenseType === 'temp-2h') durationHours = 2;
+        else if (licenseType === 'temp-6h') durationHours = 6;
         else if (licenseType === 'temp-12h') durationHours = 12;
         else if (licenseType === 'temp-24h') durationHours = 24;
-        else if (licenseType === 'temp-7d')  durationHours = 7 * 24;
+        else if (licenseType === 'temp-7d') durationHours = 7 * 24;
         else if (licenseType === 'temp-15d') durationHours = 15 * 24;
         else if (licenseType === 'temp-30d') durationHours = 30 * 24;
         else if (licenseType === 'temp-custom-hours') durationHours = parseInt(customVal, 10) || 24;
-        else if (licenseType === 'temp-custom-days')  durationHours = (parseInt(customVal, 10) || 30) * 24;
+        else if (licenseType === 'temp-custom-days') durationHours = (parseInt(customVal, 10) || 30) * 24;
 
         newDurationHours = durationHours;
         newDurationDays = Math.ceil(durationHours / 24);
 
-        // Se a licença já está ativada (tem UUID), a renovação começa agora
-        // Se estiver pendente, o expiresAt será definido apenas ao ativar
         if (lic.uuid && lic.status !== 'pending') {
           newExpiresAt = Date.now() + durationHours * 60 * 60 * 1000;
         } else {
-          // Pendente: calcular a partir de agora para referência, mas será recalculado na ativação
           newExpiresAt = Date.now() + durationHours * 60 * 60 * 1000;
         }
       }
@@ -160,7 +162,7 @@ module.exports = async (req, res) => {
 
       await saveLicenses(licenses);
 
-      const returnLicenses = user.isAdmin
+      const returnLicenses = isMasterAdmin
         ? licenses
         : licenses.filter(l => l.createdBy && l.createdBy.toLowerCase() === user.username.toLowerCase());
 
@@ -182,13 +184,16 @@ module.exports = async (req, res) => {
         return;
       }
 
+      const cleanSearchKey = key ? key.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
+      const cleanSearchUuid = uuid ? uuid.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() : '';
+
       let licenses = await getLicenses();
       const index = licenses.findIndex(l => {
-        if (key && l.key && l.key.toUpperCase() === key.trim().toUpperCase()) return true;
-        if (uuid && l.uuid && l.uuid.toLowerCase() === uuid.trim().toLowerCase()) return true;
+        if (cleanSearchKey && l.key && l.key.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() === cleanSearchKey) return true;
+        if (cleanSearchUuid && l.uuid && l.uuid.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() === cleanSearchUuid) return true;
         return false;
       });
-      
+
       if (index === -1) {
         res.status(404).json({ success: false, error: 'Licença não encontrada.' });
         return;
@@ -197,7 +202,7 @@ module.exports = async (req, res) => {
       const targetLicense = licenses[index];
 
       // Non-admins can only manage licenses they created
-      if (!user.isAdmin && targetLicense.createdBy && targetLicense.createdBy.toLowerCase() !== user.username.toLowerCase()) {
+      if (!isMasterAdmin && targetLicense.createdBy && targetLicense.createdBy.toLowerCase() !== user.username.toLowerCase()) {
         res.status(403).json({ success: false, error: 'Você só pode gerenciar licenças criadas por você.' });
         return;
       }
@@ -228,10 +233,11 @@ module.exports = async (req, res) => {
       console.error(e);
       res.status(500).json({ success: false, error: 'Erro interno.' });
     }
-  } 
+  }
   else {
     res.status(405).json({ success: false, error: 'Method Not Allowed' });
   }
 };
+
 
 
