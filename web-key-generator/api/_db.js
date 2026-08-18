@@ -245,12 +245,82 @@ async function verifyAuth(req) {
   return sessionUser;
 }
 
+const localPlansPath = path.join(os.tmpdir(), 'ffopt_plans.json');
+const localPaymentsPath = path.join(os.tmpdir(), 'ffopt_payments.json');
+
+const MP_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN || 'APP_USR-5617886944307807-020702-33b4180bff7647db4c9c46b73c7132ec-241788776';
+const MP_PUBLIC_KEY = process.env.MERCADOPAGO_PUBLIC_KEY || 'APP_USR-6a6c9dc0-0eeb-48ec-89c5-a513a3194445';
+
+const defaultPlans = [
+  { id: 'temp-1h', name: '⏳ Temporária - 1 Hora (Teste Rápido)', type: 'temporary', durationHours: 1, price: 0.00, isFree: true, enabled: true },
+  { id: 'temp-2h', name: '⏳ Temporária - 2 Horas', type: 'temporary', durationHours: 2, price: 0.00, isFree: true, enabled: true },
+  { id: 'temp-6h', name: '⏳ Temporária - 6 Horas', type: 'temporary', durationHours: 6, price: 5.00, isFree: false, enabled: true },
+  { id: 'temp-12h', name: '⏳ Temporária - 12 Horas', type: 'temporary', durationHours: 12, price: 10.00, isFree: false, enabled: true },
+  { id: 'temp-24h', name: '⏳ Temporária - 24 Horas (1 Dia)', type: 'temporary', durationHours: 24, price: 15.00, isFree: false, enabled: true },
+  { id: 'temp-7d', name: '⏳ Temporária - 7 Dias (Semanal)', type: 'temporary', durationHours: 7 * 24, price: 25.00, isFree: false, enabled: true },
+  { id: 'temp-15d', name: '⏳ Temporária - 15 Dias (Quinzenal)', type: 'temporary', durationHours: 15 * 24, price: 35.00, isFree: false, enabled: true },
+  { id: 'temp-30d', name: '⏳ Temporária - 30 Dias (Mensal)', type: 'temporary', durationHours: 30 * 24, price: 45.00, isFree: false, enabled: true },
+  { id: 'permanent-single', name: '👑 Vitalícia - 1 Ativação Única (Chave Descartável pós-uso)', type: 'permanent-single', durationHours: null, price: 47.99, isFree: false, enabled: true },
+  { id: 'permanent-unlimited', name: '👑 Vitalícia - Reativação Ilimitada no Mesmo PC (UUID Vinculado)', type: 'permanent-unlimited', durationHours: null, price: 60.00, isFree: false, enabled: true },
+  { id: 'temp-custom-hours', name: '⏳ Temporária - Personalizada (em Horas)', type: 'temporary', durationHours: null, price: 20.00, isFree: false, enabled: true },
+  { id: 'temp-custom-days', name: '⏳ Temporária - Personalizada (em Dias)', type: 'temporary', durationHours: null, price: 50.00, isFree: false, enabled: true }
+];
+
+async function getPlans() {
+  const kvData = await kvGet('plans');
+  if (Array.isArray(kvData) && kvData.length > 0) {
+    // Merge any missing default plans
+    const existingIds = new Set(kvData.map(p => p.id));
+    const merged = [...kvData];
+    for (const dp of defaultPlans) {
+      if (!existingIds.has(dp.id)) {
+        merged.push(dp);
+      }
+    }
+    return merged;
+  }
+
+  if (fs.existsSync(localPlansPath)) {
+    try {
+      const fileData = JSON.parse(fs.readFileSync(localPlansPath, 'utf8'));
+      if (Array.isArray(fileData) && fileData.length > 0) return fileData;
+    } catch (e) {}
+  }
+
+  return defaultPlans;
+}
+
+async function savePlans(plans) {
+  await kvSet('plans', plans);
+  try {
+    fs.writeFileSync(localPlansPath, JSON.stringify(plans, null, 2), 'utf8');
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+async function getPayment(paymentId) {
+  return await kvGet(`payment_${paymentId}`);
+}
+
+async function savePayment(paymentId, data) {
+  return await kvSet(`payment_${paymentId}`, data);
+}
+
 module.exports = {
   parseRequestBody,
   getOrInitUsers,
   saveUsers,
   getLicenses,
   saveLicenses,
+  getPlans,
+  savePlans,
+  getPayment,
+  savePayment,
+  defaultPlans,
+  MP_ACCESS_TOKEN,
+  MP_PUBLIC_KEY,
   hashPassword,
   createSessionToken,
   generateActivationKey,

@@ -17,14 +17,20 @@ module.exports = async (req, res) => {
     return;
   }
 
-  // Helper to map and attach sales stats
+  // Helper to map and attach sales stats and limits
   async function getEnrichedUserList() {
     const users = await getOrInitUsers();
     const licenses = await getLicenses();
+    const todayStr = new Date().toISOString().slice(0, 10);
 
     return users.map(u => {
       const userLicenses = licenses.filter(l => l.createdBy && l.createdBy.toLowerCase() === u.username.toLowerCase());
       const activeCount = userLicenses.filter(l => l.status === 'activated' && !(l.licenseType === 'temporary' && l.expiresAt && Date.now() > l.expiresAt)).length;
+
+      let todayUsage = 0;
+      if (u.freeUsageToday && u.freeUsageToday.date === todayStr) {
+        todayUsage = u.freeUsageToday.count || 0;
+      }
 
       return {
         username: u.username,
@@ -33,7 +39,10 @@ module.exports = async (req, res) => {
         createdBy: u.createdBy || 'Master Admin',
         createdAt: u.createdAt || null,
         totalKeys: userLicenses.length,
-        activeKeys: activeCount
+        activeKeys: activeCount,
+        allowedPlans: Array.isArray(u.allowedPlans) ? u.allowedPlans : [],
+        freeDailyLimit: typeof u.freeDailyLimit === 'number' ? u.freeDailyLimit : 5,
+        freeUsageToday: todayUsage
       };
     });
   }
@@ -55,28 +64,65 @@ module.exports = async (req, res) => {
 
     try {
       const body = await parseRequestBody(req);
-      const { action, usernameToUpdate, newPassword, usernameToToggle, newUsername, newIsAdmin, syncUsers } = body;
+      const { action, usernameToUpdate, newPassword, usernameToToggle, newUsername, newIsAdmin, allowedPlans, freeDailyLimit, syncUsers } = body;
 
-      // 1. Ação de Mudar Senha
-      if (action === 'change-password') {
-        if (!usernameToUpdate || !newPassword || newPassword.trim().length < 3) {
-          res.status(400).json({ success: false, error: 'Digite uma senha válida (mínimo 3 caracteres).' });
+      // 0. Ação de Editar Usuário Completo (Cargo, Senha, Planos Permitidos, Limite Diário)
+      if (action === 'edit-user') {
+        if (!usernameToUpdate) {
+          res.status(400).json({ success: false, error: 'Usuário não informado.' });
           return;
         }
 
         let users = await getOrInitUsers();
         const target = users.find(u => u.username.toLowerCase() === usernameToUpdate.trim().toLowerCase());
-
         if (!target) {
           res.status(404).json({ success: false, error: 'Usuário não encontrado.' });
           return;
         }
 
-        target.passwordHash = hashPassword(newPassword.trim());
-        await saveUsers(users);
+        if (body.newIsAdmin !== undefined && usernameToUpdate.trim().toLowerCase() !== 'gabriel') {
+          target.isAdmin = !!body.newIsAdmin;
+        }
 
+        if (newPassword && newPassword.trim().length >= 3) {
+          target.passwordHash = hashPassword(newPassword.trim());
+        }
+
+        if (Array.isArray(allowedPlans)) {
+          target.allowedPlans = allowedPlans;
+        }
+
+        if (freeDailyLimit !== undefined) {
+          target.freeDailyLimit = Math.max(0, parseInt(freeDailyLimit, 10) || 0);
+        }
+
+        await saveUsers(users);
         const userList = await getEnrichedUserList();
-        res.status(200).json({ success: true, message: `Senha do usuário "${target.username}" alterada com sucesso!`, users: userList });
+        res.status(200).json({ success: true, message: `Dados do usuário "${target.username}" atualizados com sucesso!`, users: userList });
+        return;
+      }
+
+      // 1. Ação de Trocar Cargo (Vendedor <-> Administrador)
+      if (action === 'toggle-role') {
+        if (!usernameToToggle) {
+          res.status(400).json({ success: false, error: 'Usuário não informado.' });
+          return;
+        }
+        if (usernameToToggle.trim().toLowerCase() === 'gabriel') {
+          res.status(400).json({ success: false, error: 'O usuário principal (gabriel) não pode ter o cargo alterado.' });
+          return;
+        }
+        let users = await getOrInitUsers();
+        const target = users.find(u => u.username.toLowerCase() === usernameToToggle.trim().toLowerCase());
+        if (!target) {
+          res.status(404).json({ success: false, error: 'Usuário não encontrado.' });
+          return;
+        }
+        target.isAdmin = !target.isAdmin;
+        await saveUsers(users);
+        const newRole = target.isAdmin ? 'Administrador' : 'Vendedor';
+        const userList = await getEnrichedUserList();
+        res.status(200).json({ success: true, message: `Cargo do usuário "${target.username}" alterado para ${newRole}!`, users: userList });
         return;
       }
 
@@ -144,13 +190,18 @@ module.exports = async (req, res) => {
         return;
       }
 
+      const parsedLimit = freeDailyLimit !== undefined ? Math.max(0, parseInt(freeDailyLimit, 10) || 0) : 5;
+
       const newUser = {
         username: newUsername.trim(),
         passwordHash: hashPassword(newPassword.trim()),
         isAdmin: !!newIsAdmin,
         status: 'active',
         createdBy: user.username,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        allowedPlans: Array.isArray(allowedPlans) ? allowedPlans : [],
+        freeDailyLimit: parsedLimit,
+        freeUsageToday: { date: new Date().toISOString().slice(0, 10), count: 0 }
       };
 
       users.push(newUser);

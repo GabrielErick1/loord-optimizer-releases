@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel Admin - FFOptimizer</title>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <title>Painel Admin - Loord Optimizer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,7 +15,7 @@
       <div class="header">
         <span class="logo-badge">🔑 PAINEL ADMINISTRATIVO</span>
         <h1>Loord Optimizer</h1>
-        <p class="desc">Faça login para gerenciar chaves e usuários.</p>
+        <p class="desc">Faça login para gerenciar chaves, vendedores e planos.</p>
       </div>
 
       <div class="form-group">
@@ -61,6 +61,9 @@
         <button class="nav-item" id="nav-users" data-tab="users">
           <span class="nav-icon">👥</span> Gerenciar Usuários
         </button>
+        <button class="nav-item" id="nav-plans" data-tab="plans" style="display: none;">
+          <span class="nav-icon">⚙️</span> Planos & Preços
+        </button>
       </nav>
       
       <div class="sidebar-footer">
@@ -75,6 +78,14 @@
         <h2>Gerador de Keys</h2>
         <p class="subtitle">Gere chaves permanentes (vitalícias) ou temporárias com validade configurável.</p>
         
+        <!-- Vendor Quota Banner -->
+        <div id="vendor-quota-banner" style="display: none; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; font-size: 0.9rem; color: #bae6fd; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <strong>🎁 Cota de Chaves Gratuitas Hoje:</strong> <span id="quota-usage-text">0 de 5 usadas</span>
+          </div>
+          <span id="quota-status-badge" style="background: #0284c7; color: white; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700;">5 Restantes</span>
+        </div>
+
         <div class="card">
           <h3>Geração de Licença</h3>
           
@@ -84,20 +95,9 @@
           </div>
 
           <div class="form-group">
-            <label for="license-type">Tipo de Licença:</label>
+            <label for="license-type">Tipo de Licença / Plano:</label>
             <select id="license-type" style="width: 100%; padding: 12px 14px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); border-radius: 8px; color: white; font-family: inherit; font-size: 0.95rem;">
-              <option value="permanent-unlimited" selected>👑 Vitalícia - Reativação Ilimitada no Mesmo PC (UUID Vinculado)</option>
-              <option value="permanent-single">👑 Vitalícia - 1 Ativação Única (Chave Descartável pós-uso)</option>
-              <option value="temp-1h">⏳ Temporária - 1 Hora (Teste Rápido)</option>
-              <option value="temp-2h">⏳ Temporária - 2 Horas</option>
-              <option value="temp-6h">⏳ Temporária - 6 Horas</option>
-              <option value="temp-12h">⏳ Temporária - 12 Horas</option>
-              <option value="temp-24h">⏳ Temporária - 24 Horas (1 Dia)</option>
-              <option value="temp-7d">⏳ Temporária - 7 Dias (Semanal)</option>
-              <option value="temp-15d">⏳ Temporária - 15 Dias (Quinzenal)</option>
-              <option value="temp-30d">⏳ Temporária - 30 Dias (Mensal)</option>
-              <option value="temp-custom-hours">⏳ Temporária - Personalizada (em Horas)</option>
-              <option value="temp-custom-days">⏳ Temporária - Personalizada (em Dias)</option>
+              <!-- Preenchido dinamicamente via JS com os planos ativos e preços -->
             </select>
           </div>
 
@@ -106,10 +106,9 @@
             <input type="number" id="custom-val" placeholder="Ex: 3" min="1" max="1000" value="1">
           </div>
 
-
           <div class="form-group">
             <label for="client-uuid">UUID do Cliente (Opcional se for gerar chave avulsa):</label>
-            <input type="text" id="client-uuid" placeholder="Cole o UUID do cliente ou deixe em branco para chave pré-paga" autocomplete="off">
+            <input type="text" id="client-uuid" placeholder="Cole o UUID do cliente ou deixe em branco para chave avulsa" autocomplete="off">
           </div>
 
           <button id="btn-generate" class="btn btn-primary">⚡ Gerar Chave de Ativação</button>
@@ -209,7 +208,7 @@
       <!-- TAB: MANAGE USERS -->
       <section id="tab-users" class="tab-content">
         <h2>Gerenciar Usuários & Vendedores</h2>
-        <p class="subtitle">Crie novos acessos, altere senhas, inative ou ative vendedores e acompanhe as vendas de cada um.</p>
+        <p class="subtitle">Crie novos acessos, defina limites de chaves gratuitas, selecione quais planos o vendedor pode criar e altere senhas.</p>
         
         <div class="users-grid">
           <!-- Create User Form -->
@@ -225,13 +224,29 @@
             </div>
             <div class="form-group checkbox-row">
               <input type="checkbox" id="new-is-admin">
-              <label for="new-is-admin" style="display: inline; margin: 0; text-transform: none; letter-spacing: 0;">Privilégios de Administrador (Acesso total)</label>
+              <label for="new-is-admin" style="display: inline; margin: 0; text-transform: none; letter-spacing: 0; font-weight: 700; color: #a5b4fc;">👑 Privilégios de Administrador (Acesso total)</label>
+            </div>
+
+            <!-- Vendedor Settings -->
+            <div id="new-vendor-options" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;">
+              <div class="form-group">
+                <label for="new-free-limit">🎁 Limite Diário de Chaves Gratuitas (Ex: 5/dia):</label>
+                <input type="number" id="new-free-limit" value="5" min="0" max="100" placeholder="Ex: 5">
+                <small style="color: #94a3b8; font-size: 0.75rem;">Quantidade máxima de testes gratuitos que este vendedor pode gerar por dia.</small>
+              </div>
+
+              <div class="form-group" style="margin-top: 12px;">
+                <label style="margin-bottom: 6px;">🎯 Planos Permitidos para este Vendedor:</label>
+                <div id="new-vendor-plans-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px;">
+                  <!-- Checkboxes gerados dinamicamente via JS -->
+                </div>
+              </div>
             </div>
             
             <div id="create-user-error" class="error-text" style="display: none; margin-bottom: 12px;"></div>
             <div id="create-user-success" class="success-text" style="display: none; margin-bottom: 12px;">✔️ Usuário criado com sucesso!</div>
 
-            <button id="btn-create-user" class="btn btn-primary">➕ Cadastrar Usuário</button>
+            <button id="btn-create-user" class="btn btn-primary" style="margin-top: 10px;">➕ Cadastrar Usuário</button>
           </div>
 
           <!-- Users List -->
@@ -239,7 +254,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
               <div>
                 <h3>Usuários & Vendedores Cadastrados</h3>
-                <p style="font-size: 0.8rem; color: var(--text-gray); margin-top: 2px;">Altere senhas, inative/ative acessos ou exclua vendedores.</p>
+                <p style="font-size: 0.8rem; color: var(--text-gray); margin-top: 2px;">Altere senhas, limites de chaves gratuitas, permissões de planos ou inative acessos.</p>
               </div>
               <button id="btn-refresh-users" class="btn btn-primary" style="padding: 4px 10px; font-size: 0.75rem;">🔄 Atualizar</button>
             </div>
@@ -250,7 +265,7 @@
                     <th>Usuário</th>
                     <th>Cargo</th>
                     <th>Status</th>
-                    <th>Criado Por</th>
+                    <th>Limite Grátis</th>
                     <th>Keys (Vendas)</th>
                     <th>Criação</th>
                     <th>Ações</th>
@@ -264,7 +279,152 @@
           </div>
         </div>
       </section>
+
+      <!-- TAB: PLANS & PRICING (ADMIN ONLY) -->
+      <section id="tab-plans" class="tab-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h2>⚙️ Tabela de Planos & Preços (Mercado Pago)</h2>
+            <p class="subtitle">Defina o valor em R$ de cada plano, ative/desative planos do sistema e configure se são gratuitos (testes) ou pagos para vendedores.</p>
+          </div>
+          <button id="btn-save-plans" class="btn btn-primary" style="padding: 10px 22px; font-size: 0.95rem; font-weight: 800;">💾 Salvar Tabela de Preços</button>
+        </div>
+
+        <div class="card">
+          <div class="table-container">
+            <table class="users-table">
+              <thead>
+                <tr>
+                  <th style="width: 80px; text-align: center;">Ativo?</th>
+                  <th>Plano</th>
+                  <th>Duração</th>
+                  <th style="width: 140px;">Preço (R$)</th>
+                  <th>Tipo de Cobrança</th>
+                </tr>
+              </thead>
+              <tbody id="plans-list-body">
+                <!-- JS injects rows -->
+              </tbody>
+            </table>
+          </div>
+          <div id="plans-save-msg" style="margin-top: 15px; font-size: 0.9rem; font-weight: 700; min-height: 22px;"></div>
+        </div>
+      </section>
     </main>
+  </div>
+
+  <!-- Modal: Editar Usuário -->
+  <div id="edit-user-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#0f172a; border:1px solid rgba(99,102,241,0.35); border-radius:16px; padding:28px; width:460px; max-width:92vw; box-shadow:0 25px 60px rgba(0,0,0,0.6); position:relative; max-height: 90vh; overflow-y: auto;">
+      <button onclick="closeEditModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#64748b;font-size:1.4rem;cursor:pointer;line-height:1;" title="Fechar">✕</button>
+      <h3 style="margin:0 0 6px 0; font-size:1.15rem; color:#e2e8f0;">✏️ Editar Usuário</h3>
+      <p id="edit-modal-username-label" style="margin:0 0 18px 0; font-size:0.85rem; color:#64748b;"></p>
+
+      <!-- Cargo -->
+      <div style="margin-bottom:16px;">
+        <label style="display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8; margin-bottom:8px;">Cargo</label>
+        <div style="display:flex; gap:10px;">
+          <button id="btn-role-vendedor" onclick="setModalRole(false)" style="flex:1; padding:10px; border-radius:8px; border:2px solid transparent; background:rgba(56,189,248,0.1); color:#38bdf8; font-weight:700; cursor:pointer; transition:all 0.2s;">👤 Vendedor</button>
+          <button id="btn-role-admin" onclick="setModalRole(true)" style="flex:1; padding:10px; border-radius:8px; border:2px solid transparent; background:rgba(99,102,241,0.1); color:#818cf8; font-weight:700; cursor:pointer; transition:all 0.2s;">👑 Administrador</button>
+        </div>
+      </div>
+
+      <!-- Nova Senha -->
+      <div style="margin-bottom:14px;">
+        <label for="edit-modal-new-password" style="display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8; margin-bottom:6px;">Nova Senha <span style="color:#64748b;font-weight:400;text-transform:none;">(deixe vazio para não alterar)</span></label>
+        <input type="password" id="edit-modal-new-password" placeholder="Digite a nova senha..." style="width:100%; box-sizing:border-box; padding:10px 14px; background:rgba(0,0,0,0.4); border:1px solid rgba(99,102,241,0.25); border-radius:8px; color:white; font-family:inherit; font-size:0.95rem;">
+      </div>
+
+      <!-- Opções exclusivas de Vendedor -->
+      <div id="edit-vendor-options" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px; margin-bottom: 14px;">
+        <div style="margin-bottom:12px;">
+          <label for="edit-modal-free-limit" style="display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8; margin-bottom:6px;">🎁 Limite Diário de Chaves Gratuitas:</label>
+          <input type="number" id="edit-modal-free-limit" min="0" max="100" style="width:100%; box-sizing:border-box; padding:10px 14px; background:rgba(0,0,0,0.4); border:1px solid rgba(99,102,241,0.25); border-radius:8px; color:white; font-family:inherit; font-size:0.95rem;">
+        </div>
+
+        <div>
+          <label style="display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8; margin-bottom:6px;">🎯 Planos Permitidos para este Vendedor:</label>
+          <div id="edit-modal-plans-list" style="display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px;">
+            <!-- Gerado via JS -->
+          </div>
+        </div>
+      </div>
+
+      <div id="edit-modal-msg" style="margin:10px 0 0 0; font-size:0.85rem; min-height:20px;"></div>
+
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button onclick="closeEditModal()" style="flex:1; padding:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#94a3b8; font-weight:600; cursor:pointer;">Cancelar</button>
+        <button id="btn-save-edit" onclick="saveUserEdit()" style="flex:2; padding:12px; background:linear-gradient(135deg,#6366f1,#4f46e5); border:none; border-radius:8px; color:white; font-weight:700; cursor:pointer; font-size:0.95rem;">💾 Salvar Alterações</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Renovar Licença -->
+  <div id="renew-license-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(7px); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#0f172a; border:1px solid rgba(245,158,11,0.35); border-radius:16px; padding:32px; width:460px; max-width:93vw; box-shadow:0 25px 60px rgba(0,0,0,0.65); position:relative;">
+      <button onclick="closeRenewModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#64748b;font-size:1.4rem;cursor:pointer;line-height:1;" title="Fechar">✕</button>
+      <h3 style="margin:0 0 4px 0; font-size:1.15rem; color:#f59e0b;">🔄 Renovar Licença</h3>
+      <p id="renew-modal-key-label" style="margin:0 0 20px 0; font-size:0.8rem; color:#64748b; font-family:monospace;"></p>
+
+      <!-- Tipo de Licença -->
+      <div style="margin-bottom:16px;">
+        <label style="display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8; margin-bottom:8px;">Novo Tipo de Licença</label>
+        <select id="renew-license-type" style="width:100%; padding:12px 14px; background:rgba(0,0,0,0.4); border:1px solid rgba(245,158,11,0.3); border-radius:8px; color:white; font-family:inherit; font-size:0.9rem;">
+          <!-- Preenchido dinamicamente via JS -->
+        </select>
+      </div>
+
+      <!-- Campo personalizado -->
+      <div id="renew-custom-val-container" style="display:none; margin-bottom:16px;">
+        <label id="renew-custom-val-label" for="renew-custom-val" style="display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8; margin-bottom:8px;">Quantidade:</label>
+        <input type="number" id="renew-custom-val" min="1" max="8760" value="30" style="width:100%; box-sizing:border-box; padding:12px 14px; background:rgba(0,0,0,0.4); border:1px solid rgba(245,158,11,0.25); border-radius:8px; color:white; font-family:inherit; font-size:0.95rem;">
+      </div>
+
+      <div id="renew-modal-msg" style="margin:10px 0 0 0; font-size:0.85rem; min-height:20px;"></div>
+
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button onclick="closeRenewModal()" style="flex:1; padding:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#94a3b8; font-weight:600; cursor:pointer;">Cancelar</button>
+        <button id="btn-confirm-renew" onclick="confirmRenew()" style="flex:2; padding:12px; background:linear-gradient(135deg,#f59e0b,#d97706); border:none; border-radius:8px; color:#0f172a; font-weight:800; cursor:pointer; font-size:0.95rem;">🔄 Confirmar Renovação</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Pagamento PIX Mercado Pago (Para Vendedor) -->
+  <div id="pix-payment-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); z-index:99999; align-items:center; justify-content:center;">
+    <div style="background:#0f172a; border:2px solid #009ee3; border-radius:20px; padding:30px; width:480px; max-width:94vw; box-shadow:0 0 50px rgba(0,158,227,0.35); text-align:center; position:relative;">
+      <button onclick="closePixModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#64748b;font-size:1.4rem;cursor:pointer;" title="Fechar">✕</button>
+      
+      <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:4px;">
+        <span style="font-size:1.6rem;">💠</span>
+        <h3 style="margin:0; font-size:1.25rem; color:#009ee3; font-weight:800;">Pagamento PIX Mercado Pago</h3>
+      </div>
+      <p style="margin:0 0 16px 0; font-size:0.85rem; color:#94a3b8;">Efetue o pagamento do PIX para liberar a chave automaticamente.</p>
+
+      <div style="background:rgba(0,158,227,0.1); border:1px solid rgba(0,158,227,0.3); border-radius:12px; padding:12px 16px; margin-bottom:16px;">
+        <div id="pix-plan-name" style="font-weight:700; color:#e2e8f0; font-size:0.95rem;">Plano: Vitalícia</div>
+        <div id="pix-plan-price" style="font-size:1.8rem; font-weight:900; color:#00e676; margin-top:4px;">R$ 47,99</div>
+      </div>
+
+      <!-- QR Code Image -->
+      <div style="background:white; padding:12px; border-radius:12px; display:inline-block; margin-bottom:14px; box-shadow:0 4px 15px rgba(0,0,0,0.4);">
+        <img id="pix-qr-img" src="" alt="QR Code Pix" style="width:190px; height:190px; display:block; margin:0 auto;">
+      </div>
+
+      <!-- Pix Copia e Cola -->
+      <div style="margin-bottom:16px; text-align:left;">
+        <label style="font-size:0.75rem; text-transform:uppercase; color:#94a3b8; font-weight:700; display:block; margin-bottom:6px;">Pix Copia e Cola:</label>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="pix-copy-paste-input" readonly style="flex:1; padding:10px 12px; background:rgba(0,0,0,0.5); border:1px solid rgba(0,158,227,0.3); border-radius:8px; color:#cbd5e1; font-size:0.8rem; font-family:monospace;">
+          <button id="btn-copy-pix" onclick="copyPixCode()" class="btn btn-primary" style="background:#009ee3; font-weight:700; font-size:0.85rem; padding:0 14px; white-space:nowrap;">📋 Copiar</button>
+        </div>
+      </div>
+
+      <div id="pix-status-badge" style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:0.9rem; font-weight:700; color:#fbbf24; margin-bottom:10px;">
+        <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#fbbf24; animation:pulse 1.5s infinite;"></span> Aguardando pagamento via PIX...
+      </div>
+
+      <p style="font-size:0.75rem; color:#64748b; margin:0;">A aprovação é instantânea. Não feche esta janela até a confirmação.</p>
+    </div>
   </div>
 
   <script src="script.js"></script>

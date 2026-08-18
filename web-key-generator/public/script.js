@@ -11,6 +11,7 @@ const loginError = document.getElementById('login-error');
 const displayUsername = document.getElementById('display-username');
 const displayRole = document.getElementById('display-role');
 const navUsers = document.getElementById('nav-users');
+const navPlans = document.getElementById('nav-plans');
 const btnLogout = document.getElementById('btn-logout');
 
 const navItems = document.querySelectorAll('.nav-item');
@@ -20,13 +21,17 @@ const tabContents = document.querySelectorAll('.tab-content');
 const clientNameInput = document.getElementById('client-name');
 const clientUuidInput = document.getElementById('client-uuid');
 const licenseTypeSelect = document.getElementById('license-type');
-const customDaysContainer = document.getElementById('custom-days-container');
-const customDaysInput = document.getElementById('custom-days');
+const customValContainer = document.getElementById('custom-val-container');
+const customValLabel = document.getElementById('custom-val-label');
+const customValInput = document.getElementById('custom-val');
 const btnGenerate = document.getElementById('btn-generate');
 const resultBox = document.getElementById('result-box');
 const keyOutput = document.getElementById('key-output');
 const resultDetails = document.getElementById('result-details');
 const btnCopy = document.getElementById('btn-copy');
+const vendorQuotaBanner = document.getElementById('vendor-quota-banner');
+const quotaUsageText = document.getElementById('quota-usage-text');
+const quotaStatusBadge = document.getElementById('quota-status-badge');
 
 // Aba de Licenças
 const licensesListBody = document.getElementById('licenses-list-body');
@@ -38,17 +43,35 @@ const filterSellerSelect = document.getElementById('filter-seller');
 const newUsernameInput = document.getElementById('new-username');
 const newPasswordInput = document.getElementById('new-password');
 const newIsAdminCheckbox = document.getElementById('new-is-admin');
+const newFreeLimitInput = document.getElementById('new-free-limit');
+const newVendorOptions = document.getElementById('new-vendor-options');
+const newVendorPlansList = document.getElementById('new-vendor-plans-list');
 const btnCreateUser = document.getElementById('btn-create-user');
 const btnRefreshUsers = document.getElementById('btn-refresh-users');
 const createUserError = document.getElementById('create-user-error');
 const createUserSuccess = document.getElementById('create-user-success');
 const usersListBody = document.getElementById('users-list-body');
 
+// Aba de Planos & Preços (Admin)
+const plansListBody = document.getElementById('plans-list-body');
+const btnSavePlans = document.getElementById('btn-save-plans');
+const plansSaveMsg = document.getElementById('plans-save-msg');
+
+// Modal PIX Mercado Pago
+const pixPaymentModal = document.getElementById('pix-payment-modal');
+const pixPlanName = document.getElementById('pix-plan-name');
+const pixPlanPrice = document.getElementById('pix-plan-price');
+const pixQrImg = document.getElementById('pix-qr-img');
+const pixCopyPasteInput = document.getElementById('pix-copy-paste-input');
+const pixStatusBadge = document.getElementById('pix-status-badge');
+
 let userToken = localStorage.getItem('admin_token');
 let currentLoadedLicenses = [];
 let currentLoadedUsers = [];
+let currentLoadedPlans = [];
+let activePixPollTimer = null;
 
-// Helper para escapar HTML e evitar injeções
+// Helper para escapar HTML
 function escapeHtml(text) {
   if (!text) return '';
   return String(text)
@@ -59,122 +82,51 @@ function escapeHtml(text) {
     .replace(/'/g, "&#039;");
 }
 
-// Toggle Custom Days container
-if (licenseTypeSelect) {
-  licenseTypeSelect.addEventListener('change', () => {
-    if (licenseTypeSelect.value === 'temporary-custom') {
-      customDaysContainer.style.display = 'block';
-    } else {
-      customDaysContainer.style.display = 'none';
-    }
-  });
-}
-
-if (btnRefreshLicenses) {
-  btnRefreshLicenses.addEventListener('click', () => {
-    loadLicenses();
-  });
-}
-
-if (btnRefreshUsers) {
-  btnRefreshUsers.addEventListener('click', () => {
-    loadUsers();
-  });
-}
-
-if (searchLicensesInput) {
-  searchLicensesInput.addEventListener('input', () => {
-    renderLicensesTable(currentLoadedLicenses);
-  });
-}
-
-if (filterSellerSelect) {
-  filterSellerSelect.addEventListener('change', () => {
-    renderLicensesTable(currentLoadedLicenses);
-  });
-}
-
 // Local cache storage helpers
 function getLocalLicensesCache() {
-  try {
-    return JSON.parse(localStorage.getItem('admin_licenses_cache') || '[]');
-  } catch (e) {
-    return [];
-  }
+  try { return JSON.parse(localStorage.getItem('admin_licenses_cache') || '[]'); } catch (e) { return []; }
 }
-
 function saveLocalLicensesCache(licenses) {
-  try {
-    localStorage.setItem('admin_licenses_cache', JSON.stringify(licenses));
-  } catch (e) {}
+  try { localStorage.setItem('admin_licenses_cache', JSON.stringify(licenses)); } catch (e) {}
 }
 
 function getLocalUsersCache() {
-  try {
-    return JSON.parse(localStorage.getItem('admin_users_cache') || '[]');
-  } catch (e) {
-    return [];
-  }
+  try { return JSON.parse(localStorage.getItem('admin_users_cache') || '[]'); } catch (e) { return []; }
 }
-
 function saveLocalUsersCache(users) {
-  try {
-    localStorage.setItem('admin_users_cache', JSON.stringify(users));
-  } catch (e) {}
+  try { localStorage.setItem('admin_users_cache', JSON.stringify(users)); } catch (e) {}
 }
 
-// Atualizar Dropdown de Vendedores
-function updateSellerDropdown(licenses, users) {
-  if (!filterSellerSelect) return;
-  const currentVal = filterSellerSelect.value;
-  const sellers = new Set();
-  
-  if (Array.isArray(users)) {
-    users.forEach(u => sellers.add(u.username));
-  }
-  if (Array.isArray(licenses)) {
-    licenses.forEach(l => {
-      if (l.createdBy) sellers.add(l.createdBy);
-    });
-  }
-
-  filterSellerSelect.innerHTML = '<option value="">👤 Todos os Vendedores</option>';
-  Array.from(sellers).sort().forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s.toLowerCase();
-    opt.textContent = `👤 ${s}`;
-    if (currentVal && currentVal.toLowerCase() === s.toLowerCase()) {
-      opt.selected = true;
-    }
-    filterSellerSelect.appendChild(opt);
-  });
-}
-
-// Monitor de Abas
+// Navegação de Abas
 navItems.forEach(item => {
   item.addEventListener('click', () => {
-    navItems.forEach(nav => nav.classList.remove('active'));
-    tabContents.forEach(content => content.classList.remove('active'));
+    const tabName = item.getAttribute('data-tab');
+    if (!tabName) return;
+
+    navItems.forEach(i => i.classList.remove('active'));
+    tabContents.forEach(c => c.classList.remove('active'));
 
     item.classList.add('active');
-    const tabId = `tab-${item.getAttribute('data-tab')}`;
-    const targetTab = document.getElementById(tabId);
-    if (targetTab) targetTab.classList.add('active');
+    const target = document.getElementById(`tab-${tabName}`);
+    if (target) target.classList.add('active');
 
-    if (item.getAttribute('data-tab') === 'users') {
-      loadUsers();
-    } else if (item.getAttribute('data-tab') === 'licenses') {
-      loadLicenses();
-    }
+    if (tabName === 'licenses') loadLicenses();
+    if (tabName === 'users') loadUsers();
+    if (tabName === 'plans') loadPlans();
+    if (tabName === 'generator') loadPlans();
   });
 });
 
-// Ações do Login
+// Ação de Login
 btnLogin.addEventListener('click', async () => {
   const username = loginUsernameInput.value.trim();
-  const password = loginPasswordInput.value;
+  const password = loginPasswordInput.value.trim();
 
-  if (!username || !password) return;
+  if (!username || !password) {
+    loginError.textContent = '❌ Preencha todos os campos.';
+    loginError.style.display = 'block';
+    return;
+  }
 
   btnLogin.disabled = true;
   btnLogin.textContent = 'Entrando...';
@@ -189,18 +141,17 @@ btnLogin.addEventListener('click', async () => {
     const data = await res.json();
 
     if (data.success) {
-      const isMaster = (data.username && data.username.toLowerCase() === 'gabriel') || data.isAdmin === true;
+      userToken = data.token;
       localStorage.setItem('admin_token', data.token);
       localStorage.setItem('admin_username', data.username);
-      localStorage.setItem('admin_is_admin', isMaster ? 'true' : 'false');
-      userToken = data.token;
-      initDashboard(data.username, isMaster);
+      localStorage.setItem('admin_is_admin', data.isAdmin);
+
+      initDashboard(data.username, data.isAdmin);
     } else {
-      loginError.textContent = `❌ ${data.error || 'Erro ao fazer login.'}`;
+      loginError.textContent = `❌ ${data.error || 'Credenciais inválidas.'}`;
       loginError.style.display = 'block';
     }
   } catch (e) {
-    console.error(e);
     loginError.textContent = '❌ Erro de conexão com o servidor.';
     loginError.style.display = 'block';
   } finally {
@@ -209,33 +160,36 @@ btnLogin.addEventListener('click', async () => {
   }
 });
 
-// Iniciar visualização do Dashboard
-function initDashboard(username, isAdmin) {
-  const isMaster = (username && username.toLowerCase() === 'gabriel') || isAdmin === true;
+// Ação de Logout
+btnLogout.addEventListener('click', () => {
+  userToken = null;
+  localStorage.removeItem('admin_token');
+  localStorage.removeItem('admin_username');
+  localStorage.removeItem('admin_is_admin');
+  if (activePixPollTimer) clearInterval(activePixPollTimer);
+  location.reload();
+});
 
+// Inicialização do Dashboard
+function initDashboard(username, isAdmin) {
   loginContainer.style.display = 'none';
   dashboardContainer.style.display = 'flex';
+
   displayUsername.textContent = username;
-  displayRole.textContent = isMaster ? 'Administrador Master' : 'Vendedor / Colaborador';
-  
-  if (navUsers) {
-    navUsers.style.display = isMaster ? 'flex' : 'none';
+  const isMaster = (username.toLowerCase() === 'gabriel') || isAdmin;
+  displayRole.textContent = isMaster ? '👑 Administrador' : '👤 Vendedor';
+
+  if (isMaster) {
+    if (navUsers) navUsers.style.display = 'flex';
+    if (navPlans) navPlans.style.display = 'flex';
+  } else {
+    if (navUsers) navUsers.style.display = 'none';
+    if (navPlans) navPlans.style.display = 'none';
   }
 
-  // Resetar abas para o gerador por padrão
-  navItems.forEach(nav => nav.classList.remove('active'));
-  tabContents.forEach(content => content.classList.remove('active'));
-  document.querySelector('[data-tab="generator"]').classList.add('active');
-  document.getElementById('tab-generator').classList.add('active');
-  
-  clientNameInput.value = '';
-  clientUuidInput.value = '';
-  resultBox.style.display = 'none';
-  
+  loadPlans();
   loadLicenses();
-  if (isMaster) {
-    loadUsers();
-  }
+  if (isMaster) loadUsers();
 }
 
 // Auto-login se já tiver token
@@ -247,33 +201,245 @@ function initDashboard(username, isAdmin) {
   }
 })();
 
-const customValContainer = document.getElementById('custom-val-container');
-const customValLabel = document.getElementById('custom-val-label');
-const customValInput = document.getElementById('custom-val');
+// Carregar Planos do Servidor
+async function loadPlans() {
+  if (!userToken) return;
+
+  try {
+    const res = await fetch(`${API_URL}/api/plans`, {
+      headers: { 'Authorization': `Bearer ${userToken}` }
+    });
+    const data = await res.json();
+
+    if (data.success && Array.isArray(data.plans)) {
+      currentLoadedPlans = data.plans;
+
+      // 1. Atualiza dropdown do gerador de keys
+      renderPlanSelectOptions(data.plans);
+
+      // 2. Atualiza quota do vendedor se aplicável
+      if (!data.isAdmin && vendorQuotaBanner) {
+        vendorQuotaBanner.style.display = 'flex';
+        quotaUsageText.textContent = `${data.freeUsageToday || 0} de ${data.freeDailyLimit || 5} chaves de teste usadas`;
+        quotaStatusBadge.textContent = `${data.freeRemainingToday || 0} Restantes Hoje`;
+        quotaStatusBadge.style.background = (data.freeRemainingToday > 0) ? '#0284c7' : '#ef4444';
+      } else if (vendorQuotaBanner) {
+        vendorQuotaBanner.style.display = 'none';
+      }
+
+      // 3. Atualiza tabela de planos para o Admin
+      if (data.isAdmin && plansListBody) {
+        renderPlansAdminTable(data.plans);
+      }
+
+      // 4. Atualiza checkboxes de planos no form de cadastro de vendedor
+      renderNewVendorPlanCheckboxes(data.plans);
+    }
+  } catch (e) {
+    console.error('Erro ao carregar planos:', e);
+  }
+}
+
+// Renderiza opções do Select no Gerador
+function renderPlanSelectOptions(plans) {
+  if (!licenseTypeSelect) return;
+  const currentVal = licenseTypeSelect.value;
+  licenseTypeSelect.innerHTML = '';
+
+  plans.forEach(plan => {
+    if (!plan.enabled) return;
+    const opt = document.createElement('option');
+    opt.value = plan.id;
+    
+    let priceLabel = 'Grátis';
+    if (plan.price > 0) {
+      priceLabel = `R$ ${Number(plan.price).toFixed(2).replace('.', ',')}`;
+    }
+
+    opt.textContent = `${plan.name} — [${priceLabel}]`;
+    licenseTypeSelect.appendChild(opt);
+  });
+
+  if (currentVal && plans.some(p => p.id === currentVal && p.enabled)) {
+    licenseTypeSelect.value = currentVal;
+  }
+}
 
 // Exibir campo customizado quando selecionar personalizado
-licenseTypeSelect.addEventListener('change', () => {
-  const val = licenseTypeSelect.value;
-  if (val === 'temp-custom-hours') {
-    customValContainer.style.display = 'block';
-    customValLabel.textContent = 'Horas de Validade:';
-    customValInput.placeholder = 'Ex: 3';
-    customValInput.value = '3';
-    customValInput.min = '1';
-    customValInput.max = '8760';
-  } else if (val === 'temp-custom-days') {
-    customValContainer.style.display = 'block';
-    customValLabel.textContent = 'Dias de Validade:';
-    customValInput.placeholder = 'Ex: 45';
-    customValInput.value = '45';
-    customValInput.min = '1';
-    customValInput.max = '365';
-  } else {
-    customValContainer.style.display = 'none';
-  }
-});
+if (licenseTypeSelect) {
+  licenseTypeSelect.addEventListener('change', () => {
+    const val = licenseTypeSelect.value;
+    if (val === 'temp-custom-hours') {
+      customValContainer.style.display = 'block';
+      customValLabel.textContent = 'Horas de Validade:';
+      customValInput.placeholder = 'Ex: 3';
+      customValInput.value = '3';
+      customValInput.min = '1';
+      customValInput.max = '8760';
+    } else if (val === 'temp-custom-days') {
+      customValContainer.style.display = 'block';
+      customValLabel.textContent = 'Dias de Validade:';
+      customValInput.placeholder = 'Ex: 45';
+      customValInput.value = '45';
+      customValInput.min = '1';
+      customValInput.max = '365';
+    } else {
+      customValContainer.style.display = 'none';
+    }
+  });
+}
 
-// Ação de Gerar Key
+// Renderiza Tabela de Planos para o Administrador
+function renderPlansAdminTable(plans) {
+  if (!plansListBody) return;
+  plansListBody.innerHTML = '';
+
+  plans.forEach(plan => {
+    const tr = document.createElement('tr');
+    tr.setAttribute('data-plan-id', plan.id);
+
+    const isChecked = plan.enabled ? 'checked' : '';
+    const isFree = plan.price <= 0;
+
+    let durationText = 'Vitalícia';
+    if (plan.durationHours) {
+      if (plan.durationHours >= 24 && plan.durationHours % 24 === 0) {
+        durationText = `${plan.durationHours / 24} Dia(s)`;
+      } else {
+        durationText = `${plan.durationHours} Hora(s)`;
+      }
+    } else if (plan.id === 'temp-custom-hours') {
+      durationText = 'Personalizada (Horas)';
+    } else if (plan.id === 'temp-custom-days') {
+      durationText = 'Personalizada (Dias)';
+    }
+
+    tr.innerHTML = `
+      <td style="text-align: center;">
+        <input type="checkbox" class="plan-toggle-active" ${isChecked} style="width: 18px; height: 18px; cursor: pointer;">
+      </td>
+      <td style="font-weight: 700; color: #f8fafc;">
+        ${escapeHtml(plan.name)}
+      </td>
+      <td>
+        <span style="font-size: 0.8rem; color: #94a3b8; font-family: monospace;">${escapeHtml(plan.id)}</span>
+      </td>
+      <td>
+        <span style="background: rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 6px; font-size: 0.85rem;">${durationText}</span>
+      </td>
+      <td>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <span style="color: #94a3b8; font-size: 0.85rem;">R$</span>
+          <input type="number" class="plan-price-input" step="0.01" min="0" value="${Number(plan.price || 0).toFixed(2)}" style="width: 90px; padding: 6px 10px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #00e676; font-weight: 700; font-size: 0.9rem;">
+        </div>
+      </td>
+      <td>
+        <span class="badge-cob" style="padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; background: ${isFree ? 'rgba(56,189,248,0.15)' : 'rgba(16,185,129,0.15)'}; color: ${isFree ? '#38bdf8' : '#10b981'};">
+          ${isFree ? '🎁 Gratuita (Teste)' : '💳 Paga (PIX)'}
+        </span>
+      </td>
+    `;
+    plansListBody.appendChild(tr);
+  });
+}
+
+// Salvar Tabela de Planos e Preços
+if (btnSavePlans) {
+  btnSavePlans.addEventListener('click', async () => {
+    btnSavePlans.disabled = true;
+    btnSavePlans.textContent = 'Salvando...';
+    plansSaveMsg.textContent = '';
+
+    const rows = plansListBody.querySelectorAll('tr[data-plan-id]');
+    const updatedPlans = [];
+
+    rows.forEach(tr => {
+      const planId = tr.getAttribute('data-plan-id');
+      const origPlan = currentLoadedPlans.find(p => p.id === planId) || {};
+      const activeInput = tr.querySelector('.plan-toggle-active');
+      const priceInput = tr.querySelector('.plan-price-input');
+
+      const priceVal = Math.max(0, parseFloat(priceInput.value) || 0);
+      const enabledVal = activeInput ? activeInput.checked : true;
+
+      updatedPlans.push({
+        ...origPlan,
+        id: planId,
+        price: priceVal,
+        isFree: priceVal <= 0,
+        enabled: enabledVal
+      });
+    });
+
+    try {
+      const res = await fetch(`${API_URL}/api/plans`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userToken}`
+        },
+        body: JSON.stringify({ plans: updatedPlans })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        plansSaveMsg.style.color = '#10b981';
+        plansSaveMsg.textContent = '✔️ Tabela de preços e status dos planos salva com sucesso!';
+        currentLoadedPlans = data.plans;
+        renderPlansAdminTable(data.plans);
+        renderPlanSelectOptions(data.plans);
+      } else {
+        plansSaveMsg.style.color = '#ef4444';
+        plansSaveMsg.textContent = `❌ ${data.error || 'Erro ao salvar planos.'}`;
+      }
+    } catch (e) {
+      plansSaveMsg.style.color = '#ef4444';
+      plansSaveMsg.textContent = '❌ Erro de conexão ao salvar planos.';
+    } finally {
+      btnSavePlans.disabled = false;
+      btnSavePlans.textContent = '💾 Salvar Tabela de Preços';
+    }
+  });
+}
+
+// Renderiza Checkboxes de Planos para Novo Vendedor
+function renderNewVendorPlanCheckboxes(plans) {
+  if (!newVendorPlansList) return;
+  newVendorPlansList.innerHTML = '';
+
+  plans.forEach(p => {
+    const div = document.createElement('div');
+    div.style.display = 'flex';
+    div.style.alignItems = 'center';
+    div.style.gap = '8px';
+    div.style.fontSize = '0.85rem';
+    div.style.color = '#e2e8f0';
+
+    div.innerHTML = `
+      <input type="checkbox" id="new-plan-${p.id}" value="${p.id}" checked style="cursor: pointer;">
+      <label for="new-plan-${p.id}" style="cursor: pointer; margin: 0; text-transform: none; letter-spacing: 0;">
+        ${escapeHtml(p.name)} <span style="color: #94a3b8; font-size: 0.75rem;">(${p.price > 0 ? 'R$ ' + p.price.toFixed(2).replace('.', ',') : 'Grátis'})</span>
+      </label>
+    `;
+    newVendorPlansList.appendChild(div);
+  });
+}
+
+// Esconde opções de vendedor se marcar Administrador no cadastro
+if (newIsAdminCheckbox) {
+  newIsAdminCheckbox.addEventListener('change', () => {
+    if (newIsAdminCheckbox.checked) {
+      if (newVendorOptions) newVendorOptions.style.display = 'none';
+    } else {
+      if (newVendorOptions) newVendorOptions.style.display = 'block';
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  GERAÇÃO DE CHAVE & CHECKOUT PIX MERCADO PAGO
+// ═══════════════════════════════════════════════════════════════════════
+
 btnGenerate.addEventListener('click', async () => {
   const uuid = clientUuidInput.value.trim();
   const clientName = clientNameInput.value.trim() || 'Cliente VIP';
@@ -281,7 +447,7 @@ btnGenerate.addEventListener('click', async () => {
   const customVal = customValInput ? parseInt(customValInput.value, 10) : 0;
 
   btnGenerate.disabled = true;
-  btnGenerate.textContent = 'Gerando...';
+  btnGenerate.textContent = 'Processando...';
   resultBox.style.display = 'none';
 
   try {
@@ -300,217 +466,291 @@ btnGenerate.addEventListener('click', async () => {
     });
     const data = await res.json();
 
+    if (data.requirePayment) {
+      // Plano pago para vendedor: Abre o checkout PIX Mercado Pago
+      openPixModal({
+        planId: data.planId,
+        planName: data.planName,
+        price: data.price,
+        clientName,
+        uuid,
+        customVal
+      });
+      return;
+    }
+
     if (data.success) {
-      keyOutput.textContent = data.key;
-      let typeLabel = '👑 Vitalícia (UUID Vinculado)';
-      if (typeVal === 'permanent-single') typeLabel = '👑 Vitalícia (1 Uso Único / Descartável)';
-      else if (typeVal === 'temp-1h') typeLabel = '⏳ Temporária - 1 Hora (Teste Rápido)';
-      else if (typeVal === 'temp-2h') typeLabel = '⏳ Temporária - 2 Horas';
-      else if (typeVal === 'temp-6h') typeLabel = '⏳ Temporária - 6 Horas';
-      else if (typeVal === 'temp-12h') typeLabel = '⏳ Temporária - 12 Horas';
-      else if (typeVal === 'temp-24h') typeLabel = '⏳ Temporária - 24 Horas (1 Dia)';
-      else if (typeVal === 'temp-7d') typeLabel = '⏳ Temporária - 7 Dias (Semanal)';
-      else if (typeVal === 'temp-15d') typeLabel = '⏳ Temporária - 15 Dias (Quinzenal)';
-      else if (typeVal === 'temp-30d') typeLabel = '⏳ Temporária - 30 Dias (Mensal)';
-      else if (typeVal === 'temp-custom-hours') typeLabel = `⏳ Temporária - ${customVal || data.durationHours} Horas`;
-      else if (typeVal === 'temp-custom-days') typeLabel = `⏳ Temporária - ${customVal || data.durationDays} Dias`;
-
-      resultDetails.innerHTML = `
-        <strong>Cliente:</strong> ${escapeHtml(data.clientName)}<br>
-        <strong>Tipo:</strong> ${typeLabel}<br>
-        <strong>UUID Vinculado:</strong> ${data.uuid || 'Qualquer PC (Ativação Pendente)'}<br>
-        <strong>Criado por:</strong> ${escapeHtml(localStorage.getItem('admin_username') || 'Você')}
-      `;
-      resultBox.style.display = 'block';
-      const cached = getLocalLicensesCache();
-      const newEntry = {
-        uuid: data.uuid !== 'Aguardando Ativação' ? data.uuid : null,
-        key: data.key,
-        clientName: data.clientName,
-        licenseType: data.licenseType,
-        activationMode: data.activationMode,
-        durationDays: data.durationDays,
-        createdBy: currentLoggedInUser,
-        status: 'pending',
-        createdAt: Date.now(),
-        activatedAt: null,
-        expiresAt: null
-      };
-      const idx = cached.findIndex(c => c.key === data.key);
-      if (idx !== -1) cached[idx] = newEntry; else cached.unshift(newEntry);
-      saveLocalLicensesCache(cached);
-
-      loadLicenses();
+      renderGeneratedKeyResult(data, typeVal, customVal);
+      loadPlans(); // Atualiza quota
     } else {
-      alert(`Erro: ${data.error || 'Não foi possível gerar a chave.'}`);
+      alert(`Aviso: ${data.error || 'Não foi possível gerar a chave.'}`);
     }
   } catch (e) {
     console.error(e);
-    alert('Erro de conexão ao gerar a chave.');
+    alert('Erro de conexão ao processar geração de chave.');
   } finally {
     btnGenerate.disabled = false;
     btnGenerate.textContent = '⚡ Gerar Chave de Ativação';
   }
 });
 
-// Ação de Copiar Key
-btnCopy.addEventListener('click', () => {
-  navigator.clipboard.writeText(keyOutput.textContent);
-  btnCopy.textContent = 'Copiado!';
-  setTimeout(() => {
-    btnCopy.textContent = 'Copiar';
-  }, 2000);
-});
+function renderGeneratedKeyResult(data, typeVal, customVal) {
+  keyOutput.textContent = data.key;
+  let typeLabel = data.licenseType;
+  const plan = currentLoadedPlans.find(p => p.id === typeVal);
+  if (plan) typeLabel = plan.name;
 
-// Carregar Lista de Licenças
-async function loadLicenses() {
-  licensesListBody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--text-gray);">Carregando licenças...</td></tr>';
-  
-  let licenses = getLocalLicensesCache();
+  resultDetails.innerHTML = `
+    <strong>Cliente:</strong> ${escapeHtml(data.clientName)}<br>
+    <strong>Tipo / Plano:</strong> ${escapeHtml(typeLabel)}<br>
+    <strong>UUID Vinculado:</strong> ${data.uuid || 'Qualquer PC (Ativação Pendente)'}<br>
+    <strong>Criado por:</strong> ${escapeHtml(localStorage.getItem('admin_username') || 'Você')}
+  `;
+  resultBox.style.display = 'block';
+
+  loadLicenses();
+}
+
+// Abrir Modal de Pagamento PIX Mercado Pago
+async function openPixModal(params) {
+  pixPlanName.textContent = `Plano: ${params.planName}`;
+  pixPlanPrice.textContent = `R$ ${Number(params.price).toFixed(2).replace('.', ',')}`;
+  pixQrImg.src = '';
+  pixCopyPasteInput.value = 'Gerando cobrança PIX...';
+  pixStatusBadge.innerHTML = '<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#fbbf24; animation:pulse 1.5s infinite;"></span> Gerando QR Code no Mercado Pago...';
+  pixPaymentModal.style.display = 'flex';
 
   try {
-    const res = await fetch(`${API_URL}/api/licenses`, {
+    const res = await fetch(`${API_URL}/api/create-payment`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${userToken}`
       },
-      body: JSON.stringify({ clientLicenses: licenses })
+      body: JSON.stringify(params)
     });
     const data = await res.json();
-    if (data.success && Array.isArray(data.licenses)) {
-      licenses = data.licenses;
-      saveLocalLicensesCache(licenses);
+
+    if (data.success && data.paymentId) {
+      if (data.qrCodeBase64) {
+        pixQrImg.src = `data:image/png;base64,${data.qrCodeBase64}`;
+      } else {
+        pixQrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data.qrCode || '')}`;
+      }
+
+      pixCopyPasteInput.value = data.qrCode || 'Código não disponível';
+      pixStatusBadge.innerHTML = '<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#fbbf24; animation:pulse 1.5s infinite;"></span> Aguardando pagamento via PIX...';
+
+      // Inicia polling para detectar aprovação instantânea
+      startPixPaymentPolling(data.paymentId, params);
+    } else {
+      alert(`Erro no Mercado Pago: ${data.error || 'Não foi possível gerar cobrança PIX.'}`);
+      closePixModal();
     }
   } catch (e) {
-    console.warn('Usando cache local de licenças:', e);
+    alert('Erro ao conectar com o Mercado Pago.');
+    closePixModal();
   }
-
-  currentLoadedLicenses = licenses;
-  updateSellerDropdown(licenses, currentLoadedUsers);
-  renderLicensesTable(licenses);
 }
 
-// Renderizar Tabela de Licenças com Filtro de Vendedor e Busca
+function startPixPaymentPolling(paymentId, params) {
+  if (activePixPollTimer) clearInterval(activePixPollTimer);
+
+  activePixPollTimer = setInterval(async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/check-payment?paymentId=${paymentId}`, {
+        headers: { 'Authorization': `Bearer ${userToken}` }
+      });
+      const data = await res.json();
+
+      if (data.success && data.approved) {
+        clearInterval(activePixPollTimer);
+        pixStatusBadge.innerHTML = '🎉 <span style="color:#00e676;">Pagamento Aprovado! Chave gerada!</span>';
+        
+        setTimeout(() => {
+          closePixModal();
+          renderGeneratedKeyResult({
+            key: data.key,
+            clientName: data.clientName,
+            licenseType: params.planName,
+            uuid: params.uuid
+          }, params.planId, params.customVal);
+        }, 1200);
+      }
+    } catch (e) {}
+  }, 2500);
+}
+
+function closePixModal() {
+  if (activePixPollTimer) clearInterval(activePixPollTimer);
+  pixPaymentModal.style.display = 'none';
+}
+
+function copyPixCode() {
+  if (!pixCopyPasteInput.value) return;
+  navigator.clipboard.writeText(pixCopyPasteInput.value).then(() => {
+    const btn = document.getElementById('btn-copy-pix');
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = '✔️ Copiado!';
+      setTimeout(() => btn.textContent = orig, 2000);
+    }
+  });
+}
+
+// Botão Copiar Chave
+if (btnCopy) {
+  btnCopy.addEventListener('click', () => {
+    const key = keyOutput.textContent;
+    navigator.clipboard.writeText(key).then(() => {
+      btnCopy.textContent = 'Copiado!';
+      setTimeout(() => btnCopy.textContent = 'Copiar', 2000);
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  ABA LICENÇAS & ATIVAÇÕES
+// ═══════════════════════════════════════════════════════════════════════
+
+async function loadLicenses() {
+  if (!userToken) return;
+
+  try {
+    const res = await fetch(`${API_URL}/api/licenses`, {
+      headers: { 'Authorization': `Bearer ${userToken}` }
+    });
+    const data = await res.json();
+
+    if (data.success && Array.isArray(data.licenses)) {
+      currentLoadedLicenses = data.licenses;
+      saveLocalLicensesCache(data.licenses);
+      renderLicensesTable(data.licenses);
+      updateLicensesStats(data.licenses);
+      populateSellerFilter(data.licenses);
+    }
+  } catch (e) {
+    const cached = getLocalLicensesCache();
+    if (cached.length > 0) {
+      currentLoadedLicenses = cached;
+      renderLicensesTable(cached);
+      updateLicensesStats(cached);
+    }
+  }
+}
+
+function updateLicensesStats(licenses) {
+  const total = licenses.length;
+  let active = 0, pending = 0, revoked = 0;
+
+  licenses.forEach(l => {
+    if (l.status === 'revoked') revoked++;
+    else if (l.status === 'pending') pending++;
+    else if (l.status === 'activated') {
+      if (l.licenseType === 'temporary' && l.expiresAt && Date.now() > l.expiresAt) revoked++;
+      else active++;
+    }
+  });
+
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-active').textContent = active;
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-revoked').textContent = revoked;
+}
+
+function populateSellerFilter(licenses) {
+  if (!filterSellerSelect) return;
+  const currentVal = filterSellerSelect.value;
+  const sellers = Array.from(new Set(licenses.map(l => l.createdBy || 'Sistema'))).sort();
+
+  filterSellerSelect.innerHTML = '<option value="">👤 Todos os Vendedores</option>';
+  sellers.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s;
+    opt.textContent = `👤 ${s}`;
+    filterSellerSelect.appendChild(opt);
+  });
+  filterSellerSelect.value = currentVal;
+}
+
 function renderLicensesTable(licenses) {
+  if (!licensesListBody) return;
   licensesListBody.innerHTML = '';
-  
-  const totalCount = licenses.length;
-  const activeCount = licenses.filter(l => l.status === 'activated').length;
-  const pendingCount = licenses.filter(l => l.status === 'pending').length;
-  const revokedCount = licenses.filter(l => l.status === 'revoked' || (l.licenseType === 'temporary' && l.expiresAt && Date.now() > l.expiresAt)).length;
 
-  const statTotal = document.getElementById('stat-total');
-  const statActive = document.getElementById('stat-active');
-  const statPending = document.getElementById('stat-pending');
-  const statRevoked = document.getElementById('stat-revoked');
-
-  if (statTotal) statTotal.textContent = totalCount;
-  if (statActive) statActive.textContent = activeCount;
-  if (statPending) statPending.textContent = pendingCount;
-  if (statRevoked) statRevoked.textContent = revokedCount;
-
-  const query = (searchLicensesInput ? searchLicensesInput.value.trim().toLowerCase() : '');
-  const selectedSeller = (filterSellerSelect ? filterSellerSelect.value.trim().toLowerCase() : '');
+  const search = searchLicensesInput ? searchLicensesInput.value.toLowerCase().trim() : '';
+  const seller = filterSellerSelect ? filterSellerSelect.value : '';
 
   const filtered = licenses.filter(l => {
-    if (selectedSeller && (!l.createdBy || l.createdBy.toLowerCase() !== selectedSeller)) {
-      return false;
-    }
-    if (!query) return true;
-    return (
-      (l.clientName && l.clientName.toLowerCase().includes(query)) ||
-      (l.key && l.key.toLowerCase().includes(query)) ||
-      (l.uuid && l.uuid.toLowerCase().includes(query)) ||
-      (l.createdBy && l.createdBy.toLowerCase().includes(query))
-    );
+    const matchesSearch = !search || 
+      (l.clientName && l.clientName.toLowerCase().includes(search)) ||
+      (l.key && l.key.toLowerCase().includes(search)) ||
+      (l.uuid && l.uuid.toLowerCase().includes(search));
+
+    const matchesSeller = !seller || (l.createdBy === seller);
+    return matchesSearch && matchesSeller;
   });
 
   if (filtered.length === 0) {
-    licensesListBody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--text-gray);">Nenhuma chave encontrada com estes filtros.</td></tr>';
+    licensesListBody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #64748b; padding: 25px;">Nenhuma licença encontrada.</td></tr>';
     return;
   }
 
   filtered.forEach(l => {
     const tr = document.createElement('tr');
-    let statusText = '🟡 Pendente';
-    let statusClass = 'user';
-    
-    // Check if expired
-    const isExpired = l.licenseType === 'temporary' && l.expiresAt && Date.now() > l.expiresAt;
-    
+
+    let statusHtml = '<span class="status-badge status-pending">Pendente</span>';
     if (l.status === 'revoked') {
-      statusText = '🔴 Revogado';
-      statusClass = 'user';
-    } else if (isExpired) {
-      statusText = '⌛ Expirado';
-      statusClass = 'user';
+      statusHtml = '<span class="status-badge status-revoked">Revogado</span>';
     } else if (l.status === 'activated') {
-      statusText = '🟢 Ativo';
-      statusClass = 'admin';
-    }
-
-    let typeBadge = '';
-    if (l.licenseType === 'temporary') {
-      typeBadge = `<span style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">⏳ ${l.durationDays || 30} Dias</span>`;
-    } else if (l.licenseType === 'permanent-single') {
-      typeBadge = `<span style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">👑 Vitalícia (1 Uso)</span>`;
-    } else {
-      typeBadge = `<span style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">👑 Vitalícia (Reativação)</span>`;
-    }
-
-    const sellerBadge = `<span style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">👤 ${escapeHtml(l.createdBy || 'gabriel')}</span>`;
-
-    const creationDate = l.createdAt ? new Date(l.createdAt).toLocaleDateString('pt-BR') : '-';
-    
-    let validityText = 'Vitalícia (Nunca Expira)';
-    if (l.licenseType === 'temporary') {
-      if (l.expiresAt) {
-        const remainingMs = l.expiresAt - Date.now();
-        const daysRemaining = Math.max(0, Math.ceil(remainingMs / (1000 * 60 * 60 * 24)));
-        const expDate = new Date(l.expiresAt).toLocaleDateString('pt-BR');
-        validityText = daysRemaining > 0 
-          ? `<span style="color: #10b981;">Até ${expDate} (${daysRemaining}d)</span>`
-          : `<span style="color: #ef4444; font-weight: bold;">Expirou em ${expDate}</span>`;
+      if (l.licenseType === 'temporary' && l.expiresAt && Date.now() > l.expiresAt) {
+        statusHtml = '<span class="status-badge status-revoked">Expirado</span>';
       } else {
-        validityText = `<span style="color: #f59e0b;">${l.durationDays || 30}d após primeiro uso</span>`;
+        statusHtml = '<span class="status-badge status-active">🟢 Ativo</span>';
       }
-    } else if (l.licenseType === 'permanent-single') {
-      validityText = '<span style="color: #c084fc;">Vitalícia (1 Ativação Única)</span>';
-    } else {
-      validityText = '<span style="color: #10b981;">Vitalícia (Reativação Ilimitada)</span>';
     }
 
-    const uuidDisplay = l.uuid 
-      ? `<span style="font-family: monospace; font-size: 0.75rem;" title="${escapeHtml(l.uuid)}">${escapeHtml(l.uuid.substring(0, 16))}...</span>`
-      : `<span style="color: #f59e0b; font-size: 0.8rem; font-style: italic;">Aguardando PC</span>`;
-    
+    let validityHtml = '<span style="color: #64748b;">—</span>';
+    if (l.licenseType === 'temporary' && l.expiresAt) {
+      const diffMs = l.expiresAt - Date.now();
+      if (diffMs > 0) {
+        const hoursLeft = Math.floor(diffMs / (1000 * 60 * 60));
+        const daysLeft = Math.floor(hoursLeft / 24);
+        if (daysLeft >= 1) {
+          validityHtml = `<span style="color:#38bdf8; font-weight:700;">${daysLeft}d restantes</span>`;
+        } else {
+          validityHtml = `<span style="color:#fbbf24; font-weight:700;">${hoursLeft}h restantes</span>`;
+        }
+      } else {
+        validityHtml = '<span style="color:#ef4444; font-weight:700;">Expirado</span>';
+      }
+    } else if (l.licenseType === 'temporary' && !l.expiresAt) {
+      const hours = l.durationHours || 720;
+      validityHtml = `<span style="color:#94a3b8;">${hours >= 24 ? Math.round(hours / 24) + 'd' : hours + 'h'} (após ativação)</span>`;
+    } else {
+      validityHtml = '<span style="color:#a855f7; font-weight:700;">👑 Vitalícia</span>';
+    }
+
     tr.innerHTML = `
-      <td><strong>${escapeHtml(l.clientName || 'Cliente VIP')}</strong></td>
-      <td>${typeBadge}</td>
-      <td>${sellerBadge}</td>
-      <td>${uuidDisplay}</td>
-      <td><span style="font-family: monospace; font-size: 0.85rem; color: #ef4444; font-weight: 700;">${escapeHtml(l.key)}</span></td>
-      <td><span class="role-badge ${statusClass}">${statusText}</span></td>
-      <td style="font-size: 0.8rem;">${creationDate}</td>
-      <td style="font-size: 0.8rem;">${validityText}</td>
+      <td style="font-weight: 700; color: #f8fafc;">${escapeHtml(l.clientName || 'Cliente VIP')}</td>
+      <td><span style="font-size: 0.8rem; color: #cbd5e1;">${l.licenseType === 'temporary' ? '⏳ Temp' : '👑 Vitalícia'}</span></td>
+      <td><span style="font-size: 0.8rem; color: #38bdf8;">${escapeHtml(l.createdBy || 'Sistema')}</span></td>
+      <td style="font-family: monospace; font-size: 0.8rem; color: #94a3b8;">${l.uuid ? escapeHtml(l.uuid.substring(0, 12)) + '...' : '<span style="color:#64748b;">Avulsa</span>'}</td>
+      <td style="font-family: monospace; font-size: 0.85rem; font-weight: 700; color: #e2e8f0;">${escapeHtml(l.key)}</td>
+      <td>${statusHtml}</td>
+      <td style="font-size: 0.8rem; color: #64748b;">${l.createdAt ? new Date(l.createdAt).toLocaleDateString('pt-BR') : '—'}</td>
+      <td>${validityHtml}</td>
       <td>
-        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-          <button class="btn-copy" style="background-color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); color: white; padding: 4px 6px; font-size: 0.7rem;" title="Invalidar a chave e bloquear o software do cliente" onclick="revokeLicense('${escapeHtml(l.uuid || '')}', '${escapeHtml(l.key)}')">🔴 Revogar</button>
-          <button class="btn-copy" style="background-color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); color: white; padding: 4px 6px; font-size: 0.7rem;" title="Desvincular o computador e deslogar do software" onclick="unlinkPc('${escapeHtml(l.uuid || '')}', '${escapeHtml(l.key)}')">🔄 Deslogar</button>
-          <button class="btn-copy" style="background-color: #334155; border: 1px solid rgba(255, 255, 255, 0.1); color: white; padding: 4px 6px; font-size: 0.7rem;" title="Excluir do painel" onclick="deleteLicense('${escapeHtml(l.uuid || '')}', '${escapeHtml(l.key)}')">🗑️</button>
-        </div>
+        <button onclick="deleteLicense('${escapeHtml(l.key)}')" class="btn-action" style="color: #ef4444;" title="Excluir Chave">🗑️</button>
       </td>
     `;
     licensesListBody.appendChild(tr);
   });
 }
 
-// Ações de Licença:
-// 1. Revogar / Invalidar Chave
-window.revokeLicense = async function(uuid, key) {
-  if (!confirm(`Deseja realmente REVOGAR e INVALIDAR a chave ${key}? O software do cliente será bloqueado imediatamente.`)) return;
-  
+// Excluir Licença
+window.deleteLicense = async function(key) {
+  if (!confirm(`Deseja realmente excluir e revogar a chave ${key}?`)) return;
+
   try {
     const res = await fetch(`${API_URL}/api/licenses`, {
       method: 'DELETE',
@@ -518,213 +758,233 @@ window.revokeLicense = async function(uuid, key) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${userToken}`
       },
-      body: JSON.stringify({ uuid, key, action: 'revoke' })
+      body: JSON.stringify({ key })
     });
     const data = await res.json();
-    
-    // Update local cache
-    const cached = getLocalLicensesCache();
-    const target = cached.find(c => (key && c.key === key) || (uuid && c.uuid === uuid));
-    if (target) {
-      target.status = 'revoked';
-      saveLocalLicensesCache(cached);
+    if (data.success) {
+      loadLicenses();
+    } else {
+      alert(`Erro: ${data.error || 'Não foi possível excluir a licença.'}`);
     }
-
-    loadLicenses();
   } catch (e) {
-    console.error(e);
-    alert('Erro ao revogar licença.');
-  }
-};
-
-// 2. Desvincular PC / Deslogar do Software
-window.unlinkPc = async function(uuid, key) {
-  if (!confirm(`Deseja DESLOGAR o PC vinculado à chave ${key}? A máquina atual será desvinculada e a chave poderá ser ativada em outro PC.`)) return;
-
-  try {
-    const res = await fetch(`${API_URL}/api/licenses`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userToken}`
-      },
-      body: JSON.stringify({ uuid, key, action: 'unlink' })
-    });
-    const data = await res.json();
-    
-    // Update local cache
-    const cached = getLocalLicensesCache();
-    const target = cached.find(c => (key && c.key === key) || (uuid && c.uuid === uuid));
-    if (target) {
-      target.uuid = null;
-      target.status = 'pending';
-      target.activatedAt = null;
-      saveLocalLicensesCache(cached);
-    }
-
-    alert('Computador desvinculado! O usuário foi deslogado com sucesso.');
-    loadLicenses();
-  } catch (e) {
-    console.error(e);
-    alert('Erro ao deslogar computador.');
-  }
-};
-
-// 3. Excluir Chave
-window.deleteLicense = async function(uuid, key) {
-  if (!confirm(`Deseja EXCLUIR permanentemente a chave ${key}?`)) return;
-
-  try {
-    const res = await fetch(`${API_URL}/api/licenses`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userToken}`
-      },
-      body: JSON.stringify({ uuid, key, action: 'delete' })
-    });
-    const data = await res.json();
-    
-    // Update local cache
-    let cached = getLocalLicensesCache();
-    cached = cached.filter(c => c.key !== key);
-    saveLocalLicensesCache(cached);
-
-    loadLicenses();
-  } catch (e) {
-    console.error(e);
     alert('Erro ao excluir licença.');
   }
 };
 
-// Carregar Lista de Usuários e Vendedores
+// ═══════════════════════════════════════════════════════════════════════
+//  ABA USUÁRIOS & VENDEDORES
+// ═══════════════════════════════════════════════════════════════════════
+
 async function loadUsers() {
-  usersListBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-gray);">Carregando usuários...</td></tr>';
-  
-  let localUsers = getLocalUsersCache();
+  if (!userToken) return;
 
   try {
     const res = await fetch(`${API_URL}/api/users`, {
       headers: { 'Authorization': `Bearer ${userToken}` }
     });
     const data = await res.json();
+
     if (data.success && Array.isArray(data.users)) {
-      usersListBody.innerHTML = '';
-      localUsers = data.users;
-      saveLocalUsersCache(localUsers);
-      currentLoadedUsers = localUsers;
-      updateSellerDropdown(currentLoadedLicenses, localUsers);
-
-      data.users.forEach(u => {
-        const tr = document.createElement('tr');
-        const roleText = u.isAdmin ? '👑 Administrador' : '👤 Vendedor';
-        const roleClass = u.isAdmin ? 'admin' : 'user';
-        const createdBy = u.createdBy || 'Master Admin';
-        const createdAt = u.createdAt ? new Date(u.createdAt).toLocaleDateString('pt-BR') : '-';
-        
-        const isMaster = u.username.toLowerCase() === 'gabriel';
-        const isInactive = u.status === 'inactive';
-        
-        const statusBadge = isInactive
-          ? '<span style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">🔴 Inativo</span>'
-          : '<span style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">🟢 Ativo</span>';
-
-        const changePasswordBtn = `<button class="btn-copy" style="background-color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.4); color: white; padding: 3px 7px; font-size: 0.75rem;" title="Mudar senha deste usuário" onclick="changePassword('${escapeHtml(u.username)}')">🔑 Senha</button>`;
-
-        const toggleStatusBtn = isMaster 
-          ? ''
-          : `<button class="btn-copy" style="background-color: ${isInactive ? '#10b981' : '#f59e0b'}; border: 1px solid rgba(255,255,255,0.1); color: white; padding: 3px 7px; font-size: 0.75rem;" title="${isInactive ? 'Ativar acesso do vendedor' : 'Inativar e bloquear vendedor'}" onclick="toggleUserStatus('${escapeHtml(u.username)}')">${isInactive ? '▶️ Ativar' : '⏸️ Inativar'}</button>`;
-
-        const deleteButton = isMaster 
-          ? '<span style="color: #64748b; font-size: 0.75rem; padding: 3px 6px;">Principal</span>'
-          : `<button class="btn-copy" style="background-color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); color: white; padding: 3px 7px; font-size: 0.75rem;" title="Excluir usuário permanentemente" onclick="deleteUser('${escapeHtml(u.username)}')">🗑️</button>`;
-
-        tr.innerHTML = `
-          <td><strong>${escapeHtml(u.username)}</strong></td>
-          <td><span class="role-badge ${roleClass}">${roleText}</span></td>
-          <td>${statusBadge}</td>
-          <td style="font-size: 0.85rem; color: #94a3b8;">${escapeHtml(createdBy)}</td>
-          <td>
-            <span style="font-size: 0.95rem; font-weight: 800; color: #38bdf8;">${u.totalKeys || 0}</span> 
-            <span style="font-size: 0.75rem; color: #10b981; font-weight: 600;">(${u.activeKeys || 0} ativas)</span>
-          </td>
-          <td style="font-size: 0.85rem;">${createdAt}</td>
-          <td>
-            <div style="display: flex; gap: 4px; flex-wrap: wrap; align-items: center;">
-              ${changePasswordBtn}
-              ${toggleStatusBtn}
-              ${deleteButton}
-            </div>
-          </td>
-        `;
-        usersListBody.appendChild(tr);
-      });
-    } else {
-      usersListBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--red);">Erro: ${data.error || 'Não foi possível carregar.'}</td></tr>`;
+      currentLoadedUsers = data.users;
+      saveLocalUsersCache(data.users);
+      renderUsersTable(data.users);
     }
   } catch (e) {
-    console.error(e);
-    usersListBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--red);">Erro ao conectar com o servidor.</td></tr>';
+    const cached = getLocalUsersCache();
+    if (cached.length > 0) {
+      currentLoadedUsers = cached;
+      renderUsersTable(cached);
+    }
   }
 }
 
-// Ação de Criar Novo Usuário / Vendedor
-btnCreateUser.addEventListener('click', async () => {
-  const newUsername = newUsernameInput.value.trim();
-  const newPassword = newPasswordInput.value;
-  const newIsAdmin = newIsAdminCheckbox.checked;
+function renderUsersTable(users) {
+  if (!usersListBody) return;
+  usersListBody.innerHTML = '';
 
-  if (!newUsername || !newPassword) {
-    createUserError.textContent = '❌ Preencha o nome de usuário e a senha.';
-    createUserError.style.display = 'block';
+  if (users.length === 0) {
+    usersListBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #64748b; padding: 25px;">Nenhum usuário cadastrado.</td></tr>';
     return;
   }
 
-  btnCreateUser.disabled = true;
-  btnCreateUser.textContent = 'Criando...';
-  createUserError.style.display = 'none';
-  createUserSuccess.style.display = 'none';
+  users.forEach(u => {
+    const tr = document.createElement('tr');
+    const isMaster = u.username.toLowerCase() === 'gabriel';
+    const statusLabel = u.status === 'inactive' ? '<span style="color:#ef4444; font-weight:700;">Inativo</span>' : '<span style="color:#10b981; font-weight:700;">🟢 Ativo</span>';
 
-  try {
-    const res = await fetch(`${API_URL}/api/users`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userToken}`
-      },
-      body: JSON.stringify({ newUsername, newPassword, newIsAdmin })
-    });
-    const data = await res.json();
+    const roleBadge = u.isAdmin 
+      ? '<span style="background: rgba(99,102,241,0.15); color: #818cf8; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.8rem;">👑 Admin</span>'
+      : '<span style="background: rgba(56,189,248,0.15); color: #38bdf8; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.8rem;">👤 Vendedor</span>';
 
-    if (data.success) {
-      createUserSuccess.textContent = `✔️ Usuário "${newUsername}" cadastrado com sucesso!`;
-      createUserSuccess.style.display = 'block';
-      newUsernameInput.value = '';
-      newPasswordInput.value = '';
-      newIsAdminCheckbox.checked = false;
-      loadUsers();
-    } else {
-      createUserError.textContent = `❌ ${data.error || 'Erro ao criar usuário.'}`;
+    const limitLabel = u.isAdmin ? '<span style="color:#64748b;">Ilimitado</span>' : `<strong>${u.freeUsageToday || 0} / ${u.freeDailyLimit || 5}</strong> hoje`;
+
+    tr.innerHTML = `
+      <td style="font-weight: 700; color: #f8fafc;">${escapeHtml(u.username)}</td>
+      <td>${roleBadge}</td>
+      <td>${statusLabel}</td>
+      <td style="font-size: 0.85rem; color: #e2e8f0;">${limitLabel}</td>
+      <td><span style="font-weight: 700; color: #38bdf8;">${u.totalKeys || 0}</span> keys</td>
+      <td style="font-size: 0.8rem; color: #64748b;">${u.createdAt ? new Date(u.createdAt).toLocaleDateString('pt-BR') : '—'}</td>
+      <td>
+        <button onclick="openEditUserModal('${escapeHtml(u.username)}')" class="btn-action" title="Editar Usuário" style="color:#818cf8; margin-right:4px;">✏️</button>
+        ${!isMaster ? `
+          <button onclick="toggleUserStatus('${escapeHtml(u.username)}')" class="btn-action" title="Ativar/Inativar" style="color:#fbbf24; margin-right:4px;">🔄</button>
+          <button onclick="deleteUser('${escapeHtml(u.username)}')" class="btn-action" title="Excluir Usuário" style="color:#ef4444;">🗑️</button>
+        ` : ''}
+      </td>
+    `;
+    usersListBody.appendChild(tr);
+  });
+}
+
+// Cadastrar Novo Usuário / Vendedor
+if (btnCreateUser) {
+  btnCreateUser.addEventListener('click', async () => {
+    const newUsername = newUsernameInput.value.trim();
+    const newPassword = newPasswordInput.value.trim();
+    const newIsAdmin = newIsAdminCheckbox.checked;
+    const freeDailyLimit = parseInt(newFreeLimitInput.value, 10) || 5;
+
+    createUserError.style.display = 'none';
+    createUserSuccess.style.display = 'none';
+
+    if (!newUsername || !newPassword) {
+      createUserError.textContent = '❌ Preencha o usuário e a senha.';
       createUserError.style.display = 'block';
+      return;
     }
-  } catch (e) {
-    console.error(e);
-    createUserError.textContent = '❌ Erro de conexão com o servidor.';
-    createUserError.style.display = 'block';
-  } finally {
-    btnCreateUser.disabled = false;
-    btnCreateUser.textContent = '➕ Cadastrar Usuário';
-  }
-});
 
-// Ação de Mudar Senha de Usuário
-window.changePassword = async function(username) {
-  const newPass = prompt(`Digite a NOVA SENHA para o usuário "${username}":`);
-  if (!newPass) return;
-  if (newPass.trim().length < 3) {
-    alert('A senha deve ter no mínimo 3 caracteres.');
-    return;
+    // Coleta planos permitidos selecionados
+    const allowedPlans = [];
+    if (!newIsAdmin && newVendorPlansList) {
+      const checkedBoxes = newVendorPlansList.querySelectorAll('input[type="checkbox"]:checked');
+      checkedBoxes.forEach(cb => allowedPlans.push(cb.value));
+    }
+
+    btnCreateUser.disabled = true;
+    btnCreateUser.textContent = 'Cadastrando...';
+
+    try {
+      const res = await fetch(`${API_URL}/api/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userToken}`
+        },
+        body: JSON.stringify({
+          newUsername,
+          newPassword,
+          newIsAdmin,
+          allowedPlans,
+          freeDailyLimit
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        createUserSuccess.textContent = `✔️ Usuário "${newUsername}" cadastrado com sucesso!`;
+        createUserSuccess.style.display = 'block';
+        newUsernameInput.value = '';
+        newPasswordInput.value = '';
+        newIsAdminCheckbox.checked = false;
+        if (newVendorOptions) newVendorOptions.style.display = 'block';
+        loadUsers();
+      } else {
+        createUserError.textContent = `❌ ${data.error || 'Erro ao cadastrar usuário.'}`;
+        createUserError.style.display = 'block';
+      }
+    } catch (e) {
+      createUserError.textContent = '❌ Erro ao conectar com o servidor.';
+      createUserError.style.display = 'block';
+    } finally {
+      btnCreateUser.disabled = false;
+      btnCreateUser.textContent = '➕ Cadastrar Usuário';
+    }
+  });
+}
+
+// Modal de Edição de Usuário
+let editingUsername = null;
+let editingIsAdmin = false;
+
+window.openEditUserModal = function(username) {
+  const user = currentLoadedUsers.find(u => u.username.toLowerCase() === username.toLowerCase());
+  if (!user) return;
+
+  editingUsername = user.username;
+  editingIsAdmin = !!user.isAdmin;
+
+  document.getElementById('edit-modal-username-label').textContent = `Editando: ${user.username}`;
+  document.getElementById('edit-modal-new-password').value = '';
+  document.getElementById('edit-modal-msg').textContent = '';
+
+  const editVendorOptions = document.getElementById('edit-vendor-options');
+  const editFreeLimitInput = document.getElementById('edit-modal-free-limit');
+  const editPlansList = document.getElementById('edit-modal-plans-list');
+
+  editFreeLimitInput.value = typeof user.freeDailyLimit === 'number' ? user.freeDailyLimit : 5;
+
+  // Renderiza checkboxes de planos permitidos
+  editPlansList.innerHTML = '';
+  currentLoadedPlans.forEach(p => {
+    const isAllowed = !user.allowedPlans || user.allowedPlans.length === 0 || user.allowedPlans.includes(p.id);
+    const div = document.createElement('div');
+    div.style.display = 'flex';
+    div.style.alignItems = 'center';
+    div.style.gap = '8px';
+    div.style.fontSize = '0.85rem';
+    div.style.color = '#e2e8f0';
+
+    div.innerHTML = `
+      <input type="checkbox" id="edit-plan-${p.id}" value="${p.id}" ${isAllowed ? 'checked' : ''} style="cursor: pointer;">
+      <label for="edit-plan-${p.id}" style="cursor: pointer; margin: 0; text-transform: none; letter-spacing: 0;">
+        ${escapeHtml(p.name)}
+      </label>
+    `;
+    editPlansList.appendChild(div);
+  });
+
+  setModalRole(editingIsAdmin);
+  document.getElementById('edit-user-modal').style.display = 'flex';
+};
+
+window.setModalRole = function(isAdmin) {
+  editingIsAdmin = isAdmin;
+  const btnVendedor = document.getElementById('btn-role-vendedor');
+  const btnAdmin = document.getElementById('btn-role-admin');
+  const editVendorOptions = document.getElementById('edit-vendor-options');
+
+  if (isAdmin) {
+    btnAdmin.style.border = '2px solid #818cf8';
+    btnAdmin.style.background = 'rgba(99,102,241,0.25)';
+    btnVendedor.style.border = '2px solid transparent';
+    btnVendedor.style.background = 'rgba(56,189,248,0.06)';
+    if (editVendorOptions) editVendorOptions.style.display = 'none';
+  } else {
+    btnVendedor.style.border = '2px solid #38bdf8';
+    btnVendedor.style.background = 'rgba(56,189,248,0.25)';
+    btnAdmin.style.border = '2px solid transparent';
+    btnAdmin.style.background = 'rgba(99,102,241,0.06)';
+    if (editVendorOptions) editVendorOptions.style.display = 'block';
   }
+};
+
+window.closeEditModal = function() {
+  document.getElementById('edit-user-modal').style.display = 'none';
+};
+
+window.saveUserEdit = async function() {
+  const newPassword = document.getElementById('edit-modal-new-password').value.trim();
+  const freeDailyLimit = parseInt(document.getElementById('edit-modal-free-limit').value, 10) || 5;
+  const msgEl = document.getElementById('edit-modal-msg');
+  const saveBtn = document.getElementById('btn-save-edit');
+
+  const allowedPlans = [];
+  const checkedBoxes = document.getElementById('edit-modal-plans-list').querySelectorAll('input[type="checkbox"]:checked');
+  checkedBoxes.forEach(cb => allowedPlans.push(cb.value));
+
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Salvando...';
 
   try {
     const res = await fetch(`${API_URL}/api/users`, {
@@ -734,29 +994,35 @@ window.changePassword = async function(username) {
         'Authorization': `Bearer ${userToken}`
       },
       body: JSON.stringify({
-        action: 'change-password',
-        usernameToUpdate: username,
-        newPassword: newPass.trim()
+        action: 'edit-user',
+        usernameToUpdate: editingUsername,
+        newIsAdmin: editingIsAdmin,
+        newPassword: newPassword || undefined,
+        allowedPlans,
+        freeDailyLimit
       })
     });
     const data = await res.json();
 
     if (data.success) {
-      alert(`Senha do usuário "${username}" alterada com sucesso!`);
+      msgEl.style.color = '#10b981';
+      msgEl.textContent = '✔️ Usuário atualizado com sucesso!';
       loadUsers();
+      setTimeout(closeEditModal, 1000);
     } else {
-      alert(`Erro: ${data.error || 'Não foi possível alterar a senha.'}`);
+      msgEl.style.color = '#ef4444';
+      msgEl.textContent = `❌ ${data.error || 'Erro ao atualizar.'}`;
     }
   } catch (e) {
-    console.error(e);
-    alert('Erro ao alterar senha.');
+    msgEl.style.color = '#ef4444';
+    msgEl.textContent = '❌ Erro de conexão ao salvar.';
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = '💾 Salvar Alterações';
   }
 };
 
-// Ação de Inativar / Ativar Usuário
 window.toggleUserStatus = async function(username) {
-  if (!confirm(`Deseja alterar o status (Ativar/Inativar) do usuário "${username}"?`)) return;
-
   try {
     const res = await fetch(`${API_URL}/api/users`, {
       method: 'POST',
@@ -770,21 +1036,12 @@ window.toggleUserStatus = async function(username) {
       })
     });
     const data = await res.json();
-
-    if (data.success) {
-      loadUsers();
-    } else {
-      alert(`Erro: ${data.error || 'Não foi possível alterar o status.'}`);
-    }
-  } catch (e) {
-    console.error(e);
-    alert('Erro ao alterar status do usuário.');
-  }
+    if (data.success) loadUsers();
+  } catch (e) {}
 };
 
-// Ação de Excluir Usuário
 window.deleteUser = async function(username) {
-  if (!confirm(`Deseja realmente EXCLUIR o acesso do usuário "${username}"?`)) return;
+  if (!confirm(`Deseja realmente remover o usuário "${username}"?`)) return;
 
   try {
     const res = await fetch(`${API_URL}/api/users`, {
@@ -796,27 +1053,15 @@ window.deleteUser = async function(username) {
       body: JSON.stringify({ usernameToDelete: username })
     });
     const data = await res.json();
-
-    if (data.success) {
-      loadUsers();
-    } else {
-      alert(`Erro: ${data.error || 'Não foi possível excluir o usuário.'}`);
-    }
+    if (data.success) loadUsers();
+    else alert(`Erro: ${data.error || 'Não foi possível excluir o usuário.'}`);
   } catch (e) {
-    console.error(e);
     alert('Erro ao excluir usuário.');
   }
 };
 
-// Ação de Logout
-btnLogout.addEventListener('click', () => {
-  localStorage.removeItem('admin_token');
-  localStorage.removeItem('admin_username');
-  localStorage.removeItem('admin_is_admin');
-  userToken = null;
-  loginContainer.style.display = 'flex';
-  dashboardContainer.style.display = 'none';
-  loginUsernameInput.value = '';
-  loginPasswordInput.value = '';
-  loginError.style.display = 'none';
-});
+// Listeners auxiliares
+if (btnRefreshLicenses) btnRefreshLicenses.addEventListener('click', loadLicenses);
+if (btnRefreshUsers) btnRefreshUsers.addEventListener('click', loadUsers);
+if (searchLicensesInput) searchLicensesInput.addEventListener('input', () => renderLicensesTable(currentLoadedLicenses));
+if (filterSellerSelect) filterSellerSelect.addEventListener('change', () => renderLicensesTable(currentLoadedLicenses));
