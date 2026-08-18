@@ -56,7 +56,19 @@ module.exports = async (req, res) => {
       }
     }
 
-    const price = Number(plan.price);
+    let price = Number(plan.price) || 0;
+    let planDisplayName = plan.name;
+
+    if (plan.id === 'temp-custom-days') {
+      const daysCount = Math.max(1, parseInt(customVal || durationDays, 10) || 1);
+      price = price * daysCount;
+      planDisplayName = `${plan.name} (${daysCount} dias)`;
+    } else if (plan.id === 'temp-custom-hours') {
+      const hoursCount = Math.max(1, parseInt(customVal || durationHours, 10) || 1);
+      price = price * hoursCount;
+      planDisplayName = `${plan.name} (${hoursCount} horas)`;
+    }
+
     if (price <= 0) {
       res.status(400).json({ success: false, error: 'Este plano é gratuito e não requer pagamento.' });
       return;
@@ -69,7 +81,7 @@ module.exports = async (req, res) => {
     // Create PIX Payment on Mercado Pago
     const mpPayload = {
       transaction_amount: Number(price.toFixed(2)),
-      description: `Loord Optimizer - ${plan.name} (${user.username})`,
+      description: `Loord Optimizer - ${planDisplayName} (${user.username})`,
       payment_method_id: 'pix',
       payer: {
         email: `${user.username.replace(/[^a-z0-9]/gi, '')}@loordoptimizer.com`,
@@ -79,6 +91,8 @@ module.exports = async (req, res) => {
       metadata: {
         vendor_username: user.username,
         plan_id: plan.id,
+        plan_name: planDisplayName,
+        price: price,
         client_name: formattedClientName,
         uuid: cleanUuid,
         custom_val: customVal || durationHours || durationDays || null

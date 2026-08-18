@@ -253,7 +253,13 @@ function renderPlanSelectOptions(plans) {
     
     let priceLabel = 'Grátis';
     if (plan.price > 0) {
-      priceLabel = `R$ ${Number(plan.price).toFixed(2).replace('.', ',')}`;
+      if (plan.id === 'temp-custom-days') {
+        priceLabel = `R$ ${Number(plan.price).toFixed(2).replace('.', ',')} / dia`;
+      } else if (plan.id === 'temp-custom-hours') {
+        priceLabel = `R$ ${Number(plan.price).toFixed(2).replace('.', ',')} / hora`;
+      } else {
+        priceLabel = `R$ ${Number(plan.price).toFixed(2).replace('.', ',')}`;
+      }
     }
 
     opt.textContent = `${plan.name} — [${priceLabel}]`;
@@ -309,9 +315,9 @@ function renderPlansAdminTable(plans) {
         durationText = `${plan.durationHours} Hora(s)`;
       }
     } else if (plan.id === 'temp-custom-hours') {
-      durationText = 'Personalizada (Horas)';
+      durationText = 'Personalizada (R$ / hora)';
     } else if (plan.id === 'temp-custom-days') {
-      durationText = 'Personalizada (Dias)';
+      durationText = 'Personalizada (R$ / dia)';
     }
 
     tr.innerHTML = `

@@ -50,7 +50,19 @@ module.exports = async (req, res) => {
       }
 
       // 2. Check if plan is paid or free
-      const price = Number(plan.price) || 0;
+      let price = Number(plan.price) || 0;
+      let planDisplayName = plan.name;
+
+      if (plan.id === 'temp-custom-days') {
+        const daysCount = Math.max(1, parseInt(customVal || durationDays, 10) || 1);
+        price = price * daysCount;
+        planDisplayName = `${plan.name} (${daysCount} dias)`;
+      } else if (plan.id === 'temp-custom-hours') {
+        const hoursCount = Math.max(1, parseInt(customVal || durationHours, 10) || 1);
+        price = price * hoursCount;
+        planDisplayName = `${plan.name} (${hoursCount} horas)`;
+      }
+
       const isFree = plan.isFree || price <= 0;
 
       if (!isFree) {
@@ -59,9 +71,9 @@ module.exports = async (req, res) => {
           success: false,
           requirePayment: true,
           planId: plan.id,
-          planName: plan.name,
+          planName: planDisplayName,
           price: price,
-          message: `Este plano (${plan.name}) é pago (R$ ${price.toFixed(2).replace('.', ',')}). Conclua o pagamento via PIX para gerar a chave.`
+          message: `Este plano (${planDisplayName}) é pago (R$ ${price.toFixed(2).replace('.', ',')}). Conclua o pagamento via PIX para gerar a chave.`
         });
         return;
       }
