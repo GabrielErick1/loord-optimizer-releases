@@ -741,7 +741,7 @@ function buildAdaptiveAffinityMap(hw) {
 
 
 
-// ── Configurar Process Lasso automaticamente (se instalado) ───────────────
+// ── Configurar Process Lasso automaticamente (Sempre / Always) ────────────
 function configureProcessLasso(hw, emuCores) {
   const possiblePaths = [
     'C:\\ProgramData\\ProcessLasso\\config\\prolasso.ini',
@@ -752,6 +752,17 @@ function configureProcessLasso(hw, emuCores) {
   ];
 
   let configured = false;
+  const emuProcesses = ['hd-player.exe', 'HD-Player.exe', 'BlueStacks.exe', 'BlueStacksHelper.exe'];
+
+  // Calcular máscara hexadecimal dos núcleos físicos (pares)
+  let maskHex = '0x5555';
+  let coresListStr = '0,2,4,6,8,10,12,14';
+  if (emuCores && emuCores.length > 0) {
+    coresListStr = emuCores.join(',');
+    let m = 0;
+    for (const c of emuCores) { if (c < 32) m |= (1 << c); }
+    maskHex = '0x' + (m >>> 0).toString(16);
+  }
 
   for (const iniPath of possiblePaths) {
     try {
@@ -829,21 +840,19 @@ function configureProcessLasso(hw, emuCores) {
         return match ? match[1].trim() : '';
       }
 
-      const emuProcesses = ['HD-Player.exe', 'BlueStacks.exe', 'BlueStacksHelper.exe', 'hd-player.exe'];
-
-      // 1. Excluir do ProBalance (Anti-Throttling)
+      // 1. Excluir do ProBalance (Sempre)
       const currOoc = getIniKey(text, 'OutOfControlProcessRestraint', 'OocExclusions');
       const newOoc = appendUniqueCSV(currOoc, emuProcesses);
       text = updateIniKey(text, 'OutOfControlProcessRestraint', 'OocExclusions', newOoc);
 
-      // 2. Induzir o Modo de Desempenho (Gaming Mode)
+      // 2. Induzir o Modo de Desempenho (Gaming Mode - Sempre)
       text = updateIniKey(text, 'GamingMode', 'GamingModeEnabled', 'true');
       text = updateIniKey(text, 'GamingMode', 'GamingChangePowerPlan', 'true');
       const currGaming = getIniKey(text, 'GamingMode', 'AutomaticGamingModeProcessPaths');
       const newGaming = appendUniqueCSV(currGaming, emuProcesses);
       text = updateIniKey(text, 'GamingMode', 'AutomaticGamingModeProcessPaths', newGaming);
 
-      // 3. SmartTrim
+      // 3. SmartTrim (Sempre Ativado com Exclusão do Emulador)
       text = updateIniKey(text, 'SmartTrim', 'SmartTrimIsEnabled', 'true');
       text = updateIniKey(text, 'SmartTrim', 'SmartTrimClearStandbyList', 'true');
       text = updateIniKey(text, 'SmartTrim', 'SmartTrimWorkingSetTrims', 'true');
@@ -851,15 +860,28 @@ function configureProcessLasso(hw, emuCores) {
       const newTrimEx = appendUniqueCSV(currTrimEx, emuProcesses);
       text = updateIniKey(text, 'SmartTrim', 'SmartTrimExclusions', newTrimEx);
 
-      // 4. Prioridade de CPU (3 = High) e Prioridade de E/S (3 = High)
-      text = updateIniKey(text, 'ProcessDefaults', 'DefaultPriorities', 'HD-Player.exe,3,BlueStacks.exe,3,BlueStacksHelper.exe,3');
-      text = updateIniKey(text, 'ProcessDefaults', 'DefaultIOPriorities', 'HD-Player.exe,3,BlueStacks.exe,3,BlueStacksHelper.exe,3');
+      // 4. Afinidade de CPU Permanente (Sempre -> Núcleos Físicos Pares)
+      // Constrói regras de afinidade estendidas e clássicas
+      const affExRules = emuProcesses.map(p => `${p},0,${coresListStr}`).join(',');
+      const affHexRules = emuProcesses.map(p => `${p},${maskHex}`).join(',');
+      text = updateIniKey(text, 'ProcessDefaults', 'DefaultAffinitiesEx', affExRules);
+      text = updateIniKey(text, 'ProcessDefaults', 'DefaultAffinities', affHexRules);
 
-      // 5. Afinidade com Núcleos Físicos (Pares)
-      if (emuCores && emuCores.length > 0) {
-        const coresStr = emuCores.join(',');
-        text = updateIniKey(text, 'ProcessDefaults', 'DefaultAffinitiesEx', `hd-player.exe,0,${coresStr},BlueStacks.exe,0,${coresStr}`);
-      }
+      // 5. Classe de Prioridade Permanente (Sempre -> Alta / 3)
+      const priRules = emuProcesses.map(p => `${p},3`).join(',');
+      text = updateIniKey(text, 'ProcessDefaults', 'DefaultPriorities', priRules);
+
+      // 6. Prioridade de E/S Permanente (Sempre -> Alta / 3)
+      const ioRules = emuProcesses.map(p => `${p},3`).join(',');
+      text = updateIniKey(text, 'ProcessDefaults', 'DefaultIOPriorities', ioRules);
+
+      // 7. Prioridade de GPU Permanente (Sempre -> Alta / 2)
+      const gpuRules = emuProcesses.map(p => `${p},2`).join(',');
+      text = updateIniKey(text, 'ProcessDefaults', 'DefaultGPUPriorities', gpuRules);
+
+      // 8. Prioridade de Memória Permanente (Sempre -> Normal/Alta / 5)
+      const memRules = emuProcesses.map(p => `${p},5`).join(',');
+      text = updateIniKey(text, 'ProcessDefaults', 'DefaultMemoryPriorities', memRules);
 
       fs.writeFileSync(iniPath, Buffer.from(text, encoding));
       configured = true;
@@ -868,12 +890,13 @@ function configureProcessLasso(hw, emuCores) {
     }
   }
 
-  // Notificar / recarregar Process Governor se estiver rodando
-  if (configured) {
-    try {
-      execSync('powershell -NoProfile -Command "Get-Process ProcessGovernor -ErrorAction SilentlyContinue | ForEach-Object { try { Stop-Process -Id $_.Id -Force; Start-Sleep -Milliseconds 300; Start-Process $_.Path -WindowStyle Hidden } catch {} }"', { stdio: 'ignore', timeout: 4000 });
-    } catch (_) {}
-  }
+  // Notificar / Iniciar o motor do Process Governor se o Process Lasso estiver instalado
+  try {
+    const govExe = 'C:\\Program Files\\Process Lasso\\ProcessGovernor.exe';
+    if (fs.existsSync(govExe)) {
+      execSync(`powershell -NoProfile -Command "Get-Process ProcessGovernor -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 200; Start-Process '${govExe}' -WindowStyle Hidden -ErrorAction SilentlyContinue"`, { stdio: 'ignore', timeout: 5000 });
+    }
+  } catch (_) {}
 
   return configured;
 }
