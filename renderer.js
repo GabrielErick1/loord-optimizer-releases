@@ -668,8 +668,15 @@ async function checkActivation() {
         // Licença inválida, expirada, revogada, deletada ou deslogada pelo administrador
         localStorage.removeItem('activation_key');
         localStorage.removeItem('client_name');
+        localStorage.removeItem('ffopt_applied_tweaks');
+
+        // Reverter 100% de todas as otimizações e registros automaticamente
+        try {
+          await window.api.revertAllTweaksOnRevoke();
+        } catch (_) {}
+
         if (activationError) {
-          activationError.textContent = `❌ ${data.error || 'Licença expirada, revogada ou não encontrada no sistema.'}`;
+          activationError.textContent = `❌ ${data.error || 'Licença expirada, revogada ou não encontrada no sistema. O computador foi restaurado ao estado original.'}`;
           activationError.style.display = 'block';
         }
       }
@@ -1000,8 +1007,15 @@ async function initApp() {
         if (!data.success) {
           localStorage.removeItem('activation_key');
           localStorage.removeItem('client_name');
+          localStorage.removeItem('ffopt_applied_tweaks');
+
+          // Reverter 100% de todas as otimizações e registros automaticamente
+          try {
+            await window.api.revertAllTweaksOnRevoke();
+          } catch (_) {}
+
           const reason = data.error || 'Sua licença foi encerrada.';
-          alert(`🔒 Acesso encerrado!\n\n${reason}\n\nEntre em contato com seu vendedor para renovar.`);
+          alert(`🔒 Acesso encerrado!\n\n${reason}\n\nTodas as otimizações e registros aplicados foram restaurados ao padrão original do seu computador.`);
           window.location.reload();
         } else {
           updateLicenseBadge(true, data.clientName, data.licenseType, data.daysRemaining);

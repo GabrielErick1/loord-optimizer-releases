@@ -1467,7 +1467,7 @@ ipcMain.handle('revert-all-tweaks-on-revoke', async () => {
     // 1. Parar macros e cleaners em execução
     await killMacroProcess().catch(() => {});
 
-    // 2. Restaurar backups do registro (.reg) e bluestacks.conf
+    // 2. Restaurar backups do registro (.reg) e arquivos de configuração bluestacks.conf
     try {
       if (fs.existsSync(backupDir)) {
         const files = fs.readdirSync(backupDir);
@@ -1476,17 +1476,52 @@ ipcMain.handle('revert-all-tweaks-on-revoke', async () => {
             await runCmd(`reg import "${path.join(backupDir, file)}"`);
           }
         }
+
+        const pathsToRestore = [
+          { key: 'bluestacks_msi.conf.bak', path: 'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf' },
+          { key: 'bluestacks_msi5.conf.bak', path: 'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf' },
+          { key: 'bluestacks_bgp_msi.conf.bak', path: 'C:\\ProgramData\\BlueStacks_bgp_msi\\bluestacks.conf' },
+          { key: 'bluestacks.conf.bak', path: 'C:\\ProgramData\\BlueStacks\\bluestacks.conf' },
+          { key: 'bluestacks_nxt.conf.bak', path: 'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf' },
+          { key: 'bluestacks_bgp.conf.bak', path: 'C:\\ProgramData\\BlueStacks_bgp\\bluestacks.conf' }
+        ];
+
+        for (const item of pathsToRestore) {
+          if (fs.existsSync(path.join(backupDir, item.key)) && fs.existsSync(path.dirname(item.path))) {
+            fs.copyFileSync(path.join(backupDir, item.key), item.path);
+          }
+        }
       }
     } catch (_) {}
 
-    // 3. Reverter DNS para DHCP Automático do Windows
+    // 3. Limpar regras do Process Lasso se prolasso.ini existir
+    const possibleLassoPaths = [
+      'C:\\ProgramData\\ProcessLasso\\config\\prolasso.ini',
+      'C:\\Program Files\\Process Lasso\\config\\prolasso.ini',
+      'C:\\Program Files\\Process Lasso\\prolasso.ini'
+    ];
+    for (const iniPath of possibleLassoPaths) {
+      try {
+        if (fs.existsSync(iniPath)) {
+          let text = fs.readFileSync(iniPath, 'utf8');
+          text = text.replace(/DefaultAffinitiesEx=.*\r?\n?/g, '');
+          text = text.replace(/DefaultAffinities=.*\r?\n?/g, '');
+          text = text.replace(/DefaultPriorities=.*\r?\n?/g, '');
+          text = text.replace(/DefaultIOPriorities=.*\r?\n?/g, '');
+          text = text.replace(/DefaultGPUPriorities=.*\r?\n?/g, '');
+          fs.writeFileSync(iniPath, text, 'utf8');
+        }
+      } catch (_) {}
+    }
+
+    // 4. Reverter DNS para DHCP Automático do Windows
     await runCmd('powershell -NoProfile -Command "Get-NetAdapter | Where-Object Status -eq Up | ForEach-Object { netsh interface ip set dns name=\\\"$($_.Name)\\\" source=dhcp; netsh interface ip set wins name=\\\"$($_.Name)\\\" source=dhcp }"').catch(() => {});
     await runCmd('ipconfig /flushdns').catch(() => {});
 
-    // 4. Reverter Plano de Energia para o padrão Equilibrado
+    // 5. Reverter Plano de Energia para o padrão Equilibrado
     await runCmd('powercfg -setactive 381b4222-f694-41f0-9685-ff5bb260df2e').catch(() => {});
 
-    // 5. Reverter Tweaks de Registro e Prioridades
+    // 6. Reverter Tweaks de Registro e Prioridades
     const resetCmds = [
       'reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "GPU Priority" /f',
       'reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Priority" /f',
@@ -1499,7 +1534,7 @@ ipcMain.handle('revert-all-tweaks-on-revoke', async () => {
       await runCmd(cmd).catch(() => {});
     }
 
-    // 6. Reverter Tweaks do Android se ADB estiver ativo
+    // 7. Reverter Tweaks do Android se ADB estiver ativo
     const adb = findAdb();
     if (adb) {
       const PORTS = [5555, 5554, 5565, 5575, 5585, 21503, 62001, 7555];
