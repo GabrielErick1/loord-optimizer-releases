@@ -403,7 +403,15 @@ async function applyMouseSettingsOnly() {
   if (res && res.success) {
     const regTitle = res.regName || 'Sensibilidade';
     if (tweakStatusText) tweakStatusText.textContent = `Regedit (${regTitle}) aplicada com sucesso no Windows!`;
-    const reboot = confirm(`⚡ Regedit (${regTitle}) aplicada com sucesso!\n\nForam aplicadas exclusivamente as otimizações de sensibilidade selecionadas (o emulador não foi alterado).\n\nDeseja REINICIAR o computador agora para que as alterações do sistema entrem em vigor?`);
+    const reboot = confirm(
+      `⚡ Regedit (${regTitle}) aplicada com sucesso!\n\n` +
+      `🎯 RECOMENDAÇÃO OFICIAL (FULL LATA / CAPA PERFEITO):\n` +
+      `• Mouse Físico: 1600 DPI | Polling Rate: 1000 Hz\n` +
+      `• Emulador: 480 DPI\n` +
+      `• Sensibilidade Jogo: X = 2.0 | Y = 2.0\n\n` +
+      `(Recomendamos manter X e Y padronizados em 2 para puxar Full Capa. Caso sinta a sensibilidade muito alta, adapte X e Y como achar melhor).\n\n` +
+      `Deseja REINICIAR o computador agora para que as alterações do sistema entrem em vigor?`
+    );
     if (reboot) {
       await window.api.rebootComputer();
     }
