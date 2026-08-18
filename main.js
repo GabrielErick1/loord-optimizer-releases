@@ -1809,6 +1809,75 @@ function getCommandsForTweak(tweakId) {
 
 // ─── AUTO-UPDATE ENGINE (Play Store Style) ──────────────────────────────────
 let downloadedInstallerPath = null;
+const https = require('https');
+const http = require('http');
+
+function downloadFileWithRedirects(url, targetPath, onProgress) {
+  return new Promise((resolve, reject) => {
+    function get(currentUrl, maxRedirects = 10) {
+      if (maxRedirects <= 0) return reject(new Error('Muitos redirecionamentos'));
+
+      const client = currentUrl.startsWith('https') ? https : http;
+      const req = client.get(currentUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': '*/*'
+        }
+      }, (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          let nextUrl = res.headers.location;
+          if (!nextUrl.startsWith('http')) {
+            const parsed = new URL(currentUrl);
+            nextUrl = `${parsed.protocol}//${parsed.host}${nextUrl}`;
+          }
+          return get(nextUrl, maxRedirects - 1);
+        }
+
+        if (res.statusCode !== 200) {
+          return reject(new Error(`HTTP ${res.statusCode} ao baixar arquivo.`));
+        }
+
+        const totalBytes = Number(res.headers['content-length']) || 76000000;
+        let receivedBytes = 0;
+        const fileStream = fs.createWriteStream(targetPath);
+        let lastSent = 0;
+
+        res.on('data', (chunk) => {
+          receivedBytes += chunk.length;
+          fileStream.write(chunk);
+          const now = Date.now();
+          if (now - lastSent > 100) {
+            lastSent = now;
+            if (onProgress) {
+              const percent = Math.min(99, Math.round((receivedBytes / totalBytes) * 100));
+              const receivedMB = (receivedBytes / (1024 * 1024)).toFixed(1);
+              const totalMB = (totalBytes / (1024 * 1024)).toFixed(1);
+              onProgress({ percent, receivedMB, totalMB });
+            }
+          }
+        });
+
+        res.on('end', () => {
+          fileStream.end();
+          if (onProgress) {
+            const finalMB = (receivedBytes / (1024 * 1024)).toFixed(1);
+            onProgress({ percent: 100, receivedMB: finalMB, totalMB: finalMB });
+          }
+          resolve(targetPath);
+        });
+
+        res.on('error', (err) => {
+          fileStream.destroy();
+          reject(err);
+        });
+      });
+
+      req.on('error', reject);
+    }
+
+    get(url);
+  });
+}
 
 ipcMain.handle('check-for-updates', async () => {
   const currentVersion = app.getVersion() || '1.0.0';
@@ -1826,7 +1895,7 @@ ipcMain.handle('check-for-updates', async () => {
       return { updateAvailable: false, currentVersion };
     }
 
-    // Compare versions (e.g. 1.0.6 > 1.0.2)
+    // Compare versions (e.g. 1.2.8 > 1.2.7)
     const isNewer = compareSemver(tag, currentVersion) > 0;
     
     // Find installer asset (.exe)
@@ -1874,46 +1943,13 @@ ipcMain.handle('download-update-progress', async (event, downloadUrl) => {
     const targetPath = path.join(os.tmpdir(), 'LoordOptimizer_Update_Setup.exe');
     downloadedInstallerPath = targetPath;
 
-    const response = await fetch(downloadUrl, {
-      redirect: 'follow',
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status} ao baixar arquivo.`);
-
-    const totalBytes = Number(response.headers.get('content-length')) || 76000000;
-    let receivedBytes = 0;
-
-    const fileStream = fs.createWriteStream(targetPath);
-    const reader = response.body.getReader();
-
-    let lastSent = 0;
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      receivedBytes += value.length;
-      fileStream.write(Buffer.from(value));
-
-      const now = Date.now();
-      if (now - lastSent > 100) {
-        lastSent = now;
-        const percent = Math.min(99, Math.round((receivedBytes / totalBytes) * 100));
-        const receivedMB = (receivedBytes / (1024 * 1024)).toFixed(1);
-        const totalMB = (totalBytes / (1024 * 1024)).toFixed(1);
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('update-download-progress', { percent, receivedMB, totalMB });
-        }
+    await downloadFileWithRedirects(downloadUrl, targetPath, (data) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('update-download-progress', data);
       }
-    }
-
-    fileStream.end();
-    await new Promise((resolve) => fileStream.on('finish', resolve));
+    });
 
     if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('update-download-progress', {
-        percent: 100,
-        receivedMB: (receivedBytes / (1024 * 1024)).toFixed(1),
-        totalMB: (receivedBytes / (1024 * 1024)).toFixed(1)
-      });
       mainWindow.webContents.send('update-downloaded', { path: targetPath });
     }
 
@@ -1923,7 +1959,6 @@ ipcMain.handle('download-update-progress', async (event, downloadUrl) => {
     return { success: false, error: e.message };
   }
 });
-
 
 ipcMain.on('install-update', () => {
   performAppUpdate();
@@ -1938,29 +1973,40 @@ function performAppUpdate() {
 
   if (fs.existsSync(targetPath)) {
     try {
-      const { spawn, exec } = require('child_process');
+      const batPath = path.join(os.tmpdir(), 'run_loord_update.cmd');
+      const appExePath = process.execPath;
       
-      // Execute installer with elevated shell
-      exec(`start "" "${targetPath}"`, (err) => {
-        if (err) {
-          const child = spawn(targetPath, [], { detached: true, stdio: 'ignore' });
-          child.unref();
-        }
+      const cmdContent = `@echo off
+timeout /t 2 /nobreak >nul
+taskkill /f /im "${path.basename(appExePath)}" >nul 2>&1
+timeout /t 1 /nobreak >nul
+start /wait "" "${targetPath}" /S
+timeout /t 2 /nobreak >nul
+if exist "${appExePath}" (
+    start "" "${appExePath}"
+) else if exist "%LOCALAPPDATA%\\Programs\\loord-optimizer\\Loord Optimizer.exe" (
+    start "" "%LOCALAPPDATA%\\Programs\\loord-optimizer\\Loord Optimizer.exe"
+)
+del "%~f0"
+`;
+      fs.writeFileSync(batPath, cmdContent, 'utf8');
+
+      const { spawn } = require('child_process');
+      const child = spawn('cmd.exe', ['/c', batPath], {
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: true
       });
+      child.unref();
 
       setTimeout(() => {
         app.isQuitting = true;
         app.exit(0);
-      }, 600);
+      }, 400);
 
       return { success: true };
     } catch (e) {
-      console.error('[AutoUpdater] Erro ao executar instalador:', e);
-      try {
-        const { shell } = require('electron');
-        shell.openPath(targetPath);
-        setTimeout(() => app.exit(0), 600);
-      } catch (_) {}
+      console.error('[AutoUpdater] Erro ao executar updater script:', e);
       return { success: false, error: e.message };
     }
   } else {

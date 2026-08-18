@@ -1,6 +1,6 @@
 {
   "name": "loord-optimizer",
-  "version": "1.2.7",
+  "version": "1.2.8",
   "author": "Loord Optimizer",
   "description": "Loord Optimizer - Otimizador Gamer de Sensibilidade e Emulador",
   "main": "main.js",
@@ -33,7 +33,7 @@
       "*.ps1"
     ],
     "win": {
-      "target": "nsis",
+      "target": ["nsis", "zip"],
       "requestedExecutionLevel": "requireAdministrator"
     },
     "nsis": {
