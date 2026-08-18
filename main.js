@@ -824,6 +824,23 @@ function configureProcessLasso(hw, emuCores) {
         }
       }
 
+      function removeIniKey(fullText, section, key) {
+        const sectionHeader = `[${section}]`;
+        const sectionIdx = fullText.indexOf(sectionHeader);
+        if (sectionIdx === -1) return fullText;
+        const nextSectionIdx = fullText.indexOf('[', sectionIdx + sectionHeader.length);
+        const sectionBody = nextSectionIdx === -1 
+          ? fullText.substring(sectionIdx) 
+          : fullText.substring(sectionIdx, nextSectionIdx);
+        const keyRegex = new RegExp(`^${key}\\s*=.*$\\r?\\n?`, 'm');
+        const newSectionBody = sectionBody.replace(keyRegex, '');
+        if (nextSectionIdx === -1) {
+          return fullText.substring(0, sectionIdx) + newSectionBody;
+        } else {
+          return fullText.substring(0, sectionIdx) + newSectionBody + fullText.substring(nextSectionIdx);
+        }
+      }
+
       function appendUniqueCSV(existing, toAdd) {
         const list = (existing || '').split(',').map(s => s.trim()).filter(Boolean);
         for (const item of toAdd) {
@@ -854,40 +871,44 @@ function configureProcessLasso(hw, emuCores) {
       // 2. Induzir o Modo de Desempenho (Gaming Mode - Sempre)
       text = updateIniKey(text, 'GamingMode', 'GamingModeEnabled', 'true');
       text = updateIniKey(text, 'GamingMode', 'GamingChangePowerPlan', 'true');
+      text = updateIniKey(text, 'GamingMode', 'TargetPowerPlan', 'Bitsum Highest Performance');
       const currGaming = getIniKey(text, 'GamingMode', 'AutomaticGamingModeProcessPaths');
       const newGaming = appendUniqueCSV(currGaming, emuProcesses);
       text = updateIniKey(text, 'GamingMode', 'AutomaticGamingModeProcessPaths', newGaming);
 
-      // 3. SmartTrim (Sempre Ativado com Exclusão do Emulador)
-      text = updateIniKey(text, 'SmartTrim', 'SmartTrimIsEnabled', 'true');
-      text = updateIniKey(text, 'SmartTrim', 'SmartTrimClearStandbyList', 'true');
-      text = updateIniKey(text, 'SmartTrim', 'SmartTrimWorkingSetTrims', 'true');
-      const currTrimEx = getIniKey(text, 'SmartTrim', 'SmartTrimExclusions');
-      const newTrimEx = appendUniqueCSV(currTrimEx, emuProcesses);
-      text = updateIniKey(text, 'SmartTrim', 'SmartTrimExclusions', newTrimEx);
+      // 3. SmartTrim & MemoryManagement (Conforme modelo prolasso.ini)
+      text = updateIniKey(text, 'MemoryManagement', 'SmartTrimIsEnabled', 'true');
+      text = updateIniKey(text, 'MemoryManagement', 'SmartTrimWorkingSetTrims', 'true');
+      text = updateIniKey(text, 'MemoryManagement', 'SmartTrimClearStandbyList', 'true');
+      text = updateIniKey(text, 'MemoryManagement', 'SmartTrimClearFileCache', 'true');
+      text = updateIniKey(text, 'MemoryManagement', 'ClearStandbyFreeRAMThresholdMB', '6000');
+      text = updateIniKey(text, 'MemoryManagement', 'ClearStandbyOnlyInPerfMode', 'true');
+      text = updateIniKey(text, 'MemoryManagement', 'SmartTrimIntervalMins', '15');
 
-      // 4. Afinidade de CPU Permanente (Sempre -> Núcleos Físicos Pares: 0, 2, 4, 6, 8, 10...)
-      // Process Lasso utiliza ponto e vírgula no DefaultAffinitiesEx (ex: hd-player.exe,0,0;2;4;6;8;10)
-      const affExRules = emuProcesses.map(p => `${p},0,${coresListSemicolon}`).join(',');
-      const affHexRules = emuProcesses.map(p => `${p},${maskHex}`).join(',');
-      text = updateIniKey(text, 'ProcessDefaults', 'DefaultAffinitiesEx', affExRules);
-      text = updateIniKey(text, 'ProcessDefaults', 'DefaultAffinities', affHexRules);
+      // 4. Foreground Boosting & Logging (Conforme modelo prolasso.ini)
+      text = updateIniKey(text, 'ForegroundBoosting', 'BoostForegroundProcess', 'true');
+      text = updateIniKey(text, 'ForegroundBoosting', 'ForegroundBoostPriorityClass', '0x8000');
+      text = updateIniKey(text, 'ForegroundBoosting', 'ForegroundBoostGPU', '2');
+      text = updateIniKey(text, 'Logging', 'LogDisable', 'true');
 
-      // 5. Classe de Prioridade Permanente (Sempre -> Alta / 3)
-      const priRules = emuProcesses.map(p => `${p},3`).join(',');
+      // 5. Prioridades Permanentes em ProcessDefaults (Conforme modelo prolasso.ini)
+      const priRules = emuProcesses.map(p => `${p},high`).join(',');
       text = updateIniKey(text, 'ProcessDefaults', 'DefaultPriorities', priRules);
 
-      // 6. Prioridade de E/S Permanente (Sempre -> Alta / 3)
       const ioRules = emuProcesses.map(p => `${p},3`).join(',');
       text = updateIniKey(text, 'ProcessDefaults', 'DefaultIOPriorities', ioRules);
 
-      // 7. Prioridade de GPU Permanente (Sempre -> Alta / 2)
-      const gpuRules = emuProcesses.map(p => `${p},2`).join(',');
+      const gpuRules = emuProcesses.map(p => `${p},4`).join(',');
       text = updateIniKey(text, 'ProcessDefaults', 'DefaultGPUPriorities', gpuRules);
 
-      // 8. Prioridade de Memória Permanente (Sempre -> Normal/Alta / 5)
-      const memRules = emuProcesses.map(p => `${p},5`).join(',');
-      text = updateIniKey(text, 'ProcessDefaults', 'DefaultMemoryPriorities', memRules);
+      const threadBoostRules = emuProcesses.map(p => `${p};0`).join(',');
+      text = updateIniKey(text, 'ProcessDefaults', 'ThreadPriorityBoosts', threadBoostRules);
+
+      // 6. Afinidade de CPU Permanente (Sempre -> Núcleos Físicos Pares: 0;2;4;6;8;10...)
+      // Remove DefaultAffinities (que dava conflito com 0x) e grava apenas DefaultAffinitiesEx
+      const affExRules = emuProcesses.map(p => `${p},0,${coresListSemicolon}`).join(',');
+      text = updateIniKey(text, 'ProcessDefaults', 'DefaultAffinitiesEx', affExRules);
+      text = removeIniKey(text, 'ProcessDefaults', 'DefaultAffinities');
 
       fs.writeFileSync(iniPath, Buffer.from(text, encoding));
       configured = true;
