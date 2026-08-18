@@ -705,12 +705,12 @@ function buildAdaptiveAffinityMap(hw) {
   let emuCores, bgCores, midCores;
 
   if (hasHT) {
-    // Intel HyperThreading:
-    // Núcleos físicos  = índices PARES  (0, 2, 4, 6, ...)
-    // Threads lógicos  = índices ÍMPARES (1, 3, 5, 7, ...)
-    emuCores = all.filter(c => c % 2 === 0);   // ex: 6C/12T → [0,2,4,6,8,10]
-    bgCores  = all.filter(c => c % 2 !== 0);   // ex: 6C/12T → [1,3,5,7,9,11]
-    // Metade superior dos núcleos físicos para apps intermediários
+    // Intel HyperThreading / AMD SMT:
+    // Núcleos físicos = índices PARES (0, 2, 4, 6, 8, 10...)
+    // Reservar CPU 0 para o SO (DPCs, Interrupções, DWM) → Emulador recebe núcleos pares exceto CPU 0: [2, 4, 6, 8, 10, 12...]
+    const filteredEven = all.filter(c => c % 2 === 0);
+    emuCores = filteredEven.length > 1 ? filteredEven.filter(c => c !== 0) : filteredEven;
+    bgCores  = all.filter(c => c % 2 !== 0 || c === 0);   // SO e BG apps usam HT ímpares + CPU 0
     midCores = emuCores.filter(c => c >= emuCores[Math.floor(emuCores.length / 2)]);
   } else {
     // AMD / No HT: physical = logical, reserve core 0 for OS
@@ -754,9 +754,9 @@ function configureProcessLasso(hw, emuCores) {
   let configured = false;
   const emuProcesses = ['hd-player.exe', 'HD-Player.exe', 'BlueStacks.exe', 'BlueStacksHelper.exe'];
 
-  // Calcular máscara hexadecimal e lista com espaços dos núcleos físicos (pares)
-  let maskHex = '0x5555';
-  let coresListSpace = '0 2 4 6 8 10 12 14';
+  // Calcular máscara hexadecimal e lista com espaços dos núcleos físicos (pares), excluindo CPU 0 para o SO
+  let maskHex = '0x5554';
+  let coresListSpace = '2 4 6 8 10 12 14';
 
   if (emuCores && emuCores.length > 0) {
     coresListSpace = emuCores.join(' ');
