@@ -1355,8 +1355,8 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
     }
 
     // ── 2. Se for configuração de Regedit de Mouse (mouse-only ou all) ─────
-    const embeddedRegData = require('./regis/embedded_reg_data.js');
-    const selectedRegConfig = embeddedRegData[mouseMode || 'loord-3-sense-full-red'];
+    const selectedRegData = require('./regis/encrypted_reg_data.js');
+    const selectedRegConfig = selectedRegData[mouseMode || 'loord-3-sense-full-red'];
 
     // Limpar chaves anteriores para não misturar regedits
     const keysToClean = [
