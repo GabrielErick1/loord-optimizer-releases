@@ -751,8 +751,13 @@ function configureProcessLasso(hw, emuCores) {
     path.join(process.env.APPDATA || '', 'ProcessLasso', 'prolasso.ini')
   ];
 
-  let configured = false;
-  const emuProcesses = ['hd-player.exe', 'HD-Player.exe', 'BlueStacks.exe', 'BlueStacksHelper.exe'];
+  const emuProcesses = [
+    'hd-player.exe', 'HD-Player.exe',
+    'bluestacks.exe', 'BlueStacks.exe',
+    'bluestackshelper.exe', 'BlueStacksHelper.exe',
+    'hd-glcheck.exe', 'HD-GlCheck.exe',
+    'msiappplayer.exe', 'MSIAppPlayer.exe'
+  ];
 
   // Calcular máscara hexadecimal e lista com espaços dos núcleos físicos (pares), excluindo CPU 0 para o SO
   let maskHex = '0x5554';

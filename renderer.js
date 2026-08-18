@@ -1698,9 +1698,15 @@ if (btnApplyDns) {
 // ─── Modo Turbo Game Booster ────────────────────────────────────────
 const btnGameBooster = document.getElementById('btn-game-booster');
 const badgeGameBooster = document.getElementById('badge-game-booster');
+let isGameBoosterActive = false;
 
 if (btnGameBooster) {
   btnGameBooster.addEventListener('click', async () => {
+    if (isGameBoosterActive) {
+      alert('⚠️ ATENÇÃO:\n\nO Game Booster já foi ativado nesta sessão!\n\nClicar repetidamente duas vezes seguidas pode sobrecarregar as otimizações do sistema. As otimizações para HD-Player (BlueStacks e MSI App Player) já estão 100% ativas!');
+      return;
+    }
+
     btnGameBooster.disabled = true;
     btnGameBooster.textContent = '🔍 Detectando hardware...';
 
@@ -1711,11 +1717,15 @@ if (btnGameBooster) {
     const res = await window.api.boostGameTurbo();
 
     if (res && res.success) {
+      isGameBoosterActive = true;
+      btnGameBooster.disabled = false;
+      btnGameBooster.textContent = '✅ Game Booster Ativo';
+      btnGameBooster.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+
       if (badgeGameBooster) {
         badgeGameBooster.style.display = 'inline';
         setTimeout(() => { badgeGameBooster.style.display = 'none'; }, 10000);
       }
-      btnGameBooster.textContent = '🔥 Ativar Game Booster';
 
       const hw = res.hw || {};
       const brand  = hw.isIntel ? 'Intel' : hw.isAMD ? 'AMD/Ryzen' : 'Outro';
