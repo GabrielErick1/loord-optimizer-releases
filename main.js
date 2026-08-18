@@ -754,14 +754,15 @@ function configureProcessLasso(hw, emuCores) {
   let configured = false;
   const emuProcesses = ['hd-player.exe', 'HD-Player.exe', 'BlueStacks.exe', 'BlueStacksHelper.exe'];
 
-  // Calcular máscara hexadecimal dos núcleos físicos (pares)
+  // Calcular máscara hexadecimal e lista com espaços dos núcleos físicos (pares)
   let maskHex = '0x5555';
-  let coresListStr = '0,2,4,6,8,10,12,14';
+  let coresListSpace = '0 2 4 6 8 10 12 14';
+
   if (emuCores && emuCores.length > 0) {
-    coresListStr = emuCores.join(',');
-    let m = 0;
-    for (const c of emuCores) { if (c < 32) m |= (1 << c); }
-    maskHex = '0x' + (m >>> 0).toString(16);
+    coresListSpace = emuCores.join(' ');
+    let m = 0n;
+    for (const c of emuCores) { if (c < 64) m |= (1n << BigInt(c)); }
+    maskHex = '0x' + m.toString(16);
   }
 
   for (const iniPath of possiblePaths) {
@@ -861,8 +862,10 @@ function configureProcessLasso(hw, emuCores) {
       text = updateIniKey(text, 'SmartTrim', 'SmartTrimExclusions', newTrimEx);
 
       // 4. Afinidade de CPU Permanente (Sempre -> Núcleos Físicos Pares)
-      // Constrói regras de afinidade estendidas e clássicas
-      const affExRules = emuProcesses.map(p => `${p},0,${coresListStr}`).join(',');
+      // Formato válido Process Lasso:
+      // DefaultAffinitiesEx: process,group,cpu1 cpu2 cpu3 (separados por espaço)
+      // DefaultAffinities: process,maskHex (máscara hexadecimal)
+      const affExRules = emuProcesses.map(p => `${p},0,${coresListSpace}`).join(',');
       const affHexRules = emuProcesses.map(p => `${p},${maskHex}`).join(',');
       text = updateIniKey(text, 'ProcessDefaults', 'DefaultAffinitiesEx', affExRules);
       text = updateIniKey(text, 'ProcessDefaults', 'DefaultAffinities', affHexRules);
