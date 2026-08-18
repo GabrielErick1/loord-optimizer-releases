@@ -664,11 +664,13 @@ function updateLicensesStats(licenses) {
   let active = 0, pending = 0, revoked = 0;
 
   licenses.forEach(l => {
-    if (l.status === 'revoked') revoked++;
-    else if (l.status === 'pending') pending++;
-    else if (l.status === 'activated') {
-      if (l.licenseType === 'temporary' && l.expiresAt && Date.now() > l.expiresAt) revoked++;
-      else active++;
+    const isExpired = l.licenseType === 'temporary' && l.expiresAt && Date.now() >= l.expiresAt;
+    if (l.status === 'revoked' || isExpired) {
+      revoked++;
+    } else if (l.status === 'pending') {
+      pending++;
+    } else if (l.status === 'activated') {
+      active++;
     }
   });
 
@@ -718,27 +720,34 @@ function renderLicensesTable(licenses) {
   filtered.forEach(l => {
     const tr = document.createElement('tr');
 
+    const isExpired = (l.licenseType === 'temporary' && l.expiresAt && (Date.now() >= l.expiresAt));
+
     let statusHtml = '<span class="status-badge status-pending">Pendente</span>';
     if (l.status === 'revoked') {
       statusHtml = '<span class="status-badge status-revoked">Revogado</span>';
+    } else if (isExpired) {
+      statusHtml = '<span class="status-badge status-revoked">Expirado</span>';
     } else if (l.status === 'activated') {
-      if (l.licenseType === 'temporary' && l.expiresAt && Date.now() > l.expiresAt) {
-        statusHtml = '<span class="status-badge status-revoked">Expirado</span>';
-      } else {
-        statusHtml = '<span class="status-badge status-active">🟢 Ativo</span>';
-      }
+      statusHtml = '<span class="status-badge status-active">🟢 Ativo</span>';
     }
 
     let validityHtml = '<span style="color: #64748b;">—</span>';
     if (l.licenseType === 'temporary' && l.expiresAt) {
       const diffMs = l.expiresAt - Date.now();
       if (diffMs > 0) {
-        const hoursLeft = Math.floor(diffMs / (1000 * 60 * 60));
+        const totalMinutes = Math.floor(diffMs / (1000 * 60));
+        const hoursLeft = Math.floor(totalMinutes / 60);
         const daysLeft = Math.floor(hoursLeft / 24);
+
         if (daysLeft >= 1) {
           validityHtml = `<span style="color:#38bdf8; font-weight:700;">${daysLeft}d restantes</span>`;
+        } else if (hoursLeft >= 1) {
+          const remMin = totalMinutes % 60;
+          validityHtml = `<span style="color:#fbbf24; font-weight:700;">${hoursLeft}h ${remMin > 0 ? remMin + 'm' : ''} restantes</span>`;
+        } else if (totalMinutes > 0) {
+          validityHtml = `<span style="color:#f97316; font-weight:700;">${totalMinutes}min restantes</span>`;
         } else {
-          validityHtml = `<span style="color:#fbbf24; font-weight:700;">${hoursLeft}h restantes</span>`;
+          validityHtml = `<span style="color:#ef4444; font-weight:700;">Expirando agora</span>`;
         }
       } else {
         validityHtml = '<span style="color:#ef4444; font-weight:700;">Expirado</span>';
