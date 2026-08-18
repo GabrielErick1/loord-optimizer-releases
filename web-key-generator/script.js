@@ -750,6 +750,9 @@ function renderLicensesTable(licenses) {
       validityHtml = '<span style="color:#a855f7; font-weight:700;">👑 Vitalícia</span>';
     }
 
+    const isRevoked = l.status === 'revoked';
+    const hasUuid = !!(l.uuid && l.uuid.trim().length > 3);
+
     tr.innerHTML = `
       <td style="font-weight: 700; color: #f8fafc;">${escapeHtml(l.clientName || 'Cliente VIP')}</td>
       <td><span style="font-size: 0.8rem; color: #cbd5e1;">${l.licenseType === 'temporary' ? '⏳ Temp' : '👑 Vitalícia'}</span></td>
@@ -759,17 +762,100 @@ function renderLicensesTable(licenses) {
       <td>${statusHtml}</td>
       <td style="font-size: 0.8rem; color: #64748b;">${l.createdAt ? new Date(l.createdAt).toLocaleDateString('pt-BR') : '—'}</td>
       <td>${validityHtml}</td>
-      <td>
-        <button onclick="deleteLicense('${escapeHtml(l.key)}')" class="btn-action" style="color: #ef4444;" title="Excluir Chave">🗑️</button>
+      <td style="white-space: nowrap;">
+        <button onclick="openRenewModal('${escapeHtml(l.key)}')" class="btn-action" title="Renovar Validade da Chave" style="color: #38bdf8; margin-right: 4px;">🔄</button>
+        ${hasUuid ? `<button onclick="resetLicenseUuid('${escapeHtml(l.key)}')" class="btn-action" title="Deslogar PC (Desvincular UUID)" style="color: #fbbf24; margin-right: 4px;">🔌</button>` : ''}
+        <button onclick="toggleRevokeLicense('${escapeHtml(l.key)}')" class="btn-action" title="${isRevoked ? 'Reativar Chave' : 'Revogar / Bloquear Chave'}" style="color: ${isRevoked ? '#10b981' : '#f59e0b'}; margin-right: 4px;">${isRevoked ? '🟢' : '⛔'}</button>
+        <button onclick="deleteLicense('${escapeHtml(l.key)}')" class="btn-action" title="Excluir Chave Permanentemente" style="color: #ef4444;">🗑️</button>
       </td>
     `;
     licensesListBody.appendChild(tr);
   });
 }
 
-// Excluir Licença
-window.deleteLicense = async function(key) {
-  if (!confirm(`Deseja realmente excluir e revogar a chave ${key}?`)) return;
+// ═══════════════════════════════════════════════════════════════════════
+//  AÇÕES DE LICENÇA (RENOVAR, DESLOGAR PC, REVOGAR, EXCLUIR)
+// ═══════════════════════════════════════════════════════════════════════
+
+// 1. Abrir Modal de Renovação de Licença
+let renewingKey = null;
+
+window.openRenewModal = function(key) {
+  const lic = currentLoadedLicenses.find(l => l.key.toUpperCase() === key.toUpperCase());
+  if (!lic) return;
+
+  renewingKey = lic.key;
+  document.getElementById('renew-modal-key-label').textContent = `Chave: ${lic.key} | Cliente: ${lic.clientName || 'Cliente VIP'}`;
+  document.getElementById('renew-modal-msg').textContent = '';
+
+  const renewSelect = document.getElementById('renew-license-type');
+  if (renewSelect) {
+    renewSelect.innerHTML = '';
+    currentLoadedPlans.forEach(plan => {
+      if (!plan.enabled) return;
+      const opt = document.createElement('option');
+      opt.value = plan.id;
+      opt.textContent = `${plan.name}`;
+      renewSelect.appendChild(opt);
+    });
+  }
+
+  document.getElementById('renew-license-modal').style.display = 'flex';
+};
+
+window.closeRenewModal = function() {
+  document.getElementById('renew-license-modal').style.display = 'none';
+  renewingKey = null;
+};
+
+window.confirmRenew = async function() {
+  if (!renewingKey) return;
+  const renewSelect = document.getElementById('renew-license-type');
+  const licenseType = renewSelect ? renewSelect.value : 'temp-30d';
+  const customValInput = document.getElementById('renew-custom-val');
+  const customVal = customValInput ? parseInt(customValInput.value, 10) : 30;
+  const msgEl = document.getElementById('renew-modal-msg');
+  const confirmBtn = document.getElementById('btn-confirm-renew');
+
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = 'Renovando...';
+
+  try {
+    const res = await fetch(`${API_URL}/api/licenses`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify({
+        key: renewingKey,
+        licenseType,
+        customVal
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      msgEl.style.color = '#10b981';
+      msgEl.textContent = '✔️ Licença renovada com sucesso!';
+      loadLicenses();
+      setTimeout(closeRenewModal, 1200);
+    } else {
+      msgEl.style.color = '#ef4444';
+      msgEl.textContent = `❌ ${data.error || 'Erro ao renovar.'}`;
+    }
+  } catch (e) {
+    msgEl.style.color = '#ef4444';
+    msgEl.textContent = '❌ Erro de conexão ao renovar.';
+  } finally {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = '🔄 Confirmar Renovação';
+  }
+};
+
+// 2. Deslogar PC (Desvincular UUID)
+window.resetLicenseUuid = async function(key) {
+  if (!confirm(`Deseja realmente deslogar o PC e desvincular o UUID da chave ${key}?\nO cliente precisará ativar novamente no próximo uso.`)) return;
 
   try {
     const res = await fetch(`${API_URL}/api/licenses`, {
@@ -778,7 +864,72 @@ window.deleteLicense = async function(key) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${userToken}`
       },
-      body: JSON.stringify({ key })
+      body: JSON.stringify({ key, action: 'unlink' })
+    });
+    const data = await res.json();
+    if (data.success) {
+      loadLicenses();
+    } else {
+      alert(`Erro: ${data.error || 'Não foi possível desvincular o PC.'}`);
+    }
+  } catch (e) {
+    alert('Erro ao desvincular PC.');
+  }
+};
+
+// 3. Revogar / Desativar / Reativar Chave
+window.toggleRevokeLicense = async function(key) {
+  const lic = currentLoadedLicenses.find(l => l.key.toUpperCase() === key.toUpperCase());
+  const isRevoked = lic && lic.status === 'revoked';
+  const actionText = isRevoked ? 'reativar' : 'revogar/bloquear';
+
+  if (!confirm(`Deseja realmente ${actionText} a chave ${key}?`)) return;
+
+  try {
+    if (isRevoked) {
+      // Reativar via PATCH
+      const res = await fetch(`${API_URL}/api/licenses`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userToken}`
+        },
+        body: JSON.stringify({ key, licenseType: lic.licenseType || 'permanent-unlimited' })
+      });
+      const data = await res.json();
+      if (data.success) loadLicenses();
+      else alert(`Erro: ${data.error || 'Não foi possível reativar.'}`);
+    } else {
+      // Revogar via DELETE default
+      const res = await fetch(`${API_URL}/api/licenses`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userToken}`
+        },
+        body: JSON.stringify({ key, action: 'revoke' })
+      });
+      const data = await res.json();
+      if (data.success) loadLicenses();
+      else alert(`Erro: ${data.error || 'Não foi possível revogar.'}`);
+    }
+  } catch (e) {
+    alert('Erro ao alterar status da chave.');
+  }
+};
+
+// 4. Excluir Chave Permanentemente
+window.deleteLicense = async function(key) {
+  if (!confirm(`Deseja realmente EXCLUIR PERMANENTEMENTE a chave ${key}?\nEsta ação não poderá ser desfeita.`)) return;
+
+  try {
+    const res = await fetch(`${API_URL}/api/licenses`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify({ key, action: 'delete' })
     });
     const data = await res.json();
     if (data.success) {
