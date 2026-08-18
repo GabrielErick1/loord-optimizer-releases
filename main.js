@@ -706,17 +706,15 @@ function buildAdaptiveAffinityMap(hw) {
 
   if (hasHT) {
     // Intel HyperThreading / AMD SMT:
-    // Núcleos físicos = índices PARES (0, 2, 4, 6, 8, 10...)
-    // Reservar CPU 0 para o SO (DPCs, Interrupções, DWM) → Emulador recebe núcleos pares exceto CPU 0: [2, 4, 6, 8, 10, 12...]
-    const filteredEven = all.filter(c => c % 2 === 0);
-    emuCores = filteredEven.length > 1 ? filteredEven.filter(c => c !== 0) : filteredEven;
-    bgCores  = all.filter(c => c % 2 !== 0 || c === 0);   // SO e BG apps usam HT ímpares + CPU 0
+    // Núcleos físicos = índices PARES (0, 2, 4, 6, 8, 10, 12...)
+    emuCores = all.filter(c => c % 2 === 0);
+    bgCores  = all.filter(c => c % 2 !== 0);
     midCores = emuCores.filter(c => c >= emuCores[Math.floor(emuCores.length / 2)]);
   } else {
-    // AMD / No HT: physical = logical, reserve core 0 for OS
+    // AMD / No HT: physical = logical
     const osReserve = physicalCores <= 2 ? 0 : 1;
-    emuCores = all.filter(c => c >= osReserve);            // ex: 6C/6T → [1,2,3,4,5]
-    bgCores  = all.filter(c => c < osReserve);             // ex: → [0]
+    emuCores = all.filter(c => c >= osReserve);
+    bgCores  = all.filter(c => c < osReserve);
     midCores = all.filter(c => c >= osReserve && c < osReserve + Math.ceil((cap - osReserve) / 2));
   }
 
@@ -759,11 +757,13 @@ function configureProcessLasso(hw, emuCores) {
     'msiappplayer.exe', 'MSIAppPlayer.exe'
   ];
 
-  // Calcular máscara hexadecimal e lista com espaços dos núcleos físicos (pares), excluindo CPU 0 para o SO
-  let maskHex = '0x5554';
-  let coresListSpace = '2 4 6 8 10 12 14';
+  // Calcular máscara hexadecimal e listas dos núcleos físicos (pares: 0, 2, 4, 6, 8, 10...)
+  let maskHex = '0x5555';
+  let coresListSemicolon = '0;2;4;6;8;10;12;14';
+  let coresListSpace = '0 2 4 6 8 10 12 14';
 
   if (emuCores && emuCores.length > 0) {
+    coresListSemicolon = emuCores.join(';');
     coresListSpace = emuCores.join(' ');
     let m = 0n;
     for (const c of emuCores) { if (c < 64) m |= (1n << BigInt(c)); }
@@ -866,11 +866,9 @@ function configureProcessLasso(hw, emuCores) {
       const newTrimEx = appendUniqueCSV(currTrimEx, emuProcesses);
       text = updateIniKey(text, 'SmartTrim', 'SmartTrimExclusions', newTrimEx);
 
-      // 4. Afinidade de CPU Permanente (Sempre -> Núcleos Físicos Pares)
-      // Formato válido Process Lasso:
-      // DefaultAffinitiesEx: process,group,cpu1 cpu2 cpu3 (separados por espaço)
-      // DefaultAffinities: process,maskHex (máscara hexadecimal)
-      const affExRules = emuProcesses.map(p => `${p},0,${coresListSpace}`).join(',');
+      // 4. Afinidade de CPU Permanente (Sempre -> Núcleos Físicos Pares: 0, 2, 4, 6, 8, 10...)
+      // Process Lasso utiliza ponto e vírgula no DefaultAffinitiesEx (ex: hd-player.exe,0,0;2;4;6;8;10)
+      const affExRules = emuProcesses.map(p => `${p},0,${coresListSemicolon}`).join(',');
       const affHexRules = emuProcesses.map(p => `${p},${maskHex}`).join(',');
       text = updateIniKey(text, 'ProcessDefaults', 'DefaultAffinitiesEx', affExRules);
       text = updateIniKey(text, 'ProcessDefaults', 'DefaultAffinities', affHexRules);
