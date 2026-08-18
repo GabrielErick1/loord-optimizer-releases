@@ -259,9 +259,10 @@ body {
 /* Content Area */
 .content-area {
   flex-grow: 1;
-  padding: 40px;
+  padding: 30px 40px;
   overflow-y: auto;
-  max-width: 1000px;
+  max-width: 1500px;
+  width: 100%;
 }
 
 .tab-content {
@@ -350,11 +351,12 @@ h2 {
 /* Manage Users Grid */
 .users-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  grid-template-columns: 460px 1fr;
+  gap: 28px;
+  align-items: start;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 1200px) {
   .users-grid {
     grid-template-columns: 1fr;
   }
@@ -376,6 +378,100 @@ h2 {
 .table-container {
   width: 100%;
   overflow-x: auto;
+}
+
+.plan-select-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.plan-checkbox-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.plan-checkbox-card:hover {
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.plan-checkbox-card.checked {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.plan-checkbox-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  flex: 1;
+}
+
+.plan-checkbox-card input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #38bdf8;
+  cursor: pointer;
+  margin: 0;
+}
+
+.plan-title-text {
+  font-size: 0.88rem;
+  color: #f1f5f9;
+  font-weight: 600;
+}
+
+.plan-badge-price {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  font-weight: 800;
+  font-size: 0.78rem;
+  padding: 3px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+.plan-badge-free {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  font-weight: 800;
+  font-size: 0.78rem;
+  padding: 3px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.4);
 }
 
 .users-table {

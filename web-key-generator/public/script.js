@@ -408,19 +408,33 @@ function renderNewVendorPlanCheckboxes(plans) {
   newVendorPlansList.innerHTML = '';
 
   plans.forEach(p => {
+    const isFree = p.price <= 0;
+    const priceBadge = isFree 
+      ? '<span class="plan-badge-free">🎁 Grátis</span>'
+      : `<span class="plan-badge-price">💳 R$ ${Number(p.price).toFixed(2).replace('.', ',')}</span>`;
+
     const div = document.createElement('div');
-    div.style.display = 'flex';
-    div.style.alignItems = 'center';
-    div.style.gap = '8px';
-    div.style.fontSize = '0.85rem';
-    div.style.color = '#e2e8f0';
+    div.className = 'plan-checkbox-card';
 
     div.innerHTML = `
-      <input type="checkbox" id="new-plan-${p.id}" value="${p.id}" checked style="cursor: pointer;">
-      <label for="new-plan-${p.id}" style="cursor: pointer; margin: 0; text-transform: none; letter-spacing: 0;">
-        ${escapeHtml(p.name)} <span style="color: #94a3b8; font-size: 0.75rem;">(${p.price > 0 ? 'R$ ' + p.price.toFixed(2).replace('.', ',') : 'Grátis'})</span>
-      </label>
+      <div class="plan-checkbox-left">
+        <input type="checkbox" id="new-plan-${p.id}" value="${p.id}" checked>
+        <label for="new-plan-${p.id}" class="plan-title-text" style="cursor: pointer; margin: 0;">
+          ${escapeHtml(p.name)}
+        </label>
+      </div>
+      ${priceBadge}
     `;
+
+    // Toggle on container click
+    div.addEventListener('click', (e) => {
+      if (e.target.tagName !== 'INPUT') {
+        const cb = div.querySelector('input[type="checkbox"]');
+        cb.checked = !cb.checked;
+      }
+      div.classList.toggle('checked', div.querySelector('input[type="checkbox"]').checked);
+    });
+
     newVendorPlansList.appendChild(div);
   });
 }
@@ -928,19 +942,32 @@ window.openEditUserModal = function(username) {
   editPlansList.innerHTML = '';
   currentLoadedPlans.forEach(p => {
     const isAllowed = !user.allowedPlans || user.allowedPlans.length === 0 || user.allowedPlans.includes(p.id);
+    const isFree = p.price <= 0;
+    const priceBadge = isFree 
+      ? '<span class="plan-badge-free">🎁 Grátis</span>'
+      : `<span class="plan-badge-price">💳 R$ ${Number(p.price).toFixed(2).replace('.', ',')}</span>`;
+
     const div = document.createElement('div');
-    div.style.display = 'flex';
-    div.style.alignItems = 'center';
-    div.style.gap = '8px';
-    div.style.fontSize = '0.85rem';
-    div.style.color = '#e2e8f0';
+    div.className = `plan-checkbox-card ${isAllowed ? 'checked' : ''}`;
 
     div.innerHTML = `
-      <input type="checkbox" id="edit-plan-${p.id}" value="${p.id}" ${isAllowed ? 'checked' : ''} style="cursor: pointer;">
-      <label for="edit-plan-${p.id}" style="cursor: pointer; margin: 0; text-transform: none; letter-spacing: 0;">
-        ${escapeHtml(p.name)}
-      </label>
+      <div class="plan-checkbox-left">
+        <input type="checkbox" id="edit-plan-${p.id}" value="${p.id}" ${isAllowed ? 'checked' : ''}>
+        <label for="edit-plan-${p.id}" class="plan-title-text" style="cursor: pointer; margin: 0;">
+          ${escapeHtml(p.name)}
+        </label>
+      </div>
+      ${priceBadge}
     `;
+
+    div.addEventListener('click', (e) => {
+      if (e.target.tagName !== 'INPUT') {
+        const cb = div.querySelector('input[type="checkbox"]');
+        cb.checked = !cb.checked;
+      }
+      div.classList.toggle('checked', div.querySelector('input[type="checkbox"]').checked);
+    });
+
     editPlansList.appendChild(div);
   });
 
