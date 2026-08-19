@@ -2153,10 +2153,14 @@ ipcMain.handle('transform-windows-lite', async () => {
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v FeatureSettingsOverride /t REG_DWORD /d 3 /f /reg:64',
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v FeatureSettingsOverrideMask /t REG_DWORD /d 3 /f /reg:64',
 
-      // 2. Priorização Extrema de Threads (Win32PrioritySeparation = 26 / Hex 1A)
+      // 2. Priorização Extrema de Threads e Jogos (Win32PrioritySeparation = 26 / Hex 1A)
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 26 /f /reg:64',
       'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 0 /f /reg:64',
       'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v NetworkThrottlingIndex /t REG_DWORD /d 4294967295 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "GPU Priority" /t REG_DWORD /d 8 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Priority" /t REG_DWORD /d 6 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Scheduling Category" /t REG_SZ /d "High" /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "SFIO Priority" /t REG_SZ /d "High" /f /reg:64',
 
       // 3. Agrupamento de Svchost (Transforma ~60 processos svchost em menos de 15)
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control" /v SvcHostSplitThresholdInKB /t REG_DWORD /d 4294967295 /f /reg:64',
@@ -2172,7 +2176,12 @@ ipcMain.handle('transform-windows-lite', async () => {
       'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338389Enabled /t REG_DWORD /d 0 /f',
       'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-353696Enabled /t REG_DWORD /d 0 /f',
 
-      // 5. Otimização Visual Minimalista Estilo Ghost Spectre
+      // 5. GameDVR e Gravação em Fundo Desativados
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v AllowGameDVR /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKCU\\System\\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f',
+      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR" /v AppCaptureEnabled /t REG_DWORD /d 0 /f',
+
+      // 6. Otimização Visual Minimalista Estilo Ghost Spectre
       'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects" /v VisualFXSetting /t REG_DWORD /d 2 /f',
       'reg add "HKCU\\Control Panel\\Desktop" /v UserPreferencesMask /t REG_BINARY /d 9012038010000000 /f',
       'reg add "HKCU\\Control Panel\\Desktop\\WindowMetrics" /v MinAnimate /t REG_SZ /d 0 /f',
@@ -2180,7 +2189,17 @@ ipcMain.handle('transform-windows-lite', async () => {
       'reg add "HKCU\\Control Panel\\Desktop" /v DragFullWindows /t REG_SZ /d 0 /f',
       'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f',
 
-      // 6. Desativar Serviços Pesados de Fundo
+      // 7. Plano de Energia Máxima & Core Unparking
+      'powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61',
+      'powercfg -setactive e9a42b02-d5df-448d-aa00-03f14749eb61',
+      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100',
+      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100',
+      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMINCORES 100',
+      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMAXCORES 100',
+      'powercfg -setactive SCHEME_CURRENT',
+      'powercfg -h off',
+
+      // 8. Desativar Serviços Pesados de Fundo
       'sc config "WSearch" start= disabled',
       'sc stop "WSearch"',
       'sc config "SysMain" start= disabled',
@@ -2204,16 +2223,16 @@ ipcMain.handle('transform-windows-lite', async () => {
       'sc config "dosvc" start= demand',
       'sc stop "dosvc"',
 
-      // 7. BCD Timer Resolution 0.5ms & Boot Rápido
+      // 9. BCD Timer Resolution 0.5ms & Boot Rápido
       'bcdedit /set useplatformtick yes',
       'bcdedit /set disabledynamictick yes',
       'bcdedit /set useplatformclock no',
       'bcdedit /set bootux disabled',
       'bcdedit /timeout 3',
-      'powercfg -h off',
 
-      // 8. SSD TRIM
-      'fsutil behavior set DisableDeleteNotify 0'
+      // 10. SSD TRIM & Rede QoS 0%
+      'fsutil behavior set DisableDeleteNotify 0',
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched" /v NonBestEffortLimit /t REG_DWORD /d 0 /f /reg:64'
     ];
 
     for (const cmd of liteCommands) {
