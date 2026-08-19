@@ -1771,6 +1771,19 @@ if (btnApplyDns) {
   });
 }
 
+const btnResetDhcp = document.getElementById('btn-reset-dhcp');
+if (btnResetDhcp) {
+  btnResetDhcp.addEventListener('click', async () => {
+    btnResetDhcp.disabled = true;
+    btnResetDhcp.textContent = 'Restaurando...';
+    const res = await window.api.resetNetworkDhcp();
+    btnResetDhcp.disabled = false;
+    btnResetDhcp.textContent = '✔ Restaurado!';
+    setTimeout(() => { btnResetDhcp.textContent = '🔄 Restaurar Conexão Padrão (DHCP & Fix Perfis)'; }, 3000);
+    alert(res && res.message ? res.message : '✔ Conexão e arquivo Hosts restaurados com sucesso!');
+  });
+}
+
 // ─── Modo Turbo Game Booster ────────────────────────────────────────
 const btnGameBooster = document.getElementById('btn-game-booster');
 const badgeGameBooster = document.getElementById('badge-game-booster');

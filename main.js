@@ -69,6 +69,7 @@ app.on('second-instance', () => {
 });
 
 app.whenReady().then(() => {
+  cleanHostsFileOfBluestacks();
   checkAdminPrivileges((isAdmin) => {
     systemIsAdmin = isAdmin;
     createWindow();
@@ -145,6 +146,23 @@ function runCmd(command) {
       else resolve(stdout.trim());
     });
   });
+}
+
+function cleanHostsFileOfBluestacks() {
+  try {
+    const hostsPath = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32\\drivers\\etc\\hosts');
+    if (fs.existsSync(hostsPath)) {
+      let hostsContent = fs.readFileSync(hostsPath, 'utf8');
+      if (hostsContent.includes('bluestacks.com')) {
+        const cleaned = hostsContent
+          .split(/\r?\n/)
+          .filter(line => !line.includes('bluestacks.com'))
+          .join('\r\n');
+        fs.writeFileSync(hostsPath, cleaned, 'utf8');
+        try { execSync('ipconfig /flushdns', { stdio: 'ignore' }); } catch (_) {}
+      }
+    }
+  } catch (_) {}
 }
 
 // IPC Handlers
@@ -2483,34 +2501,8 @@ ipcMain.handle('remove-emulator-ads', async (event, port) => {
       }
     }
 
-    // 2. Bloquear domínios de entrega de anúncios do BlueStacks no arquivo hosts do Windows
-    try {
-      const hostsPath = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32\\drivers\\etc\\hosts');
-      if (fs.existsSync(hostsPath)) {
-        let hostsContent = fs.readFileSync(hostsPath, 'utf8');
-        const adDomains = [
-          'cloud.bluestacks.com',
-          'ads.bluestacks.com',
-          'bst-ads.bluestacks.com',
-          'delivery.bluestacks.com',
-          'telemetry.bluestacks.com',
-          'static-gamecenter.bluestacks.com',
-          'gamecenter.bluestacks.com',
-          'bs3-cloud.bluestacks.com',
-          'promo.bluestacks.com'
-        ];
-        let addedDomains = false;
-        for (const dom of adDomains) {
-          if (!hostsContent.includes(dom)) {
-            hostsContent += `\r\n127.0.0.1 ${dom}`;
-            addedDomains = true;
-          }
-        }
-        if (addedDomains) {
-          fs.writeFileSync(hostsPath, hostsContent, 'utf8');
-        }
-      }
-    } catch (_) {}
+    // 2. Garantir que o arquivo hosts não bloqueie serviços legítimos do BlueStacks (como lista de celulares)
+    cleanHostsFileOfBluestacks();
 
     // 3. Desinstalar apps de anúncios e promoções via ADB se conectado
     let adbSuccess = false;
@@ -2544,6 +2536,28 @@ ipcMain.handle('remove-emulator-ads', async (event, port) => {
       confModified, 
       adbSuccess, 
       message: '🚫 Anúncios do emulador, App Center e barra de jogos recomendados removidos com sucesso! Reinicie o emulador para ver a tela 100% limpa.' 
+    };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+// ─── RESTAURAR REDE & CONEXÃO (DHCP + FLUSH DNS + LIMPAR HOSTS) ─────────────
+ipcMain.handle('reset-network-dhcp', async () => {
+  try {
+    cleanHostsFileOfBluestacks();
+
+    try {
+      execSync('powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Get-NetAdapter | Where-Object Status -eq \'Up\' | ForEach-Object { netsh interface ip set dns name=\\\"$($_.Name)\\\" source=dhcp; netsh interface ip set wins name=\\\"$($_.Name)\\\" source=dhcp }"', { stdio: 'ignore' });
+    } catch (_) {}
+
+    try {
+      execSync('ipconfig /flushdns', { stdio: 'ignore' });
+    } catch (_) {}
+
+    return { 
+      success: true, 
+      message: '✔ Conexão de rede restaurada para o padrão (DHCP Automático, DNS limpo e arquivo Hosts reparado)!\n\nAgora o BlueStacks conseguirá carregar a lista de Perfis de Telefone normalmente.' 
     };
   } catch (e) {
     return { success: false, error: e.message };

@@ -55,6 +55,7 @@ contextBridge.exposeInMainWorld('api', {
   // ─── Network & DNS Gamer ─────────────────────────────────────────
   testPing: () => ipcRenderer.invoke('test-ping'),
   setGamerDns: (dnsType) => ipcRenderer.invoke('set-gamer-dns', dnsType),
+  resetNetworkDhcp: () => ipcRenderer.invoke('reset-network-dhcp'),
   // ─── Game Booster Turbo ──────────────────────────────────────────
   boostGameTurbo: () => ipcRenderer.invoke('boost-game-turbo'),
   // ─── PC Fraco / 1ª Geração (Ultra FPS) ───────────────────────────
