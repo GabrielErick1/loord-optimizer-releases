@@ -82,6 +82,10 @@ $services = @(
     'SysMain',          # SuperFetch - consome RAM
     'DiagTrack',        # Telemetria Windows
     'WSearch',          # Indexador de busca
+    'Fax',              # Fax do Windows
+    'wuauserv',         # Windows Update (pausado em jogo)
+    'BITS',             # Background Intelligent Transfer
+    'dosvc',            # Otimizacao de entrega
     'dmwappushservice', # Push de dados Microsoft
     'MapsBroker',       # Mapas offline
     'PcaSvc',           # Assistente de compatibilidade
@@ -111,7 +115,7 @@ $services = @(
 foreach ($svc in $services) {
     Stop-Service -Name $svc -Force -ErrorAction SilentlyContinue
 }
-Write-Host "  -> Servicos de telemetria, Xbox, impressora e outros pausados." -ForegroundColor Green
+Write-Host "  -> Servicos de telemetria, Xbox, BITS, impressora e outros pausados." -ForegroundColor Green
 
 # =============================================================
 # ETAPA 4: Agrupar svchost (reduz de 60 para ~12 pos-reboot)

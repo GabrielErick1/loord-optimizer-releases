@@ -1196,21 +1196,54 @@ ipcMain.handle('optimize-windows-master', async () => {
   }
   try {
     const directCommands = [
+      // 1. Energia & Hibernação
       'powercfg -h off',
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" /v HiberbootEnabled /t REG_DWORD /d 0 /f /reg:64',
-      'powercfg -setactive SCHEME_MIN',
-      'powercfg -setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c',
       'powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61',
       'powercfg -setactive e9a42b02-d5df-448d-aa00-03f14749eb61',
+      'powercfg -setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c',
       'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100',
       'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100',
+      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMINCORES 100',
+      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMAXCORES 100',
+      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPHEADROOM 0',
       'powercfg -setactive SCHEME_CURRENT',
+
+      // 2. Timer Resolution & Microstutter BCD
+      'bcdedit /set useplatformtick yes',
+      'bcdedit /set disabledynamictick yes',
+      'bcdedit /set useplatformclock no',
+      'bcdedit /set bootux disabled',
+      'bcdedit /timeout 3',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\kernel" /v GlobalTimerResolutionRequests /t REG_DWORD /d 1 /f /reg:64',
+
+      // 3. GPU Max Performance & HAGS & Desativar Fullscreen Optimizations
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers" /v HwSchMode /t REG_DWORD /d 2 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers" /v PowerMizerEnable /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers" /v PowerMizerLevel /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers" /v PowerMizerLevelAC /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers" /v PerfLevelSrc /t REG_DWORD /d 8738 /f /reg:64',
+      'reg add "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehaviorMode /t REG_DWORD /d 2 /f',
+      'reg add "HKCU\\System\\GameConfigStore" /v GameDVR_HonorUserFSEBehaviorMode /t REG_DWORD /d 1 /f',
+      'reg add "HKCU\\System\\GameConfigStore" /v GameDVR_DXGIHonorFSEWindowsCompatible /t REG_DWORD /d 1 /f',
+      'reg add "HKCU\\System\\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f',
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v AllowGameDVR /t REG_DWORD /d 0 /f /reg:64',
+
+      // Compatibilidade do Emulador sem Delay
+      'reg add "HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers" /v "C:\\Program Files\\BlueStacks_nxt\\HD-Player.exe" /t REG_SZ /d "~ DISABLEDXMAXIMIZEDWINDOWEDMODE HIGHDPIAWARE" /f',
+      'reg add "HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers" /v "C:\\Program Files\\BlueStacks_msi5\\HD-Player.exe" /t REG_SZ /d "~ DISABLEDXMAXIMIZEDWINDOWEDMODE HIGHDPIAWARE" /f',
+      'reg add "HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers" /v "C:\\Program Files\\BlueStacks\\HD-Player.exe" /t REG_SZ /d "~ DISABLEDXMAXIMIZEDWINDOWEDMODE HIGHDPIAWARE" /f',
+
+      // 4. Efeitos Visuais Mínimos & Resposta Rápida
       'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects" /v VisualFXSetting /t REG_DWORD /d 2 /f',
       'reg add "HKCU\\Control Panel\\Desktop" /v UserPreferencesMask /t REG_BINARY /d 9012038010000000 /f',
       'reg add "HKCU\\Control Panel\\Desktop\\WindowMetrics" /v MinAnimate /t REG_SZ /d 0 /f',
       'reg add "HKCU\\Software\\Microsoft\\Windows\\DWM" /v EnableAeroPeek /t REG_DWORD /d 0 /f',
       'reg add "HKCU\\Control Panel\\Desktop" /v DragFullWindows /t REG_SZ /d 0 /f',
+      'reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothing /t REG_SZ /d 2 /f',
+      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Serialize" /v StartupDelayInMSec /t REG_DWORD /d 0 /f',
+
+      // 5. Notificações & Telemetria
       'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v ToastEnabled /t REG_DWORD /d 0 /f',
       'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings" /v NOC_GLOBAL_SETTING_TOASTS_ENABLED /t REG_DWORD /d 0 /f',
       'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings" /v NOC_GLOBAL_SETTING_ALLOW_NOTIFICATION_SOUND /t REG_DWORD /d 0 /f',
@@ -1218,17 +1251,37 @@ ipcMain.handle('optimize-windows-master', async () => {
       'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338389Enabled /t REG_DWORD /d 0 /f',
       'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SoftLandingEnabled /t REG_DWORD /d 0 /f',
       'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SystemPaneSuggestionsEnabled /t REG_DWORD /d 0 /f',
+
+      // 6. Rede QoS & Nagle Global
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched" /v NonBestEffortLimit /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\QoS" /v "Do not use NLA" /t REG_SZ /d 1 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\MSMQ\\Parameters" /v TCPNoDelay /t REG_DWORD /d 1 /f /reg:64',
+
+      // 7. SSD TRIM & Otimização de Armazenamento
+      'fsutil behavior set DisableDeleteNotify 0',
+
+      // 8. Serviços em Segundo Plano
+      'sc config "Fax" start= disabled',
+      'sc stop "Fax"',
+      'sc config "MapsBroker" start= disabled',
+      'sc stop "MapsBroker"',
+      'sc config "Spooler" start= disabled',
+      'sc stop "Spooler"',
       'sc config "WSearch" start= demand',
-      'sc config DiagTrack start= disabled',
-      'sc stop DiagTrack',
-      'sc config WerSvc start= disabled',
-      'sc stop WerSvc',
-      'sc config Spooler start= disabled',
-      'sc stop Spooler',
-      'sc config dmwappushservice start= disabled',
-      'sc stop dmwappushservice',
-      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f /reg:64',
-      'ipconfig /flushdns'
+      'sc stop "WSearch"',
+      'sc config "DiagTrack" start= disabled',
+      'sc stop "DiagTrack"',
+      'sc config "WerSvc" start= disabled',
+      'sc stop "WerSvc"',
+      'sc config "dmwappushservice" start= disabled',
+      'sc stop "dmwappushservice"',
+      'sc config "wuauserv" start= demand',
+      'sc stop "wuauserv"',
+      'sc config "BITS" start= demand',
+      'sc stop "BITS"',
+      'sc config "dosvc" start= demand',
+      'sc stop "dosvc"',
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f /reg:64'
     ];
 
     for (const cmd of directCommands) {
@@ -1237,12 +1290,17 @@ ipcMain.handle('optimize-windows-master', async () => {
       } catch (e) {}
     }
 
-    // Clean temp files safely without failing on locked files
+    // 9. Nagle por Interface de Rede & Desativação de IPv6 para menor latência DNS
     try {
-      execSync('cmd.exe /c "del /q /f /s \"%TEMP%\\*\" & del /q /f /s \"C:\\Windows\\Temp\\*\" & del /q /f /s \"%LOCALAPPDATA%\\D3DSCache\\*\" & exit /b 0"', { stdio: 'ignore' });
+      execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Get-NetAdapter | Foreach-Object { $key = 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\' + $_.InterfaceGuid; if (Test-Path $key) { Set-ItemProperty -Path $key -Name TcpAckFrequency -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue; Set-ItemProperty -Path $key -Name TCPNoDelay -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue; Set-ItemProperty -Path $key -Name TcpDelAckTicks -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue } }; Get-NetAdapterBinding -ComponentID ms_tcpip6 | Disable-NetAdapterBinding -ErrorAction SilentlyContinue"`, { stdio: 'ignore' });
+    } catch (_) {}
+
+    // 10. Limpar Shaders DirectX Cache, D3D e Temp sem falhas
+    try {
+      execSync('cmd.exe /c "del /q /f /s \"%TEMP%\\*\" & del /q /f /s \"C:\\Windows\\Temp\\*\" & del /q /f /s \"%LOCALAPPDATA%\\D3DSCache\\*\" & del /q /f /s \"%LOCALAPPDATA%\\NVIDIA\\DXCache\\*\" & del /q /f /s \"%LOCALAPPDATA%\\AMD\\DxCache\\*\" & ipconfig /flushdns & exit /b 0"', { stdio: 'ignore' });
     } catch (e) {}
 
-    // Also run process reduction and RAM cleaner
+    // 11. Redução de processos em segundo plano e purga de RAM
     try {
       const procScript = getPhysicalScriptPath('otimizar_processos.ps1');
       execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${procScript}"`, { stdio: 'ignore' });
