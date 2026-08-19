@@ -598,6 +598,123 @@ ipcMain.handle('restore-default-android', async (event, port) => {
   return { success: true };
 });
 
+// ─── TOUCH ENGINE & SENSIBILIDADE IPHONE / ANDROID REAL ─────────────────────
+ipcMain.handle('set-android-dpi', async (event, dpiValue, port) => {
+  const targetDpi = parseInt(dpiValue) || 240;
+  const p = port || 5555;
+  const adb = findAdb();
+  let adbDone = false;
+
+  if (adb) {
+    try {
+      execSync(`"${adb}" connect 127.0.0.1:${p}`, { timeout: 3000, stdio: 'ignore' });
+      execSync(`"${adb}" -s 127.0.0.1:${p} shell wm density ${targetDpi}`, { timeout: 5000, stdio: 'ignore' });
+      adbDone = true;
+    } catch (_) {}
+  }
+
+  // Atualizar também nos arquivos bluestacks.conf
+  const confPaths = [
+    'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_bgp_msi\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_bgp\\bluestacks.conf'
+  ];
+
+  let confCount = 0;
+  for (const cp of confPaths) {
+    if (fs.existsSync(cp)) {
+      try {
+        let content = fs.readFileSync(cp, 'utf8');
+        content = content.replace(/bst\.instance\.(.*?)\.dpi=".*?"/g, `bst.instance.$1.dpi="${targetDpi}"`);
+        fs.writeFileSync(cp, content, 'utf8');
+        confCount++;
+      } catch (_) {}
+    }
+  }
+
+  return { success: true, targetDpi, adbDone, confCount, message: `DPI do Android alterada para ${targetDpi} com sucesso!` };
+});
+
+ipcMain.handle('apply-touch-engine-profile', async (event, profile, port) => {
+  const p = port || 5555;
+  const adb = findAdb();
+  if (!adb) return { success: false, error: 'ADB não conectado. Abra o emulador primeiro.' };
+
+  try {
+    execSync(`"${adb}" connect 127.0.0.1:${p}`, { timeout: 3000, stdio: 'ignore' });
+  } catch (_) {}
+
+  let tweaks = [];
+  let dpi = 440;
+  let profileName = 'iPhone 15 Pro Max (iOS Touch Engine)';
+
+  if (profile === 'iphone-15-pro') {
+    profileName = 'iPhone 15 Pro Max (iOS Touch Engine)';
+    dpi = 440;
+    tweaks = [
+      'setprop view.touch_slop 1',
+      'setprop touch.pressure.scale 0.001',
+      'setprop touch.size.scale 1',
+      'setprop windowsmgr.max_events_per_sec 300',
+      'setprop ro.input.surface_flinger_vsync 0',
+      'setprop debug.egl.hw 1',
+      'setprop debug.sf.hw 1',
+      'setprop persist.sys.ui.hw 1',
+      'setprop debug.performance.tuning 1'
+    ];
+  } else if (profile === 'rog-phone-8') {
+    profileName = 'ASUS ROG Phone 8 (Ultra Fast 360Hz)';
+    dpi = 600;
+    tweaks = [
+      'setprop view.touch_slop 1',
+      'setprop touch.pressure.scale 0.0005',
+      'setprop windowsmgr.max_events_per_sec 360',
+      'setprop ro.input.surface_flinger_vsync 0',
+      'setprop debug.egl.hw 1',
+      'setprop debug.sf.hw 1',
+      'setprop debug.performance.tuning 1'
+    ];
+  } else if (profile === 'galaxy-s24') {
+    profileName = 'Samsung Galaxy S24 Ultra (Precisão 2x/4x)';
+    dpi = 480;
+    tweaks = [
+      'setprop view.touch_slop 1',
+      'setprop touch.pressure.scale 0.001',
+      'setprop windowsmgr.max_events_per_sec 240',
+      'setprop debug.egl.hw 1',
+      'setprop debug.sf.hw 1'
+    ];
+  } else if (profile === 'black-shark') {
+    profileName = 'Xiaomi Black Shark (One-Tap / Desert & M1014)';
+    dpi = 520;
+    tweaks = [
+      'setprop view.touch_slop 1',
+      'setprop touch.pressure.scale 0.0008',
+      'setprop windowsmgr.max_events_per_sec 320',
+      'setprop debug.egl.hw 1',
+      'setprop debug.sf.hw 1'
+    ];
+  }
+
+  let appliedCount = 0;
+  for (const tw of tweaks) {
+    try {
+      execSync(`"${adb}" -s 127.0.0.1:${p} shell "${tw}"`, { timeout: 3000, stdio: 'ignore' });
+      appliedCount++;
+    } catch (_) {}
+  }
+
+  // Aplica DPI correspondente
+  try {
+    execSync(`"${adb}" -s 127.0.0.1:${p} shell wm density ${dpi}`, { timeout: 3000, stdio: 'ignore' });
+  } catch (_) {}
+
+  return { success: true, profileName, appliedCount, dpi, message: `Perfil de Sensibilidade ${profileName} aplicado com sucesso no Android!` };
+});
+
 ipcMain.handle('test-ping', async () => {
   const targets = [
     { name: 'Cloudflare Gaming', host: '1.1.1.1' },

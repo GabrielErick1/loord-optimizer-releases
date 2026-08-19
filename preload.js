@@ -40,6 +40,9 @@ contextBridge.exposeInMainWorld('api', {
   adbShell: (cmd, port) => ipcRenderer.invoke('adb-shell', cmd, port),
   adbUninstall: (packages, port) => ipcRenderer.invoke('adb-uninstall', packages, port),
   removeEmulatorAds: (port) => ipcRenderer.invoke('remove-emulator-ads', port),
+  // ─── Touch Engine & Sensibilidade iPhone / Android Real ──────────
+  applyTouchEngineProfile: (profile, port) => ipcRenderer.invoke('apply-touch-engine-profile', profile, port),
+  setAndroidDpi: (dpiValue, port) => ipcRenderer.invoke('set-android-dpi', dpiValue, port),
   // ─── FPS & Delay Fix ─────────────────────────────────────────────
   unlockFpsHz: (hz) => ipcRenderer.invoke('unlock-fps-hz', hz),
   removeFreeFireDelay: () => ipcRenderer.invoke('remove-freefire-delay'),

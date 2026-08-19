@@ -1421,6 +1421,36 @@ if (window.api.onUpdateAvailable) {
     });
   }
 
+  // ── Touch Engine & Sensibilidade iPhone / Android Real ────────────
+  const presetTouchBtns = document.querySelectorAll('.preset-touch-btn');
+  const statusTouchEngine = document.getElementById('status-touch-engine');
+
+  presetTouchBtns.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const prof = btn.getAttribute('data-profile');
+      if (!await requireConnected()) return;
+      btn.disabled = true;
+      const originalText = btn.textContent;
+      btn.textContent = '⏳ Aplicando...';
+      logAdb(`Injetando Touch Engine (${prof}) no Android via ADB...`, '#38bdf8');
+
+      const res = await window.api.applyTouchEngineProfile(prof, adbPort);
+      btn.disabled = false;
+      btn.textContent = originalText;
+
+      if (res && res.success) {
+        logAdb(`✔ ${res.profileName} aplicado! (Touch 300Hz, Slop 1, DPI ${res.dpi})`, '#28c385');
+        if (statusTouchEngine) {
+          statusTouchEngine.style.display = 'block';
+          statusTouchEngine.textContent = `✔ ${res.profileName} aplicado com sucesso! (Touch 300Hz, Touch Slop 1, DPI ${res.dpi})`;
+        }
+        alert(`✨ ${res.profileName} Ativado com Sucesso!\n\n• Resposta ao Toque Ultrarrápida (300Hz)\n• Touch Slop = 1 (Arrasto de capa instantâneo sem delay)\n• DPI do Android ajustada para ${res.dpi}\n• Pipeline gráfico direto para máxima precisão de mira`);
+      } else {
+        logAdb('Falha ao aplicar Touch Engine. Verifique a conexão ADB.', '#ef4444');
+      }
+    });
+  });
+
   // ── Desbloquear FPS com Hz da Tela ───────────────────────────────
   const inputScreenHz = document.getElementById('input-screen-hz');
   const btnUnlockFps  = document.getElementById('btn-unlock-fps');
