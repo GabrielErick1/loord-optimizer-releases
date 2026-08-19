@@ -42,34 +42,27 @@ foreach ($p in $heavyApps) {
 Write-Host "  -> $killed tipos de apps encerrados." -ForegroundColor Green
 
 # =============================================================
-# ETAPA 2: Matar bloatware, atualizadores e telemetria
+# ETAPA 2: Matar bloatware, atualizadores e telemetria de terceiros
 # =============================================================
 Write-Host ""
-Write-Host "[2/5] Encerrando bloatware e atualizadores..." -ForegroundColor Cyan
+Write-Host "[2/5] Encerrando bloatware e atualizadores de segundo plano..." -ForegroundColor Cyan
 $bloatware = @(
     'OneDrive','OneDriveSetup','OneDriveUpdater',
-    'MicrosoftEdgeUpdate','edgeupdate','edgeupdatem','MicrosoftEdgeWebView2',
+    'MicrosoftEdgeUpdate','edgeupdate','edgeupdatem',
     'GoogleUpdate','GoogleCrashHandler','GoogleCrashHandler64',
     'AdobeUpdateService','AdobeIPCBroker','AdobeCollabSync',
     'CCXProcess','CCLibrary','AdobeGCInvoker','AGSService',
-    'NvDisplay.Container','NvContainerLocalSystem','NvOAWrapperCache',
-    'NVIDIA Share','NvNodeLauncher','NvTelemetryContainer','nvsphelper64',
-    'RadeonSoftware','RadeoncnUser','CNext','AMDCrashDefender','atieclxx',
-    'RazerCentralService','RazerNahimicSvc','RzSDKService','RGSUpdater',
-    'LGHUBUpdaterService','LGHUB','logi_crashpad_handler',
+    'NvTelemetryContainer','nvsphelper64',
+    'RadeonSoftware','RadeoncnUser','CNext','AMDCrashDefender',
+    'RazerCentralService','RzSDKService','RGSUpdater',
+    'LGHUBUpdaterService','logi_crashpad_handler',
     'SteelSeriesEngine','SteelSeriesGG',
-    'SearchApp','SearchHost','SearchIndexer','SearchProtocolHost','SearchFilterHost',
-    'Cortana','RuntimeBroker','StartMenuExperienceHost',
+    'Cortana',
     'GameBarPresenceWriter','GameBar','GameBarFTServer',
     'XboxPcApp','XboxApp','XboxGameBarSpotify',
     'Widgets','WidgetService','widgetservice',
     'PhoneExperienceHost','YourPhone','YourPhoneServer',
-    'WmiPrvSE','SgrmBroker',
-    'TextInputHost','SmartScreen','CompPkgSrv',
-    'MsMpEng','NisSrv',
-    'CCXProcess','node','AcrobatNotificationClient',
-    'msedgewebview2','EpicWebHelper',
-    'shellhost','sihost'
+    'AcrobatNotificationClient','EpicWebHelper'
 )
 $killed2 = 0
 foreach ($p in $bloatware) {
@@ -78,7 +71,7 @@ foreach ($p in $bloatware) {
         $killed2++
     }
 }
-Write-Host "  -> $killed2 tipos de bloatware encerrados." -ForegroundColor Green
+Write-Host "  -> $killed2 tipos de bloatware encerrados com segurança." -ForegroundColor Green
 
 # =============================================================
 # ETAPA 3: Parar servicos nao essenciais
