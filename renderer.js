@@ -1603,10 +1603,30 @@ if (window.api.onUpdateAvailable) {
     });
   }
 
+  // ── Remover Anúncios e Promoções do Emulador (AdBlock Completo) ──
+  const btnRemoveEmuAds = document.getElementById('btn-remove-emu-ads');
+  if (btnRemoveEmuAds) {
+    btnRemoveEmuAds.addEventListener('click', async () => {
+      btnRemoveEmuAds.disabled = true;
+      btnRemoveEmuAds.textContent = '⏳ Removendo anúncios...';
+      logAdb('=== INICIANDO REMOÇÃO DE ANÚNCIOS DO EMULADOR ===', '#ec4899');
+      logAdb('1. Desativando flags de anúncios no bluestacks.conf...');
+      logAdb('2. Bloqueando domínios de anúncios no hosts do Windows...');
+      logAdb('3. Removendo App Center e barra de recomendações...');
+
+      const res = await window.api.removeEmulatorAds(adbPort);
+      btnRemoveEmuAds.disabled = false;
+      btnRemoveEmuAds.textContent = '✔ Anúncios Removidos!';
+      setApplied('badge-emu-ads');
+      logAdb('✔ Anúncios e recomendações de jogos desativados com sucesso!', '#28c385');
+      alert(res && res.message ? res.message : '✔ Anúncios do emulador removidos com sucesso!\n\nRecomendamos reiniciar o BlueStacks/MSI para que as alterações entrem em vigor.');
+    });
+  }
+
   // ── Desinstalar Bloatware ─────────────────────────────────────────
   const BLOATWARE_MAP = {
     'uninst-browser':   ['com.android.chrome', 'com.android.browser', 'com.google.android.browser', 'com.sec.android.app.sbrowser', 'org.chromium.chrome'],
-    'uninst-ads':       ['gg.now.ads.service', 'gg.now.billing.service2', 'gg.now.billing.interceptor', 'com.bluestacks.gamepedia', 'com.bluestacks.settings', 'com.bluestacks.home'],
+    'uninst-ads':       ['com.bluestacks.gamecenter', 'com.bluestacks.appmart', 'com.bluestacks.gamepedia', 'gg.now.ads.service', 'gg.now.billing.service2', 'gg.now.billing.interceptor', 'com.bluestacks.hyperdesk', 'com.bluestacks.search'],
     'uninst-files':     ['com.android.documentsui', 'com.android.externalstorage', 'com.estrongs.android.pop', 'com.android.providers.downloads.ui'],
     'uninst-telephony': ['com.android.providers.telephony', 'com.android.phone', 'com.android.providers.contacts', 'com.android.captiveportallogin'],
     'uninst-email':     ['com.android.email', 'com.google.android.gm', 'com.android.calendar', 'com.google.android.calendar'],

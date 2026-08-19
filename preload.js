@@ -39,6 +39,7 @@ contextBridge.exposeInMainWorld('api', {
   adbAutoDetect: () => ipcRenderer.invoke('adb-autodetect'),
   adbShell: (cmd, port) => ipcRenderer.invoke('adb-shell', cmd, port),
   adbUninstall: (packages, port) => ipcRenderer.invoke('adb-uninstall', packages, port),
+  removeEmulatorAds: (port) => ipcRenderer.invoke('remove-emulator-ads', port),
   // ─── FPS & Delay Fix ─────────────────────────────────────────────
   unlockFpsHz: (hz) => ipcRenderer.invoke('unlock-fps-hz', hz),
   removeFreeFireDelay: () => ipcRenderer.invoke('remove-freefire-delay'),

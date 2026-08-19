@@ -2288,6 +2288,151 @@ Get-AppxPackage -AllUsers *ZuneVideo* | Remove-AppxPackage -ErrorAction Silently
   }
 });
 
+// ─── REMOVEDOR DE ANÚNCIOS DO EMULADOR (ADBLOCK COMPLETO) ───────────────────
+ipcMain.handle('remove-emulator-ads', async (event, port) => {
+  try {
+    let confModified = 0;
+    const allPaths = [
+      'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
+      'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
+      'C:\\ProgramData\\BlueStacks_bgp_msi\\bluestacks.conf',
+      'C:\\ProgramData\\BlueStacks\\bluestacks.conf',
+      'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
+      'C:\\ProgramData\\BlueStacks_bgp\\bluestacks.conf'
+    ];
+
+    // 1. Desativar flags de anúncios e recomendações no bluestacks.conf
+    for (const confPath of allPaths) {
+      if (fs.existsSync(confPath)) {
+        let content = fs.readFileSync(confPath, 'utf8');
+        const lines = content.split(/\r?\n/);
+        const newLines = [];
+
+        for (let line of lines) {
+          if (line.match(/^bst\.instance\.(.*?)\.show_sidebar_ads=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.show_sidebar_ads=/)[1];
+            line = `bst.instance.${inst}.show_sidebar_ads="0"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.show_banner_ads=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.show_banner_ads=/)[1];
+            line = `bst.instance.${inst}.show_banner_ads="0"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.show_game_center_ads=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.show_game_center_ads=/)[1];
+            line = `bst.instance.${inst}.show_game_center_ads="0"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.show_ads=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.show_ads=/)[1];
+            line = `bst.instance.${inst}.show_ads="0"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.allow_user_to_hide_ads=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.allow_user_to_hide_ads=/)[1];
+            line = `bst.instance.${inst}.allow_user_to_hide_ads="1"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.enable_recommendations=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.enable_recommendations=/)[1];
+            line = `bst.instance.${inst}.enable_recommendations="0"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.hide_ads_while_gaming=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.hide_ads_while_gaming=/)[1];
+            line = `bst.instance.${inst}.hide_ads_while_gaming="1"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.show_promoted_apps=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.show_promoted_apps=/)[1];
+            line = `bst.instance.${inst}.show_promoted_apps="0"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.enable_promoted_apps=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.enable_promoted_apps=/)[1];
+            line = `bst.instance.${inst}.enable_promoted_apps="0"`;
+          }
+          newLines.push(line);
+        }
+
+        // Inserir flags globais de desativação de anúncios se ainda não existirem
+        const globalAdFlags = [
+          'bst.feature.ad="0"',
+          'bst.feature.sidebar_ad="0"',
+          'bst.feature.banner_ad="0"',
+          'bst.feature.popup_ad="0"',
+          'bst.feature.promoted_apps="0"',
+          'bst.feature.recommendations="0"',
+          'bst.feature.game_center_ads="0"',
+          'bst.feature.feed_ads="0"'
+        ];
+        for (const gf of globalAdFlags) {
+          const key = gf.split('=')[0];
+          const idx = newLines.findIndex(l => l.startsWith(key + '='));
+          if (idx !== -1) {
+            newLines[idx] = gf;
+          } else {
+            newLines.push(gf);
+          }
+        }
+
+        fs.writeFileSync(confPath, newLines.join('\r\n'), 'utf8');
+        confModified++;
+      }
+    }
+
+    // 2. Bloquear domínios de entrega de anúncios do BlueStacks no arquivo hosts do Windows
+    try {
+      const hostsPath = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32\\drivers\\etc\\hosts');
+      if (fs.existsSync(hostsPath)) {
+        let hostsContent = fs.readFileSync(hostsPath, 'utf8');
+        const adDomains = [
+          'cloud.bluestacks.com',
+          'ads.bluestacks.com',
+          'bst-ads.bluestacks.com',
+          'delivery.bluestacks.com',
+          'telemetry.bluestacks.com',
+          'static-gamecenter.bluestacks.com',
+          'gamecenter.bluestacks.com',
+          'bs3-cloud.bluestacks.com',
+          'promo.bluestacks.com'
+        ];
+        let addedDomains = false;
+        for (const dom of adDomains) {
+          if (!hostsContent.includes(dom)) {
+            hostsContent += `\r\n127.0.0.1 ${dom}`;
+            addedDomains = true;
+          }
+        }
+        if (addedDomains) {
+          fs.writeFileSync(hostsPath, hostsContent, 'utf8');
+        }
+      }
+    } catch (_) {}
+
+    // 3. Desinstalar apps de anúncios e promoções via ADB se conectado
+    let adbSuccess = false;
+    const adb = findAdb();
+    if (adb) {
+      const targetPort = port || 5555;
+      const adPackages = [
+        'com.bluestacks.gamecenter',
+        'com.bluestacks.appmart',
+        'com.bluestacks.gamepedia',
+        'gg.now.ads.service',
+        'gg.now.billing.service2',
+        'gg.now.billing.interceptor',
+        'com.bluestacks.hyperdesk',
+        'com.bluestacks.search'
+      ];
+      for (const pkg of adPackages) {
+        try {
+          execSync(`"${adb}" -s 127.0.0.1:${targetPort} shell pm uninstall -k --user 0 ${pkg}`, { stdio: 'ignore', timeout: 3000 });
+          execSync(`"${adb}" -s 127.0.0.1:${targetPort} shell pm disable-user --user 0 ${pkg}`, { stdio: 'ignore', timeout: 3000 });
+        } catch (_) {}
+      }
+      try {
+        execSync(`"${adb}" -s 127.0.0.1:${targetPort} shell pm clear com.bluestacks.home`, { stdio: 'ignore', timeout: 3000 });
+      } catch (_) {}
+      adbSuccess = true;
+    }
+
+    return { 
+      success: true, 
+      confModified, 
+      adbSuccess, 
+      message: '🚫 Anúncios do emulador, App Center e barra de jogos recomendados removidos com sucesso! Reinicie o emulador para ver a tela 100% limpa.' 
+    };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
 // ─── AUTO-UPDATE ENGINE (Play Store Style) ──────────────────────────────────
 let downloadedInstallerPath = null;
 const https = require('https');
