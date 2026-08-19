@@ -59,6 +59,7 @@ contextBridge.exposeInMainWorld('api', {
   removeWindowsBloatware: () => ipcRenderer.invoke('remove-windows-bloatware'),
   applyLowEndEmulatorConfig: (preset) => ipcRenderer.invoke('apply-low-end-emulator-config', preset),
   setFixedPagefile: () => ipcRenderer.invoke('set-fixed-pagefile'),
+  transformWindowsLite: () => ipcRenderer.invoke('transform-windows-lite'),
   // ─────────────────────────────────────────────────────────────────
 });
 

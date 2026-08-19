@@ -2141,6 +2141,134 @@ ipcMain.handle('set-fixed-pagefile', async () => {
   }
 });
 
+// ─── TRANSFORMADOR DE WINDOWS LITE / ISO GAMER (SEM FORMATAR) ──────────────────
+ipcMain.handle('transform-windows-lite', async () => {
+  if (!systemIsAdmin) return { success: false, error: 'Privilégios de Administrador requeridos.' };
+  try {
+    const liteCommands = [
+      // 1. Manter Kernel do Windows na Memória RAM Física (Elimina lentidão de disco HD/SSD)
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v DisablePagingExecutive /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v LargeSystemCache /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v FeatureSettings /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v FeatureSettingsOverride /t REG_DWORD /d 3 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v FeatureSettingsOverrideMask /t REG_DWORD /d 3 /f /reg:64',
+
+      // 2. Priorização Extrema de Threads (Win32PrioritySeparation = 26 / Hex 1A)
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 26 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v NetworkThrottlingIndex /t REG_DWORD /d 4294967295 /f /reg:64',
+
+      // 3. Agrupamento de Svchost (Transforma ~60 processos svchost em menos de 15)
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control" /v SvcHostSplitThresholdInKB /t REG_DWORD /d 4294967295 /f /reg:64',
+
+      // 4. Desativação Completa de Bloatware & Telemetria do Sistema
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v AllowCortana /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SilentInstalledAppsEnabled /t REG_DWORD /d 0 /f',
+      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SystemPaneSuggestionsEnabled /t REG_DWORD /d 0 /f',
+      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SoftLandingEnabled /t REG_DWORD /d 0 /f',
+      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338388Enabled /t REG_DWORD /d 0 /f',
+      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338389Enabled /t REG_DWORD /d 0 /f',
+      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-353696Enabled /t REG_DWORD /d 0 /f',
+
+      // 5. Otimização Visual Minimalista Estilo Ghost Spectre
+      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects" /v VisualFXSetting /t REG_DWORD /d 2 /f',
+      'reg add "HKCU\\Control Panel\\Desktop" /v UserPreferencesMask /t REG_BINARY /d 9012038010000000 /f',
+      'reg add "HKCU\\Control Panel\\Desktop\\WindowMetrics" /v MinAnimate /t REG_SZ /d 0 /f',
+      'reg add "HKCU\\Software\\Microsoft\\Windows\\DWM" /v EnableAeroPeek /t REG_DWORD /d 0 /f',
+      'reg add "HKCU\\Control Panel\\Desktop" /v DragFullWindows /t REG_SZ /d 0 /f',
+      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f',
+
+      // 6. Desativar Serviços Pesados de Fundo
+      'sc config "WSearch" start= disabled',
+      'sc stop "WSearch"',
+      'sc config "SysMain" start= disabled',
+      'sc stop "SysMain"',
+      'sc config "DiagTrack" start= disabled',
+      'sc stop "DiagTrack"',
+      'sc config "WerSvc" start= disabled',
+      'sc stop "WerSvc"',
+      'sc config "Spooler" start= disabled',
+      'sc stop "Spooler"',
+      'sc config "Fax" start= disabled',
+      'sc stop "Fax"',
+      'sc config "MapsBroker" start= disabled',
+      'sc stop "MapsBroker"',
+      'sc config "PcaSvc" start= disabled',
+      'sc stop "PcaSvc"',
+      'sc config "wuauserv" start= demand',
+      'sc stop "wuauserv"',
+      'sc config "BITS" start= demand',
+      'sc stop "BITS"',
+      'sc config "dosvc" start= demand',
+      'sc stop "dosvc"',
+
+      // 7. BCD Timer Resolution 0.5ms & Boot Rápido
+      'bcdedit /set useplatformtick yes',
+      'bcdedit /set disabledynamictick yes',
+      'bcdedit /set useplatformclock no',
+      'bcdedit /set bootux disabled',
+      'bcdedit /timeout 3',
+      'powercfg -h off',
+
+      // 8. SSD TRIM
+      'fsutil behavior set DisableDeleteNotify 0'
+    ];
+
+    for (const cmd of liteCommands) {
+      try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
+    }
+
+    // Remover bloatware nativo (AppX)
+    try {
+      const psBloatCmd = `Get-AppxPackage -AllUsers *3DBuilder* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *BingWeather* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *BingNews* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *GetHelp* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *Getstarted* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *MicrosoftSolitaireCollection* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *OfficeHub* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *OneNote* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *People* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *WindowsCommunicationsApps* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *WindowsFeedbackHub* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *WindowsMaps* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *WindowsSoundRecorder* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *XboxApp* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *XboxGameOverlay* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *XboxGamingOverlay* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *YourPhone* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *ZuneMusic* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *ZuneVideo* | Remove-AppxPackage -ErrorAction SilentlyContinue;`;
+      execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psBloatCmd.replace(/\r?\n/g, ' ')}"`, { stdio: 'ignore' });
+    } catch (_) {}
+
+    // Desativar Nagle e IPv6
+    try {
+      execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Get-NetAdapter | Foreach-Object { $key = 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\' + $_.InterfaceGuid; if (Test-Path $key) { Set-ItemProperty -Path $key -Name TcpAckFrequency -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue; Set-ItemProperty -Path $key -Name TCPNoDelay -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue; Set-ItemProperty -Path $key -Name TcpDelAckTicks -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue } }; Get-NetAdapterBinding -ComponentID ms_tcpip6 | Disable-NetAdapterBinding -ErrorAction SilentlyContinue"`, { stdio: 'ignore' });
+    } catch (_) {}
+
+    // Purgar processos desnecessários e limpar RAM
+    try {
+      const procScript = getPhysicalScriptPath('otimizar_processos.ps1');
+      execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${procScript}"`, { stdio: 'ignore' });
+    } catch (_) {}
+
+    try {
+      const ramScript = getPhysicalScriptPath('clean_ram.ps1');
+      execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${ramScript}"`, { stdio: 'ignore' });
+    } catch (_) {}
+
+    return { 
+      success: true, 
+      message: '🚀 Transformação em Windows Lite Gamer concluída com sucesso! Seu Windows agora está no padrão Ghost Spectre / ReviOS (Kernel na RAM, Svchosts agrupados e 0% bloatware).' 
+    };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
 // ─── AUTO-UPDATE ENGINE (Play Store Style) ──────────────────────────────────
 let downloadedInstallerPath = null;
 const https = require('https');

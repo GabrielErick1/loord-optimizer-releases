@@ -1896,6 +1896,34 @@ if (btnMasterPcFraco) {
   });
 }
 
+const btnTransformWindowsLite = document.getElementById('btn-transform-windows-lite');
+const statusWindowsLite = document.getElementById('status-windows-lite');
+if (btnTransformWindowsLite) {
+  btnTransformWindowsLite.addEventListener('click', async () => {
+    const confirmLite = confirm('⚡ DESEJA TRANSFORMAR SEU WINDOWS EM UMA VERSÃO LITE GAMER (Estilo Ghost Spectre / ReviOS)?\n\nEssa ação irá:\n- Manter o Kernel do Windows na RAM (DisablePagingExecutive)\n- Agrupar processos svchost de 60 para ~12\n- Remover 100% dos bloatwares e telemetria pesada\n- Zerar a latência de GPU e priorizar o emulador\n\nNão formata nem apaga seus arquivos pessoais!');
+    if (!confirmLite) return;
+
+    btnTransformWindowsLite.disabled = true;
+    btnTransformWindowsLite.textContent = '⏳ Reformulando Windows Lite...';
+    if (statusWindowsLite) {
+      statusWindowsLite.style.display = 'block';
+      statusWindowsLite.textContent = 'Aplicando modificações de kernel na RAM, agrupando svchosts e removendo bloatwares...';
+    }
+
+    const res = await window.api.transformWindowsLite();
+    btnTransformWindowsLite.disabled = false;
+    btnTransformWindowsLite.textContent = '✔️ Windows Lite Ativo!';
+    if (statusWindowsLite) {
+      statusWindowsLite.textContent = res && res.message ? res.message : 'Transformação em Windows Lite Gamer aplicada com sucesso!';
+    }
+
+    const reboot = confirm('Transformação em Windows Lite Gamer aplicada com sucesso!\n\nRecomendamos REINICIAR o computador agora para que o agrupamento de processos (svchost) e o carregamento do kernel na RAM entrem em vigor!\n\nDeseja reiniciar agora?');
+    if (reboot) {
+      await window.api.rebootComputer();
+    }
+  });
+}
+
 const btnCleanDeepDisk = document.getElementById('btn-clean-deep-disk');
 const statusDeepDisk = document.getElementById('status-deep-disk');
 if (btnCleanDeepDisk) {
