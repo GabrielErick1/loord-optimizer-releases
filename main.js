@@ -452,6 +452,55 @@ ipcMain.handle('remove-freefire-delay', async () => {
   return { success: filesModified > 0, filesModified, totalReplaced };
 });
 
+// Helper: Atualizar ou inserir chaves para todas as instâncias do BlueStacks/MSI
+function updateBluestacksInstanceKeys(confPath, keysToUpdateByInstance) {
+  if (!fs.existsSync(confPath)) return 0;
+  try {
+    let content = fs.readFileSync(confPath, 'utf8');
+    const lines = content.split(/\r?\n/);
+    
+    // Identificar todas as instâncias existentes no arquivo (ex: Pie64, Nougat32, etc.)
+    const instanceNames = new Set();
+    for (const line of lines) {
+      const match = line.match(/^bst\.instance\.([a-zA-Z0-9_]+)\./);
+      if (match && match[1]) {
+        instanceNames.add(match[1]);
+      }
+    }
+
+    if (instanceNames.size === 0) {
+      instanceNames.add('Pie64');
+      instanceNames.add('Nougat32');
+      instanceNames.add('Nougat64');
+      instanceNames.add('Rvc64');
+    }
+
+    let updatedLines = [...lines];
+    for (const inst of instanceNames) {
+      const keysForInst = typeof keysToUpdateByInstance === 'function' 
+        ? keysToUpdateByInstance(inst) 
+        : keysToUpdateByInstance;
+
+      for (const [subKey, val] of Object.entries(keysForInst)) {
+        const fullPrefix = `bst.instance.${inst}.${subKey}=`;
+        const existingIdx = updatedLines.findIndex(l => l.startsWith(fullPrefix));
+        const lineVal = `${fullPrefix}"${val}"`;
+        if (existingIdx !== -1) {
+          updatedLines[existingIdx] = lineVal;
+        } else {
+          updatedLines.push(lineVal);
+        }
+      }
+    }
+
+    fs.writeFileSync(confPath, updatedLines.join('\r\n'), 'utf8');
+    return 1;
+  } catch (e) {
+    console.error('Error updating bluestacks.conf instance keys:', e);
+    return 0;
+  }
+}
+
 ipcMain.handle('change-device-profile', async (event, profile) => {
   const { brand, manufacturer, model, carrier } = profile || {};
   const targetBrand = brand || 'asus';
@@ -470,38 +519,54 @@ ipcMain.handle('change-device-profile', async (event, profile) => {
 
   let modifiedCount = 0;
   for (const f of files) {
-    if (fs.existsSync(f)) {
+    modifiedCount += updateBluestacksInstanceKeys(f, (inst) => ({
+      'device_profile_code': 'custom',
+      'device_custom_brand': targetBrand,
+      'device_custom_manufacturer': targetManufacturer,
+      'device_custom_model': targetModel,
+      'device_carrier_code': targetCarrier
+    }));
+  }
+
+  // Injetar também ao vivo no Android via ADB em todas as portas ativas
+  const adb = findAdb();
+  if (adb) {
+    const PORTS = [5555, 5554, 5565, 5575, 5585, 21503, 62001, 7555];
+    for (const p of PORTS) {
       try {
-        let lines = fs.readFileSync(f, 'utf8').split(/\r?\n/);
-        let newLines = [];
-        for (let line of lines) {
-          if (line.includes('.device_profile_code=')) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.device_profile_code=/);
-            if (inst) line = `bst.instance.${inst[1]}.device_profile_code="custom"`;
-          } else if (line.includes('.device_custom_brand=')) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.device_custom_brand=/);
-            if (inst) line = `bst.instance.${inst[1]}.device_custom_brand="${targetBrand}"`;
-          } else if (line.includes('.device_custom_manufacturer=')) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.device_custom_manufacturer=/);
-            if (inst) line = `bst.instance.${inst[1]}.device_custom_manufacturer="${targetManufacturer}"`;
-          } else if (line.includes('.device_custom_model=')) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.device_custom_model=/);
-            if (inst) line = `bst.instance.${inst[1]}.device_custom_model="${targetModel}"`;
-          } else if (line.includes('.device_carrier_code=')) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.device_carrier_code=/);
-            if (inst) line = `bst.instance.${inst[1]}.device_carrier_code="${targetCarrier}"`;
-          }
-          newLines.push(line);
-        }
-        fs.writeFileSync(f, newLines.join('\r\n'), 'utf8');
-        modifiedCount++;
-      } catch (e) {
-        console.error(`Erro ao atualizar device profile em ${f}:`, e.message);
-      }
+        execSync(`"${adb}" connect 127.0.0.1:${p}`, { timeout: 1500, stdio: 'ignore' });
+        execSync(`"${adb}" -s 127.0.0.1:${p} shell "setprop ro.product.brand \\"${targetBrand}\\"; setprop ro.product.manufacturer \\"${targetManufacturer}\\"; setprop ro.product.model \\"${targetModel}\\"; setprop ro.product.device \\"${targetModel}\\"; setprop ro.build.product \\"${targetModel}\\""`, { timeout: 2500, stdio: 'ignore' });
+      } catch (_) {}
     }
   }
 
-  return { success: modifiedCount > 0, modifiedCount, model: targetModel, brand: targetBrand };
+  return { success: true, modifiedCount, model: targetModel, brand: targetBrand };
+});
+
+ipcMain.handle('restart-bluestacks', async () => {
+  try {
+    try {
+      execSync('taskkill /f /im HD-Player.exe', { stdio: 'ignore' });
+    } catch (_) {}
+
+    await new Promise(r => setTimeout(r, 1500));
+
+    const candidates = [
+      'C:\\Program Files\\BlueStacks_nxt\\HD-Player.exe',
+      'C:\\Program Files\\BlueStacks_msi5\\HD-Player.exe',
+      'C:\\Program Files\\BlueStacks\\HD-Player.exe',
+      'C:\\Program Files\\BlueStacks_msi\\HD-Player.exe'
+    ];
+    for (const exe of candidates) {
+      if (fs.existsSync(exe)) {
+        exec(`"${exe}" --instance Pie64 || "${exe}" --instance Nougat32 || "${exe}"`);
+        break;
+      }
+    }
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
 });
 
 ipcMain.handle('flash-system-tweaks', async (event, port) => {
@@ -619,20 +684,7 @@ ipcMain.handle('restore-default-android', async (event, port) => {
 // ─── TOUCH ENGINE & SENSIBILIDADE IPHONE / ANDROID REAL ─────────────────────
 ipcMain.handle('set-android-dpi', async (event, dpiValue, port) => {
   const targetDpi = parseInt(dpiValue) || 240;
-  const p = port || 5555;
-  const adb = findAdb();
-  let adbDone = false;
-
-  if (adb) {
-    try {
-      execSync(`"${adb}" connect 127.0.0.1:${p}`, { timeout: 3000, stdio: 'ignore' });
-      execSync(`"${adb}" -s 127.0.0.1:${p} shell wm density ${targetDpi}`, { timeout: 5000, stdio: 'ignore' });
-      adbDone = true;
-    } catch (_) {}
-  }
-
-  // Atualizar também nos arquivos bluestacks.conf
-  const confPaths = [
+  const files = [
     'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
     'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
     'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
@@ -642,29 +694,29 @@ ipcMain.handle('set-android-dpi', async (event, dpiValue, port) => {
   ];
 
   let confCount = 0;
-  for (const cp of confPaths) {
-    if (fs.existsSync(cp)) {
+  for (const cp of files) {
+    confCount += updateBluestacksInstanceKeys(cp, (inst) => ({
+      'dpi': String(targetDpi)
+    }));
+  }
+
+  const adb = findAdb();
+  let adbDone = false;
+  if (adb) {
+    const PORTS = port ? [port] : [5555, 5554, 5565, 5575, 5585, 21503, 62001, 7555];
+    for (const p of PORTS) {
       try {
-        let content = fs.readFileSync(cp, 'utf8');
-        content = content.replace(/bst\.instance\.(.*?)\.dpi=".*?"/g, `bst.instance.$1.dpi="${targetDpi}"`);
-        fs.writeFileSync(cp, content, 'utf8');
-        confCount++;
+        execSync(`"${adb}" connect 127.0.0.1:${p}`, { timeout: 1500, stdio: 'ignore' });
+        execSync(`"${adb}" -s 127.0.0.1:${p} shell wm density ${targetDpi}`, { timeout: 3000, stdio: 'ignore' });
+        adbDone = true;
       } catch (_) {}
     }
   }
 
-  return { success: true, targetDpi, adbDone, confCount, message: `DPI do Android alterada para ${targetDpi} com sucesso!` };
+  return { success: true, targetDpi, adbDone, confCount, message: `DPI do Android alterada para ${targetDpi} com sucesso! Reinicie o emulador para validar no jogo.` };
 });
 
 ipcMain.handle('apply-touch-engine-profile', async (event, profile, port) => {
-  const p = port || 5555;
-  const adb = findAdb();
-  if (!adb) return { success: false, error: 'ADB não conectado. Abra o emulador primeiro.' };
-
-  try {
-    execSync(`"${adb}" connect 127.0.0.1:${p}`, { timeout: 3000, stdio: 'ignore' });
-  } catch (_) {}
-
   let tweaks = [];
   let dpi = 440;
   let profileName = 'iPhone 15 Pro Max (iOS Touch Engine)';
@@ -717,20 +769,43 @@ ipcMain.handle('apply-touch-engine-profile', async (event, profile, port) => {
     ];
   }
 
-  let appliedCount = 0;
-  for (const tw of tweaks) {
-    try {
-      execSync(`"${adb}" -s 127.0.0.1:${p} shell "${tw}"`, { timeout: 3000, stdio: 'ignore' });
-      appliedCount++;
-    } catch (_) {}
+  // 1. Atualizar DPI em todos os bluestacks.conf
+  const files = [
+    'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_bgp_msi\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_bgp\\bluestacks.conf'
+  ];
+  for (const cp of files) {
+    updateBluestacksInstanceKeys(cp, (inst) => ({
+      'dpi': String(dpi)
+    }));
   }
 
-  // Aplica DPI correspondente
-  try {
-    execSync(`"${adb}" -s 127.0.0.1:${p} shell wm density ${dpi}`, { timeout: 3000, stdio: 'ignore' });
-  } catch (_) {}
+  // 2. Injetar propriedades via ADB
+  const adb = findAdb();
+  let appliedCount = 0;
+  if (adb) {
+    const PORTS = port ? [port] : [5555, 5554, 5565, 5575, 5585, 21503, 62001, 7555];
+    for (const p of PORTS) {
+      try {
+        execSync(`"${adb}" connect 127.0.0.1:${p}`, { timeout: 1500, stdio: 'ignore' });
+        for (const tw of tweaks) {
+          try {
+            execSync(`"${adb}" -s 127.0.0.1:${p} shell "${tw}"`, { timeout: 2500, stdio: 'ignore' });
+            appliedCount++;
+          } catch (_) {}
+        }
+        try {
+          execSync(`"${adb}" -s 127.0.0.1:${p} shell wm density ${dpi}`, { timeout: 2500, stdio: 'ignore' });
+        } catch (_) {}
+      } catch (_) {}
+    }
+  }
 
-  return { success: true, profileName, appliedCount, dpi, message: `Perfil de Sensibilidade ${profileName} aplicado com sucesso no Android!` };
+  return { success: true, profileName, appliedCount, dpi, message: `Perfil de Sensibilidade ${profileName} aplicado com sucesso no Android! Reinicie o emulador para que o jogo reconheça a nova DPI.` };
 });
 
 ipcMain.handle('test-ping', async () => {

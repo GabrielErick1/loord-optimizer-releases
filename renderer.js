@@ -1444,7 +1444,9 @@ if (window.api.onUpdateAvailable) {
           statusTouchEngine.style.display = 'block';
           statusTouchEngine.textContent = `✔ ${res.profileName} aplicado com sucesso! (Touch 300Hz, Touch Slop 1, DPI ${res.dpi})`;
         }
-        alert(`✨ ${res.profileName} Ativado com Sucesso!\n\n• Resposta ao Toque Ultrarrápida (300Hz)\n• Touch Slop = 1 (Arrasto de capa instantâneo sem delay)\n• DPI do Android ajustada para ${res.dpi}\n• Pipeline gráfico direto para máxima precisão de mira`);
+        if (confirm(`✨ ${res.profileName} Ativado com Sucesso!\n\n• Resposta ao Toque Ultrarrápida (300Hz)\n• Touch Slop = 1 (Arrasto de capa instantâneo sem delay)\n• DPI do Android ajustada para ${res.dpi}\n\n⚠️ Deseja reiniciar o BlueStacks agora para aplicar 100% no Free Fire?`)) {
+          window.api.restartBluestacks();
+        }
       } else {
         logAdb('Falha ao aplicar Touch Engine. Verifique a conexão ADB.', '#ef4444');
       }
@@ -1562,7 +1564,9 @@ if (window.api.onUpdateAvailable) {
         setApplied('badge-device-profile');
         btnApplyDevice.textContent = '✔ Modelo Aplicado!';
         logAdb(`✔ Modelo alterado para ${prof.brand.toUpperCase()} (${prof.model}) em ${res.modifiedCount} instâncias!`, '#28c385');
-        alert(`✔ Modelo de Celular atualizado com sucesso!\n\n• Fabricante: ${prof.manufacturer}\n• Marca: ${prof.brand}\n• Modelo: ${prof.model}\n\nAbra o emulador para que o Free Fire reconheça o novo aparelho.`);
+        if (confirm(`✔ Modelo de Celular atualizado com sucesso!\n\n• Fabricante: ${prof.manufacturer}\n• Marca: ${prof.brand}\n• Modelo: ${prof.model}\n\n⚠️ O BlueStacks precisa ser reiniciado para o Free Fire carregar o novo modelo.\n\nDeseja reiniciar o BlueStacks agora?`)) {
+          window.api.restartBluestacks();
+        }
       } else {
         alert('Nenhum arquivo bluestacks.conf encontrado para atualizar o perfil.');
       }

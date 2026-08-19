@@ -52,6 +52,7 @@ contextBridge.exposeInMainWorld('api', {
   // ─── Real Android Transformation ────────────────────────────────
   convertToRealAndroid: (port) => ipcRenderer.invoke('convert-to-real-android', port),
   restoreDefaultAndroid: (port) => ipcRenderer.invoke('restore-default-android', port),
+  restartBluestacks: () => ipcRenderer.invoke('restart-bluestacks'),
   // ─── Network & DNS Gamer ─────────────────────────────────────────
   testPing: () => ipcRenderer.invoke('test-ping'),
   setGamerDns: (dnsType) => ipcRenderer.invoke('set-gamer-dns', dnsType),
