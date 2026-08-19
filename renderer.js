@@ -149,17 +149,6 @@ function restoreAppliedTweaks() {
   }
 }
 
-// Lista completa de todos os 35 módulos de otimização
-const allTweakIds = [
-  'remove-kbd-delay', 'mouse-default', 'mouse-current', 'mouse-no-accel', 'display-input-tweak',
-  'disable-overlays', 'disable-gamedvr', 'game-mode-toggle', 'game-priority', 'freefire-delay',
-  'clean-startup-apps', 'disable-telemetry', 'disable-prefetch', 'disable-background-apps', 'pause-windows-update',
-  'disable-core-parking', 'gpu-max-power', 'enable-hags', 'ultimate-power', 'disable-throttling',
-  'timestamp-0ms', 'disable-fse', 'csrss-priority', 'disable-hpet', 'win32-priority',
-  'disable-nagle', 'qos-game-priority', 'network-adapter', 'flush-dns-cache', 'disable-hibernation',
-  'visual-performance', 'disable-notifications', 'boost-processes', 'svchost-split', 'clean-standbylist'
-];
-
 function setTweakStatus(text) {
   const el = document.querySelector('#tweak-status-line .status-text') || document.getElementById('tweak-status-line');
   if (el) el.textContent = text;
