@@ -88,7 +88,22 @@ const fpsValueTxt = document.getElementById('fps-value-txt');
 const tweakStatusLine = document.getElementById('tweak-status-line');
 const tweakStatusText = tweakStatusLine ? tweakStatusLine.querySelector('.status-text') : null;
 
-let appIsAdmin = false;
+let appIsAdmin = true;
+
+if (window.api && window.api.checkAdmin) {
+  window.api.checkAdmin().then((isAdmin) => {
+    appIsAdmin = isAdmin !== false;
+    const statusLine = document.getElementById('tweak-status-line');
+    if (statusLine) {
+      const statusText = statusLine.querySelector('.status-text');
+      if (statusText) {
+        statusText.textContent = appIsAdmin ? 'Executando como Administrador. Otimizações prontas.' : 'Pronto para otimizar.';
+      }
+    }
+  }).catch(() => {
+    appIsAdmin = true;
+  });
+}
 
 // Estimated FPS increments
 const fpsBoosts = {
@@ -156,12 +171,6 @@ function setTweakStatus(text) {
 
 // Function to apply single tweak from UI
 async function applySingleTweak(tweakId) {
-  if (!appIsAdmin) {
-    setTweakStatus('Aviso: Privilégios de Administrador requeridos!');
-    alert('Por favor, execute como Administrador para aplicar alterações do sistema/registro.');
-    return;
-  }
-
   const card = document.getElementById(`card-${tweakId}`);
   const btn = card ? card.querySelector('.opt-btn-apply') : null;
   const title = card ? card.querySelector('.opt-title').textContent : tweakId;
@@ -220,11 +229,6 @@ document.querySelectorAll('.opt-card').forEach(card => {
 const btnApplyAllModules = document.getElementById('btn-apply-all-modules');
 if (btnApplyAllModules) {
   btnApplyAllModules.addEventListener('click', async () => {
-    if (!appIsAdmin) {
-      alert('Erro: Executar esta ação requer privilégios de Administrador.');
-      return;
-    }
-    
     btnApplyAllModules.disabled = true;
     btnApplyAllModules.textContent = '⚡ Aplicando módulos...';
     
@@ -261,10 +265,6 @@ if (btnApplyEmulator) {
 const btnMasterWinOpt = document.getElementById('btn-master-win-opt');
 if (btnMasterWinOpt) {
   btnMasterWinOpt.addEventListener('click', async () => {
-    if (!appIsAdmin) {
-      alert('Erro: Requer privilégios de Administrador!');
-      return;
-    }
     setTweakStatus('Executando Otimização Master do Windows (Energia Máxima, Efeitos Visuais, Latência, Cache, Processos)...');
     const btnText = btnMasterWinOpt.innerHTML;
     btnMasterWinOpt.disabled = true;
