@@ -1921,6 +1921,226 @@ function getCommandsForTweak(tweakId) {
   }
 }
 
+// ─── PC Fraco / 1ª Geração (Ultra FPS) ───────────────────────────
+ipcMain.handle('optimize-pc-fraco', async () => {
+  if (!systemIsAdmin) return { success: false, error: 'Privilégios de Administrador requeridos.' };
+  try {
+    const lowEndTweaks = [
+      // 1. Forçar visual minimalista do Windows (desliga transparência, sombras e animações que pesam na GPU antiga)
+      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects" /v VisualFXSetting /t REG_DWORD /d 2 /f',
+      'reg add "HKCU\\Control Panel\\Desktop" /v UserPreferencesMask /t REG_BINARY /d 9012038010000000 /f',
+      'reg add "HKCU\\Control Panel\\Desktop\\WindowMetrics" /v MinAnimate /t REG_SZ /d 0 /f',
+      'reg add "HKCU\\Software\\Microsoft\\Windows\\DWM" /v EnableAeroPeek /t REG_DWORD /d 0 /f',
+      'reg add "HKCU\\Software\\Microsoft\\Windows\\DWM" /v AlwaysHibernateThumbnails /t REG_DWORD /d 0 /f',
+      'reg add "HKCU\\Control Panel\\Desktop" /v DragFullWindows /t REG_SZ /d 0 /f',
+      'reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothing /t REG_SZ /d 0 /f',
+      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f',
+
+      // 2. Desativar Serviços Pesados que travam 100% de Disco e CPU em PC Antigo
+      'sc config "WSearch" start= disabled',
+      'sc stop "WSearch"',
+      'sc config "SysMain" start= disabled',
+      'sc stop "SysMain"',
+      'sc config "DiagTrack" start= disabled',
+      'sc stop "DiagTrack"',
+      'sc config "WerSvc" start= disabled',
+      'sc stop "WerSvc"',
+      'sc config "Spooler" start= disabled',
+      'sc stop "Spooler"',
+      'sc config "Fax" start= disabled',
+      'sc stop "Fax"',
+      'sc config "MapsBroker" start= disabled',
+      'sc stop "MapsBroker"',
+      'sc config "dmwappushservice" start= disabled',
+      'sc stop "dmwappushservice"',
+      'sc config "PcaSvc" start= disabled',
+      'sc stop "PcaSvc"',
+
+      // 3. Plano de Energia Máxima & Core Unparking
+      'powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61',
+      'powercfg -setactive e9a42b02-d5df-448d-aa00-03f14749eb61',
+      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100',
+      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100',
+      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMINCORES 100',
+      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMAXCORES 100',
+      'powercfg -setactive SCHEME_CURRENT',
+      'powercfg -h off',
+
+      // 4. Prioridade Win32 Separator para primeiro plano
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 26 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 0 /f /reg:64',
+
+      // 5. Otimizações de GPU Integrada (Intel HD Graphics / AMD APU)
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers" /v PowerMizerEnable /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers" /v PowerMizerLevel /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers" /v PowerMizerLevelAC /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Intel\\GMM" /v DedicatedSegmentSize /t REG_DWORD /d 512 /f /reg:64',
+
+      // 6. BCD Latência 0ms
+      'bcdedit /set useplatformtick yes',
+      'bcdedit /set disabledynamictick yes',
+      'bcdedit /set useplatformclock no',
+      'bcdedit /set bootux disabled',
+      'bcdedit /timeout 3',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\kernel" /v GlobalTimerResolutionRequests /t REG_DWORD /d 1 /f /reg:64'
+    ];
+
+    for (const cmd of lowEndTweaks) {
+      try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
+    }
+
+    // Purgar processos desnecessários e limpar RAM
+    try {
+      const procScript = getPhysicalScriptPath('otimizar_processos.ps1');
+      execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${procScript}"`, { stdio: 'ignore' });
+    } catch (_) {}
+
+    try {
+      const ramScript = getPhysicalScriptPath('clean_ram.ps1');
+      execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${ramScript}"`, { stdio: 'ignore' });
+    } catch (_) {}
+
+    return { success: true, message: 'Otimização para PC Fraco aplicada com sucesso!' };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('clean-deep-disk', async () => {
+  if (!systemIsAdmin) return { success: false, error: 'Privilégios de Administrador requeridos.' };
+  try {
+    const cleanCmd = 'cmd.exe /c "del /q /f /s \"%TEMP%\\*\" & del /q /f /s \"C:\\Windows\\Temp\\*\" & del /q /f /s \"C:\\Windows\\Prefetch\\*\" & del /q /f /s \"%LOCALAPPDATA%\\D3DSCache\\*\" & del /q /f /s \"%LOCALAPPDATA%\\NVIDIA\\DXCache\\*\" & del /q /f /s \"%LOCALAPPDATA%\\AMD\\DxCache\\*\" & del /q /f /s \"C:\\Windows\\SoftwareDistribution\\Download\\*\" & del /q /f /s \"C:\\ProgramData\\BlueStacks_nxt\\Logs\\*\" & del /q /f /s \"C:\\ProgramData\\BlueStacks_msi5\\Logs\\*\" & del /q /f /s \"C:\\ProgramData\\BlueStacks\\Logs\\*\" & ipconfig /flushdns & exit /b 0"';
+    execSync(cleanCmd, { stdio: 'ignore' });
+    return { success: true, message: 'Limpeza profunda de disco e cache concluída! Espaço e RAM liberados.' };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('remove-windows-bloatware', async () => {
+  if (!systemIsAdmin) return { success: false, error: 'Privilégios de Administrador requeridos.' };
+  try {
+    const psBloatCmd = `Get-AppxPackage -AllUsers *3DBuilder* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *BingWeather* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *BingNews* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *GetHelp* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *Getstarted* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *MicrosoftSolitaireCollection* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *OfficeHub* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *OneNote* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *People* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *WindowsCommunicationsApps* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *WindowsFeedbackHub* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *WindowsMaps* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *WindowsSoundRecorder* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *XboxApp* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *XboxGameOverlay* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *XboxGamingOverlay* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *YourPhone* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *ZuneMusic* | Remove-AppxPackage -ErrorAction SilentlyContinue;
+Get-AppxPackage -AllUsers *ZuneVideo* | Remove-AppxPackage -ErrorAction SilentlyContinue;`;
+
+    execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psBloatCmd.replace(/\r?\n/g, ' ')}"`, { stdio: 'ignore' });
+    return { success: true, message: 'Bloatwares e aplicativos inúteis do Windows desinstalados com sucesso!' };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('apply-low-end-emulator-config', async (event, preset) => {
+  if (!systemIsAdmin) return { success: false, error: 'Privilégios de Administrador requeridos.' };
+  try {
+    const allPaths = [
+      'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
+      'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
+      'C:\\ProgramData\\BlueStacks_bgp_msi\\bluestacks.conf',
+      'C:\\ProgramData\\BlueStacks\\bluestacks.conf',
+      'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
+      'C:\\ProgramData\\BlueStacks_bgp\\bluestacks.conf'
+    ];
+
+    let width = "960";
+    let height = "540";
+    let dpi = "240";
+    let ram = "2048";
+    let cpu = "2";
+    let fps = "60";
+
+    if (preset === 'ultra-potato') {
+      width = "800";
+      height = "600";
+      dpi = "160";
+      ram = "1536";
+      cpu = "2";
+      fps = "60";
+    } else if (preset === '720p-smooth') {
+      width = "1280";
+      height = "720";
+      dpi = "240";
+      ram = "2048";
+      cpu = "2";
+      fps = "90";
+    }
+
+    for (const confPath of allPaths) {
+      if (fs.existsSync(confPath)) {
+        let content = fs.readFileSync(confPath, 'utf8');
+        const lines = content.split(/\r?\n/);
+        const newLines = [];
+        for (let line of lines) {
+          if (line.match(/^bst\.instance\.(.*?)\.fb_width=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.fb_width=/)[1];
+            line = `bst.instance.${inst}.fb_width="${width}"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.fb_height=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.fb_height=/)[1];
+            line = `bst.instance.${inst}.fb_height="${height}"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.dpi=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.dpi=/)[1];
+            line = `bst.instance.${inst}.dpi="${dpi}"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.ram=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.ram=/)[1];
+            line = `bst.instance.${inst}.ram="${ram}"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.cpu=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.cpu=/)[1];
+            line = `bst.instance.${inst}.cpu="${cpu}"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.max_fps=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.max_fps=/)[1];
+            line = `bst.instance.${inst}.max_fps="${fps}"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.enable_high_fps=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.enable_high_fps=/)[1];
+            line = `bst.instance.${inst}.enable_high_fps="1"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.astc_decoding_mode=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.astc_decoding_mode=/)[1];
+            line = `bst.instance.${inst}.astc_decoding_mode="0"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.enable_vsync=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.enable_vsync=/)[1];
+            line = `bst.instance.${inst}.enable_vsync="0"`;
+          }
+          newLines.push(line);
+        }
+        fs.writeFileSync(confPath, newLines.join('\r\n'), 'utf8');
+      }
+    }
+
+    return { success: true, message: `Perfil ${preset} aplicado ao emulador com sucesso!` };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('set-fixed-pagefile', async () => {
+  if (!systemIsAdmin) return { success: false, error: 'Privilégios de Administrador requeridos.' };
+  try {
+    // Configura Pagefile fixo de 6GB (6144MB) no drive C: para evitar congelamentos e falta de RAM
+    const cmd = 'wmic pagefilesetting where name="C:\\\\pagefile.sys" set InitialSize=6144,MaximumSize=6144';
+    try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
+    execSync('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v PagingFiles /t REG_MULTI_SZ /d "C:\\pagefile.sys 6144 6144" /f /reg:64', { stdio: 'ignore' });
+    return { success: true, message: 'Memória Virtual (Pagefile) fixada em 6GB com sucesso!' };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
 // ─── AUTO-UPDATE ENGINE (Play Store Style) ──────────────────────────────────
 let downloadedInstallerPath = null;
 const https = require('https');

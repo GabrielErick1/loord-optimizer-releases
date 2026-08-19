@@ -53,9 +53,12 @@ contextBridge.exposeInMainWorld('api', {
   setGamerDns: (dnsType) => ipcRenderer.invoke('set-gamer-dns', dnsType),
   // ─── Game Booster Turbo ──────────────────────────────────────────
   boostGameTurbo: () => ipcRenderer.invoke('boost-game-turbo'),
-  // ─── Backup & Restore Configs ────────────────────────────────────
-  exportUserConfig: (config) => ipcRenderer.invoke('export-user-config', config),
-  importUserConfig: () => ipcRenderer.invoke('import-user-config'),
+  // ─── PC Fraco / 1ª Geração (Ultra FPS) ───────────────────────────
+  optimizePcFraco: () => ipcRenderer.invoke('optimize-pc-fraco'),
+  cleanDeepDisk: () => ipcRenderer.invoke('clean-deep-disk'),
+  removeWindowsBloatware: () => ipcRenderer.invoke('remove-windows-bloatware'),
+  applyLowEndEmulatorConfig: (preset) => ipcRenderer.invoke('apply-low-end-emulator-config', preset),
+  setFixedPagefile: () => ipcRenderer.invoke('set-fixed-pagefile'),
   // ─────────────────────────────────────────────────────────────────
 });
 

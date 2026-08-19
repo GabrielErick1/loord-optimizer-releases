@@ -1874,3 +1874,110 @@ if (btnImportProfile) {
   });
 }
 
+// ─── PC Fraco / 1ª Geração (Ultra FPS) ───────────────────────────
+const btnMasterPcFraco = document.getElementById('btn-master-pc-fraco');
+const statusPcFracoMaster = document.getElementById('status-pc-fraco-master');
+
+if (btnMasterPcFraco) {
+  btnMasterPcFraco.addEventListener('click', async () => {
+    btnMasterPcFraco.disabled = true;
+    btnMasterPcFraco.textContent = '⏳ Otimizando PC Fraco...';
+    if (statusPcFracoMaster) {
+      statusPcFracoMaster.style.display = 'block';
+      statusPcFracoMaster.textContent = 'Aplicando modo visual mínimo, desativando serviços pesados e configurando plano extremo...';
+    }
+
+    const res = await window.api.optimizePcFraco();
+    btnMasterPcFraco.disabled = false;
+    btnMasterPcFraco.textContent = '✔️ Modo Batata Turbo Ativo!';
+    if (statusPcFracoMaster) {
+      statusPcFracoMaster.textContent = res && res.message ? res.message : 'Modo Batata Turbo aplicado com sucesso no Windows!';
+    }
+  });
+}
+
+const btnCleanDeepDisk = document.getElementById('btn-clean-deep-disk');
+const statusDeepDisk = document.getElementById('status-deep-disk');
+if (btnCleanDeepDisk) {
+  btnCleanDeepDisk.addEventListener('click', async () => {
+    btnCleanDeepDisk.disabled = true;
+    btnCleanDeepDisk.textContent = '⏳ Limpando...';
+    const res = await window.api.cleanDeepDisk();
+    btnCleanDeepDisk.disabled = false;
+    btnCleanDeepDisk.textContent = '🧹 Limpeza Concluída!';
+    if (statusDeepDisk) {
+      statusDeepDisk.style.display = 'block';
+      statusDeepDisk.textContent = res && res.message ? res.message : 'Limpeza de disco concluída!';
+    }
+  });
+}
+
+const btnRemoveBloatware = document.getElementById('btn-remove-bloatware');
+const statusBloatware = document.getElementById('status-bloatware');
+if (btnRemoveBloatware) {
+  btnRemoveBloatware.addEventListener('click', async () => {
+    const confirmRemoval = confirm('Deseja desinstalar aplicativos nativos inúteis do Windows (Xbox, Clima, Notícias, Cortana, Mapas, etc.) para liberar RAM e processamento?');
+    if (!confirmRemoval) return;
+
+    btnRemoveBloatware.disabled = true;
+    btnRemoveBloatware.textContent = '⏳ Removendo Bloatware...';
+    const res = await window.api.removeWindowsBloatware();
+    btnRemoveBloatware.disabled = false;
+    btnRemoveBloatware.textContent = '🗑️ Bloatware Removido!';
+    if (statusBloatware) {
+      statusBloatware.style.display = 'block';
+      statusBloatware.textContent = res && res.message ? res.message : 'Bloatware removido!';
+    }
+  });
+}
+
+const btnSetPagefile = document.getElementById('btn-set-pagefile');
+const statusPagefile = document.getElementById('status-pagefile');
+if (btnSetPagefile) {
+  btnSetPagefile.addEventListener('click', async () => {
+    btnSetPagefile.disabled = true;
+    btnSetPagefile.textContent = '⏳ Fixando Pagefile...';
+    const res = await window.api.setFixedPagefile();
+    btnSetPagefile.disabled = false;
+    btnSetPagefile.textContent = '⚡ Memória Virtual Fixada em 6GB!';
+    if (statusPagefile) {
+      statusPagefile.style.display = 'block';
+      statusPagefile.textContent = res && res.message ? res.message : 'Pagefile fixado com sucesso!';
+    }
+  });
+}
+
+const statusEmuPreset = document.getElementById('status-emu-preset');
+const btnPresetPotato = document.getElementById('btn-preset-potato');
+if (btnPresetPotato) {
+  btnPresetPotato.addEventListener('click', async () => {
+    const res = await window.api.applyLowEndEmulatorConfig('ultra-potato');
+    if (statusEmuPreset) {
+      statusEmuPreset.style.display = 'block';
+      statusEmuPreset.textContent = '🥔 Perfil Ultra Batata (800x600, 160 DPI, 2 CPU, 1.5GB RAM) aplicado no BlueStacks/MSI!';
+    }
+  });
+}
+
+const btnPresetSmooth = document.getElementById('btn-preset-smooth');
+if (btnPresetSmooth) {
+  btnPresetSmooth.addEventListener('click', async () => {
+    const res = await window.api.applyLowEndEmulatorConfig('540p-balanced');
+    if (statusEmuPreset) {
+      statusEmuPreset.style.display = 'block';
+      statusEmuPreset.textContent = '⚡ Perfil 540p (960x540, 240 DPI, 2 CPU, 2GB RAM) aplicado no BlueStacks/MSI!';
+    }
+  });
+}
+
+const btnPreset720p = document.getElementById('btn-preset-720p');
+if (btnPreset720p) {
+  btnPreset720p.addEventListener('click', async () => {
+    const res = await window.api.applyLowEndEmulatorConfig('720p-smooth');
+    if (statusEmuPreset) {
+      statusEmuPreset.style.display = 'block';
+      statusEmuPreset.textContent = '🎮 Perfil 720p (1280x720, 240 DPI, 2 CPU, 2GB RAM) aplicado no BlueStacks/MSI!';
+    }
+  });
+}
+

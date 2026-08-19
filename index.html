@@ -50,6 +50,9 @@
           <button class="nav-item" data-tab="minha-config">
             <span class="nav-icon">💾</span> Minha Config
           </button>
+          <button class="nav-item" data-tab="pc-fraco" style="color: #f59e0b; font-weight: 700;">
+            <span class="nav-icon">🥔</span> PC Fraco (Ultra FPS)
+          </button>
         </nav>
         
         <div class="sidebar-footer">
@@ -1013,6 +1016,92 @@
                 <span id="status-running" class="badge badge-neutral">Não</span>
               </div>
             </div>
+          </div>
+        </section>
+
+        <!-- TAB: PC FRACO / 1ª GERAÇÃO (ULTRA FPS) -->
+        <section id="tab-pc-fraco" class="tab-content">
+          <h2>PC Fraco / 1ª Geração (Ultra FPS)</h2>
+          <p class="subtitle">Otimizações extremas de recursos, debloat do Windows, remoção de bloatwares e ajuste de emulador para PCs antigos e sem placa de vídeo.</p>
+
+          <!-- Master Potato Mode Banner -->
+          <div class="card" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(239, 68, 68, 0.1)); border: 1px solid rgba(245, 158, 11, 0.4); padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+              <div>
+                <div style="font-weight: 800; font-size: 1.15rem; color: #fbbf24; display: flex; align-items: center; gap: 8px;">
+                  <span>🥔 MODO BATATA TURBO (1-Click Otimização Extrema)</span>
+                </div>
+                <div style="font-size: 0.85rem; color: #e2e8f0; margin-top: 4px;">
+                  Desativa transparências/efeitos visuais pesados, desliga serviços de 100% de disco/CPU, desativa telemetria, ativa plano de energia máxima para CPUs de 1ª/2ª/3ª geração e zera o input lag.
+                </div>
+              </div>
+              <button class="btn btn-primary" id="btn-master-pc-fraco" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; font-weight: 800; font-size: 0.95rem; padding: 12px 24px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);">🚀 Ativar Modo Batata Turbo</button>
+            </div>
+            <div id="status-pc-fraco-master" style="margin-top: 10px; font-size: 0.82rem; color: #10b981; font-weight: 600; display: none;"></div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 16px;">
+            <!-- Limpeza Profunda de Disco -->
+            <div class="card" style="border: 1px solid rgba(59, 130, 246, 0.3);">
+              <div style="font-weight: 700; color: #60a5fa; font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <span>🧹 Limpeza Profunda de Disco & Lixo do Windows</span>
+              </div>
+              <p style="font-size: 0.8rem; color: var(--text-gray); margin-bottom: 12px;">
+                Limpa arquivos temporários (%TEMP%, Prefetch, Windows SoftwareDistribution, Shaders DirectX da Intel/Nvidia/AMD e logs do BlueStacks/MSI) liberando gigabytes de espaço e acelerando o carregamento do jogo.
+              </p>
+              <button class="btn btn-primary btn-sm" id="btn-clean-deep-disk" style="width: 100%;">🧹 Executar Limpeza Profunda</button>
+              <div id="status-deep-disk" style="margin-top: 8px; font-size: 0.8rem; color: #10b981; display: none;"></div>
+            </div>
+
+            <!-- Desinstalar Bloatwares do Windows -->
+            <div class="card" style="border: 1px solid rgba(239, 68, 68, 0.3);">
+              <div style="font-weight: 700; color: #f87171; font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <span>🗑️ Desinstalar Bloatware & Apps Inúteis do Windows</span>
+              </div>
+              <p style="font-size: 0.8rem; color: var(--text-gray); margin-bottom: 12px;">
+                Remove aplicativos nativos do Windows que rodam em segundo plano e consomem RAM/CPU (Xbox Apps, Clima, Notícias, Cortana, Mapas, Gravador de Voz, Solitaire, YourPhone).
+              </p>
+              <button class="btn btn-danger btn-sm" id="btn-remove-bloatware" style="width: 100%;">🗑️ Remover Apps Inúteis (AppX)</button>
+              <div id="status-bloatware" style="margin-top: 8px; font-size: 0.8rem; color: #10b981; display: none;"></div>
+            </div>
+
+            <!-- Memória Virtual Fixa (Pagefile) -->
+            <div class="card" style="border: 1px solid rgba(16, 185, 129, 0.3);">
+              <div style="font-weight: 700; color: #34d399; font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <span>🧠 Fixar Memória Virtual (Evitar Queda de FPS e Tela Azul)</span>
+              </div>
+              <p style="font-size: 0.8rem; color: var(--text-gray); margin-bottom: 12px;">
+                Fixa o arquivo de paginação (Pagefile) em 6GB no disco C:. Impede que o Windows redimensione a memória virtual durante a partida, evitando congelamentos do emulador.
+              </p>
+              <button class="btn btn-outline btn-sm" id="btn-set-pagefile" style="width: 100%; border-color: #10b981; color: #10b981;">⚡ Fixar Memória Virtual em 6GB</button>
+              <div id="status-pagefile" style="margin-top: 8px; font-size: 0.8rem; color: #10b981; display: none;"></div>
+            </div>
+
+            <!-- Predefinições de Emulador para PC Fraco -->
+            <div class="card" style="border: 1px solid rgba(168, 85, 247, 0.3);">
+              <div style="font-weight: 700; color: #c084fc; font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <span>🎮 Configuração Pronta do Emulador (PC Fraco)</span>
+              </div>
+              <p style="font-size: 0.8rem; color: var(--text-gray); margin-bottom: 10px;">
+                Aplica a melhor combinação de Resolução, DPI, Núcleos de CPU e RAM no seu BlueStacks / MSI:
+              </p>
+              <div style="display: flex; gap: 8px; flex-direction: column;">
+                <button class="btn btn-sm" id="btn-preset-potato" style="background: #e11d48; color: #fff; font-weight: 700;">🥔 Perfil Ultra Batata (800x600 | 160 DPI | 2 CPU | 1.5GB RAM)</button>
+                <button class="btn btn-sm" id="btn-preset-smooth" style="background: #2563eb; color: #fff; font-weight: 700;">⚡ Perfil 540p Equilibrado (960x540 | 240 DPI | 2 CPU | 2GB RAM)</button>
+                <button class="btn btn-sm" id="btn-preset-720p" style="background: #7c3aed; color: #fff; font-weight: 700;">🎮 Perfil 720p Suave (1280x720 | 240 DPI | 2 CPU | 2GB RAM)</button>
+              </div>
+              <div id="status-emu-preset" style="margin-top: 8px; font-size: 0.8rem; color: #10b981; display: none;"></div>
+            </div>
+          </div>
+
+          <!-- Dicas e Versões Recomendadas -->
+          <div class="card" style="margin-top: 16px; background: rgba(30, 41, 59, 0.5); border: 1px solid #334155;">
+            <h3 style="color: #38bdf8; margin-top: 0; font-size: 0.95rem;">💡 Dicas de Ouro para Jogar Free Fire em PC Antigo / Fraco</h3>
+            <ul style="font-size: 0.82rem; color: #cbd5e1; line-height: 1.6; margin: 0; padding-left: 20px;">
+              <li><strong>Versão de Emulador Recomendada:</strong> Para computadores com 4GB de RAM ou processadores Core 2 Duo / Core i3 de 1ª/2ª geração, use o <strong>MSI App Player 4.240.15.5318 (32-bit)</strong> ou <strong>BlueStacks 4.240 (32-bit)</strong>. Emuladores de 32-bit usam 50% menos memória RAM.</li>
+              <li><strong>Gráficos no Jogo:</strong> Dentro do Free Fire, coloque os gráficos no <strong>Suave</strong> e ative <strong>Alto FPS</strong>.</li>
+              <li><strong>Desative Pacotes de Expansão:</strong> Não baixe todos os pacotes de skin e mapas pesados no jogo; baixe apenas as roupas e armas que você usa.</li>
+            </ul>
           </div>
         </section>
 
