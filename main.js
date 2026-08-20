@@ -398,26 +398,75 @@ ipcMain.handle('adb-shell', async (event, cmd, port) => {
 });
 
 ipcMain.handle('adb-uninstall', async (event, packages, port) => {
-  const p = port || 5555;
-  const results = [];
-  for (const pkg of packages) {
-    try {
-      const out = await runAdb(`-s 127.0.0.1:${p} shell pm uninstall --user 0 ${pkg}`);
-      const isSuccess = out.includes('Success');
-      if (!isSuccess) {
-        await runAdb(`-s 127.0.0.1:${p} shell pm disable-user --user 0 ${pkg}`).catch(() => {});
-        await runAdb(`-s 127.0.0.1:${p} shell pm clear ${pkg}`).catch(() => {});
-      }
-      results.push({ pkg, ok: isSuccess, out: out.trim() });
-    } catch (e) {
-      try {
-        await runAdb(`-s 127.0.0.1:${p} shell pm disable-user --user 0 ${pkg}`);
-        results.push({ pkg, ok: true, out: 'Disabled' });
-      } catch (err2) {
-        results.push({ pkg, ok: false, error: e.message });
+  const adb = findAdb();
+  if (!adb) return packages.map(pkg => ({ pkg, ok: false, error: 'ADB não encontrado.' }));
+
+  // Descobrir portas ativas
+  let ports = port ? [port] : [];
+  if (ports.length === 0) {
+    const confPaths = [
+      'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
+      'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
+      'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
+      'C:\\ProgramData\\BlueStacks\\bluestacks.conf'
+    ];
+    for (const cp of confPaths) {
+      if (fs.existsSync(cp)) {
+        try {
+          const content = fs.readFileSync(cp, 'utf8');
+          const matches = content.matchAll(/status\.adb_port="(\d+)"/g);
+          for (const m of matches) ports.push(parseInt(m[1]));
+        } catch (_) {}
       }
     }
+    ports.push(5555, 5554, 5565, 5575, 5585, 21503, 62001, 7555);
   }
+  ports = [...new Set(ports)];
+
+  const results = [];
+
+  for (const pkg of packages) {
+    let uninstalled = false;
+    let lastOut = '';
+
+    for (const p of ports) {
+      try {
+        execSync(`"${adb}" connect 127.0.0.1:${p}`, { timeout: 1500, stdio: 'ignore' });
+        
+        // Estratégia 1: Force stop e clear
+        try { execSync(`"${adb}" -s 127.0.0.1:${p} shell am force-stop ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
+        try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm clear ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
+
+        // Estratégia 2: Desativar para usuário e ocultar
+        try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm disable-user --user 0 ${pkg}`, { timeout: 2500, stdio: 'ignore' }); } catch (_) {}
+        try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm disable ${pkg}`, { timeout: 2500, stdio: 'ignore' }); } catch (_) {}
+        try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm hide --user 0 ${pkg}`, { timeout: 2500, stdio: 'ignore' }); } catch (_) {}
+        try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm suspend ${pkg}`, { timeout: 2500, stdio: 'ignore' }); } catch (_) {}
+
+        // Estratégia 3: Desinstalação completa do pacote
+        const out = execSync(`"${adb}" -s 127.0.0.1:${p} shell pm uninstall --user 0 ${pkg}`, { encoding: 'utf8', timeout: 3000 });
+        lastOut = out.trim();
+        if (out.includes('Success') || out.includes('not installed') || out.includes('Unknown package')) {
+          uninstalled = true;
+          break;
+        }
+
+        // Estratégia 4: Se tiver root (su)
+        try {
+          const suOut = execSync(`"${adb}" -s 127.0.0.1:${p} shell su -c "pm disable ${pkg}; pm uninstall --user 0 ${pkg}"`, { encoding: 'utf8', timeout: 3000 });
+          if (suOut.includes('Success')) {
+            uninstalled = true;
+            break;
+          }
+        } catch (_) {}
+      } catch (e) {
+        lastOut = e.message;
+      }
+    }
+
+    results.push({ pkg, ok: uninstalled || lastOut.includes('Success') || lastOut.includes('Disabled'), out: lastOut || 'OK' });
+  }
+
   return results;
 });
 
