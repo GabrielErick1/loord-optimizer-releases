@@ -480,30 +480,6 @@ ipcMain.handle('adb-uninstall', async (event, packages, port) => {
     await execAsync(`"${adb}" -s ${t} shell su -c "${shellBatch}"`, 6000);
   }
 
-  // Atualizar bluestacks.conf em segundo plano
-  setTimeout(() => {
-    const confFiles = [
-      'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
-      'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
-      'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
-      'C:\\ProgramData\\BlueStacks\\bluestacks.conf'
-    ];
-    for (const f of confFiles) {
-      updateBluestacksInstanceKeys(f, () => ({
-        'show_ads': '0',
-        'show_banner': '0',
-        'show_banner_ads': '0',
-        'show_sidebar_ads': '0',
-        'show_game_center_ads': '0',
-        'enable_recommendations': '0',
-        'show_promoted_apps': '0',
-        'banner_games_enabled': '0',
-        'allow_user_to_hide_ads': '1',
-        'hide_ads_while_gaming': '1'
-      }));
-    }
-  }, 10);
-
   return packages.map(pkg => ({ pkg, ok: true, out: 'Success' }));
 });
 
@@ -752,29 +728,8 @@ function sanitizeBluestacksConfFiles() {
 
 ipcMain.handle('convert-to-real-android', async (event, port) => {
   const adb = findAdb();
-  const files = [
-    'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
-    'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
-    'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
-    'C:\\ProgramData\\BlueStacks\\bluestacks.conf',
-    'C:\\ProgramData\\BlueStacks\\bluestacks.conf',
-    'C:\\ProgramData\\BlueStacks_bgp_msi\\bluestacks.conf',
-    'C:\\ProgramData\\BlueStacks_bgp\\bluestacks.conf'
-  ];
 
-  // 1. Inserir somente chaves 100% válidas no schema do BlueStacks 5
-  for (const f of files) {
-    updateBluestacksInstanceKeys(f, () => ({
-      'allow_user_to_hide_ads': '1',
-      'hide_ads_while_gaming': '1',
-      'enable_recommendations': '0',
-      'ads_limit_min_pixels': '99999',
-      'ads_screen_width': '0',
-      'ads_screen_width_percentage': '0'
-    }));
-  }
-
-  // 2. Injetar desativação de pacotes e performance via ADB em todas as portas e alvos ativos
+  // Desativação de pacotes de anúncio e injeção de performance via ADB em todas as portas e alvos ativos
   const packagesToDisable = [
     'gg.now.ads.service',
     'gg.now.billing.service2',
@@ -2726,62 +2681,13 @@ Get-AppxPackage -AllUsers *ZuneVideo* | Remove-AppxPackage -ErrorAction Silently
 // ─── REMOVEDOR DE ANÚNCIOS DO EMULADOR (ADBLOCK COMPLETO) ───────────────────
 ipcMain.handle('remove-emulator-ads', async (event, port) => {
   try {
-    const files = [
-      'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
-      'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
-      'C:\\ProgramData\\BlueStacks_bgp_msi\\bluestacks.conf',
-      'C:\\ProgramData\\BlueStacks\\bluestacks.conf',
-      'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
-      'C:\\ProgramData\\BlueStacks_bgp\\bluestacks.conf'
-    ];
-
-    let confModified = 0;
-    for (const f of files) {
-      confModified += updateBluestacksInstanceKeys(f, (inst) => ({
-        'show_ads': '0',
-        'show_banner': '0',
-        'show_banner_ads': '0',
-        'show_sidebar_ads': '0',
-        'show_game_center_ads': '0',
-        'enable_recommendations': '0',
-        'show_promoted_apps': '0',
-        'banner_games_enabled': '0',
-        'allow_user_to_hide_ads': '1',
-        'hide_ads_while_gaming': '1',
-        'astc_decoding_mode': '0'
-      }));
-
-      if (fs.existsSync(f)) {
-        try {
-          let content = fs.readFileSync(f, 'utf8');
-          const globals = [
-            'bst.banner_games_enabled="0"',
-            'bst.feature.game_center="0"',
-            'bst.feature.rewards="0"',
-            'bst.feature.nowgg="0"',
-            'bst.feature.cloud_game="0"',
-            'bst.promoted_apps="0"',
-            'bst.app_center_game_list_url=""'
-          ];
-          for (const g of globals) {
-            const key = g.split('=')[0];
-            if (content.includes(key)) {
-              content = content.replace(new RegExp(`^${key}=.*$`, 'm'), g);
-            } else {
-              content += `\r\n${g}`;
-            }
-          }
-          fs.writeFileSync(f, content, 'utf8');
-        } catch (_) {}
-      }
-    }
-
     cleanHostsFileOfBluestacks();
+    sanitizeBluestacksConfFiles();
 
     const adb = findAdb();
     let adbSuccess = false;
     if (adb) {
-      const PORTS = port ? [port] : [5555, 5554, 5565, 5575, 5585, 21503, 62001, 7555];
+      const targets = getActiveAdbTargets(port);
       const adPackages = [
         'com.bluestacks.gamecenter',
         'com.bluestacks.appmart',
@@ -2792,25 +2698,20 @@ ipcMain.handle('remove-emulator-ads', async (event, port) => {
         'com.bluestacks.hyperdesk',
         'com.bluestacks.search'
       ];
-      for (const p of PORTS) {
-        try {
-          execSync(`"${adb}" connect 127.0.0.1:${p}`, { timeout: 1500, stdio: 'ignore' });
-          for (const pkg of adPackages) {
-            try { execSync(`"${adb}" -s 127.0.0.1:${p} shell am force-stop ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
-            try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm disable-user --user 0 ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
-            try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm uninstall --user 0 ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
-          }
-          try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm clear com.bluestacks.home`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
-          adbSuccess = true;
-        } catch (_) {}
+      const pkgList = adPackages.join(' ');
+      const shellBatch = `for p in ${pkgList}; do pm disable-user --user 0 $p 2>/dev/null; pm disable $p 2>/dev/null; pm hide --user 0 $p 2>/dev/null; pm uninstall --user 0 $p 2>/dev/null; am force-stop $p 2>/dev/null; pm clear $p 2>/dev/null; done; pm clear com.bluestacks.home 2>/dev/null; am force-stop com.bluestacks.home 2>/dev/null; am start -n com.bluestacks.home/.HomeActivity 2>/dev/null`;
+
+      for (const t of targets) {
+        await execAsync(`"${adb}" -s ${t} shell "${shellBatch}"`, 5000);
+        await execAsync(`"${adb}" -s ${t} shell su -c "${shellBatch}"`, 5000);
+        adbSuccess = true;
       }
     }
 
     return { 
       success: true, 
-      confModified, 
       adbSuccess, 
-      message: '🚫 Anúncios do emulador, App Center e barra de jogos recomendados removidos com sucesso! Reinicie o emulador para ver a tela 100% limpa.' 
+      message: '🚫 Anúncios do emulador, App Center e propagandas desativados com sucesso!' 
     };
   } catch (e) {
     return { success: false, error: e.message };
