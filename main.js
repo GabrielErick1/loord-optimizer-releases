@@ -37,6 +37,48 @@ if (!fs.existsSync(backupDir)) {
   fs.mkdirSync(backupDir, { recursive: true });
 }
 
+function createInitialSystemBackup() {
+  try {
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+
+    const mouseBak = path.join(backupDir, 'Mouse_Original.reg');
+    if (!fs.existsSync(mouseBak)) {
+      try { execSync(`reg export "HKCU\\Control Panel\\Mouse" "${mouseBak}" /y`, { stdio: 'ignore' }); } catch (_) {}
+    }
+
+    const sysProfileBak = path.join(backupDir, 'SystemProfile_Original.reg');
+    if (!fs.existsSync(sysProfileBak)) {
+      try { execSync(`reg export "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" "${sysProfileBak}" /y`, { stdio: 'ignore' }); } catch (_) {}
+    }
+
+    const priorityBak = path.join(backupDir, 'PriorityControl_Original.reg');
+    if (!fs.existsSync(priorityBak)) {
+      try { execSync(`reg export "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" "${priorityBak}" /y`, { stdio: 'ignore' }); } catch (_) {}
+    }
+
+    const confPaths = [
+      { key: 'bluestacks_msi.conf.bak', path: 'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf' },
+      { key: 'bluestacks_msi5.conf.bak', path: 'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf' },
+      { key: 'bluestacks_bgp_msi.conf.bak', path: 'C:\\ProgramData\\BlueStacks_bgp_msi\\bluestacks.conf' },
+      { key: 'bluestacks.conf.bak', path: 'C:\\ProgramData\\BlueStacks\\bluestacks.conf' },
+      { key: 'bluestacks_nxt.conf.bak', path: 'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf' },
+      { key: 'bluestacks_bgp.conf.bak', path: 'C:\\ProgramData\\BlueStacks_bgp\\bluestacks.conf' }
+    ];
+
+    for (const item of confPaths) {
+      const dest = path.join(backupDir, item.key);
+      if (!fs.existsSync(dest) && fs.existsSync(item.path)) {
+        try { fs.copyFileSync(item.path, dest); } catch (_) {}
+      }
+    }
+  } catch (e) {
+    console.error('Error creating initial backup:', e);
+  }
+}
+createInitialSystemBackup();
+
 // Check for Administrator privileges (async helper for renderer compatibility)
 function checkAdminPrivileges(callback) {
   callback(systemIsAdmin);
@@ -1756,13 +1798,43 @@ ipcMain.handle('revert-all-tweaks-on-revoke', async () => {
 
         for (const item of pathsToRestore) {
           if (fs.existsSync(path.join(backupDir, item.key)) && fs.existsSync(path.dirname(item.path))) {
-            fs.copyFileSync(path.join(backupDir, item.key), item.path);
+            try { fs.copyFileSync(path.join(backupDir, item.key), item.path); } catch (_) {}
           }
         }
       }
     } catch (_) {}
 
-    // 3. Limpar regras do Process Lasso se prolasso.ini existir
+    // 3. Reset explícito do Mouse para padrão absoluto do Windows (Sensibilidade normal 10, sem curvas customizadas)
+    const mouseResetCmds = [
+      'reg add "HKCU\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d "0" /f',
+      'reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d "0" /f',
+      'reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d "0" /f',
+      'reg add "HKCU\\Control Panel\\Mouse" /v MouseSensitivity /t REG_SZ /d "10" /f',
+      'reg add "HKCU\\Control Panel\\Mouse" /v MouseHoverTime /t REG_SZ /d "400" /f',
+      'reg add "HKCU\\Control Panel\\Mouse" /v SmoothMouseXCurve /t REG_BINARY /d 0000000000000000156e000000000000004001000000000029dc0300000000000000280000000000 /f',
+      'reg add "HKCU\\Control Panel\\Mouse" /v SmoothMouseYCurve /t REG_BINARY /d 0000000000000000fd11010000000000002404000000000000fc1200000000000000bd0400000000 /f',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters" /v MouseDataQueueSize /t REG_DWORD /d 100 /f',
+      'reg add "HKCU\\Control Panel\\Keyboard" /v KeyboardDelay /t REG_SZ /d "1" /f',
+      'reg add "HKCU\\Control Panel\\Keyboard" /v KeyboardSpeed /t REG_SZ /d "31" /f'
+    ];
+    for (const cmd of mouseResetCmds) {
+      await runCmd(cmd).catch(() => {});
+    }
+
+    // Atualizar parâmetros do mouse na API Win32 ao vivo
+    try {
+      const psMouseRefresh = `Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public class WinMouse {
+  [DllImport("user32.dll", SetLastError = true)]
+  public static extern bool SystemParametersInfo(uint uiAction, uint uiParam, IntPtr pvParam, uint fWinIni);
+}
+"@; [WinMouse]::SystemParametersInfo(0x0071, 10, [IntPtr]::Zero, 3); [WinMouse]::SystemParametersInfo(0x0004, 0, [IntPtr]::Zero, 3); [WinMouse]::SystemParametersInfo(0x0017, 1, [IntPtr]::Zero, 3); [WinMouse]::SystemParametersInfo(0x000B, 31, [IntPtr]::Zero, 3);`;
+      execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psMouseRefresh.replace(/\r?\n/g, ' ')}"`, { stdio: 'ignore' });
+    } catch (_) {}
+
+    // 4. Limpar regras do Process Lasso se prolasso.ini existir
     const possibleLassoPaths = [
       'C:\\ProgramData\\ProcessLasso\\config\\prolasso.ini',
       'C:\\Program Files\\Process Lasso\\config\\prolasso.ini',
@@ -1782,27 +1854,55 @@ ipcMain.handle('revert-all-tweaks-on-revoke', async () => {
       } catch (_) {}
     }
 
-    // 4. Reverter DNS para DHCP Automático do Windows
+    // 5. Reverter DNS para DHCP Automático do Windows e limpar hosts
     await runCmd('powershell -NoProfile -Command "Get-NetAdapter | Where-Object Status -eq Up | ForEach-Object { netsh interface ip set dns name=\\\"$($_.Name)\\\" source=dhcp; netsh interface ip set wins name=\\\"$($_.Name)\\\" source=dhcp }"').catch(() => {});
+    cleanHostsFileOfBluestacks();
     await runCmd('ipconfig /flushdns').catch(() => {});
 
-    // 5. Reverter Plano de Energia para o padrão Equilibrado
+    // 6. Reverter Plano de Energia para o padrão Equilibrado
     await runCmd('powercfg -setactive 381b4222-f694-41f0-9685-ff5bb260df2e').catch(() => {});
 
-    // 6. Reverter Tweaks de Registro e Prioridades
+    // 7. Reverter Tweaks de Sistema, Memória, Svchost e Prioridades
     const resetCmds = [
       'reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "GPU Priority" /f',
       'reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Priority" /f',
       'reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Scheduling Category" /f',
       'reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /f',
+      'reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Control" /v SvcHostSplitThresholdInKB /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v DisablePagingExecutive /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v FeatureSettingsOverride /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v FeatureSettingsOverrideMask /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 20 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v NetworkThrottlingIndex /t REG_DWORD /d 10 /f /reg:64',
+      'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched" /v NonBestEffortLimit /f /reg:64',
       'bcdedit /deletevalue useplatformtick',
-      'bcdedit /deletevalue disabledynamictick'
+      'bcdedit /deletevalue disabledynamictick',
+      'bcdedit /deletevalue useplatformclock',
+      'bcdedit /deletevalue bootux'
     ];
     for (const cmd of resetCmds) {
       await runCmd(cmd).catch(() => {});
     }
 
-    // 7. Reverter Tweaks do Android se ADB estiver ativo
+    // 8. Reativar serviços padrão do Windows
+    const servicesToRestore = [
+      'sc config "SysMain" start= auto',
+      'sc start "SysMain"',
+      'sc config "WSearch" start= auto',
+      'sc start "WSearch"',
+      'sc config "DiagTrack" start= auto',
+      'sc start "DiagTrack"',
+      'sc config "Spooler" start= auto',
+      'sc start "Spooler"',
+      'sc config "wuauserv" start= demand',
+      'sc config "BITS" start= demand',
+      'sc config "dosvc" start= demand'
+    ];
+    for (const svc of servicesToRestore) {
+      await runCmd(svc).catch(() => {});
+    }
+
+    // 9. Reverter Tweaks do Android e Touch Engine via ADB
     const adb = findAdb();
     if (adb) {
       const PORTS = [5555, 5554, 5565, 5575, 5585, 21503, 62001, 7555];
@@ -1812,6 +1912,10 @@ ipcMain.handle('revert-all-tweaks-on-revoke', async () => {
           await runCmd(`"${adb}" -s 127.0.0.1:${p} shell settings put global transition_animation_scale 1.0`);
           await runCmd(`"${adb}" -s 127.0.0.1:${p} shell settings put global animator_duration_scale 1.0`);
           await runCmd(`"${adb}" -s 127.0.0.1:${p} shell settings put global background_process_limit -1`);
+          await runCmd(`"${adb}" -s 127.0.0.1:${p} shell wm density 240`);
+          await runCmd(`"${adb}" -s 127.0.0.1:${p} shell setprop view.touch_slop 8`);
+          await runCmd(`"${adb}" -s 127.0.0.1:${p} shell setprop touch.pressure.scale 1`);
+          await runCmd(`"${adb}" -s 127.0.0.1:${p} shell setprop windowsmgr.max_events_per_sec 60`);
         } catch (_) {}
       }
     }
