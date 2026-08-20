@@ -1,6 +1,6 @@
 {
   "name": "loord-optimizer",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "author": "Loord Optimizer",
   "description": "Loord Optimizer - Otimizador Gamer de Sensibilidade e Emulador",
   "main": "main.js",
@@ -34,7 +34,8 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "perMachine": true
     },
     "publish": [
       {

@@ -6,6 +6,18 @@ const crypto = require('crypto');
 const { exec, execSync } = require('child_process');
 const { autoUpdater } = require('electron-updater');
 
+// Prevenir travamentos do Chromium em GPUs antigas (Intel HD Graphics 1ª/2ª/3ª geração e ISOs Lite)
+app.commandLine.appendSwitch('disable-gpu-process-crash-limit');
+app.commandLine.appendSwitch('no-sandbox');
+app.commandLine.appendSwitch('disable-software-rasterizer');
+app.commandLine.appendSwitch('disable-features', 'HardwareMediaKeyHandling');
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection:', reason);
+});
 
 // Enforce single instance lock
 const gotTheLock = app.requestSingleInstanceLock();
@@ -17,7 +29,7 @@ if (!gotTheLock) {
 // Determine admin privileges synchronously before setting paths
 let systemIsAdmin = false;
 try {
-  execSync('net session');
+  execSync('net session', { stdio: 'ignore' });
   systemIsAdmin = true;
 } catch (e) {
   systemIsAdmin = false;
@@ -34,7 +46,7 @@ const backupDir = path.join(app.getPath('userData'), 'Backup_Sensibilidade');
 
 // Ensure backup directory exists
 if (!fs.existsSync(backupDir)) {
-  fs.mkdirSync(backupDir, { recursive: true });
+  try { fs.mkdirSync(backupDir, { recursive: true }); } catch (_) {}
 }
 
 function createInitialSystemBackup() {
@@ -77,7 +89,6 @@ function createInitialSystemBackup() {
     console.error('Error creating initial backup:', e);
   }
 }
-createInitialSystemBackup();
 
 // Check for Administrator privileges (async helper for renderer compatibility)
 function checkAdminPrivileges(callback) {
@@ -241,27 +252,42 @@ ipcMain.handle('verify-key', async (event, key) => {
 });
 
 function getMachineUuid() {
+  // 1. Tenta pegar o MachineGuid do Registro do Windows (funciona em 100% dos Windows e ISOs Lite / Ghost Spectre)
   try {
-    const output = execSync('powershell -Command "(Get-CimInstance Win32_ComputerSystemProduct).UUID"', { encoding: 'utf8' });
+    const regOut = execSync('reg query "HKLM\\SOFTWARE\\Microsoft\\Cryptography" /v MachineGuid', { encoding: 'utf8', timeout: 3000 });
+    const match = regOut.match(/MachineGuid\s+REG_SZ\s+([a-fA-F0-9\-]+)/);
+    if (match && match[1] && match[1].length > 10) {
+      return match[1].trim();
+    }
+  } catch (_) {}
+
+  // 2. Tenta via CimInstance
+  try {
+    const output = execSync('powershell -NoProfile -Command "(Get-CimInstance Win32_ComputerSystemProduct -ErrorAction SilentlyContinue).UUID"', { encoding: 'utf8', timeout: 3000 });
     const uuid = output.trim();
-    if (uuid && uuid.length > 10) {
+    if (uuid && uuid.length > 10 && !uuid.includes('00000000')) {
       return uuid;
     }
-  } catch (e) {
-    console.error('Error getting UUID via CimInstance:', e);
-  }
+  } catch (_) {}
+
+  // 3. Tenta via WMIC
   try {
-    const output = execSync('wmic csproduct get uuid', { encoding: 'utf8' });
+    const output = execSync('wmic csproduct get uuid', { encoding: 'utf8', timeout: 3000 });
     const lines = output.split('\n');
     if (lines.length > 1) {
       const uuid = lines[1].trim();
-      if (uuid && uuid.length > 10) {
+      if (uuid && uuid.length > 10 && !uuid.includes('00000000')) {
         return uuid;
       }
     }
-  } catch (e) {
-    console.error('Error getting UUID via wmic:', e);
-  }
+  } catch (_) {}
+
+  // 4. Fallback estável por hostname e processador
+  try {
+    const fallbackId = `${os.hostname()}-${os.platform()}-${os.arch()}-${os.cpus()[0]?.model || 'CPU'}`;
+    return crypto.createHash('md5').update(fallbackId).digest('hex').toUpperCase();
+  } catch (_) {}
+
   return 'UNKNOWN-UUID-FALLBACK';
 }
 
