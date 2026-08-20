@@ -1615,7 +1615,9 @@ if (window.api.onUpdateAvailable) {
         setApplied('badge-real-android');
         btnConvertReal.textContent = '✔ Android Real Ativo!';
         logAdb(`✔ Modo Android Verdadeiro ativado com sucesso! (${res.appliedCount} módulos configurados)`, '#28c385');
-        alert('✨ Modo Android Verdadeiro Ativado com Sucesso!\n\n• Tela inicial sem anúncios e sem popups do BlueStacks\n• Sistema mascarado com Fingerprint de celular original\n• Free Fire reconhecendo hardware como smartphone físico real\n• Renderização nativa da GPU ativada');
+        if (confirm('✨ Modo Android Verdadeiro Ativado com Sucesso!\n\n• Tela inicial sem anúncios e sem banners do BlueStacks\n• Game Center e propagandas desativados\n• Renderização nativa da GPU ativada\n\n⚠️ Deseja reiniciar o BlueStacks agora para aplicar 100% das alterações?')) {
+          window.api.restartBluestacks();
+        }
       } else {
         logAdb('Erro ao aplicar Modo Android Real. Verifique a conexão ADB.', '#ef4444');
       }
@@ -1645,15 +1647,16 @@ if (window.api.onUpdateAvailable) {
       btnRemoveEmuAds.textContent = '⏳ Removendo anúncios...';
       logAdb('=== INICIANDO REMOÇÃO DE ANÚNCIOS DO EMULADOR ===', '#ec4899');
       logAdb('1. Desativando flags de anúncios no bluestacks.conf...');
-      logAdb('2. Bloqueando domínios de anúncios no hosts do Windows...');
-      logAdb('3. Removendo App Center e barra de recomendações...');
+      logAdb('2. Desativando Game Center e barra de recomendações...');
 
       const res = await window.api.removeEmulatorAds(adbPort);
       btnRemoveEmuAds.disabled = false;
       btnRemoveEmuAds.textContent = '✔ Anúncios Removidos!';
       setApplied('badge-emu-ads');
       logAdb('✔ Anúncios e recomendações de jogos desativados com sucesso!', '#28c385');
-      alert(res && res.message ? res.message : '✔ Anúncios do emulador removidos com sucesso!\n\nRecomendamos reiniciar o BlueStacks/MSI para que as alterações entrem em vigor.');
+      if (confirm('🚫 Anúncios e promoções do emulador removidos com sucesso!\n\n⚠️ Deseja reiniciar o BlueStacks agora para ver a tela 100% limpa?')) {
+        window.api.restartBluestacks();
+      }
     });
   }
 

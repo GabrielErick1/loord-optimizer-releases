@@ -692,21 +692,71 @@ ipcMain.handle('flash-system-tweaks', async (event, port) => {
 });
 
 ipcMain.handle('convert-to-real-android', async (event, port) => {
-  const p = port || 5555;
   const adb = findAdb();
-  if (!adb) return { success: false, error: 'ADB não encontrado.' };
+  const files = [
+    'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_bgp_msi\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_bgp\\bluestacks.conf'
+  ];
 
-  try {
-    execSync(`"${adb}" connect 127.0.0.1:${p}`, { encoding: 'utf8', timeout: 5000, stdio: 'ignore' });
-  } catch (_) {}
+  // 1. Inserir chaves anti-anúncio em todas as instâncias do bluestacks.conf
+  for (const f of files) {
+    updateBluestacksInstanceKeys(f, (inst) => ({
+      'show_ads': '0',
+      'show_banner': '0',
+      'show_banner_ads': '0',
+      'show_sidebar_ads': '0',
+      'show_game_center_ads': '0',
+      'enable_recommendations': '0',
+      'show_promoted_apps': '0',
+      'banner_games_enabled': '0',
+      'allow_user_to_hide_ads': '1',
+      'hide_ads_while_gaming': '1',
+      'astc_decoding_mode': '0'
+    }));
 
-  const actions = [
-    'pm disable-user --user 0 gg.now.ads.service',
-    'pm disable-user --user 0 gg.now.billing.service2',
-    'pm disable-user --user 0 gg.now.billing.interceptor',
-    'pm disable-user --user 0 com.bluestacks.home',
-    'pm disable-user --user 0 com.bluestacks.gamepedia',
-    'pm enable com.android.launcher3',
+    if (fs.existsSync(f)) {
+      try {
+        let content = fs.readFileSync(f, 'utf8');
+        const globals = [
+          'bst.banner_games_enabled="0"',
+          'bst.feature.game_center="0"',
+          'bst.feature.rewards="0"',
+          'bst.feature.nowgg="0"',
+          'bst.feature.cloud_game="0"',
+          'bst.promoted_apps="0"',
+          'bst.app_center_game_list_url=""'
+        ];
+        for (const g of globals) {
+          const key = g.split('=')[0];
+          if (content.includes(key)) {
+            content = content.replace(new RegExp(`^${key}=.*$`, 'm'), g);
+          } else {
+            content += `\r\n${g}`;
+          }
+        }
+        fs.writeFileSync(f, content, 'utf8');
+      } catch (_) {}
+    }
+  }
+
+  // 2. Injetar desativação de pacotes e performance via ADB em todas as portas ativas
+  const packagesToDisable = [
+    'gg.now.ads.service',
+    'gg.now.billing.service2',
+    'gg.now.billing.interceptor',
+    'com.bluestacks.gamecenter',
+    'com.bluestacks.appmart',
+    'com.bluestacks.gamepedia',
+    'com.bluestacks.hyperdesk',
+    'com.bluestacks.search',
+    'com.google.android.googlequicksearchbox'
+  ];
+
+  const tweaks = [
     'setprop debug.sf.hw 1',
     'setprop debug.egl.hw 1',
     'setprop debug.performance.tuning 1',
@@ -717,35 +767,29 @@ ipcMain.handle('convert-to-real-android', async (event, port) => {
   ];
 
   let applied = 0;
-  for (const act of actions) {
-    try {
-      execSync(`"${adb}" -s 127.0.0.1:${p} shell "${act}"`, { encoding: 'utf8', timeout: 5000, stdio: 'ignore' });
-      applied++;
-    } catch (e) {}
-  }
-
-  // Also clean ads from bluestacks.conf files
-  const files = [
-    'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
-    'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
-    'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
-    'C:\\ProgramData\\BlueStacks\\bluestacks.conf'
-  ];
-  for (const f of files) {
-    if (fs.existsSync(f)) {
+  if (adb) {
+    const PORTS = port ? [port] : [5555, 5554, 5565, 5575, 5585, 21503, 62001, 7555];
+    for (const p of PORTS) {
       try {
-        let content = fs.readFileSync(f, 'utf8');
-        content = content.replace(/bst\.banner_games_enabled=".*?"/g, 'bst.banner_games_enabled="0"');
-        content = content.replace(/bst\.feature\.game_center=".*?"/g, 'bst.feature.game_center="0"');
-        content = content.replace(/bst\.feature\.rewards=".*?"/g, 'bst.feature.rewards="0"');
-        content = content.replace(/bst\.instance\.(.*?)\.show_ads=".*?"/g, 'bst.instance.$1.show_ads="0"');
-        content = content.replace(/bst\.instance\.(.*?)\.show_banner=".*?"/g, 'bst.instance.$1.show_banner="0"');
-        fs.writeFileSync(f, content, 'utf8');
-      } catch (e) {}
+        execSync(`"${adb}" connect 127.0.0.1:${p}`, { timeout: 1500, stdio: 'ignore' });
+        for (const pkg of packagesToDisable) {
+          try { execSync(`"${adb}" -s 127.0.0.1:${p} shell am force-stop ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
+          try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm disable-user --user 0 ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
+          try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm disable ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
+          try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm hide --user 0 ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
+          try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm uninstall --user 0 ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
+        }
+        for (const tw of tweaks) {
+          try {
+            execSync(`"${adb}" -s 127.0.0.1:${p} shell "${tw}"`, { timeout: 2000, stdio: 'ignore' });
+            applied++;
+          } catch (_) {}
+        }
+      } catch (_) {}
     }
   }
 
-  return { success: true, appliedCount: applied };
+  return { success: true, appliedCount: applied, message: 'Modo Android Real ativado com sucesso!' };
 });
 
 ipcMain.handle('restore-default-android', async (event, port) => {
@@ -2656,8 +2700,7 @@ Get-AppxPackage -AllUsers *ZuneVideo* | Remove-AppxPackage -ErrorAction Silently
 // ─── REMOVEDOR DE ANÚNCIOS DO EMULADOR (ADBLOCK COMPLETO) ───────────────────
 ipcMain.handle('remove-emulator-ads', async (event, port) => {
   try {
-    let confModified = 0;
-    const allPaths = [
+    const files = [
       'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
       'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
       'C:\\ProgramData\\BlueStacks_bgp_msi\\bluestacks.conf',
@@ -2666,79 +2709,53 @@ ipcMain.handle('remove-emulator-ads', async (event, port) => {
       'C:\\ProgramData\\BlueStacks_bgp\\bluestacks.conf'
     ];
 
-    // 1. Desativar flags de anúncios e recomendações no bluestacks.conf
-    for (const confPath of allPaths) {
-      if (fs.existsSync(confPath)) {
-        let content = fs.readFileSync(confPath, 'utf8');
-        const lines = content.split(/\r?\n/);
-        const newLines = [];
+    let confModified = 0;
+    for (const f of files) {
+      confModified += updateBluestacksInstanceKeys(f, (inst) => ({
+        'show_ads': '0',
+        'show_banner': '0',
+        'show_banner_ads': '0',
+        'show_sidebar_ads': '0',
+        'show_game_center_ads': '0',
+        'enable_recommendations': '0',
+        'show_promoted_apps': '0',
+        'banner_games_enabled': '0',
+        'allow_user_to_hide_ads': '1',
+        'hide_ads_while_gaming': '1',
+        'astc_decoding_mode': '0'
+      }));
 
-        for (let line of lines) {
-          if (line.match(/^bst\.instance\.(.*?)\.show_sidebar_ads=/)) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.show_sidebar_ads=/)[1];
-            line = `bst.instance.${inst}.show_sidebar_ads="0"`;
-          } else if (line.match(/^bst\.instance\.(.*?)\.show_banner_ads=/)) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.show_banner_ads=/)[1];
-            line = `bst.instance.${inst}.show_banner_ads="0"`;
-          } else if (line.match(/^bst\.instance\.(.*?)\.show_game_center_ads=/)) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.show_game_center_ads=/)[1];
-            line = `bst.instance.${inst}.show_game_center_ads="0"`;
-          } else if (line.match(/^bst\.instance\.(.*?)\.show_ads=/)) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.show_ads=/)[1];
-            line = `bst.instance.${inst}.show_ads="0"`;
-          } else if (line.match(/^bst\.instance\.(.*?)\.allow_user_to_hide_ads=/)) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.allow_user_to_hide_ads=/)[1];
-            line = `bst.instance.${inst}.allow_user_to_hide_ads="1"`;
-          } else if (line.match(/^bst\.instance\.(.*?)\.enable_recommendations=/)) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.enable_recommendations=/)[1];
-            line = `bst.instance.${inst}.enable_recommendations="0"`;
-          } else if (line.match(/^bst\.instance\.(.*?)\.hide_ads_while_gaming=/)) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.hide_ads_while_gaming=/)[1];
-            line = `bst.instance.${inst}.hide_ads_while_gaming="1"`;
-          } else if (line.match(/^bst\.instance\.(.*?)\.show_promoted_apps=/)) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.show_promoted_apps=/)[1];
-            line = `bst.instance.${inst}.show_promoted_apps="0"`;
-          } else if (line.match(/^bst\.instance\.(.*?)\.enable_promoted_apps=/)) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.enable_promoted_apps=/)[1];
-            line = `bst.instance.${inst}.enable_promoted_apps="0"`;
+      if (fs.existsSync(f)) {
+        try {
+          let content = fs.readFileSync(f, 'utf8');
+          const globals = [
+            'bst.banner_games_enabled="0"',
+            'bst.feature.game_center="0"',
+            'bst.feature.rewards="0"',
+            'bst.feature.nowgg="0"',
+            'bst.feature.cloud_game="0"',
+            'bst.promoted_apps="0"',
+            'bst.app_center_game_list_url=""'
+          ];
+          for (const g of globals) {
+            const key = g.split('=')[0];
+            if (content.includes(key)) {
+              content = content.replace(new RegExp(`^${key}=.*$`, 'm'), g);
+            } else {
+              content += `\r\n${g}`;
+            }
           }
-          newLines.push(line);
-        }
-
-        // Inserir flags globais de desativação de anúncios se ainda não existirem
-        const globalAdFlags = [
-          'bst.feature.ad="0"',
-          'bst.feature.sidebar_ad="0"',
-          'bst.feature.banner_ad="0"',
-          'bst.feature.popup_ad="0"',
-          'bst.feature.promoted_apps="0"',
-          'bst.feature.recommendations="0"',
-          'bst.feature.game_center_ads="0"',
-          'bst.feature.feed_ads="0"'
-        ];
-        for (const gf of globalAdFlags) {
-          const key = gf.split('=')[0];
-          const idx = newLines.findIndex(l => l.startsWith(key + '='));
-          if (idx !== -1) {
-            newLines[idx] = gf;
-          } else {
-            newLines.push(gf);
-          }
-        }
-
-        fs.writeFileSync(confPath, newLines.join('\r\n'), 'utf8');
-        confModified++;
+          fs.writeFileSync(f, content, 'utf8');
+        } catch (_) {}
       }
     }
 
-    // 2. Garantir que o arquivo hosts não bloqueie serviços legítimos do BlueStacks (como lista de celulares)
     cleanHostsFileOfBluestacks();
 
-    // 3. Desinstalar apps de anúncios e promoções via ADB se conectado
-    let adbSuccess = false;
     const adb = findAdb();
+    let adbSuccess = false;
     if (adb) {
-      const targetPort = port || 5555;
+      const PORTS = port ? [port] : [5555, 5554, 5565, 5575, 5585, 21503, 62001, 7555];
       const adPackages = [
         'com.bluestacks.gamecenter',
         'com.bluestacks.appmart',
@@ -2749,16 +2766,18 @@ ipcMain.handle('remove-emulator-ads', async (event, port) => {
         'com.bluestacks.hyperdesk',
         'com.bluestacks.search'
       ];
-      for (const pkg of adPackages) {
+      for (const p of PORTS) {
         try {
-          execSync(`"${adb}" -s 127.0.0.1:${targetPort} shell pm uninstall -k --user 0 ${pkg}`, { stdio: 'ignore', timeout: 3000 });
-          execSync(`"${adb}" -s 127.0.0.1:${targetPort} shell pm disable-user --user 0 ${pkg}`, { stdio: 'ignore', timeout: 3000 });
+          execSync(`"${adb}" connect 127.0.0.1:${p}`, { timeout: 1500, stdio: 'ignore' });
+          for (const pkg of adPackages) {
+            try { execSync(`"${adb}" -s 127.0.0.1:${p} shell am force-stop ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
+            try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm disable-user --user 0 ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
+            try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm uninstall --user 0 ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
+          }
+          try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm clear com.bluestacks.home`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
+          adbSuccess = true;
         } catch (_) {}
       }
-      try {
-        execSync(`"${adb}" -s 127.0.0.1:${targetPort} shell pm clear com.bluestacks.home`, { stdio: 'ignore', timeout: 3000 });
-      } catch (_) {}
-      adbSuccess = true;
     }
 
     return { 
