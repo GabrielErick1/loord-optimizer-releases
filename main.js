@@ -361,15 +361,86 @@ function runAdb(args) {
   });
 }
 
-ipcMain.handle('adb-connect', async (event, port) => {
-  const p = port || 5555;
-  try {
-    const out = await runAdb(`connect 127.0.0.1:${p}`);
-    const ok = out.includes('connected') || out.includes('already connected');
-    return { success: ok, output: out, port: p };
-  } catch (e) {
-    return { success: false, error: e.message };
+function getActiveAdbTargets(port) {
+  const adb = findAdb();
+  if (!adb) return [];
+
+  const scanPorts = new Set(port ? [port] : []);
+
+  // 1. Varrer todos os arquivos de configuração do BlueStacks / MSI
+  const confPaths = [
+    'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_bgp_msi\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_bgp\\bluestacks.conf'
+  ];
+  for (const cp of confPaths) {
+    if (fs.existsSync(cp)) {
+      try {
+        const content = fs.readFileSync(cp, 'utf8');
+        const matches = content.matchAll(/(?:status\.adb_port|adb_port)="(\d+)"/g);
+        for (const m of matches) scanPorts.add(parseInt(m[1]));
+      } catch (_) {}
+    }
   }
+
+  // 2. Varrer portas listening ativas via netstat
+  try {
+    const netstatOut = execSync('netstat -ano', { encoding: 'utf8', timeout: 2000 });
+    const lines = netstatOut.split(/\r?\n/);
+    for (const l of lines) {
+      if (l.includes('LISTENING') && (l.includes('127.0.0.1:') || l.includes('0.0.0.0:') || l.includes('[::]:'))) {
+        const m = l.match(/:(\d+)\s+/);
+        if (m) {
+          const pNum = parseInt(m[1]);
+          if ((pNum >= 5554 && pNum <= 5595) || (pNum >= 16384 && pNum <= 16420) || pNum === 21503 || pNum === 62001 || pNum === 7555) {
+            scanPorts.add(pNum);
+          }
+        }
+      }
+    }
+  } catch (_) {}
+
+  // 3. Portas comuns padrão
+  [5555, 5554, 5565, 5575, 5585, 21503, 62001, 7555].forEach(p => scanPorts.add(p));
+
+  // 4. Conectar em todas as portas descobertas
+  for (const p of scanPorts) {
+    try { execSync(`"${adb}" connect 127.0.0.1:${p}`, { timeout: 1000, stdio: 'ignore' }); } catch (_) {}
+    try { execSync(`"${adb}" connect localhost:${p}`, { timeout: 1000, stdio: 'ignore' }); } catch (_) {}
+  }
+
+  // 5. Ler todos os dispositivos reconhecidos por `adb devices`
+  const targets = new Set();
+  try {
+    const devOut = execSync(`"${adb}" devices`, { encoding: 'utf8', timeout: 3000 });
+    const lines = devOut.split(/\r?\n/);
+    for (const line of lines) {
+      const match = line.match(/^([^\s]+)\s+device$/);
+      if (match && match[1]) {
+        targets.add(match[1]); // Ex: "emulator-5554", "127.0.0.1:5555", etc.
+      }
+    }
+  } catch (_) {}
+
+  if (targets.size > 0) {
+    return Array.from(targets);
+  }
+
+  return Array.from(scanPorts).map(p => `127.0.0.1:${p}`);
+}
+
+ipcMain.handle('adb-connect', async (event, port) => {
+  const adb = findAdb();
+  if (!adb) return { success: false, error: 'ADB não encontrado.' };
+
+  const targets = getActiveAdbTargets(port);
+  if (targets.length > 0) {
+    return { success: true, port: port || targets[0], targets, output: `Conectado a ${targets.join(', ')}` };
+  }
+  return { success: false, error: 'Nenhum dispositivo encontrado no ADB.' };
 });
 
 // Auto-detect: detecta portas no bluestacks.conf ou tenta portas comuns
@@ -377,113 +448,65 @@ ipcMain.handle('adb-autodetect', async () => {
   const adb = findAdb();
   if (!adb) return { success: false, error: 'ADB não encontrado. Abra o emulador primeiro.' };
 
-  // 1. Tenta ler porta real configurada nos arquivos bluestacks.conf do MSI ou BlueStacks
-  const confPaths = [
-    'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
-    'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
-    'C:\\ProgramData\\BlueStacks_msi2\\bluestacks.conf',
-    'C:\\ProgramData\\BlueStacks\\bluestacks.conf'
-  ];
-
-  const foundPorts = new Set();
-  for (const cp of confPaths) {
-    if (fs.existsSync(cp)) {
-      try {
-        const content = fs.readFileSync(cp, 'utf8');
-        const matches = content.matchAll(/status\.adb_port="(\d+)"/g);
-        for (const m of matches) {
-          foundPorts.add(parseInt(m[1]));
-        }
-      } catch (_) {}
-    }
-  }
-
-  // Lista de portas prioritárias
-  const priorityPorts = [...foundPorts, 5555, 5554, 5565, 5575, 5585, 21503, 62001, 7555];
-
-  for (const p of priorityPorts) {
-    try {
-      const out = execSync(`"${adb}" connect 127.0.0.1:${p}`, { encoding: 'utf8', timeout: 3000 });
-      if (out.includes('connected') || out.includes('already connected')) {
-        return { success: true, port: p, output: out.trim() };
-      }
-    } catch (_) {}
+  const targets = getActiveAdbTargets();
+  if (targets.length > 0) {
+    return { success: true, port: targets[0], targets, output: `Dispositivo detectado: ${targets.join(', ')}` };
   }
   return { success: false, error: 'Nenhum emulador com ADB ativo encontrado. Ative o ADB nas Configurações do Emulador.' };
 });
 
 
 ipcMain.handle('adb-shell', async (event, cmd, port) => {
-  const p = port || 5555;
-  try {
-    const out = await runAdb(`-s 127.0.0.1:${p} shell ${cmd}`);
-    return { success: true, output: out };
-  } catch (e) {
-    return { success: false, error: e.message };
+  const adb = findAdb();
+  if (!adb) return { success: false, error: 'ADB não encontrado.' };
+  const targets = getActiveAdbTargets(port);
+  let lastOut = '';
+  let ok = false;
+  for (const t of targets) {
+    try {
+      lastOut = execSync(`"${adb}" -s ${t} shell ${cmd}`, { encoding: 'utf8', timeout: 5000 }).trim();
+      ok = true;
+    } catch (e) {
+      lastOut = e.message;
+    }
   }
+  return { success: ok, output: lastOut };
 });
 
 ipcMain.handle('adb-uninstall', async (event, packages, port) => {
   const adb = findAdb();
   if (!adb) return packages.map(pkg => ({ pkg, ok: false, error: 'ADB não encontrado.' }));
 
-  // Descobrir portas ativas
-  let ports = port ? [port] : [];
-  if (ports.length === 0) {
-    const confPaths = [
-      'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
-      'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
-      'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
-      'C:\\ProgramData\\BlueStacks\\bluestacks.conf'
-    ];
-    for (const cp of confPaths) {
-      if (fs.existsSync(cp)) {
-        try {
-          const content = fs.readFileSync(cp, 'utf8');
-          const matches = content.matchAll(/status\.adb_port="(\d+)"/g);
-          for (const m of matches) ports.push(parseInt(m[1]));
-        } catch (_) {}
-      }
-    }
-    ports.push(5555, 5554, 5565, 5575, 5585, 21503, 62001, 7555);
-  }
-  ports = [...new Set(ports)];
-
+  const targets = getActiveAdbTargets(port);
   const results = [];
 
   for (const pkg of packages) {
     let uninstalled = false;
     let lastOut = '';
 
-    for (const p of ports) {
+    for (const t of targets) {
       try {
-        execSync(`"${adb}" connect 127.0.0.1:${p}`, { timeout: 1500, stdio: 'ignore' });
-        
         // Estratégia 1: Force stop e clear
-        try { execSync(`"${adb}" -s 127.0.0.1:${p} shell am force-stop ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
-        try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm clear ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
+        try { execSync(`"${adb}" -s ${t} shell am force-stop ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
+        try { execSync(`"${adb}" -s ${t} shell pm clear ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
 
         // Estratégia 2: Desativar para usuário e ocultar
-        try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm disable-user --user 0 ${pkg}`, { timeout: 2500, stdio: 'ignore' }); } catch (_) {}
-        try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm disable ${pkg}`, { timeout: 2500, stdio: 'ignore' }); } catch (_) {}
-        try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm hide --user 0 ${pkg}`, { timeout: 2500, stdio: 'ignore' }); } catch (_) {}
-        try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm suspend ${pkg}`, { timeout: 2500, stdio: 'ignore' }); } catch (_) {}
+        try { execSync(`"${adb}" -s ${t} shell pm disable-user --user 0 ${pkg}`, { timeout: 2500, stdio: 'ignore' }); } catch (_) {}
+        try { execSync(`"${adb}" -s ${t} shell pm disable ${pkg}`, { timeout: 2500, stdio: 'ignore' }); } catch (_) {}
+        try { execSync(`"${adb}" -s ${t} shell pm hide --user 0 ${pkg}`, { timeout: 2500, stdio: 'ignore' }); } catch (_) {}
+        try { execSync(`"${adb}" -s ${t} shell pm suspend ${pkg}`, { timeout: 2500, stdio: 'ignore' }); } catch (_) {}
 
         // Estratégia 3: Desinstalação completa do pacote
-        const out = execSync(`"${adb}" -s 127.0.0.1:${p} shell pm uninstall --user 0 ${pkg}`, { encoding: 'utf8', timeout: 3000 });
+        const out = execSync(`"${adb}" -s ${t} shell pm uninstall --user 0 ${pkg}`, { encoding: 'utf8', timeout: 3000 });
         lastOut = out.trim();
         if (out.includes('Success') || out.includes('not installed') || out.includes('Unknown package')) {
           uninstalled = true;
-          break;
         }
 
-        // Estratégia 4: Se tiver root (su)
+        // Estratégia 4: Root forçado (su) para remoção definitiva de apps do sistema (Play Store, Store, etc.)
         try {
-          const suOut = execSync(`"${adb}" -s 127.0.0.1:${p} shell su -c "pm disable ${pkg}; pm uninstall --user 0 ${pkg}"`, { encoding: 'utf8', timeout: 3000 });
-          if (suOut.includes('Success')) {
-            uninstalled = true;
-            break;
-          }
+          execSync(`"${adb}" -s ${t} shell su -c "pm disable ${pkg}; pm disable-user --user 0 ${pkg}; pm hide --user 0 ${pkg}; pm uninstall --user 0 ${pkg}; rm -rf /data/app/*${pkg}* /data/data/${pkg}"`, { timeout: 3000, stdio: 'ignore' });
+          uninstalled = true;
         } catch (_) {}
       } catch (e) {
         lastOut = e.message;
@@ -491,6 +514,36 @@ ipcMain.handle('adb-uninstall', async (event, packages, port) => {
     }
 
     results.push({ pkg, ok: uninstalled || lastOut.includes('Success') || lastOut.includes('Disabled'), out: lastOut || 'OK' });
+  }
+
+  // 5. Limpar o cache do Launcher do BlueStacks para sumir com os ícones na hora
+  for (const t of targets) {
+    try {
+      execSync(`"${adb}" -s ${t} shell su -c "pm clear com.bluestacks.home; am force-stop com.bluestacks.home; am start -n com.bluestacks.home/.HomeActivity"`, { timeout: 2500, stdio: 'ignore' });
+      execSync(`"${adb}" -s ${t} shell su -c "pm clear com.android.launcher3; am force-stop com.android.launcher3"`, { timeout: 2500, stdio: 'ignore' });
+    } catch (_) {}
+  }
+
+  // 6. Atualizar bluestacks.conf com chaves anti-anúncio
+  const confFiles = [
+    'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks\\bluestacks.conf'
+  ];
+  for (const f of confFiles) {
+    updateBluestacksInstanceKeys(f, () => ({
+      'show_ads': '0',
+      'show_banner': '0',
+      'show_banner_ads': '0',
+      'show_sidebar_ads': '0',
+      'show_game_center_ads': '0',
+      'enable_recommendations': '0',
+      'show_promoted_apps': '0',
+      'banner_games_enabled': '0',
+      'allow_user_to_hide_ads': '1',
+      'hide_ads_while_gaming': '1'
+    }));
   }
 
   return results;
@@ -645,14 +698,13 @@ ipcMain.handle('change-device-profile', async (event, profile) => {
     }));
   }
 
-  // Injetar também ao vivo no Android via ADB em todas as portas ativas
+  // Injetar também ao vivo no Android via ADB em todas as portas e alvos ativos
   const adb = findAdb();
   if (adb) {
-    const PORTS = [5555, 5554, 5565, 5575, 5585, 21503, 62001, 7555];
-    for (const p of PORTS) {
+    const targets = getActiveAdbTargets();
+    for (const t of targets) {
       try {
-        execSync(`"${adb}" connect 127.0.0.1:${p}`, { timeout: 1500, stdio: 'ignore' });
-        execSync(`"${adb}" -s 127.0.0.1:${p} shell "setprop ro.product.brand \\"${targetBrand}\\"; setprop ro.product.manufacturer \\"${targetManufacturer}\\"; setprop ro.product.model \\"${targetModel}\\"; setprop ro.product.device \\"${targetModel}\\"; setprop ro.build.product \\"${targetModel}\\""`, { timeout: 2500, stdio: 'ignore' });
+        execSync(`"${adb}" -s ${t} shell "setprop ro.product.brand \\"${targetBrand}\\"; setprop ro.product.manufacturer \\"${targetManufacturer}\\"; setprop ro.product.model \\"${targetModel}\\"; setprop ro.product.device \\"${targetModel}\\"; setprop ro.build.product \\"${targetModel}\\""`, { timeout: 2500, stdio: 'ignore' });
       } catch (_) {}
     }
   }
@@ -687,14 +739,10 @@ ipcMain.handle('restart-bluestacks', async () => {
 });
 
 ipcMain.handle('flash-system-tweaks', async (event, port) => {
-  const p = port || 5555;
   const adb = findAdb();
   if (!adb) return { success: false, error: 'ADB não encontrado.' };
 
-  try {
-    execSync(`"${adb}" connect 127.0.0.1:${p}`, { encoding: 'utf8', timeout: 5000, stdio: 'ignore' });
-  } catch (_) {}
-
+  const targets = getActiveAdbTargets(port);
   const tweaks = [
     'setprop debug.sf.hw 1',
     'setprop debug.egl.hw 1',
@@ -707,11 +755,13 @@ ipcMain.handle('flash-system-tweaks', async (event, port) => {
   ];
 
   let applied = 0;
-  for (const tw of tweaks) {
-    try {
-      execSync(`"${adb}" -s 127.0.0.1:${p} shell "${tw}"`, { encoding: 'utf8', timeout: 5000, stdio: 'ignore' });
-      applied++;
-    } catch (e) {}
+  for (const t of targets) {
+    for (const tw of tweaks) {
+      try {
+        execSync(`"${adb}" -s ${t} shell "${tw}"`, { encoding: 'utf8', timeout: 3000, stdio: 'ignore' });
+        applied++;
+      } catch (e) {}
+    }
   }
 
   return { success: true, appliedCount: applied };
@@ -730,7 +780,7 @@ ipcMain.handle('convert-to-real-android', async (event, port) => {
 
   // 1. Inserir chaves anti-anúncio em todas as instâncias do bluestacks.conf
   for (const f of files) {
-    updateBluestacksInstanceKeys(f, (inst) => ({
+    updateBluestacksInstanceKeys(f, () => ({
       'show_ads': '0',
       'show_banner': '0',
       'show_banner_ads': '0',
@@ -769,7 +819,7 @@ ipcMain.handle('convert-to-real-android', async (event, port) => {
     }
   }
 
-  // 2. Injetar desativação de pacotes e performance via ADB em todas as portas ativas
+  // 2. Injetar desativação de pacotes e performance via ADB em todas as portas e alvos ativos
   const packagesToDisable = [
     'gg.now.ads.service',
     'gg.now.billing.service2',
@@ -794,23 +844,24 @@ ipcMain.handle('convert-to-real-android', async (event, port) => {
 
   let applied = 0;
   if (adb) {
-    const PORTS = port ? [port] : [5555, 5554, 5565, 5575, 5585, 21503, 62001, 7555];
-    for (const p of PORTS) {
+    const targets = getActiveAdbTargets(port);
+    for (const t of targets) {
+      for (const pkg of packagesToDisable) {
+        try { execSync(`"${adb}" -s ${t} shell am force-stop ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
+        try { execSync(`"${adb}" -s ${t} shell pm disable-user --user 0 ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
+        try { execSync(`"${adb}" -s ${t} shell pm disable ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
+        try { execSync(`"${adb}" -s ${t} shell pm hide --user 0 ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
+        try { execSync(`"${adb}" -s ${t} shell pm uninstall --user 0 ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
+        try { execSync(`"${adb}" -s ${t} shell su -c "pm disable ${pkg}; pm uninstall --user 0 ${pkg}; rm -rf /data/app/*${pkg}* /data/data/${pkg}"`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
+      }
+      for (const tw of tweaks) {
+        try {
+          execSync(`"${adb}" -s ${t} shell "${tw}"`, { timeout: 2000, stdio: 'ignore' });
+          applied++;
+        } catch (_) {}
+      }
       try {
-        execSync(`"${adb}" connect 127.0.0.1:${p}`, { timeout: 1500, stdio: 'ignore' });
-        for (const pkg of packagesToDisable) {
-          try { execSync(`"${adb}" -s 127.0.0.1:${p} shell am force-stop ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
-          try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm disable-user --user 0 ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
-          try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm disable ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
-          try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm hide --user 0 ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
-          try { execSync(`"${adb}" -s 127.0.0.1:${p} shell pm uninstall --user 0 ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
-        }
-        for (const tw of tweaks) {
-          try {
-            execSync(`"${adb}" -s 127.0.0.1:${p} shell "${tw}"`, { timeout: 2000, stdio: 'ignore' });
-            applied++;
-          } catch (_) {}
-        }
+        execSync(`"${adb}" -s ${t} shell su -c "pm clear com.bluestacks.home; am force-stop com.bluestacks.home; am start -n com.bluestacks.home/.HomeActivity"`, { timeout: 2000, stdio: 'ignore' });
       } catch (_) {}
     }
   }

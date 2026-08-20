@@ -1695,7 +1695,9 @@ if (window.api.onUpdateAvailable) {
     setApplied('badge-adb-uninstall');
     btnUninstall.textContent = '🗑️ Desinstalar Selecionados';
     btnUninstall.disabled = false;
-    alert(`✔ Limpeza de Apps Concluída!\n\n• ${ok} aplicativos foram desinstalados ou desativados com sucesso no emulador!\n• O emulador agora está mais leve e com menos consumo de RAM.`);
+    if (confirm(`✔ Limpeza Concluída com Sucesso!\n\n• ${ok} pacotes foram desinstalados e desativados no Android.\n• O cache do launcher foi limpo e os ícones foram removidos.\n\n⚠️ Deseja reiniciar o BlueStacks agora para aplicar 100% da tela limpa?`)) {
+      window.api.restartBluestacks();
+    }
   });
 
   // ── Otimização Completa (1 Clique - Não mexe na resolução) ────────
