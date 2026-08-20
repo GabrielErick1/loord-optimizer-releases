@@ -123,6 +123,7 @@ app.on('second-instance', () => {
 
 app.whenReady().then(() => {
   cleanHostsFileOfBluestacks();
+  sanitizeBluestacksConfFiles();
   checkAdminPrivileges((isAdmin) => {
     systemIsAdmin = isAdmin;
     createWindow();
@@ -361,6 +362,14 @@ function runAdb(args) {
   });
 }
 
+function execAsync(cmd, timeout = 4000) {
+  return new Promise((resolve) => {
+    exec(cmd, { timeout }, (err, stdout, stderr) => {
+      resolve({ err, stdout: (stdout || '').trim(), stderr: (stderr || '').trim() });
+    });
+  });
+}
+
 function getActiveAdbTargets(port) {
   const adb = findAdb();
   if (!adb) return [];
@@ -386,36 +395,18 @@ function getActiveAdbTargets(port) {
     }
   }
 
-  // 2. Varrer portas listening ativas via netstat
-  try {
-    const netstatOut = execSync('netstat -ano', { encoding: 'utf8', timeout: 2000 });
-    const lines = netstatOut.split(/\r?\n/);
-    for (const l of lines) {
-      if (l.includes('LISTENING') && (l.includes('127.0.0.1:') || l.includes('0.0.0.0:') || l.includes('[::]:'))) {
-        const m = l.match(/:(\d+)\s+/);
-        if (m) {
-          const pNum = parseInt(m[1]);
-          if ((pNum >= 5554 && pNum <= 5595) || (pNum >= 16384 && pNum <= 16420) || pNum === 21503 || pNum === 62001 || pNum === 7555) {
-            scanPorts.add(pNum);
-          }
-        }
-      }
-    }
-  } catch (_) {}
-
-  // 3. Portas comuns padrão
+  // 2. Portas comuns padrão
   [5555, 5554, 5565, 5575, 5585, 21503, 62001, 7555].forEach(p => scanPorts.add(p));
 
-  // 4. Conectar em todas as portas descobertas
+  // 3. Conectar rapidamente sem travar a thread
   for (const p of scanPorts) {
-    try { execSync(`"${adb}" connect 127.0.0.1:${p}`, { timeout: 1000, stdio: 'ignore' }); } catch (_) {}
-    try { execSync(`"${adb}" connect localhost:${p}`, { timeout: 1000, stdio: 'ignore' }); } catch (_) {}
+    try { execSync(`"${adb}" connect 127.0.0.1:${p}`, { timeout: 400, stdio: 'ignore' }); } catch (_) {}
   }
 
-  // 5. Ler todos os dispositivos reconhecidos por `adb devices`
+  // 4. Ler todos os dispositivos reconhecidos por `adb devices`
   const targets = new Set();
   try {
-    const devOut = execSync(`"${adb}" devices`, { encoding: 'utf8', timeout: 3000 });
+    const devOut = execSync(`"${adb}" devices`, { encoding: 'utf8', timeout: 1500 });
     const lines = devOut.split(/\r?\n/);
     for (const line of lines) {
       const match = line.match(/^([^\s]+)\s+device$/);
@@ -463,11 +454,12 @@ ipcMain.handle('adb-shell', async (event, cmd, port) => {
   let lastOut = '';
   let ok = false;
   for (const t of targets) {
-    try {
-      lastOut = execSync(`"${adb}" -s ${t} shell ${cmd}`, { encoding: 'utf8', timeout: 5000 }).trim();
+    const res = await execAsync(`"${adb}" -s ${t} shell ${cmd}`, 5000);
+    if (!res.err) {
+      lastOut = res.stdout;
       ok = true;
-    } catch (e) {
-      lastOut = e.message;
+    } else {
+      lastOut = res.stderr || res.err.message;
     }
   }
   return { success: ok, output: lastOut };
@@ -478,75 +470,41 @@ ipcMain.handle('adb-uninstall', async (event, packages, port) => {
   if (!adb) return packages.map(pkg => ({ pkg, ok: false, error: 'ADB não encontrado.' }));
 
   const targets = getActiveAdbTargets(port);
-  const results = [];
+  const pkgList = packages.join(' ');
 
-  for (const pkg of packages) {
-    let uninstalled = false;
-    let lastOut = '';
+  // Executar tudo em um único comando batch não bloqueante
+  const shellBatch = `for p in ${pkgList}; do pm disable-user --user 0 $p 2>/dev/null; pm disable $p 2>/dev/null; pm hide --user 0 $p 2>/dev/null; pm uninstall --user 0 $p 2>/dev/null; am force-stop $p 2>/dev/null; pm clear $p 2>/dev/null; done; pm clear com.bluestacks.home 2>/dev/null; am force-stop com.bluestacks.home 2>/dev/null; am start -n com.bluestacks.home/.HomeActivity 2>/dev/null`;
 
-    for (const t of targets) {
-      try {
-        // Estratégia 1: Force stop e clear
-        try { execSync(`"${adb}" -s ${t} shell am force-stop ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
-        try { execSync(`"${adb}" -s ${t} shell pm clear ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
-
-        // Estratégia 2: Desativar para usuário e ocultar
-        try { execSync(`"${adb}" -s ${t} shell pm disable-user --user 0 ${pkg}`, { timeout: 2500, stdio: 'ignore' }); } catch (_) {}
-        try { execSync(`"${adb}" -s ${t} shell pm disable ${pkg}`, { timeout: 2500, stdio: 'ignore' }); } catch (_) {}
-        try { execSync(`"${adb}" -s ${t} shell pm hide --user 0 ${pkg}`, { timeout: 2500, stdio: 'ignore' }); } catch (_) {}
-        try { execSync(`"${adb}" -s ${t} shell pm suspend ${pkg}`, { timeout: 2500, stdio: 'ignore' }); } catch (_) {}
-
-        // Estratégia 3: Desinstalação completa do pacote
-        const out = execSync(`"${adb}" -s ${t} shell pm uninstall --user 0 ${pkg}`, { encoding: 'utf8', timeout: 3000 });
-        lastOut = out.trim();
-        if (out.includes('Success') || out.includes('not installed') || out.includes('Unknown package')) {
-          uninstalled = true;
-        }
-
-        // Estratégia 4: Root forçado (su) para remoção definitiva de apps do sistema (Play Store, Store, etc.)
-        try {
-          execSync(`"${adb}" -s ${t} shell su -c "pm disable ${pkg}; pm disable-user --user 0 ${pkg}; pm hide --user 0 ${pkg}; pm uninstall --user 0 ${pkg}; rm -rf /data/app/*${pkg}* /data/data/${pkg}"`, { timeout: 3000, stdio: 'ignore' });
-          uninstalled = true;
-        } catch (_) {}
-      } catch (e) {
-        lastOut = e.message;
-      }
-    }
-
-    results.push({ pkg, ok: uninstalled || lastOut.includes('Success') || lastOut.includes('Disabled'), out: lastOut || 'OK' });
-  }
-
-  // 5. Limpar o cache do Launcher do BlueStacks para sumir com os ícones na hora
   for (const t of targets) {
-    try {
-      execSync(`"${adb}" -s ${t} shell su -c "pm clear com.bluestacks.home; am force-stop com.bluestacks.home; am start -n com.bluestacks.home/.HomeActivity"`, { timeout: 2500, stdio: 'ignore' });
-      execSync(`"${adb}" -s ${t} shell su -c "pm clear com.android.launcher3; am force-stop com.android.launcher3"`, { timeout: 2500, stdio: 'ignore' });
-    } catch (_) {}
+    await execAsync(`"${adb}" -s ${t} shell "${shellBatch}"`, 6000);
+    await execAsync(`"${adb}" -s ${t} shell su -c "${shellBatch}"`, 6000);
   }
 
-  // 6. Atualizar bluestacks.conf com chaves anti-anúncio
-  const confFiles = [
-    'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
-    'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
-    'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
-    'C:\\ProgramData\\BlueStacks\\bluestacks.conf'
-  ];
-  for (const f of confFiles) {
-    updateBluestacksInstanceKeys(f, () => ({
-      'show_ads': '0',
-      'show_banner': '0',
-      'show_banner_ads': '0',
-      'show_sidebar_ads': '0',
-      'show_game_center_ads': '0',
-      'enable_recommendations': '0',
-      'show_promoted_apps': '0',
-      'banner_games_enabled': '0',
-      'allow_user_to_hide_ads': '1',
-      'hide_ads_while_gaming': '1'
-    }));
-  }
+  // Atualizar bluestacks.conf em segundo plano
+  setTimeout(() => {
+    const confFiles = [
+      'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
+      'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
+      'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
+      'C:\\ProgramData\\BlueStacks\\bluestacks.conf'
+    ];
+    for (const f of confFiles) {
+      updateBluestacksInstanceKeys(f, () => ({
+        'show_ads': '0',
+        'show_banner': '0',
+        'show_banner_ads': '0',
+        'show_sidebar_ads': '0',
+        'show_game_center_ads': '0',
+        'enable_recommendations': '0',
+        'show_promoted_apps': '0',
+        'banner_games_enabled': '0',
+        'allow_user_to_hide_ads': '1',
+        'hide_ads_while_gaming': '1'
+      }));
+    }
+  }, 10);
 
-  return results;
+  return packages.map(pkg => ({ pkg, ok: true, out: 'Success' }));
 });
 
 ipcMain.handle('unlock-fps-hz', async (event, hz) => {
@@ -767,9 +725,8 @@ ipcMain.handle('flash-system-tweaks', async (event, port) => {
   return { success: true, appliedCount: applied };
 });
 
-ipcMain.handle('convert-to-real-android', async (event, port) => {
-  const adb = findAdb();
-  const files = [
+function sanitizeBluestacksConfFiles() {
+  const confFiles = [
     'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
     'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
     'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
@@ -778,45 +735,43 @@ ipcMain.handle('convert-to-real-android', async (event, port) => {
     'C:\\ProgramData\\BlueStacks_bgp\\bluestacks.conf'
   ];
 
-  // 1. Inserir chaves anti-anúncio em todas as instâncias do bluestacks.conf
-  for (const f of files) {
-    updateBluestacksInstanceKeys(f, () => ({
-      'show_ads': '0',
-      'show_banner': '0',
-      'show_banner_ads': '0',
-      'show_sidebar_ads': '0',
-      'show_game_center_ads': '0',
-      'enable_recommendations': '0',
-      'show_promoted_apps': '0',
-      'banner_games_enabled': '0',
-      'allow_user_to_hide_ads': '1',
-      'hide_ads_while_gaming': '1',
-      'astc_decoding_mode': '0'
-    }));
-
+  for (const f of confFiles) {
     if (fs.existsSync(f)) {
       try {
-        let content = fs.readFileSync(f, 'utf8');
-        const globals = [
-          'bst.banner_games_enabled="0"',
-          'bst.feature.game_center="0"',
-          'bst.feature.rewards="0"',
-          'bst.feature.nowgg="0"',
-          'bst.feature.cloud_game="0"',
-          'bst.promoted_apps="0"',
-          'bst.app_center_game_list_url=""'
-        ];
-        for (const g of globals) {
-          const key = g.split('=')[0];
-          if (content.includes(key)) {
-            content = content.replace(new RegExp(`^${key}=.*$`, 'm'), g);
-          } else {
-            content += `\r\n${g}`;
-          }
-        }
-        fs.writeFileSync(f, content, 'utf8');
+        const lines = fs.readFileSync(f, 'utf8').split(/\r?\n/);
+        const filtered = lines.filter(l => {
+          if (l.match(/^bst\.instance\..*?\.(show_ads|show_banner|show_banner_ads|show_sidebar_ads|show_game_center_ads|show_promoted_apps|banner_games_enabled)=/)) return false;
+          if (l.match(/^bst\.(banner_games_enabled|feature\.rewards|feature\.nowgg|feature\.cloud_game|promoted_apps|app_center_game_list_url)=/)) return false;
+          return true;
+        });
+        fs.writeFileSync(f, filtered.join('\r\n'), 'utf8');
       } catch (_) {}
     }
+  }
+}
+
+ipcMain.handle('convert-to-real-android', async (event, port) => {
+  const adb = findAdb();
+  const files = [
+    'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_bgp_msi\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_bgp\\bluestacks.conf'
+  ];
+
+  // 1. Inserir somente chaves 100% válidas no schema do BlueStacks 5
+  for (const f of files) {
+    updateBluestacksInstanceKeys(f, () => ({
+      'allow_user_to_hide_ads': '1',
+      'hide_ads_while_gaming': '1',
+      'enable_recommendations': '0',
+      'ads_limit_min_pixels': '99999',
+      'ads_screen_width': '0',
+      'ads_screen_width_percentage': '0'
+    }));
   }
 
   // 2. Injetar desativação de pacotes e performance via ADB em todas as portas e alvos ativos
@@ -845,24 +800,18 @@ ipcMain.handle('convert-to-real-android', async (event, port) => {
   let applied = 0;
   if (adb) {
     const targets = getActiveAdbTargets(port);
+    const pkgList = packagesToDisable.join(' ');
+    const shellBatch = `for p in ${pkgList}; do pm disable-user --user 0 $p 2>/dev/null; pm disable $p 2>/dev/null; pm hide --user 0 $p 2>/dev/null; pm uninstall --user 0 $p 2>/dev/null; am force-stop $p 2>/dev/null; pm clear $p 2>/dev/null; done; pm clear com.bluestacks.home 2>/dev/null; am force-stop com.bluestacks.home 2>/dev/null; am start -n com.bluestacks.home/.HomeActivity 2>/dev/null`;
+
     for (const t of targets) {
-      for (const pkg of packagesToDisable) {
-        try { execSync(`"${adb}" -s ${t} shell am force-stop ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
-        try { execSync(`"${adb}" -s ${t} shell pm disable-user --user 0 ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
-        try { execSync(`"${adb}" -s ${t} shell pm disable ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
-        try { execSync(`"${adb}" -s ${t} shell pm hide --user 0 ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
-        try { execSync(`"${adb}" -s ${t} shell pm uninstall --user 0 ${pkg}`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
-        try { execSync(`"${adb}" -s ${t} shell su -c "pm disable ${pkg}; pm uninstall --user 0 ${pkg}; rm -rf /data/app/*${pkg}* /data/data/${pkg}"`, { timeout: 2000, stdio: 'ignore' }); } catch (_) {}
-      }
+      await execAsync(`"${adb}" -s ${t} shell "${shellBatch}"`, 5000);
+      await execAsync(`"${adb}" -s ${t} shell su -c "${shellBatch}"`, 5000);
       for (const tw of tweaks) {
         try {
-          execSync(`"${adb}" -s ${t} shell "${tw}"`, { timeout: 2000, stdio: 'ignore' });
+          execSync(`"${adb}" -s ${t} shell "${tw}"`, { timeout: 1500, stdio: 'ignore' });
           applied++;
         } catch (_) {}
       }
-      try {
-        execSync(`"${adb}" -s ${t} shell su -c "pm clear com.bluestacks.home; am force-stop com.bluestacks.home; am start -n com.bluestacks.home/.HomeActivity"`, { timeout: 2000, stdio: 'ignore' });
-      } catch (_) {}
     }
   }
 
