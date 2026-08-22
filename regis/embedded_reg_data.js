@@ -11,14 +11,18 @@ const commonLatencyKeys = [
   { path: 'HKCU\\Control Panel\\Accessibility\\Keyboard Response', name: 'DelayBeforeAcceptance', type: 'REG_SZ', value: '0' },
   { path: 'HKCU\\Control Panel\\Accessibility\\Keyboard Response', name: 'AutoRepeatDelay', type: 'REG_SZ', value: '200' },
   { path: 'HKCU\\Control Panel\\Accessibility\\Keyboard Response', name: 'AutoRepeatRate', type: 'REG_SZ', value: '15' },
-  { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters', name: 'MouseDataQueueSize', type: 'REG_DWORD', value: 100 },
+  { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters', name: 'MouseDataQueueSize', type: 'REG_DWORD', value: 20 },
   { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters', name: 'MouseResolution', type: 'REG_DWORD', value: 1 },
   { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters', name: 'MouseTicks', type: 'REG_DWORD', value: 1 },
   { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\kbdclass\\Parameters', name: 'KeyboardDataQueueSize', type: 'REG_DWORD', value: 20 },
   { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\kbdclass\\Parameters', name: 'KeyboardResolution', type: 'REG_DWORD', value: 1 },
   { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\kbdclass\\Parameters', name: 'KeyboardTicks', type: 'REG_DWORD', value: 1 },
   { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile', name: 'SystemResponsiveness', type: 'REG_DWORD', value: 0 },
-  { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile', name: 'NetworkThrottlingIndex', type: 'REG_DWORD', value: 4294967295 }
+  { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile', name: 'NetworkThrottlingIndex', type: 'REG_DWORD', value: 4294967295 },
+  { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games', name: 'Priority', type: 'REG_DWORD', value: 6 },
+  { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games', name: 'GPU Priority', type: 'REG_DWORD', value: 8 },
+  { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games', name: 'Scheduling Category', type: 'REG_SZ', value: 'High' },
+  { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters', name: 'TCPNoDelay', type: 'REG_DWORD', value: 1 }
 ];
 
 module.exports = {
@@ -398,6 +402,92 @@ module.exports = {
       { path: 'HKU\\.DEFAULT\\Control Panel\\Mouse', name: 'MouseSpeed', type: 'REG_SZ', value: '0' },
       { path: 'HKU\\.DEFAULT\\Control Panel\\Mouse', name: 'MouseThreshold1', type: 'REG_SZ', value: '0' },
       { path: 'HKU\\.DEFAULT\\Control Panel\\Mouse', name: 'MouseThreshold2', type: 'REG_SZ', value: '0' },
+      ...commonLatencyKeys
+    ]
+  },
+  'ultra-emu-boost': {
+    name: 'ULTRA EMULATOR BOOST 1:1 (Sensibilidade Real & Alto Desempenho)',
+    fix: '1.0',
+    keys: [
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseSpeed', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseThreshold1', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseThreshold2', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseSensitivity', type: 'REG_SZ', value: '10' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseTrails', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'SnapToDefaultButton', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'Active', type: 'REG_SZ', value: 'ULTRA EMULATOR BOOST 1:1' },
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_Enabled', type: 'REG_DWORD', value: 0 },
+      { path: 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR', name: 'AppCaptureEnabled', type: 'REG_DWORD', value: 0 },
+      { path: 'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR', name: 'AllowGameDVR', type: 'REG_DWORD', value: 0 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\USB', name: 'DisableSelectiveSuspend', type: 'REG_DWORD', value: 1 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\USBXHCI\\Parameters', name: 'DisableSelectiveSuspend', type: 'REG_DWORD', value: 1 },
+      ...commonLatencyKeys
+    ]
+  },
+  'zero-curve-raw': {
+    name: 'ZERO CURVE RAW INPUT 1:1 (Mira Estável & Ping Ultrabaixo)',
+    fix: '1.0',
+    keys: [
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'ActiveWindowTracking', type: 'REG_DWORD', value: 0 },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'Beep', type: 'REG_SZ', value: 'No' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'DoubleClickHeight', type: 'REG_SZ', value: '4' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'DoubleClickSpeed', type: 'REG_SZ', value: '500' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'DoubleClickWidth', type: 'REG_SZ', value: '4' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'ExtendedSounds', type: 'REG_SZ', value: 'No' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseHoverHeight', type: 'REG_SZ', value: '4' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseHoverTime', type: 'REG_SZ', value: '400' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseHoverWidth', type: 'REG_SZ', value: '4' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseSensitivity', type: 'REG_SZ', value: '6' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseSpeed', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseThreshold1', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseThreshold2', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseTrails', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'SnapToDefaultButton', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'SwapMouseButtons', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'SmoothMouseXCurve', type: 'REG_BINARY', value: '00000000000000000000000000000000000000000000000000000000000000000000000000000000' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'SmoothMouseYCurve', type: 'REG_BINARY', value: '00000000000000000000000000000000000000000000000000000000000000000000000000000000' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'Active', type: 'REG_SZ', value: 'ZERO CURVE RAW INPUT 1:1' },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters', name: 'EnablePMTUBHDetect', type: 'REG_DWORD', value: 1 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters', name: 'EnablePMTUDiscovery', type: 'REG_DWORD', value: 1 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters', name: 'GlobalMaxTcpWindowSize', type: 'REG_DWORD', value: 32767 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters', name: 'Tcp1323Opts', type: 'REG_DWORD', value: 3 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters', name: 'TcpMaxDupAcks', type: 'REG_DWORD', value: 2 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters', name: 'SackOpts', type: 'REG_DWORD', value: 1 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters', name: 'TcpWindowSize', type: 'REG_DWORD', value: 372300 },
+      ...commonLatencyKeys
+    ]
+  },
+  'ff-mouse-maximo': {
+    name: 'FREE FIRE MOUSE NO MÁXIMO (Sensibilidade 10/11 & IRQ8 Timer Boost)',
+    fix: '1.0',
+    keys: [
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseSpeed', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseThreshold1', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseThreshold2', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseSensitivity', type: 'REG_SZ', value: '10' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseHoverTime', type: 'REG_SZ', value: '10' },
+      { path: 'HKCU\\Control Panel\\Desktop', name: 'MenuShowDelay', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'Active', type: 'REG_SZ', value: 'FREE FIRE MOUSE NO MAXIMO' },
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_Enabled', type: 'REG_DWORD', value: 0 },
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_FSEBehaviorMode', type: 'REG_DWORD', value: 2 },
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_HonorUserFSEBehaviorMode', type: 'REG_DWORD', value: 1 },
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_DXGIHonorFSEWindowsCompatible', type: 'REG_DWORD', value: 1 },
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_EFSEFeatureFlags', type: 'REG_DWORD', value: 0 },
+      { path: 'HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\GameDVR', name: 'AppCaptureEnabled', type: 'REG_DWORD', value: 0 },
+      { path: 'HKCU\\Software\\Microsoft\\GameBar', name: 'AutoGameModeEnabled', type: 'REG_DWORD', value: 1 },
+      { path: 'HKCU\\Software\\Microsoft\\GameBar', name: 'AllowAutoGameMode', type: 'REG_DWORD', value: 1 },
+      { path: 'HKCU\\Software\\Microsoft\\GameBar', name: 'UseNexusForGameBarEnabled', type: 'REG_DWORD', value: 0 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\USB', name: 'DisableSelectiveSuspend', type: 'REG_DWORD', value: 1 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\USBXHCI\\Parameters', name: 'DisableSelectiveSuspend', type: 'REG_DWORD', value: 1 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters', name: 'MouseDataQueueSize', type: 'REG_DWORD', value: 100 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl', name: 'IRQ8Priority', type: 'REG_DWORD', value: 1 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl', name: 'Win32PrioritySeparation', type: 'REG_DWORD', value: 38 },
+      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile', name: 'SystemResponsiveness', type: 'REG_DWORD', value: 0 },
+      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile', name: 'NetworkThrottlingIndex', type: 'REG_DWORD', value: 4294967295 },
+      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games', name: 'GPU Priority', type: 'REG_DWORD', value: 8 },
+      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games', name: 'Priority', type: 'REG_DWORD', value: 6 },
+      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games', name: 'Scheduling Category', type: 'REG_SZ', value: 'High' },
+      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games', name: 'SFIO Priority', type: 'REG_SZ', value: 'High' },
       ...commonLatencyKeys
     ]
   }

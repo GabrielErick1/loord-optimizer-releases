@@ -1778,6 +1778,17 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
       } catch (e) {}
     }
 
+    if (mouseMode === 'ultra-emu-boost') {
+      try {
+        execSync('powercfg /setacvalueindex scheme_current 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0', { stdio: 'ignore' });
+        execSync('powercfg /setdcvalueindex scheme_current 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0', { stdio: 'ignore' });
+        execSync('powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c', { stdio: 'ignore' });
+        execSync('wmic process where name="HD-Player.exe" CALL setpriority "high priority"', { stdio: 'ignore' });
+        execSync('wmic process where name="MSIAppPlayer.exe" CALL setpriority "high priority"', { stdio: 'ignore' });
+        execSync('wmic process where name="MEmuHeadless.exe" CALL setpriority "high priority"', { stdio: 'ignore' });
+      } catch (e) {}
+    }
+
     // MouseHoverTime 41 (Hex 29)
     try {
       execSync('reg add "HKCU\\Control Panel\\Mouse" /v MouseHoverTime /t REG_DWORD /d 41 /f', { stdio: 'ignore' });
