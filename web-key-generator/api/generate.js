@@ -137,6 +137,21 @@ module.exports = async (req, res) => {
     
     const cleanUuid = (uuid && uuid.trim().length >= 5) ? uuid.trim() : null;
 
+    // Verificar se o UUID já está cadastrado no sistema
+    if (cleanUuid) {
+      const existingLicense = licenses.find(l => l.uuid && l.uuid.toLowerCase() === cleanUuid.toLowerCase());
+      if (existingLicense) {
+        const clientNameFound = existingLicense.clientName || 'Cliente';
+        const keyFound = existingLicense.key || 'Desconhecida';
+        const sellerFound = existingLicense.createdBy || 'outro vendedor';
+        res.status(400).json({
+          success: false,
+          error: `⚠️ Este UUID já está cadastrado para o cliente "${clientNameFound}" (Chave: ${keyFound}, Vendedor: ${sellerFound}). Renove a validade da chave existente na aba "Chaves Ativas" ou troque de UUID!`
+        });
+        return;
+      }
+    }
+
     const newLicense = {
       uuid: cleanUuid,
       key,
@@ -153,17 +168,7 @@ module.exports = async (req, res) => {
       activatedIp: null
     };
 
-    if (cleanUuid) {
-      const index = licenses.findIndex(l => l.uuid && l.uuid.toLowerCase() === cleanUuid.toLowerCase());
-      if (index !== -1) {
-        licenses[index] = newLicense;
-      } else {
-        licenses.push(newLicense);
-      }
-    } else {
-      licenses.push(newLicense);
-    }
-    
+    licenses.push(newLicense);
     await saveLicenses(licenses);
 
     res.status(200).json({

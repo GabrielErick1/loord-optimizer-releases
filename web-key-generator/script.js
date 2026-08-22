@@ -466,6 +466,15 @@ btnGenerate.addEventListener('click', async () => {
   const typeVal = licenseTypeSelect.value;
   const customVal = customValInput ? parseInt(customValInput.value, 10) : 0;
 
+  // Verificação prévia no cache de licenças carregadas
+  if (uuid && uuid.length >= 5 && Array.isArray(currentLoadedLicenses)) {
+    const existing = currentLoadedLicenses.find(l => l.uuid && l.uuid.toLowerCase() === uuid.toLowerCase());
+    if (existing) {
+      alert(`⚠️ UUID JÁ CADASTRADO!\n\nEste UUID (${uuid}) já pertence ao cliente "${existing.clientName || 'Cliente'}" (Chave: ${existing.key || 'Ativa'}).\n\n👉 Para estender o acesso, vá na aba "Chaves Ativas" e clique em "Renovar", ou informe outro UUID.`);
+      return;
+    }
+  }
+
   btnGenerate.disabled = true;
   btnGenerate.textContent = 'Processando...';
   resultBox.style.display = 'none';
@@ -503,7 +512,7 @@ btnGenerate.addEventListener('click', async () => {
       renderGeneratedKeyResult(data, typeVal, customVal);
       loadPlans(); // Atualiza quota
     } else {
-      alert(`Aviso: ${data.error || 'Não foi possível gerar a chave.'}`);
+      alert(data.error || 'Não foi possível gerar a chave.');
     }
   } catch (e) {
     console.error(e);

@@ -1,4 +1,4 @@
-﻿const { generateActivationKey, getLicenses, saveLicenses } = require('./_db');
+const { generateActivationKey, getLicenses, saveLicenses } = require('./_db');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -51,6 +51,15 @@ module.exports = async (req, res) => {
       hours = dias * 24;
     }
 
+    const existingLicense = licenses.find(l => l.uuid && l.uuid.toLowerCase() === cleanUuid);
+    if (existingLicense) {
+      res.status(400).json({
+        success: false,
+        error: `Este UUID já está cadastrado para o cliente "${existingLicense.clientName}" (Chave: ${existingLicense.key}). Renove a chave existente ou use outro UUID.`
+      });
+      return;
+    }
+
     const newLicense = {
       uuid: cleanUuid,
       key,
@@ -67,8 +76,7 @@ module.exports = async (req, res) => {
       activatedIp: null
     };
 
-    const index = licenses.findIndex(l => l.uuid && l.uuid.toLowerCase() === cleanUuid);
-    if (index !== -1) { licenses[index] = newLicense; } else { licenses.push(newLicense); }
+    licenses.push(newLicense);
     await saveLicenses(licenses);
 
     res.status(200).json({

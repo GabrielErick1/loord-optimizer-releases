@@ -1,4 +1,4 @@
-const { parseRequestBody, verifyAuth, getPlans, getOrInitUsers, savePayment, MP_ACCESS_TOKEN } = require('./_db');
+const { parseRequestBody, verifyAuth, getPlans, getOrInitUsers, getLicenses, savePayment, MP_ACCESS_TOKEN } = require('./_db');
 const crypto = require('crypto');
 
 module.exports = async (req, res) => {
@@ -76,6 +76,23 @@ module.exports = async (req, res) => {
 
     const formattedClientName = (clientName && clientName.trim()) ? clientName.trim() : 'Cliente VIP';
     const cleanUuid = (uuid && uuid.trim().length >= 5) ? uuid.trim() : null;
+
+    // Verificar se o UUID já está cadastrado no sistema
+    if (cleanUuid) {
+      const licenses = await getLicenses();
+      const existingLicense = licenses.find(l => l.uuid && l.uuid.toLowerCase() === cleanUuid.toLowerCase());
+      if (existingLicense) {
+        const clientNameFound = existingLicense.clientName || 'Cliente';
+        const keyFound = existingLicense.key || 'Desconhecida';
+        const sellerFound = existingLicense.createdBy || 'outro vendedor';
+        res.status(400).json({
+          success: false,
+          error: `⚠️ Este UUID já está cadastrado para o cliente "${clientNameFound}" (Chave: ${keyFound}, Vendedor: ${sellerFound}). Renove a validade da chave existente na aba "Chaves Ativas" ou troque de UUID!`
+        });
+        return;
+      }
+    }
+
     const idempotencyKey = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString('hex');
 
     // Create PIX Payment on Mercado Pago
