@@ -2241,111 +2241,269 @@ function _aHighlightFromMul(mul) {
   });
 }
 
-// ── DETECTOR DE REMADA ──────────────────────────────────────────────────────
-let _rCap=false, _rSamp=[], _rLX=null, _rLY=null, _rLT=null;
-let _rAnim=null, _rFMul=null, _rTrail=[];
+// ── DETECTOR DE REMADA (100% FUNCIONAL E INTERATIVO) ────────────────────────
+let _rSamples = [];
+let _rLastX = null, _rLastY = null, _rLastTime = null;
+let _rAnimFrame = null;
+let _rFinalMul = null;
+let _rPoints = [];
+let _rZoneActive = false;
 
-function _rCv() {
-  const cv=document.getElementById('remada-canvas'); if (!cv) return null;
-  const z=document.getElementById('remada-zone');
-  if (z){cv.width=z.offsetWidth;cv.height=z.offsetHeight;} return cv;
-}
-
-function _rDraw() {
-  const cv=_rCv(); if (!cv) return;
-  const ctx=cv.getContext('2d'); ctx.clearRect(0,0,cv.width,cv.height);
-  const now=Date.now(), maxA=800;
-  for (let i=1;i<_rTrail.length;i++) {
-    const p0=_rTrail[i-1],p1=_rTrail[i],age=now-p1.t;
-    if (age>maxA) continue;
-    const alpha=1-age/maxA,s=p1.speed||0;
-    let r=56,g=189,b=248;
-    if(s>8){r=251;g=191;b=36;} if(s>20){r=239;g=68;b=68;}
-    ctx.beginPath();ctx.moveTo(p0.x,p0.y);ctx.lineTo(p1.x,p1.y);
-    ctx.strokeStyle=`rgba(${r},${g},${b},${alpha*0.85})`;ctx.lineWidth=3;ctx.lineCap='round';ctx.stroke();
-  }
-  const cut=now-maxA-100;
-  while(_rTrail.length>0&&_rTrail[0].t<cut) _rTrail.shift();
-  _rAnim=requestAnimationFrame(_rDraw);
-}
-
-function _rMove(e) {
-  if (!_rCap) return;
-  const z=document.getElementById('remada-zone'); if (!z) return;
-  const rc=z.getBoundingClientRect();
-  const x=e.clientX-rc.left, y=e.clientY-rc.top, t=performance.now();
-  _rTrail.push({x,y,t:Date.now(),speed:0});
-  if (_rLX!==null) {
-    const dx=e.clientX-_rLX, dy=e.clientY-_rLY, dt=t-_rLT;
-    if (dt>0) {
-      const spd=Math.sqrt(dx*dx+dy*dy)/dt;
-      if (_rTrail.length>0) _rTrail[_rTrail.length-1].speed=spd;
-      _rSamp.push({speed:spd});
-      const lv=document.getElementById('remada-speed-live');
-      if(lv){const lb=spd<=5?'Lenta 🌊':spd<=15?'Média ⚡':'Rápida 🔥';lv.textContent=`${Math.round(spd*100)} px/s — ${lb}`;}
+function getRemadaCanvas() {
+  const cv = document.getElementById('remada-canvas');
+  if (!cv) return null;
+  const z = document.getElementById('remada-zone');
+  if (z) {
+    const rect = z.getBoundingClientRect();
+    const w = Math.round(rect.width) || 600;
+    const h = Math.round(rect.height) || 90;
+    if (cv.width !== w || cv.height !== h) {
+      cv.width = w;
+      cv.height = h;
     }
   }
-  _rLX=e.clientX; _rLY=e.clientY; _rLT=t;
+  return cv;
 }
 
-window.startRemadaCapture = function() {
-  _rCap=true; _rSamp=[]; _rFMul=null; _rLX=_rLY=_rLT=null;
-  const z=document.getElementById('remada-zone');
-  if(z){z.style.border='2px dashed rgba(168,85,247,0.9)';z.style.background='rgba(168,85,247,0.10)';z.style.boxShadow='0 0 18px rgba(168,85,247,0.3)';z.addEventListener('mousemove',_rMove);}
-  const im=document.getElementById('remada-idle-msg'); if(im) im.style.display='none';
-  const am=document.getElementById('remada-active-msg'); if(am) am.style.display='block';
-  const rr=document.getElementById('remada-result'); if(rr) rr.style.display='none';
-  if(_rAnim) cancelAnimationFrame(_rAnim);
-  _rAnim=requestAnimationFrame(_rDraw);
-};
+function drawRemadaTrail() {
+  const cv = document.getElementById('remada-canvas');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  if (!ctx) return;
 
-window.stopRemadaCapture = function() {
-  _rCap=false;
-  const z=document.getElementById('remada-zone');
-  if(z){z.style.border='2px dashed rgba(168,85,247,0.5)';z.style.background='rgba(168,85,247,0.04)';z.style.boxShadow='none';z.removeEventListener('mousemove',_rMove);}
-  const im=document.getElementById('remada-idle-msg'); if(im) im.style.display='block';
-  const am=document.getElementById('remada-active-msg'); if(am) am.style.display='none';
-  if (_rSamp.length<5){if(_rAnim) cancelAnimationFrame(_rAnim); return;}
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  const now = performance.now();
+  const maxAge = 600; // ms
 
-  // Mapeamento velocidade → multiplicador
-  const speeds=_rSamp.map(s=>s.speed).filter(s=>s>0);
-  const peak=Math.max(...speeds), avg=speeds.reduce((a,b)=>a+b,0)/speeds.length;
+  // Desenha os segmentos do rastro
+  for (let i = 1; i < _rPoints.length; i++) {
+    const p0 = _rPoints[i - 1];
+    const p1 = _rPoints[i];
+    const age = now - p1.t;
+    if (age > maxAge) continue;
+
+    const alpha = Math.max(0, 1 - age / maxAge);
+    const spd = p1.spd || 0;
+
+    let r = 56, g = 189, b = 248; // Azul suave
+    if (spd > 8)  { r = 251; g = 191; b = 36; }  // Amarelo moderado
+    if (spd > 20) { r = 239; g = 68;  b = 68; }  // Vermelho rápido
+
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.9})`;
+    ctx.lineWidth = Math.min(6, Math.max(2, 3 + spd * 0.15));
+    ctx.lineCap = 'round';
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 0.8)`;
+    ctx.stroke();
+  }
+
+  // Remove pontos antigos
+  const cutOff = now - maxAge - 50;
+  while (_rPoints.length > 0 && _rPoints[0].t < cutOff) {
+    _rPoints.shift();
+  }
+
+  if (_rZoneActive || _rPoints.length > 0) {
+    _rAnimFrame = requestAnimationFrame(drawRemadaTrail);
+  }
+}
+
+function onRemadaMouseMove(e) {
+  const z = document.getElementById('remada-zone');
+  if (!z) return;
+  const rc = z.getBoundingClientRect();
+  const x = e.clientX - rc.left;
+  const y = e.clientY - rc.top;
+  const now = performance.now();
+
+  let spd = 0;
+  if (_rLastX !== null && _rLastTime !== null) {
+    const dx = e.clientX - _rLastX;
+    const dy = e.clientY - _rLastY;
+    const dt = now - _rLastTime;
+    if (dt > 0) {
+      spd = Math.sqrt(dx * dx + dy * dy) / dt;
+      if (spd > 0.05) {
+        _rSamples.push({ spd, t: now });
+        
+        // Atualiza display ao vivo
+        const lv = document.getElementById('remada-speed-live');
+        if (lv) {
+          const pxSec = Math.round(spd * 1000);
+          const label = spd <= 8 ? '🌊 Lenta / Controle' : spd <= 22 ? '⚡ Equilibrada' : '🔥 Rápida / Agressiva';
+          lv.innerHTML = `<span style="font-size:1.1rem;font-weight:900;color:#fbbf24;">${pxSec} px/s</span> &nbsp;—&nbsp; <span style="font-weight:700;">${label}</span>`;
+        }
+      }
+    }
+  }
+
+  _rPoints.push({ x, y, t: now, spd });
+  _rLastX = e.clientX;
+  _rLastY = e.clientY;
+  _rLastTime = now;
+
+  // Garante animação rodando
+  if (!_rAnimFrame) {
+    _rAnimFrame = requestAnimationFrame(drawRemadaTrail);
+  }
+}
+
+function startRemadaCapture() {
+  _rZoneActive = true;
+  _rSamples = [];
+  _rLastX = null;
+  _rLastY = null;
+  _rLastTime = null;
+
+  const z = document.getElementById('remada-zone');
+  if (z) {
+    z.style.border = '2px dashed rgba(251,191,36,0.9)';
+    z.style.background = 'rgba(251,191,36,0.08)';
+    z.style.boxShadow = '0 0 20px rgba(251,191,36,0.25)';
+  }
+
+  const cv = getRemadaCanvas();
+  if (cv) {
+    const ctx = cv.getContext('2d');
+    if (ctx) ctx.clearRect(0, 0, cv.width, cv.height);
+  }
+
+  const idleMsg = document.getElementById('remada-idle-msg');
+  const activeMsg = document.getElementById('remada-active-msg');
+  if (idleMsg) idleMsg.style.display = 'none';
+  if (activeMsg) activeMsg.style.display = 'block';
+
+  if (_rAnimFrame) cancelAnimationFrame(_rAnimFrame);
+  _rAnimFrame = requestAnimationFrame(drawRemadaTrail);
+}
+
+function stopRemadaCapture() {
+  _rZoneActive = false;
+  const z = document.getElementById('remada-zone');
+  if (z) {
+    z.style.border = '2px dashed rgba(168,85,247,0.5)';
+    z.style.background = 'rgba(168,85,247,0.04)';
+    z.style.boxShadow = 'none';
+  }
+
+  const idleMsg = document.getElementById('remada-idle-msg');
+  const activeMsg = document.getElementById('remada-active-msg');
+  if (idleMsg) idleMsg.style.display = 'block';
+  if (activeMsg) activeMsg.style.display = 'none';
+
+  if (_rSamples.length < 5) return;
+
+  // Processa as velocidades da remada
+  const spds = _rSamples.map(s => s.spd).filter(s => s > 0.1);
+  if (spds.length === 0) return;
+
+  const peak = Math.max(...spds);
+  const avg = spds.reduce((a, b) => a + b, 0) / spds.length;
+
   let mul;
-  if(peak>=40) mul=0.50; else if(peak>=28) mul=0.65; else if(peak>=18) mul=0.80;
-  else if(peak>=10) mul=1.00; else if(peak>=6) mul=1.18; else if(peak>=3) mul=1.38; else mul=1.55;
-  if(avg<peak*0.35) mul=Math.min(mul+0.08,1.80);
-  mul=Math.round(mul*100)/100; _rFMul=mul;
+  if (peak >= 35)      mul = 0.55;
+  else if (peak >= 24) mul = 0.70;
+  else if (peak >= 15) mul = 0.85;
+  else if (peak >= 9)  mul = 1.00;
+  else if (peak >= 5)  mul = 1.18;
+  else if (peak >= 2.5) mul = 1.35;
+  else                 mul = 1.55;
 
-  let sd='',se2='⚡';
-  if(mul<=0.72){sd='Remada RÁPIDA — mira ativa e agressiva';se2='🔥';}
-  else if(mul<=0.92){sd='Remada MÉDIA-RÁPIDA — bom equilíbrio';se2='⚡';}
-  else if(mul<=1.10){sd='Remada EQUILIBRADA — 1:1 natural';se2='⚡';}
-  else if(mul<=1.35){sd='Remada MODERADA — precisa de impulso extra';se2='🌊';}
-  else{sd='Remada LENTA/CONTROLADA — precisa de mais força';se2='🌊';}
+  if (avg < peak * 0.35) mul = Math.min(mul + 0.08, 1.85);
+  mul = Math.round(mul * 100) / 100;
+  _rFinalMul = mul;
 
-  const rt=document.getElementById('remada-result-text');
-  if(rt) rt.innerHTML=[
-    `${se2} <b>Velocidade:</b> pico ${Math.round(peak*100)} px/s | média ${Math.round(avg*100)} px/s`,
-    `🎯 <b>Perfil:</b> ${sd}`,
-    `🎚️ <b>Multiplicador ideal:</b> <span style="color:#c084fc;font-size:1rem;font-weight:900;">${mul.toFixed(2)}x</span>`,
-  ].join('<br>');
-  const rr=document.getElementById('remada-result'); if(rr) rr.style.display='block';
-};
+  let profileDesc = '', emoji = '⚡';
+  if (mul <= 0.72) {
+    profileDesc = 'Puxada RÁPIDA / AGRESSIVA — Multiplicador suavizado para não passar da cabeça';
+    emoji = '🔥';
+  } else if (mul <= 0.92) {
+    profileDesc = 'Puxada MÉDIA-RÁPIDA — Excelente subida de capa controlada';
+    emoji = '⚡';
+  } else if (mul <= 1.10) {
+    profileDesc = 'Puxada EQUILIBRADA — Resposta linear 1:1 perfeita';
+    emoji = '⚡';
+  } else if (mul <= 1.35) {
+    profileDesc = 'Puxada MODERADA / CURTA — Multiplicador elevado para acelerar a subida';
+    emoji = '🌊';
+  } else {
+    profileDesc = 'Puxada SUAVE / LENTA — Multiplicador alto para máxima facilidade de capa';
+    emoji = '🌊';
+  }
+
+  const rt = document.getElementById('remada-result-text');
+  if (rt) {
+    rt.innerHTML = [
+      `${emoji} <b>Velocidade Detectada:</b> Pico <b>${Math.round(peak * 1000)} px/s</b> | Média <b>${Math.round(avg * 1000)} px/s</b>`,
+      `🎯 <b>Diagnóstico:</b> ${profileDesc}`,
+      `🎚️ <b>Multiplicador Ideal Recomendado:</b> <span style="color:#fbbf24;font-size:1.05rem;font-weight:900;background:rgba(251,191,36,0.18);padding:2px 8px;border-radius:4px;border:1px solid rgba(251,191,36,0.5);">${mul.toFixed(2)}x</span>`,
+    ].join('<br>');
+  }
+
+  const rr = document.getElementById('remada-result');
+  if (rr) rr.style.display = 'block';
+}
+
+window.startRemadaCapture = startRemadaCapture;
+window.stopRemadaCapture = stopRemadaCapture;
 
 window.applyRemadaResult = function() {
-  if (_rFMul===null) return;
-  const se=document.getElementById('adapt-style-mul'), ie=document.getElementById('adapt-style-mul-input');
-  if(se) se.value=_rFMul; if(ie) ie.value=_rFMul.toFixed(2);
-  _aHighlightFromMul(_rFMul); _aMulDesc(_rFMul);
-  const box=se?.parentElement?.parentElement;
-  if(box){box.style.border='1px solid rgba(168,85,247,0.9)';box.style.boxShadow='0 0 16px rgba(168,85,247,0.4)';setTimeout(()=>{box.style.border='1px solid rgba(251,191,36,0.25)';box.style.boxShadow='none';},2000);}
+  if (_rFinalMul === null) return;
+  const se = document.getElementById('adapt-style-mul');
+  const ie = document.getElementById('adapt-style-mul-input');
+  if (se) se.value = _rFinalMul;
+  if (ie) ie.value = _rFinalMul.toFixed(2);
+  _aHighlightFromMul(_rFinalMul);
+  _aMulDesc(_rFinalMul);
+
+  const box = se?.parentElement?.parentElement;
+  if (box) {
+    box.style.border = '1px solid rgba(251,191,36,0.9)';
+    box.style.boxShadow = '0 0 20px rgba(251,191,36,0.4)';
+    setTimeout(() => {
+      box.style.border = '1px solid rgba(251,191,36,0.25)';
+      box.style.boxShadow = 'none';
+    }, 2000);
+  }
 };
 
 window.resetRemada = function() {
-  _rSamp=[];_rFMul=null;_rTrail=[];
-  const cv=_rCv(); if(cv) cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
-  const rr=document.getElementById('remada-result'); if(rr) rr.style.display='none';
+  _rSamples = [];
+  _rFinalMul = null;
+  _rPoints = [];
+  const cv = document.getElementById('remada-canvas');
+  if (cv) {
+    const ctx = cv.getContext('2d');
+    if (ctx) ctx.clearRect(0, 0, cv.width, cv.height);
+  }
+  const rr = document.getElementById('remada-result');
+  if (rr) rr.style.display = 'none';
 };
+
+// Vincula listeners no elemento do detector de remada de forma direta
+document.addEventListener('DOMContentLoaded', () => {
+  const z = document.getElementById('remada-zone');
+  if (z) {
+    z.addEventListener('mouseenter', startRemadaCapture);
+    z.addEventListener('mouseleave', stopRemadaCapture);
+    z.addEventListener('mousemove', onRemadaMouseMove);
+  }
+  getRemadaCanvas();
+});
+
+// Inicialização imediata caso o DOM já esteja pronto
+(() => {
+  const z = document.getElementById('remada-zone');
+  if (z) {
+    z.addEventListener('mouseenter', startRemadaCapture);
+    z.addEventListener('mouseleave', stopRemadaCapture);
+    z.addEventListener('mousemove', onRemadaMouseMove);
+    getRemadaCanvas();
+  }
+})();
 
 // ── Handler de Aplicação ────────────────────────────────────────────────────
 (function initAdaptiveRegedit() {
