@@ -1219,7 +1219,9 @@ if (window.api.onUpdateAvailable) {
         const alertBanner = document.getElementById('global-update-alert');
         if (alertBanner) alertBanner.style.display = 'none';
 
-        if (btnInstallNow) btnInstallNow.style.display = 'none';
+        if (btnInstallNow) {
+          btnInstallNow.style.display = 'none';
+        }
         if (cardStatusTitle) cardStatusTitle.innerHTML = `✔️ <b>Você está na versão mais recente</b>`;
         if (cardStatusDesc) cardStatusDesc.textContent = `Seu Loord Optimizer está 100% atualizado (v${curV}).`;
         if (manual) {
@@ -1231,7 +1233,10 @@ if (window.api.onUpdateAvailable) {
         btnCheckUpdate.disabled = false;
         btnCheckUpdate.textContent = '🔍 Verificar Agora';
       }
-      if (cardStatusTitle) cardStatusTitle.innerHTML = `<span style="color:#4ade80; font-weight:800;">✔️ Versão Verificada</span>`;
+      if (btnInstallNow) {
+        btnInstallNow.style.display = 'none';
+      }
+      if (cardStatusTitle) cardStatusTitle.innerHTML = `✔️ <b>Versão Verificada</b>`;
       if (cardStatusDesc) cardStatusDesc.textContent = 'Não há atualizações pendentes no momento.';
     }
   }
