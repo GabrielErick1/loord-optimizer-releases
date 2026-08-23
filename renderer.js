@@ -2080,18 +2080,6 @@ if (btnPresetPotato) {
   });
 }
 
-const btnPresetSmooth = document.getElementById('btn-preset-smooth');
-if (btnPresetSmooth) {
-  btnPresetSmooth.addEventListener('click', async () => {
-    const res = await window.api.applyLowEndEmulatorConfig('540p-balanced');
-    if (statusEmuPreset) {
-      statusEmuPreset.style.display = 'block';
-      statusEmuPreset.textContent = '⚡ Perfil 540p (960x540, 240 DPI, 2 CPU, 2GB RAM) aplicado no BlueStacks/MSI!';
-    }
-  });
-}
-
-const btnPreset720p = document.getElementById('btn-preset-720p');
 if (btnPreset720p) {
   btnPreset720p.addEventListener('click', async () => {
     const res = await window.api.applyLowEndEmulatorConfig('720p-smooth');
@@ -2329,6 +2317,201 @@ if (btnApplyCompTweak) {
   });
 
   function showAdaptError(msg) {
+    }
+
+    btnApplyCompTweak.disabled = true;
+    btnApplyCompTweak.textContent = '⏳ Aplicando Otimizações...';
+
+    const res = await window.api.applyCompetitiveEmulatorTweak({
+      panSpeed: parseFloat(panSpeed),
+      sensitivityX: parseFloat(sensX),
+      sensitivityY: parseFloat(sensY),
+      astcMode: 'hardware',
+      graphicsRenderer: renderer,
+      cpuCores: cpuCores,
+      ramMb: ramMb,
+      enableHighFps: true
+    });
+
+    btnApplyCompTweak.disabled = false;
+    btnApplyCompTweak.textContent = '✔️ Otimizações Aplicadas!';
+
+    if (statusCompTweak) {
+      statusCompTweak.style.display = 'block';
+      statusCompTweak.innerText = res && res.message ? res.message : 'Otimizações aplicadas com sucesso!';
+    }
+  });
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// REGEDIT ADAPTATIVA PERSONALIZADA
+// ══════════════════════════════════════════════════════════════════════════════
+
+(function initAdaptiveRegedit() {
+  // Elementos
+  const btnApply     = document.getElementById('btn-apply-adaptive-reg');
+  const inpDpiMouse  = document.getElementById('adapt-dpi-mouse');
+  const inpDpiEmu    = document.getElementById('adapt-dpi-emu');
+  const inpSensX     = document.getElementById('adapt-sens-x');
+  const inpSensY     = document.getElementById('adapt-sens-y');
+  const resultBox    = document.getElementById('adaptive-reg-result');
+  const resultSummary= document.getElementById('adaptive-reg-summary');
+  const errorBox     = document.getElementById('adaptive-reg-error');
+  const errorMsg     = document.getElementById('adaptive-reg-error-msg');
+
+  if (!btnApply) return;
+
+  // ── Highlight visual do estilo selecionado ─────────────────────────────
+  const styleLabels = {
+    suave:       document.getElementById('style-label-suave'),
+    equilibrado: document.getElementById('style-label-equilibrado'),
+    pesada:      document.getElementById('style-label-pesada'),
+  };
+
+  const styleBorders = {
+    suave:       'rgba(56,189,248,0.9)',
+    equilibrado: 'rgba(251,191,36,0.9)',
+    pesada:      'rgba(239,68,68,0.9)',
+  };
+
+  const styleBgs = {
+    suave:       'rgba(56,189,248,0.18)',
+    equilibrado: 'rgba(251,191,36,0.22)',
+    pesada:      'rgba(239,68,68,0.18)',
+  };
+
+  function updateStyleHighlight() {
+    const selected = document.querySelector('input[name="adapt-style"]:checked');
+    if (!selected) return;
+    const val = selected.value;
+    Object.keys(styleLabels).forEach(key => {
+      const lbl = styleLabels[key];
+      if (!lbl) return;
+      if (key === val) {
+        lbl.style.border   = `2px solid ${styleBorders[key]}`;
+        lbl.style.background = styleBgs[key];
+        lbl.style.transform = 'scale(1.03)';
+        lbl.style.boxShadow = `0 0 14px ${styleBorders[key].replace('0.9','0.35')}`;
+      } else {
+        lbl.style.border   = `2px solid ${styleBorders[key].replace('0.9','0.3')}`;
+        lbl.style.background = styleBgs[key].replace('0.18','0.06').replace('0.22','0.06');
+        lbl.style.transform = 'scale(1)';
+        lbl.style.boxShadow = 'none';
+      }
+    });
+  }
+
+  document.querySelectorAll('input[name="adapt-style"]').forEach(radio => {
+    radio.addEventListener('change', updateStyleHighlight);
+  });
+  updateStyleHighlight(); // aplica ao carregar
+
+  // ── Descrição dinâmica baseada nos valores inseridos ──────────────────
+  function getStyleDescription(sensX, sensY, style) {
+    const ratio = sensY / sensX;
+    const styleNames = { suave: '🌊 Suave', equilibrado: '⚡ Equilibrado', pesada: '🔥 Pesada' };
+    let modeDesc = '';
+    if (ratio < 0.5)       modeDesc = 'Capa Travada (Y muito menor que X — forte puxada pra cabeça)';
+    else if (ratio < 0.85)  modeDesc = 'Head Lock (Y menor que X — boa subida de capa sem escorregar)';
+    else if (ratio <= 1.15) modeDesc = '1:1 Simétrico (Y ≈ X — mira uniforme em todos os eixos)';
+    else                   modeDesc = 'Y Dominante (Y maior que X — mira sobe mais rápido que gira)';
+    return `Modo detectado: ${modeDesc} | Estilo: ${styleNames[style] || style}`;
+  }
+
+  // ── Preview em tempo real ao digitar ──────────────────────────────────
+  function updatePreview() {
+    const sX = parseFloat(inpSensX?.value) || 0;
+    const sY = parseFloat(inpSensY?.value) || 0;
+    const style = document.querySelector('input[name="adapt-style"]:checked')?.value || 'equilibrado';
+    if (sX > 0 && sY > 0 && resultBox && resultBox.style.display !== 'none') {
+      if (resultSummary) {
+        const firstLine = resultSummary.innerHTML.split('<br>')[0];
+        // Atualiza a segunda linha com o modo detectado
+      }
+    }
+  }
+
+  [inpSensX, inpSensY].forEach(el => {
+    if (el) el.addEventListener('input', updatePreview);
+  });
+
+  // ── Aplicar ──────────────────────────────────────────────────────────
+  btnApply.addEventListener('click', async () => {
+    // Esconde resultados anteriores
+    if (resultBox)  resultBox.style.display  = 'none';
+    if (errorBox)   errorBox.style.display   = 'none';
+
+    const dpiMouse = parseFloat(inpDpiMouse?.value);
+    const dpiEmu   = parseFloat(inpDpiEmu?.value);
+    const sensX    = parseFloat(inpSensX?.value);
+    const sensY    = parseFloat(inpSensY?.value);
+    const style    = document.querySelector('input[name="adapt-style"]:checked')?.value || 'equilibrado';
+
+    // Validação visual
+    if (!dpiMouse || dpiMouse < 100) {
+      showAdaptError('DPI do Mouse Físico inválido. Mínimo: 100.');
+      return;
+    }
+    if (!dpiEmu || dpiEmu < 100) {
+      showAdaptError('DPI do Emulador inválido. Mínimo: 100.');
+      return;
+    }
+    if (!sensX || sensX < 0.1) {
+      showAdaptError('Sensibilidade X inválida. Mínimo: 0.10.');
+      return;
+    }
+    if (!sensY || sensY < 0.1) {
+      showAdaptError('Sensibilidade Y inválida. Mínimo: 0.10.');
+      return;
+    }
+
+    // Animação do botão
+    btnApply.disabled = true;
+    btnApply.style.opacity = '0.7';
+    btnApply.textContent = '⏳ Calculando e Aplicando...';
+
+    try {
+      const res = await window.api.applyAdaptiveRegedit({ dpiMouse, dpiEmu, sensX, sensY, style });
+
+      if (res && res.success) {
+        const s = res.summary || {};
+        const ratioYX = s.ratioYX || (sensY / sensX).toFixed(3);
+        const styleEmoji = { suave: '🌊', equilibrado: '⚡', pesada: '🔥' }[style] || '⚡';
+        const modeDesc = getStyleDescription(sensX, sensY, style);
+
+        if (resultSummary) {
+          resultSummary.innerHTML = [
+            `🖱️ <b>Mouse:</b> ${dpiMouse} DPI &nbsp;|&nbsp; 🎮 <b>Emulador:</b> ${dpiEmu} DPI`,
+            `↔️ <b>Sens X:</b> ${sensX} &nbsp;|&nbsp; ↕️ <b>Sens Y:</b> ${sensY} &nbsp;|&nbsp; <b>Razão Y/X:</b> ${ratioYX}`,
+            `${styleEmoji} <b>Estilo:</b> ${style.charAt(0).toUpperCase() + style.slice(1)}`,
+            `🔬 <b>${modeDesc}</b>`,
+            `⚡ <b>Curva X calculada:</b> fator ${s.scaleX}x &nbsp;|&nbsp; <b>Curva Y:</b> fator ${s.scaleY}x`,
+            `✅ <b>Aplicado em tempo real</b> — sem precisar reiniciar o PC!`,
+          ].join('<br>');
+        }
+        if (resultBox) resultBox.style.display = 'block';
+
+        // Animação de sucesso no botão
+        btnApply.style.background = 'linear-gradient(90deg, #22c55e, #16a34a)';
+        btnApply.textContent = '✅ REGEDIT PERSONALIZADA APLICADA!';
+        setTimeout(() => {
+          btnApply.style.background = 'linear-gradient(90deg, #f59e0b, #ef4444)';
+          btnApply.textContent = '⚡ GERAR & APLICAR MINHA REGEDIT PERSONALIZADA';
+          btnApply.disabled = false;
+          btnApply.style.opacity = '1';
+        }, 4000);
+      } else {
+        showAdaptError(res?.error || 'Erro desconhecido ao aplicar regedit.');
+        resetBtn();
+      }
+    } catch (e) {
+      showAdaptError('Erro de comunicação: ' + e.message);
+      resetBtn();
+    }
+  });
+
+  function showAdaptError(msg) {
     if (errorMsg) errorMsg.textContent = msg;
     if (errorBox) errorBox.style.display = 'block';
   }
@@ -2339,4 +2522,196 @@ if (btnApplyCompTweak) {
     btnApply.textContent = '⚡ GERAR & APLICAR MINHA REGEDIT PERSONALIZADA';
   }
 
+})();
+
+// ══════════════════════════════════════════════════════════════════════════════
+// REGEDIT ADAPTATIVA — Presets, Slider e Detector de Remada Real
+// ══════════════════════════════════════════════════════════════════════════════
+
+const ADAPT_STYLE_PRESETS = { suave: 0.78, equilibrado: 1.00, pesada: 1.22 };
+
+window.setAdaptStyle = function(style) {
+  const mul = ADAPT_STYLE_PRESETS[style] ?? 1.00;
+  const se = document.getElementById('adapt-style-mul');
+  const ie = document.getElementById('adapt-style-mul-input');
+  if (se) se.value = mul;
+  if (ie) ie.value = mul.toFixed(2);
+  _aHighlight(style); _aMulDesc(mul);
+};
+
+window.syncInputFromSlider = function() {
+  const se = document.getElementById('adapt-style-mul');
+  const ie = document.getElementById('adapt-style-mul-input');
+  if (!se || !ie) return;
+  const v = parseFloat(se.value);
+  ie.value = v.toFixed(2); _aMulDesc(v); _aHighlightFromMul(v);
+};
+
+window.syncSliderFromInput = function() {
+  const se = document.getElementById('adapt-style-mul');
+  const ie = document.getElementById('adapt-style-mul-input');
+  if (!se || !ie) return;
+  let v = parseFloat(ie.value);
+  if (isNaN(v)) v = 1.00;
+  v = Math.min(2.00, Math.max(0.40, v));
+  se.value = v; ie.value = v.toFixed(2); _aMulDesc(v); _aHighlightFromMul(v);
+};
+
+function _aMulDesc(mul) {
+  const el = document.getElementById('adapt-style-preview');
+  if (!el) return;
+  let d;
+  if      (mul<=0.60) d='🌊 Extremamente fluida — controle total';
+  else if (mul<=0.85) d='🌊 Suave — precisa, ótima pra sens baixa';
+  else if (mul<=0.95) d='⚡ Levemente suave — precisão + responsividade';
+  else if (mul<=1.05) d='⚡ Equilibrado 1:1 — curva linear padrão';
+  else if (mul<=1.15) d='⚡ Levemente pesada — mais responsiva';
+  else if (mul<=1.40) d='🔥 Pesada — agressiva, ideal sens alta';
+  else if (mul<=1.70) d='🔥 Muito pesada — para quem domina o mouse';
+  else                d='🔥 Ultraagressiva — apenas pra pros';
+  el.textContent = `${mul.toFixed(2)}x → ${d}`;
+}
+
+function _aHighlight(active) {
+  const C = {
+    suave:       { b:'rgba(56,189,248,0.9)',  bg:'rgba(56,189,248,0.18)', sh:'rgba(56,189,248,0.35)' },
+    equilibrado: { b:'rgba(251,191,36,0.9)',  bg:'rgba(251,191,36,0.22)',sh:'rgba(251,191,36,0.35)' },
+    pesada:      { b:'rgba(239,68,68,0.9)',   bg:'rgba(239,68,68,0.18)', sh:'rgba(239,68,68,0.35)'  },
+  };
+  ['suave','equilibrado','pesada'].forEach(s => {
+    const btn = document.getElementById(`style-btn-${s}`); if (!btn) return;
+    const c = C[s];
+    if (s === active) {
+      btn.style.border=`2px solid ${c.b}`; btn.style.background=c.bg;
+      btn.style.transform='scale(1.04)'; btn.style.boxShadow=`0 0 16px ${c.sh}`;
+    } else {
+      btn.style.border=`2px solid ${c.b.replace('0.9','0.3')}`;
+      btn.style.background=c.bg.replace('0.18','0.05').replace('0.22','0.05');
+      btn.style.transform='scale(1)'; btn.style.boxShadow='none';
+    }
+  });
+}
+
+function _aHighlightFromMul(mul) {
+  const e = Object.entries(ADAPT_STYLE_PRESETS).find(([,v]) => Math.abs(v-mul)<=0.03);
+  if (e) { _aHighlight(e[0]); return; }
+  ['suave','equilibrado','pesada'].forEach(s => {
+    const btn = document.getElementById(`style-btn-${s}`); if (!btn) return;
+    const bds={suave:'rgba(56,189,248,0.3)',equilibrado:'rgba(251,191,36,0.3)',pesada:'rgba(239,68,68,0.3)'};
+    const bgs={suave:'rgba(56,189,248,0.05)',equilibrado:'rgba(251,191,36,0.05)',pesada:'rgba(239,68,68,0.05)'};
+    btn.style.border=`2px solid ${bds[s]}`; btn.style.background=bgs[s];
+    btn.style.transform='scale(1)'; btn.style.boxShadow='none';
+  });
+}
+
+// ── DETECTOR DE REMADA ──────────────────────────────────────────────────────
+let _rCap=false, _rSamp=[], _rLX=null, _rLY=null, _rLT=null;
+let _rAnim=null, _rFMul=null, _rTrail=[];
+
+function _rCv() {
+  const cv=document.getElementById('remada-canvas'); if (!cv) return null;
+  const z=document.getElementById('remada-zone');
+  if (z){cv.width=z.offsetWidth;cv.height=z.offsetHeight;} return cv;
+}
+
+function _rDraw() {
+  const cv=_rCv(); if (!cv) return;
+  const ctx=cv.getContext('2d'); ctx.clearRect(0,0,cv.width,cv.height);
+  const now=Date.now(), maxA=800;
+  for (let i=1;i<_rTrail.length;i++) {
+    const p0=_rTrail[i-1],p1=_rTrail[i],age=now-p1.t;
+    if (age>maxA) continue;
+    const alpha=1-age/maxA,s=p1.speed||0;
+    let r=56,g=189,b=248;
+    if(s>8){r=251;g=191;b=36;} if(s>20){r=239;g=68;b=68;}
+    ctx.beginPath();ctx.moveTo(p0.x,p0.y);ctx.lineTo(p1.x,p1.y);
+    ctx.strokeStyle=`rgba(${r},${g},${b},${alpha*0.85})`;ctx.lineWidth=3;ctx.lineCap='round';ctx.stroke();
+  }
+  const cut=now-maxA-100;
+  while(_rTrail.length>0&&_rTrail[0].t<cut) _rTrail.shift();
+  _rAnim=requestAnimationFrame(_rDraw);
+}
+
+function _rMove(e) {
+  if (!_rCap) return;
+  const z=document.getElementById('remada-zone'); if (!z) return;
+  const rc=z.getBoundingClientRect();
+  const x=e.clientX-rc.left, y=e.clientY-rc.top, t=performance.now();
+  _rTrail.push({x,y,t:Date.now(),speed:0});
+  if (_rLX!==null) {
+    const dx=e.clientX-_rLX, dy=e.clientY-_rLY, dt=t-_rLT;
+    if (dt>0) {
+      const spd=Math.sqrt(dx*dx+dy*dy)/dt;
+      if (_rTrail.length>0) _rTrail[_rTrail.length-1].speed=spd;
+      _rSamp.push({speed:spd});
+      const lv=document.getElementById('remada-speed-live');
+      if(lv){const lb=spd<=5?'Lenta 🌊':spd<=15?'Média ⚡':'Rápida 🔥';lv.textContent=`${Math.round(spd*100)} px/s — ${lb}`;}
+    }
+  }
+  _rLX=e.clientX; _rLY=e.clientY; _rLT=t;
+}
+
+window.startRemadaCapture = function() {
+  _rCap=true; _rSamp=[]; _rFMul=null; _rLX=_rLY=_rLT=null;
+  const z=document.getElementById('remada-zone');
+  if(z){z.style.border='2px dashed rgba(168,85,247,0.9)';z.style.background='rgba(168,85,247,0.10)';z.style.boxShadow='0 0 18px rgba(168,85,247,0.3)';z.addEventListener('mousemove',_rMove);}
+  const im=document.getElementById('remada-idle-msg'); if(im) im.style.display='none';
+  const am=document.getElementById('remada-active-msg'); if(am) am.style.display='block';
+  const rr=document.getElementById('remada-result'); if(rr) rr.style.display='none';
+  if(_rAnim) cancelAnimationFrame(_rAnim);
+  _rAnim=requestAnimationFrame(_rDraw);
+};
+
+window.stopRemadaCapture = function() {
+  _rCap=false;
+  const z=document.getElementById('remada-zone');
+  if(z){z.style.border='2px dashed rgba(168,85,247,0.5)';z.style.background='rgba(168,85,247,0.04)';z.style.boxShadow='none';z.removeEventListener('mousemove',_rMove);}
+  const im=document.getElementById('remada-idle-msg'); if(im) im.style.display='block';
+  const am=document.getElementById('remada-active-msg'); if(am) am.style.display='none';
+  if (_rSamp.length<5){if(_rAnim) cancelAnimationFrame(_rAnim); return;}
+
+  // Mapeamento velocidade → multiplicador
+  const speeds=_rSamp.map(s=>s.speed).filter(s=>s>0);
+  const peak=Math.max(...speeds), avg=speeds.reduce((a,b)=>a+b,0)/speeds.length;
+  let mul;
+  if(peak>=40) mul=0.50; else if(peak>=28) mul=0.65; else if(peak>=18) mul=0.80;
+  else if(peak>=10) mul=1.00; else if(peak>=6) mul=1.18; else if(peak>=3) mul=1.38; else mul=1.55;
+  if(avg<peak*0.35) mul=Math.min(mul+0.08,1.80);
+  mul=Math.round(mul*100)/100; _rFMul=mul;
+
+  let sd='',se2='⚡';
+  if(mul<=0.72){sd='Remada RÁPIDA — mira ativa e agressiva';se2='🔥';}
+  else if(mul<=0.92){sd='Remada MÉDIA-RÁPIDA — bom equilíbrio';se2='⚡';}
+  else if(mul<=1.10){sd='Remada EQUILIBRADA — 1:1 natural';se2='⚡';}
+  else if(mul<=1.35){sd='Remada MODERADA — precisa de impulso extra';se2='🌊';}
+  else{sd='Remada LENTA/CONTROLADA — precisa de mais força';se2='🌊';}
+
+  const rt=document.getElementById('remada-result-text');
+  if(rt) rt.innerHTML=[
+    `${se2} <b>Velocidade:</b> pico ${Math.round(peak*100)} px/s | média ${Math.round(avg*100)} px/s`,
+    `🎯 <b>Perfil:</b> ${sd}`,
+    `🎚️ <b>Multiplicador ideal:</b> <span style="color:#c084fc;font-size:1rem;font-weight:900;">${mul.toFixed(2)}x</span>`,
+  ].join('<br>');
+  const rr=document.getElementById('remada-result'); if(rr) rr.style.display='block';
+};
+
+window.applyRemadaResult = function() {
+  if (_rFMul===null) return;
+  const se=document.getElementById('adapt-style-mul'), ie=document.getElementById('adapt-style-mul-input');
+  if(se) se.value=_rFMul; if(ie) ie.value=_rFMul.toFixed(2);
+  _aHighlightFromMul(_rFMul); _aMulDesc(_rFMul);
+  const box=se?.parentElement?.parentElement;
+  if(box){box.style.border='1px solid rgba(168,85,247,0.9)';box.style.boxShadow='0 0 16px rgba(168,85,247,0.4)';setTimeout(()=>{box.style.border='1px solid rgba(251,191,36,0.25)';box.style.boxShadow='none';},2000);}
+};
+
+window.resetRemada = function() {
+  _rSamp=[];_rFMul=null;_rTrail=[];
+  const cv=_rCv(); if(cv) cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
+  const rr=document.getElementById('remada-result'); if(rr) rr.style.display='none';
+};
+
+// Inicializa ao carregar
+(function(){
+  _aHighlight('equilibrado');
+  _aMulDesc(1.00);
 })();

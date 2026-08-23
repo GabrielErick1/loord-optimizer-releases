@@ -157,30 +157,104 @@
               </div>
             </div>
 
-            <!-- Estilo da Mira -->
+            <!-- Estilo da Mira — Presets + Slider Ajustável -->
             <div style="margin-bottom: 16px;">
-              <label style="font-size:0.85rem; color:#fde68a; font-weight:800; display:block; margin-bottom:10px;">⚙️ Estilo de Mira — Como você gosta de jogar?</label>
-              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-                <label id="style-label-suave" style="cursor:pointer; border: 2px solid rgba(56,189,248,0.5); border-radius:8px; padding:10px 8px; text-align:center; background: rgba(56,189,248,0.08); transition: all 0.2s;">
-                  <input type="radio" name="adapt-style" value="suave" style="display:none;">
+              <label style="font-size:0.85rem; color:#fde68a; font-weight:800; display:block; margin-bottom:10px;">⚙️ Estilo de Mira — Escolha um preset ou ajuste manualmente:</label>
+
+              <!-- Botões de atalho -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px;">
+                <button id="style-btn-suave" onclick="setAdaptStyle('suave')" type="button" style="cursor:pointer; border: 2px solid rgba(56,189,248,0.5); border-radius:8px; padding:10px 8px; text-align:center; background: rgba(56,189,248,0.08); transition: all 0.2s;">
                   <div style="font-size:1.2rem; margin-bottom:3px;">🌊</div>
                   <div style="font-size:0.8rem; font-weight:800; color:#38bdf8;">SUAVE</div>
-                  <div style="font-size:0.68rem; color:#7dd3fc; margin-top:2px; line-height:1.3;">Mira fluida e controlada. Bom pra iniciantes e quem usa sens baixa.</div>
-                </label>
-                <label id="style-label-equilibrado" style="cursor:pointer; border: 2px solid rgba(251,191,36,0.8); border-radius:8px; padding:10px 8px; text-align:center; background: rgba(251,191,36,0.15); transition: all 0.2s;">
-                  <input type="radio" name="adapt-style" value="equilibrado" checked style="display:none;">
+                  <div style="font-size:0.68rem; color:#7dd3fc; margin-top:2px; line-height:1.3;">Mira fluida e controlada</div>
+                  <div style="font-size:0.72rem; color:#38bdf8; margin-top:4px; font-weight:700; background: rgba(56,189,248,0.15); border-radius:4px; padding:2px 6px;">Multiplicador: 0.78</div>
+                </button>
+                <button id="style-btn-equilibrado" onclick="setAdaptStyle('equilibrado')" type="button" style="cursor:pointer; border: 2px solid rgba(251,191,36,0.8); border-radius:8px; padding:10px 8px; text-align:center; background: rgba(251,191,36,0.18); transition: all 0.2s; box-shadow: 0 0 12px rgba(251,191,36,0.3);">
                   <div style="font-size:1.2rem; margin-bottom:3px;">⚡</div>
                   <div style="font-size:0.8rem; font-weight:800; color:#fbbf24;">EQUILIBRADO</div>
-                  <div style="font-size:0.68rem; color:#fde68a; margin-top:2px; line-height:1.3;">Balanceia capa e controle. Recomendado para a maioria.</div>
-                </label>
-                <label id="style-label-pesada" style="cursor:pointer; border: 2px solid rgba(239,68,68,0.5); border-radius:8px; padding:10px 8px; text-align:center; background: rgba(239,68,68,0.08); transition: all 0.2s;">
-                  <input type="radio" name="adapt-style" value="pesada" style="display:none;">
+                  <div style="font-size:0.68rem; color:#fde68a; margin-top:2px; line-height:1.3;">Balanceia capa e controle</div>
+                  <div style="font-size:0.72rem; color:#fbbf24; margin-top:4px; font-weight:700; background: rgba(251,191,36,0.15); border-radius:4px; padding:2px 6px;">Multiplicador: 1.00</div>
+                </button>
+                <button id="style-btn-pesada" onclick="setAdaptStyle('pesada')" type="button" style="cursor:pointer; border: 2px solid rgba(239,68,68,0.5); border-radius:8px; padding:10px 8px; text-align:center; background: rgba(239,68,68,0.08); transition: all 0.2s;">
                   <div style="font-size:1.2rem; margin-bottom:3px;">🔥</div>
                   <div style="font-size:0.8rem; font-weight:800; color:#f87171;">PESADA</div>
-                  <div style="font-size:0.68rem; color:#fca5a5; margin-top:2px; line-height:1.3;">Mira travada e agressiva. Puxada forte pra cima. Quem usa sens alta.</div>
-                </label>
+                  <div style="font-size:0.68rem; color:#fca5a5; margin-top:2px; line-height:1.3;">Mira agressiva, puxada forte</div>
+                  <div style="font-size:0.72rem; color:#f87171; margin-top:4px; font-weight:700; background: rgba(239,68,68,0.15); border-radius:4px; padding:2px 6px;">Multiplicador: 1.22</div>
+                </button>
               </div>
+
+              <!-- Slider de ajuste fino do multiplicador -->
+              <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(251,191,36,0.25); border-radius:10px; padding:14px 16px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <label style="font-size:0.82rem; color:#fde68a; font-weight:800;">🎚️ Força da Curva (Multiplicador)</label>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <input type="number" id="adapt-style-mul-input" value="1.00" min="0.40" max="2.00" step="0.01"
+                      style="width:72px; text-align:center; font-size:0.95rem; font-weight:900; color:#fbbf24; background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.5); border-radius:6px; padding:4px 6px;"
+                      oninput="syncSliderFromInput()">
+                    <span style="font-size:0.75rem; color:#9ca3af;">0.40 → 2.00</span>
+                  </div>
+                </div>
+                <input type="range" id="adapt-style-mul" min="0.40" max="2.00" step="0.01" value="1.00"
+                  style="width:100%; accent-color:#fbbf24; height:6px; cursor:pointer;"
+                  oninput="syncInputFromSlider()">
+                <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:0.68rem; color:#6b7280;">
+                  <span>🌊 0.40 — Ultrafluida</span>
+                  <span>⚡ 1.00 — 1:1 Padrão</span>
+                  <span>🔥 2.00 — Ultraagressiva</span>
+                </div>
+                <div id="adapt-style-preview" style="margin-top:10px; font-size:0.77rem; color:#a3e635; font-weight:600; text-align:center; min-height:18px;"></div>
+              </div>
+
+              <!-- ── DETECTOR DE REMADA ─────────────────────────────────── -->
+              <div style="margin-top:14px; background: rgba(168,85,247,0.07); border: 1px solid rgba(168,85,247,0.35); border-radius:10px; padding:14px 16px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                  <span style="font-size:1rem;">🎯</span>
+                  <span style="font-size:0.85rem; font-weight:900; color:#c084fc;">DETECTOR DE REMADA AUTOMÁTICO</span>
+                  <span style="font-size:0.65rem; background:#7c3aed; color:#fff; padding:2px 6px; border-radius:4px; font-weight:800;">AUTO</span>
+                </div>
+                <p style="font-size:0.77rem; color:#d8b4fe; margin:0 0 10px 0; line-height:1.5;">Puxe o mouse <strong>aqui dentro</strong> como faz no jogo (remada de capa, giro lateral). O painel detecta sua velocidade real e calibra o multiplicador sozinho.</p>
+
+                <!-- Zona de captura -->
+                <div id="remada-zone"
+                  style="width:100%; height:90px; border-radius:8px; border: 2px dashed rgba(168,85,247,0.5); background: rgba(168,85,247,0.04); cursor:crosshair; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; transition: all 0.2s; user-select:none;"
+                  onmouseenter="startRemadaCapture()" onmouseleave="stopRemadaCapture()">
+                  <div id="remada-idle-msg" style="text-align:center; pointer-events:none;">
+                    <div style="font-size:1.4rem;">🖱️</div>
+                    <div style="font-size:0.75rem; color:#a78bfa; font-weight:600; margin-top:4px;">Mova o mouse aqui como no jogo</div>
+                  </div>
+                  <div id="remada-active-msg" style="display:none; text-align:center; pointer-events:none;">
+                    <div style="font-size:1rem; color:#c084fc; font-weight:800;" id="remada-speed-live">Medindo...</div>
+                    <div style="font-size:0.7rem; color:#a78bfa; margin-top:3px;">Velocidade detectada em tempo real</div>
+                  </div>
+                  <!-- Rastro visual da remada -->
+                  <canvas id="remada-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; opacity:0.6;"></canvas>
+                </div>
+
+                <!-- Resultado da detecção -->
+                <div id="remada-result" style="display:none; margin-top:10px; padding:10px 12px; background:rgba(168,85,247,0.12); border-radius:8px; border:1px solid rgba(168,85,247,0.4);">
+                  <div style="font-size:0.8rem; color:#e9d5ff; line-height:1.7;" id="remada-result-text"></div>
+                  <button onclick="applyRemadaResult()" type="button"
+                    style="margin-top:8px; width:100%; padding:8px; background:linear-gradient(90deg,#7c3aed,#a855f7); border:none; border-radius:6px; color:#fff; font-weight:800; font-size:0.82rem; cursor:pointer; transition:all 0.2s;">
+                    ✅ USAR ESTE MULTIPLICADOR NA MINHA REGEDIT
+                  </button>
+                </div>
+
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                  <button onclick="resetRemada()" type="button"
+                    style="flex:1; padding:6px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#9ca3af; font-size:0.75rem; cursor:pointer;">
+                    🔄 Resetar
+                  </button>
+                  <div style="flex:3; font-size:0.68rem; color:#6b7280; display:flex; align-items:center; line-height:1.3;">
+                    Quanto mais rápida a remada → multiplicador menor (controle). Lenta → multiplicador maior (impulso).
+                  </div>
+                </div>
+              </div>
+              <!-- ───────────────────────────────────────────────────────── -->
+
+              <!-- Campo oculto que guarda o valor real enviado ao backend -->
+              <input type="hidden" id="adapt-style-value" value="equilibrado">
             </div>
+
 
             <button class="btn btn-primary" id="btn-apply-adaptive-reg" style="width:100%; background: linear-gradient(90deg, #f59e0b, #ef4444); border:none; font-size:0.95rem; font-weight:900; letter-spacing:0.5px; padding:13px; border-radius:8px; cursor:pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(239,68,68,0.35);">
               ⚡ GERAR &amp; APLICAR MINHA REGEDIT PERSONALIZADA
