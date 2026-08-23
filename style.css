@@ -1119,3 +1119,22 @@ select {
   color: #ffffff;
 }
 
+/* Animações e Estilos de Atualização */
+@keyframes pulseUpdate {
+  0% { transform: translateY(-50%) scale(1); box-shadow: 0 0 8px rgba(239, 68, 68, 0.6); }
+  50% { transform: translateY(-50%) scale(1.1); box-shadow: 0 0 16px rgba(245, 158, 11, 0.9); }
+  100% { transform: translateY(-50%) scale(1); box-shadow: 0 0 8px rgba(239, 68, 68, 0.6); }
+}
+
+@keyframes slideDownAlert {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.update-card-highlight {
+  border: 2px solid #ef4444 !important;
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.35) !important;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(0, 0, 0, 0.6)) !important;
+}
+
+

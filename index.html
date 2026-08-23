@@ -47,8 +47,9 @@
           <button class="nav-item" data-tab="emulador">
             <span class="nav-icon">🎮</span> Emulador
           </button>
-          <button class="nav-item" data-tab="minha-config">
+          <button class="nav-item" data-tab="minha-config" style="position: relative;">
             <span class="nav-icon">💾</span> Minha Config
+            <span id="nav-update-badge" style="display: none; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: linear-gradient(90deg, #ef4444, #f59e0b); color: #fff; font-size: 9px; font-weight: 900; padding: 2px 6px; border-radius: 6px; box-shadow: 0 0 10px rgba(239, 68, 68, 0.8); animation: pulseUpdate 1.5s infinite;">NOVO 🔥</span>
           </button>
           <button class="nav-item" data-tab="pc-fraco" style="color: #f59e0b; font-weight: 700;">
             <span class="nav-icon">🥔</span> PC Fraco (Ultra FPS)
@@ -63,6 +64,21 @@
 
       <!-- Content Area -->
       <main class="content-area">
+        <!-- BANNER GLOBAL DE AVISO DE ATUALIZAÇÃO -->
+        <div id="global-update-alert" style="display: none; background: linear-gradient(90deg, rgba(239, 68, 68, 0.95), rgba(245, 158, 11, 0.95)); color: #fff; padding: 10px 16px; border-radius: 8px; margin: 10px 24px 0 24px; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.45); align-items: center; justify-content: space-between; gap: 12px; z-index: 1000;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 1.5rem;">🚀</span>
+            <div>
+              <strong style="font-size: 13px; letter-spacing: 0.3px; display: block;" id="global-update-text">NOVA ATUALIZAÇÃO DISPONÍVEL!</strong>
+              <div style="font-size: 11.5px; opacity: 0.95;" id="global-update-subtext">Uma nova versão do Loord Optimizer com otimizações foi lançada.</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button id="btn-global-update-action" style="background: #ffffff; color: #b91c1c; border: none; font-weight: 900; font-size: 12px; padding: 7px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 10px rgba(0,0,0,0.25);">⚡ ATUALIZAR AGORA</button>
+            <button id="btn-global-update-close" style="background: transparent; border: none; color: #fff; font-size: 16px; cursor: pointer; opacity: 0.8; padding: 4px 8px; line-height: 1;">✖</button>
+          </div>
+        </div>
+
         
         <!-- TAB: CALCULADORA SENSE -->
         <section id="tab-calculadora" class="tab-content">
