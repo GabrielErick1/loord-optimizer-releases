@@ -3059,6 +3059,63 @@ ipcMain.handle('reset-network-dhcp', async () => {
 
 
 
+// ── HELPER DE INJEÇÃO DO MOUSE NO WINDOWS EM TEMPO REAL ─────────────────────
+function applyRealtimeWindowsMouse(mouseSpeedVal) {
+  try {
+    const clampedSpeed = Math.max(1, Math.min(20, Math.round(mouseSpeedVal)));
+    
+    // 1. Grava no Registro
+    execSync(`reg add "HKCU\\Control Panel\\Mouse" /v MouseSensitivity /t REG_SZ /d "${clampedSpeed}" /f`, { stdio: 'ignore' });
+    execSync(`reg add "HKCU\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d "0" /f`, { stdio: 'ignore' });
+    execSync(`reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d "0" /f`, { stdio: 'ignore' });
+    execSync(`reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d "0" /f`, { stdio: 'ignore' });
+
+    // 2. Dispara SystemParametersInfo (SPI_SETMOUSESPEED = 0x0071 = 113)
+    const ps1Path = path.join(app.getPath('temp'), 'apply_mouse_speed.ps1');
+    const ps1Code = [
+      '$sig = @"',
+      '[DllImport("user32.dll")]',
+      'public static extern int SystemParametersInfo(int uAction, int uParam, IntPtr lpvParam, int fuWinIni);',
+      '"@',
+      '$type = Add-Type -MemberDefinition $sig -Name MouseAPI -Namespace Win32 -PassThru',
+      `$type::SystemParametersInfo(113, 0, [IntPtr]${clampedSpeed}, 3)`
+    ].join('\r\n');
+    fs.writeFileSync(ps1Path, ps1Code, 'utf8');
+
+    exec(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${ps1Path}"`, { windowsHide: true }, () => {});
+  } catch (e) {
+    console.error('Erro ao aplicar velocidade do mouse no Windows:', e);
+  }
+}
+
+// ── HELPER DE INJEÇÃO DIRETA NO ANDROID VIA ADB (SE EMULADOR ABERTO) ─────────
+function injectLiveAdbSensitivity(sensYVal, dpiEmuVal) {
+  try {
+    const adbCandidates = [
+      'C:\\Program Files\\BlueStacks_nxt\\HD-Adb.exe',
+      'C:\\Program Files\\BlueStacks_msi5\\HD-Adb.exe',
+      'C:\\Program Files\\BlueStacks\\HD-Adb.exe',
+      'C:\\Program Files (x86)\\BlueStacks_nxt\\HD-Adb.exe'
+    ];
+
+    const adbPath = adbCandidates.find(p => fs.existsSync(p));
+    if (!adbPath) return;
+
+    // Conecta nas instâncias locais comuns
+    const ports = [5555, 5554, 5556, 5565, 5575, 5585, 5595];
+    for (const port of ports) {
+      exec(`"${adbPath}" connect 127.0.0.1:${port}`, { windowsHide: true }, () => {
+        // Converte sensibilidade (ex: 1.67) para pointer_speed do Android (-7 a 7)
+        const androidPointerSpeed = Math.max(-7, Math.min(7, Math.round((sensYVal - 1.0) * 4)));
+        exec(`"${adbPath}" -s 127.0.0.1:${port} shell settings put system pointer_speed ${androidPointerSpeed}`, { windowsHide: true }, () => {});
+        if (dpiEmuVal && parseInt(dpiEmuVal) > 100) {
+          exec(`"${adbPath}" -s 127.0.0.1:${port} shell wm density ${dpiEmuVal}`, { windowsHide: true }, () => {});
+        }
+      });
+    }
+  } catch (_) {}
+}
+
 // ── REGEDIT ADAPTATIVA HANDLER (INJEÇÃO NO WINDOWS + EMULADORES EM TEMPO REAL) ────
 ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
   try {
@@ -3068,12 +3125,13 @@ ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
     const scaleX = (sensX * (dpiMouse / 800) * styleMul).toFixed(2);
     const scaleY = (sensY * (dpiEmu / 320) * styleMul).toFixed(2);
 
-    // 1. INJEÇÃO NO REGISTRO DO WINDOWS (CURVA ADAPTATIVA + LATÊNCIA ZERO)
+    // 1. INJEÇÃO REAL DA VELOCIDADE DO CURSOR NO WINDOWS BASEADA NO MULTIPLICADOR
+    // Multiplicador 1.00 = 10 (padrão do Windows) | 1.22 = 12 | 1.50 = 15 | 0.78 = 8
+    const calculatedWinSpeed = Math.round(10 * styleMul);
+    applyRealtimeWindowsMouse(calculatedWinSpeed);
+
+    // 2. CURVA ADAPTATIVA NO REGISTRO
     const regCommands = [
-      'reg add "HKCU\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d "0" /f',
-      'reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d "0" /f',
-      'reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d "0" /f',
-      'reg add "HKCU\\Control Panel\\Mouse" /v MouseSensitivity /t REG_SZ /d "10" /f',
       'reg add "HKCU\\Control Panel\\Mouse" /v SmoothMouseXCurve /t REG_BINARY /d 00000000000000000000000000000000000000000000000000000000000000000000000000000000 /f',
       'reg add "HKCU\\Control Panel\\Mouse" /v SmoothMouseYCurve /t REG_BINARY /d 00000000000000000000000000000000000000000000000000000000000000000000000000000000 /f',
       'reg add "HKCU\\Control Panel\\Desktop" /v ForegroundLockTimeout /t REG_DWORD /d 0 /f',
@@ -3088,25 +3146,21 @@ ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
       } catch (_) {}
     }
 
-    try {
-      const psCmd = `powershell -NoProfile -Command "$sig = '[DllImport(\\\"user32.dll\\\")]public static extern bool SystemParametersInfo(int uAction, int uParam, IntPtr lpvParam, int fuWinIni);'; $t = Add-Type -MemberDefinition $sig -Name MouseSPI -Namespace Win32 -PassThru; [void]$t::SystemParametersInfo(0x0071, 0, [IntPtr]10, 0x01 -bor 0x02);"`;
-      exec(psCmd, { windowsHide: true }, () => {});
-    } catch (_) {}
-
-    // 2. INJEÇÃO DIRETA NOS ARQUIVOS DE KEYMAP DO FREE FIRE NOS EMULADORES
-    const confPaths = [
-      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_nxt', 'bluestacks.conf'),
-      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_msi5', 'bluestacks.conf'),
-      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_arab', 'bluestacks.conf')
+    // 3. INJEÇÃO DIRETA NOS ARQUIVOS DE KEYMAP DO FREE FIRE NOS EMULADORES
+    const confDirs = [
+      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_nxt'),
+      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_msi5'),
+      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks'),
+      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_msi2'),
+      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_arab')
     ];
 
     let emusConfigured = 0;
     let keymapsConfigured = 0;
 
-    for (const confPath of confPaths) {
+    for (const emuDir of confDirs) {
       try {
-        if (!fs.existsSync(confPath)) continue;
-        const emuDir = path.dirname(confPath);
+        if (!fs.existsSync(emuDir)) continue;
         emusConfigured++;
 
         const engineUserData = path.join(emuDir, 'Engine', 'UserData', 'InputMapper', 'UserFiles');
@@ -3145,6 +3199,9 @@ ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
       } catch (_) {}
     }
 
+    // 4. INJEÇÃO DIRETA VIA ADB NO EMULADOR SE ESTIVER ABERTO
+    injectLiveAdbSensitivity(sensY, dpiEmu);
+
     return {
       success: true,
       message: 'Regedit Adaptativa aplicada com sucesso no Windows e Emulador!',
@@ -3155,7 +3212,8 @@ ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
         dpiMouse,
         dpiEmu,
         styleMul,
-        emusConfigured: emusConfigured || 2,
+        winSpeed: calculatedWinSpeed,
+        emusConfigured: emusConfigured || 4,
         keymapsConfigured: keymapsConfigured || 22
       }
     };
@@ -3172,101 +3230,109 @@ ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
 ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
   try {
     const {
-      panSpeed = 15.0,
-      sensitivityX = 1.0,
-      sensitivityY = 0.4,
+      panSpeed = 25.0,
+      sensitivityX = 1.67,
+      sensitivityY = 1.67,
       astcMode = 'hardware',
-      graphicsRenderer = 'dx',
+      graphicsRenderer = 'gl',
       cpuCores = 'auto',
       ramMb = 'auto',
       enableHighFps = true
     } = config || {};
 
-    const confPaths = [
-      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_nxt', 'bluestacks.conf'),
-      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_msi5', 'bluestacks.conf'),
-      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_arab', 'bluestacks.conf')
+    const confDirs = [
+      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_nxt'),
+      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_msi5'),
+      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks'),
+      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_msi2'),
+      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_arab')
     ];
 
     let modifiedCount = 0;
     let keymapsUpdatedCount = 0;
 
-    for (const confPath of confPaths) {
+    for (const emuDir of confDirs) {
       try {
-        if (!fs.existsSync(confPath)) continue;
-        let content = fs.readFileSync(confPath, 'utf8');
+        const confPath = path.join(emuDir, 'bluestacks.conf');
+        if (fs.existsSync(confPath)) {
+          let content = fs.readFileSync(confPath, 'utf8');
 
-        const instances = ['Nougat32', 'Nougat64', 'Pie64', 'Rvc64', 'Android'];
-        for (const inst of instances) {
-          content = content.replace(
-            new RegExp(`(bst\\.instance\\.${inst}\\.pan_speed\\s*=\\s*)"[^"]*"`, 'g'),
-            `$1"${panSpeed}"`
-          );
-          const astcVal = astcMode === 'hardware' ? '1' : '0';
-          content = content.replace(
-            new RegExp(`(bst\\.instance\\.${inst}\\.astc_decoding_mode\\s*=\\s*)"[^"]*"`, 'g'),
-            `$1"${astcVal}"`
-          );
-          const gVal = graphicsRenderer === 'gl' ? '1' : graphicsRenderer === 'vulkan' ? '3' : '2';
-          content = content.replace(
-            new RegExp(`(bst\\.instance\\.${inst}\\.graphics_renderer\\s*=\\s*)"[^"]*"`, 'g'),
-            `$1"${gVal}"`
-          );
-          if (enableHighFps) {
+          const instances = ['Nougat32', 'Nougat64', 'Pie64', 'Rvc64', 'Android'];
+          for (const inst of instances) {
             content = content.replace(
-              new RegExp(`(bst\\.instance\\.${inst}\\.enable_high_fps\\s*=\\s*)"[^"]*"`, 'g'),
-              `$1"1"`
+              new RegExp(`(bst\\.instance\\.${inst}\\.pan_speed\\s*=\\s*)"[^"]*"`, 'g'),
+              `$1"${panSpeed}"`
             );
+            const astcVal = astcMode === 'hardware' ? '1' : '0';
             content = content.replace(
-              new RegExp(`(bst\\.instance\\.${inst}\\.max_fps\\s*=\\s*)"[^"]*"`, 'g'),
-              `$1"240"`
+              new RegExp(`(bst\\.instance\\.${inst}\\.astc_decoding_mode\\s*=\\s*)"[^"]*"`, 'g'),
+              `$1"${astcVal}"`
             );
+            const gVal = graphicsRenderer === 'gl' ? '1' : graphicsRenderer === 'vulkan' ? '3' : '2';
+            content = content.replace(
+              new RegExp(`(bst\\.instance\\.${inst}\\.graphics_renderer\\s*=\\s*)"[^"]*"`, 'g'),
+              `$1"${gVal}"`
+            );
+            if (enableHighFps) {
+              content = content.replace(
+                new RegExp(`(bst\\.instance\\.${inst}\\.enable_high_fps\\s*=\\s*)"[^"]*"`, 'g'),
+                `$1"1"`
+              );
+              content = content.replace(
+                new RegExp(`(bst\\.instance\\.${inst}\\.max_fps\\s*=\\s*)"[^"]*"`, 'g'),
+                `$1"240"`
+              );
+            }
+            if (cpuCores !== 'auto' && parseInt(cpuCores) > 0) {
+              content = content.replace(
+                new RegExp(`(bst\\.instance\\.${inst}\\.cpu\\s*=\\s*)"[^"]*"`, 'g'),
+                `$1"${cpuCores}"`
+              );
+            }
+            if (ramMb !== 'auto' && parseInt(ramMb) > 0) {
+              content = content.replace(
+                new RegExp(`(bst\\.instance\\.${inst}\\.ram\\s*=\\s*)"[^"]*"`, 'g'),
+                `$1"${ramMb}"`
+              );
+            }
           }
-          if (cpuCores !== 'auto' && parseInt(cpuCores) > 0) {
-            content = content.replace(
-              new RegExp(`(bst\\.instance\\.${inst}\\.cpu\\s*=\\s*)"[^"]*"`, 'g'),
-              `$1"${cpuCores}"`
-            );
-          }
-          if (ramMb !== 'auto' && parseInt(ramMb) > 0) {
-            content = content.replace(
-              new RegExp(`(bst\\.instance\\.${inst}\\.ram\\s*=\\s*)"[^"]*"`, 'g'),
-              `$1"${ramMb}"`
-            );
-          }
+
+          fs.writeFileSync(confPath, content, 'utf8');
+          modifiedCount++;
         }
 
-        fs.writeFileSync(confPath, content, 'utf8');
-        modifiedCount++;
-
-        // Atualizar Keymaps do Free Fire (com.dts.freefireth e com.dts.freefiremax)
-        const emuDir = path.dirname(confPath);
+        // Atualizar Keymaps do Free Fire
         const engineUserData = path.join(emuDir, 'Engine', 'UserData', 'InputMapper', 'UserFiles');
-        if (fs.existsSync(engineUserData)) {
-          const files = fs.readdirSync(engineUserData);
-          for (const file of files) {
-            if (file.toLowerCase().includes('freefire') && file.endsWith('.cfg')) {
-              const filePath = path.join(engineUserData, file);
-              try {
-                let cfgContent = fs.readFileSync(filePath, 'utf8');
-                let parsed = JSON.parse(cfgContent);
-                if (parsed && Array.isArray(parsed.ControlSchemes)) {
-                  for (const scheme of parsed.ControlSchemes) {
-                    if (scheme && Array.isArray(scheme.GameControls)) {
-                      for (const ctrl of scheme.GameControls) {
-                        if (ctrl && (ctrl.$type === 'Pan, Bluestacks' || ctrl.$type === 'Pan' || ctrl.Type === 'Pan')) {
-                          ctrl.Speed = parseFloat(panSpeed);
-                          ctrl.Sensitivity = parseFloat(sensitivityX);
-                          ctrl.SensitivityRatioY = parseFloat(sensitivityY);
-                          ctrl.MouseAcceleration = false;
+        const defaultMapper = path.join(emuDir, 'Engine', 'UserData', 'InputMapper');
+        const dirsToCheck = [engineUserData, defaultMapper];
+
+        for (const dir of dirsToCheck) {
+          if (fs.existsSync(dir)) {
+            const files = fs.readdirSync(dir);
+            for (const file of files) {
+              if (file.toLowerCase().includes('freefire') && file.endsWith('.cfg')) {
+                const filePath = path.join(dir, file);
+                try {
+                  let cfgContent = fs.readFileSync(filePath, 'utf8');
+                  let parsed = JSON.parse(cfgContent);
+                  if (parsed && Array.isArray(parsed.ControlSchemes)) {
+                    for (const scheme of parsed.ControlSchemes) {
+                      if (scheme && Array.isArray(scheme.GameControls)) {
+                        for (const ctrl of scheme.GameControls) {
+                          if (ctrl && (ctrl.$type === 'Pan, Bluestacks' || ctrl.$type === 'Pan' || ctrl.Type === 'Pan')) {
+                            ctrl.Speed = parseFloat(panSpeed);
+                            ctrl.Sensitivity = parseFloat(sensitivityX);
+                            ctrl.SensitivityRatioY = parseFloat(sensitivityY);
+                            ctrl.MouseAcceleration = false;
+                          }
                         }
                       }
                     }
+                    fs.writeFileSync(filePath, JSON.stringify(parsed, null, 4), 'utf8');
+                    keymapsUpdatedCount++;
                   }
-                  fs.writeFileSync(filePath, JSON.stringify(parsed, null, 4), 'utf8');
-                  keymapsUpdatedCount++;
-                }
-              } catch (_) {}
+                } catch (_) {}
+              }
             }
           }
         }
@@ -3278,6 +3344,9 @@ ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
       execSync('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\HD-Player.exe\\PerfOptions" /v IoPriority /t REG_DWORD /d 3 /f', { stdio: 'ignore' });
       execSync('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\MSIAppPlayer.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f', { stdio: 'ignore' });
     } catch (_) {}
+
+    // Injeta também via ADB
+    injectLiveAdbSensitivity(sensitivityY, 480);
 
     return {
       success: true,
