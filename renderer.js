@@ -2091,29 +2091,29 @@ if (btnPreset720p) {
 }
 
 // ─── Otimizador Competitivo de Pan & BlueStacks/MSI ──────────────────────
-const btnApplyCompTweak = document.getElementById('btn-apply-comp-tweak');
-const statusCompTweak = document.getElementById('status-comp-tweak');
-const optCpuRamAuto = document.getElementById('opt-cpu-ram-auto');
-
 async function loadHardwareSpecsForEmulator() {
   try {
-    if (window.api && window.api.getSystemHardwareInfo && optCpuRamAuto) {
+    if (window.api && window.api.getSystemHardwareInfo) {
       const info = await window.api.getSystemHardwareInfo();
       if (info) {
-        optCpuRamAuto.textContent = `⚡ Automático (Seu PC: ${info.totalCores}C / ${info.totalRamGB}GB RAM -> Alocar: ${info.recommendedCores}C / ${info.recommendedRamMB / 1024}GB)`;
+        document.querySelectorAll('[id^="opt-cpu-ram-auto"]').forEach(el => {
+          el.textContent = `⚡ Automático (Seu PC: ${info.totalCores}C / ${info.totalRamGB}GB RAM -> Alocar: ${info.recommendedCores}C / ${info.recommendedRamMB / 1024}GB)`;
+        });
       }
     }
   } catch (_) {}
 }
 loadHardwareSpecsForEmulator();
 
-if (btnApplyCompTweak) {
-  btnApplyCompTweak.addEventListener('click', async () => {
-    const panSpeed = document.getElementById('comp-pan-speed') ? document.getElementById('comp-pan-speed').value : '15.0';
-    const sensX = document.getElementById('comp-sens-x') ? document.getElementById('comp-sens-x').value : '1.0';
-    const sensY = document.getElementById('comp-sens-y') ? document.getElementById('comp-sens-y').value : '0.4';
-    const renderer = document.getElementById('comp-graphics-renderer') ? document.getElementById('comp-graphics-renderer').value : 'dx';
-    const cpuRamVal = document.getElementById('comp-cpu-ram') ? document.getElementById('comp-cpu-ram').value : 'auto';
+document.querySelectorAll('#btn-apply-comp-tweak').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const parentCard = btn.closest('.card') || document;
+    const panSpeed = parentCard.querySelector('#comp-pan-speed')?.value || '15.0';
+    const sensX = parentCard.querySelector('#comp-sens-x')?.value || '1.0';
+    const sensY = parentCard.querySelector('#comp-sens-y')?.value || '0.4';
+    const renderer = parentCard.querySelector('#comp-graphics-renderer')?.value || 'dx';
+    const cpuRamVal = parentCard.querySelector('#comp-cpu-ram')?.value || 'auto';
+    const statusComp = parentCard.querySelector('#status-comp-tweak') || document.getElementById('status-comp-tweak');
 
     let cpuCores = 'auto';
     let ramMb = 'auto';
@@ -2124,29 +2124,41 @@ if (btnApplyCompTweak) {
       ramMb = parts[1];
     }
 
-    btnApplyCompTweak.disabled = true;
-    btnApplyCompTweak.textContent = '⏳ Aplicando Otimizações...';
+    btn.disabled = true;
+    const oldText = btn.textContent;
+    btn.textContent = '⏳ Aplicando Otimizações...';
 
-    const res = await window.api.applyCompetitiveEmulatorTweak({
-      panSpeed: parseFloat(panSpeed),
-      sensitivityX: parseFloat(sensX),
-      sensitivityY: parseFloat(sensY),
-      astcMode: 'hardware',
-      graphicsRenderer: renderer,
-      cpuCores: cpuCores,
-      ramMb: ramMb,
-      enableHighFps: true
-    });
+    try {
+      const res = await window.api.applyCompetitiveEmulatorTweak({
+        panSpeed: parseFloat(panSpeed),
+        sensitivityX: parseFloat(sensX),
+        sensitivityY: parseFloat(sensY),
+        astcMode: 'hardware',
+        graphicsRenderer: renderer,
+        cpuCores: cpuCores,
+        ramMb: ramMb,
+        enableHighFps: true
+      });
 
-    btnApplyCompTweak.disabled = false;
-    btnApplyCompTweak.textContent = '✔️ Otimizações Aplicadas!';
+      btn.disabled = false;
+      btn.textContent = '✔️ Otimizações Aplicadas!';
+      setTimeout(() => { btn.textContent = oldText; }, 3000);
 
-    if (statusCompTweak) {
-      statusCompTweak.style.display = 'block';
-      statusCompTweak.innerText = res && res.message ? res.message : 'Otimizações aplicadas com sucesso!';
+      if (statusComp) {
+        statusComp.style.display = 'block';
+        statusComp.innerText = res && res.message ? res.message : 'Otimizações aplicadas com sucesso!';
+      }
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = oldText;
+      if (statusComp) {
+        statusComp.style.display = 'block';
+        statusComp.style.color = '#ef4444';
+        statusComp.innerText = 'Erro: ' + e.message;
+      }
     }
   });
-}
+});
 
 
 // ══════════════════════════════════════════════════════════════════════════════
