@@ -1035,84 +1035,19 @@ async function initApp() {
 initApp();
 
 // ═══════════════════════════════════════════════════════════════════════
-//  AUTO-UPDATE UI
+//  AUTO-UPDATE UI ENGINE
 // ═══════════════════════════════════════════════════════════════════════
-if (window.api.onUpdateAvailable) {
+let handleCheckUpdatesGlobal = null;
 
-  // Inject update banner styles once
-  const updateStyle = document.createElement('style');
-  updateStyle.textContent = `
-    #update-banner {
-      display: none;
-      position: fixed;
-      top: 46px;
-      right: 16px;
-      z-index: 9999;
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-      border: 1px solid rgba(99, 202, 183, 0.5);
-      border-radius: 10px;
-      padding: 10px 16px;
-      color: #e2e8f0;
-      font-size: 12px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-      animation: slideInRight 0.4s ease;
-      cursor: pointer;
-      max-width: 320px;
-    }
-    #update-banner.hidden { display: none !important; }
-    @keyframes slideInRight {
-      from { transform: translateX(120%); opacity: 0; }
-      to   { transform: translateX(0);   opacity: 1; }
-    }
-    #update-banner .upd-icon { font-size: 20px; flex-shrink: 0; }
-    #update-banner .upd-text { flex: 1; line-height: 1.4; }
-    #update-banner .upd-text strong { display: block; color: #63cab7; }
-    #update-banner .upd-text span   { color: #94a3b8; font-size: 11px; }
-    #update-btn {
-      background: #63cab7;
-      color: #0f172a;
-      border: none;
-      border-radius: 6px;
-      padding: 5px 12px;
-      font-size: 11px;
-      font-weight: 700;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: background 0.2s;
-    }
-    #update-btn:hover { background: #4db8a3; }
-    #update-btn:disabled { background: #64748b; cursor: not-allowed; }
-    #update-progress {
-      display: none;
-      font-size: 10px;
-      color: #63cab7;
-      text-align: center;
-      margin-top: 2px;
-    }
-  `;
-  document.head.appendChild(updateStyle);
+window.handleCheckUpdatesManual = function(btn) {
+  if (typeof handleCheckUpdatesGlobal === 'function') {
+    handleCheckUpdatesGlobal(true);
+  } else {
+    alert('🔍 Verificando atualizações...');
+  }
+};
 
-  // Create update banner element
-  const updateBanner = document.createElement('div');
-  updateBanner.id = 'update-banner';
-  updateBanner.className = 'hidden';
-  updateBanner.innerHTML = `
-    <div class="upd-icon">🚀</div>
-    <div class="upd-text">
-      <strong id="upd-title">Atualização disponível</strong>
-      <span id="upd-sub">Baixando em segundo plano...</span>
-    </div>
-    <button id="update-btn" disabled>Aguarde</button>
-  `;
-  document.body.appendChild(updateBanner);
-
-  const updTitle = document.getElementById('upd-title');
-  const updSub = document.getElementById('upd-sub');
-  const updBtn = document.getElementById('update-btn');
-
+function setupAutoUpdater() {
   const cardStatusTitle = document.getElementById('update-status-title');
   const cardStatusDesc = document.getElementById('update-status-desc');
   const btnCheckUpdate = document.getElementById('btn-check-update');
@@ -1131,7 +1066,7 @@ if (window.api.onUpdateAvailable) {
     try {
       const res = await window.api.checkForUpdates();
 
-      const curV = res?.currentVersion || '1.8.7';
+      const curV = res?.currentVersion || '1.9.4';
       const latV = res?.latestVersion || curV;
 
       const badge = document.getElementById('app-version-badge');
@@ -1151,7 +1086,7 @@ if (window.api.onUpdateAvailable) {
         if (cardStatusTitle) cardStatusTitle.innerHTML = `🚀 <b>Nova Versão v${latV} Disponível!</b>`;
         if (cardStatusDesc) cardStatusDesc.textContent = 'Clique abaixo para baixar e atualizar automaticamente estilo Play Store.';
 
-        // Exibe banner dinâmico no topo
+        // Exibe banner dinâmico no topo se houver
         const alertBanner = document.getElementById('global-update-alert');
         const alertTitle = document.getElementById('global-update-title');
         const alertBtnVer = document.getElementById('global-update-btn-ver');
@@ -1166,7 +1101,6 @@ if (window.api.onUpdateAvailable) {
           if (btnGlobalClose) {
             btnGlobalClose.onclick = () => { alertBanner.style.display = 'none'; };
           }
-
           if (btnGlobalNow) {
             btnGlobalNow.onclick = () => {
               const tabConfigBtn = document.querySelector('[data-tab="tab-minha-config"]');
@@ -1211,9 +1145,10 @@ if (window.api.onUpdateAvailable) {
               btnInstallNow.textContent = 'Tentar Novamente';
             }
           };
-          if (manual) {
-            alert(`🚀 Nova Atualização Encontrada!\n\n• Sua Versão Atual: v${curV}\n• Nova Versão Disponível: v${latV}\n\nClique no botão "Baixar e Atualizar" para instalar.`);
-          }
+        }
+
+        if (manual) {
+          alert(`🚀 Nova Atualização Encontrada!\n\n• Sua Versão Atual: v${curV}\n• Nova Versão Disponível: v${latV}\n\nClique no botão "Baixar e Atualizar" para instalar.`);
         }
       } else {
         const alertBanner = document.getElementById('global-update-alert');
@@ -1238,11 +1173,16 @@ if (window.api.onUpdateAvailable) {
       }
       if (cardStatusTitle) cardStatusTitle.innerHTML = `✔️ <b>Versão Verificada</b>`;
       if (cardStatusDesc) cardStatusDesc.textContent = 'Não há atualizações pendentes no momento.';
+      if (manual) {
+        alert(`✔️ Seu Loord Optimizer já está na versão mais recente!\n\nVocê já possui todas as otimizações e melhorias instaladas.`);
+      }
     }
   }
 
+  handleCheckUpdatesGlobal = handleCheckUpdates;
+
   // Progress listener
-  if (window.api.onUpdateDownloadProgress) {
+  if (window.api && window.api.onUpdateDownloadProgress) {
     window.api.onUpdateDownloadProgress((data) => {
       if (btnInstallNow && data) {
         const p = data.percent || 0;
@@ -1252,12 +1192,6 @@ if (window.api.onUpdateAvailable) {
     });
   }
 
-
-  // Manual Check Button & Global Handler
-  window.handleCheckUpdatesManual = function(btn) {
-    handleCheckUpdates(true);
-  };
-
   if (btnCheckUpdate) {
     btnCheckUpdate.addEventListener('click', () => handleCheckUpdates(true));
   }
@@ -1265,8 +1199,12 @@ if (window.api.onUpdateAvailable) {
   // Auto Check on App Startup
   handleCheckUpdates(false);
 }
-document.addEventListener('DOMContentLoaded', setupAutoUpdater);
-setupAutoUpdater();
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setupAutoUpdater);
+} else {
+  setupAutoUpdater();
+}
 // ═══════════════════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════════════════
 
