@@ -2753,11 +2753,37 @@ async function loadHardwareSpecsForEmulator() {
 }
 loadHardwareSpecsForEmulator();
 
+function parseSensValue(val, fallback = 1.0) {
+  if (val === undefined || val === null || val === '') return fallback;
+  const cleaned = String(val).replace(',', '.').trim();
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? fallback : num;
+}
+
+// Sincronização entre inputs da Regedit e do Pan Optimizer
+function syncSensInputs() {
+  const adaptX = document.getElementById('adapt-sens-x');
+  const adaptY = document.getElementById('adapt-sens-y');
+  const compX = document.getElementById('comp-sens-x');
+  const compY = document.getElementById('comp-sens-y');
+
+  if (adaptX && compX) {
+    adaptX.addEventListener('input', () => { compX.value = adaptX.value; });
+    compX.addEventListener('input', () => { adaptX.value = compX.value; });
+  }
+  if (adaptY && compY) {
+    adaptY.addEventListener('input', () => { compY.value = adaptY.value; });
+    compY.addEventListener('input', () => { adaptY.value = compY.value; });
+  }
+}
+document.addEventListener('DOMContentLoaded', syncSensInputs);
+syncSensInputs();
+
 window.handleApplyCompTweak = async function(btn) {
   const targetBtn = btn || document.getElementById('btn-apply-comp-tweak');
   const panSpeed = document.getElementById('comp-pan-speed')?.value || '25.0';
-  const sensX = parsePtBrFloat(document.getElementById('comp-sens-x')?.value, 1.67);
-  const sensY = parsePtBrFloat(document.getElementById('comp-sens-y')?.value, 1.0);
+  const sensX = parseSensValue(document.getElementById('comp-sens-x')?.value, 1.67);
+  const sensY = parseSensValue(document.getElementById('comp-sens-y')?.value, 1.67);
   const renderer = document.getElementById('comp-graphics-renderer')?.value || 'gl';
   const cpuRamVal = document.getElementById('comp-cpu-ram')?.value || 'auto';
   const statusComp = document.getElementById('status-comp-tweak');
@@ -2779,7 +2805,7 @@ window.handleApplyCompTweak = async function(btn) {
 
   try {
     const res = await window.api.applyCompetitiveEmulatorTweak({
-      panSpeed: parseFloat(panSpeed),
+      panSpeed: parseFloat(String(panSpeed).replace(',', '.')),
       sensitivityX: sensX,
       sensitivityY: sensY,
       astcMode: 'hardware',
@@ -2831,5 +2857,6 @@ window.handleApplyCompTweak = async function(btn) {
     }
   }
 };
+
 
 

@@ -3229,16 +3229,18 @@ ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
 // ── OTIMIZADOR COMPETITIVO DE PAN & ENGINE HANDLER ─────────────────────────
 ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
   try {
-    const {
-      panSpeed = 25.0,
-      sensitivityX = 1.67,
-      sensitivityY = 1.67,
-      astcMode = 'hardware',
-      graphicsRenderer = 'gl',
-      cpuCores = 'auto',
-      ramMb = 'auto',
-      enableHighFps = true
-    } = config || {};
+    const rawPan = config?.panSpeed ?? 25.0;
+    const rawSensX = config?.sensitivityX ?? 1.67;
+    const rawSensY = config?.sensitivityY ?? 1.67;
+
+    const panSpeed = typeof rawPan === 'string' ? parseFloat(rawPan.replace(',', '.')) : parseFloat(rawPan) || 25.0;
+    const sensitivityX = typeof rawSensX === 'string' ? parseFloat(rawSensX.replace(',', '.')) : parseFloat(rawSensX) || 1.67;
+    const sensitivityY = typeof rawSensY === 'string' ? parseFloat(rawSensY.replace(',', '.')) : parseFloat(rawSensY) || 1.67;
+    const astcMode = config?.astcMode || 'hardware';
+    const graphicsRenderer = config?.graphicsRenderer || 'gl';
+    const cpuCores = config?.cpuCores || 'auto';
+    const ramMb = config?.ramMb || 'auto';
+    const enableHighFps = config?.enableHighFps !== false;
 
     const confDirs = [
       path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_nxt'),
