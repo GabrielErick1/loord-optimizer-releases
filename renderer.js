@@ -2160,3 +2160,183 @@ if (btnApplyCompTweak) {
   });
 }
 
+
+// ══════════════════════════════════════════════════════════════════════════════
+// REGEDIT ADAPTATIVA PERSONALIZADA
+// ══════════════════════════════════════════════════════════════════════════════
+
+(function initAdaptiveRegedit() {
+  // Elementos
+  const btnApply     = document.getElementById('btn-apply-adaptive-reg');
+  const inpDpiMouse  = document.getElementById('adapt-dpi-mouse');
+  const inpDpiEmu    = document.getElementById('adapt-dpi-emu');
+  const inpSensX     = document.getElementById('adapt-sens-x');
+  const inpSensY     = document.getElementById('adapt-sens-y');
+  const resultBox    = document.getElementById('adaptive-reg-result');
+  const resultSummary= document.getElementById('adaptive-reg-summary');
+  const errorBox     = document.getElementById('adaptive-reg-error');
+  const errorMsg     = document.getElementById('adaptive-reg-error-msg');
+
+  if (!btnApply) return;
+
+  // ── Highlight visual do estilo selecionado ─────────────────────────────
+  const styleLabels = {
+    suave:       document.getElementById('style-label-suave'),
+    equilibrado: document.getElementById('style-label-equilibrado'),
+    pesada:      document.getElementById('style-label-pesada'),
+  };
+
+  const styleBorders = {
+    suave:       'rgba(56,189,248,0.9)',
+    equilibrado: 'rgba(251,191,36,0.9)',
+    pesada:      'rgba(239,68,68,0.9)',
+  };
+
+  const styleBgs = {
+    suave:       'rgba(56,189,248,0.18)',
+    equilibrado: 'rgba(251,191,36,0.22)',
+    pesada:      'rgba(239,68,68,0.18)',
+  };
+
+  function updateStyleHighlight() {
+    const selected = document.querySelector('input[name="adapt-style"]:checked');
+    if (!selected) return;
+    const val = selected.value;
+    Object.keys(styleLabels).forEach(key => {
+      const lbl = styleLabels[key];
+      if (!lbl) return;
+      if (key === val) {
+        lbl.style.border   = `2px solid ${styleBorders[key]}`;
+        lbl.style.background = styleBgs[key];
+        lbl.style.transform = 'scale(1.03)';
+        lbl.style.boxShadow = `0 0 14px ${styleBorders[key].replace('0.9','0.35')}`;
+      } else {
+        lbl.style.border   = `2px solid ${styleBorders[key].replace('0.9','0.3')}`;
+        lbl.style.background = styleBgs[key].replace('0.18','0.06').replace('0.22','0.06');
+        lbl.style.transform = 'scale(1)';
+        lbl.style.boxShadow = 'none';
+      }
+    });
+  }
+
+  document.querySelectorAll('input[name="adapt-style"]').forEach(radio => {
+    radio.addEventListener('change', updateStyleHighlight);
+  });
+  updateStyleHighlight(); // aplica ao carregar
+
+  // ── Descrição dinâmica baseada nos valores inseridos ──────────────────
+  function getStyleDescription(sensX, sensY, style) {
+    const ratio = sensY / sensX;
+    const styleNames = { suave: '🌊 Suave', equilibrado: '⚡ Equilibrado', pesada: '🔥 Pesada' };
+    let modeDesc = '';
+    if (ratio < 0.5)       modeDesc = 'Capa Travada (Y muito menor que X — forte puxada pra cabeça)';
+    else if (ratio < 0.85)  modeDesc = 'Head Lock (Y menor que X — boa subida de capa sem escorregar)';
+    else if (ratio <= 1.15) modeDesc = '1:1 Simétrico (Y ≈ X — mira uniforme em todos os eixos)';
+    else                   modeDesc = 'Y Dominante (Y maior que X — mira sobe mais rápido que gira)';
+    return `Modo detectado: ${modeDesc} | Estilo: ${styleNames[style] || style}`;
+  }
+
+  // ── Preview em tempo real ao digitar ──────────────────────────────────
+  function updatePreview() {
+    const sX = parseFloat(inpSensX?.value) || 0;
+    const sY = parseFloat(inpSensY?.value) || 0;
+    const style = document.querySelector('input[name="adapt-style"]:checked')?.value || 'equilibrado';
+    if (sX > 0 && sY > 0 && resultBox && resultBox.style.display !== 'none') {
+      if (resultSummary) {
+        const firstLine = resultSummary.innerHTML.split('<br>')[0];
+        // Atualiza a segunda linha com o modo detectado
+      }
+    }
+  }
+
+  [inpSensX, inpSensY].forEach(el => {
+    if (el) el.addEventListener('input', updatePreview);
+  });
+
+  // ── Aplicar ──────────────────────────────────────────────────────────
+  btnApply.addEventListener('click', async () => {
+    // Esconde resultados anteriores
+    if (resultBox)  resultBox.style.display  = 'none';
+    if (errorBox)   errorBox.style.display   = 'none';
+
+    const dpiMouse = parseFloat(inpDpiMouse?.value);
+    const dpiEmu   = parseFloat(inpDpiEmu?.value);
+    const sensX    = parseFloat(inpSensX?.value);
+    const sensY    = parseFloat(inpSensY?.value);
+    const style    = document.querySelector('input[name="adapt-style"]:checked')?.value || 'equilibrado';
+
+    // Validação visual
+    if (!dpiMouse || dpiMouse < 100) {
+      showAdaptError('DPI do Mouse Físico inválido. Mínimo: 100.');
+      return;
+    }
+    if (!dpiEmu || dpiEmu < 100) {
+      showAdaptError('DPI do Emulador inválido. Mínimo: 100.');
+      return;
+    }
+    if (!sensX || sensX < 0.1) {
+      showAdaptError('Sensibilidade X inválida. Mínimo: 0.10.');
+      return;
+    }
+    if (!sensY || sensY < 0.1) {
+      showAdaptError('Sensibilidade Y inválida. Mínimo: 0.10.');
+      return;
+    }
+
+    // Animação do botão
+    btnApply.disabled = true;
+    btnApply.style.opacity = '0.7';
+    btnApply.textContent = '⏳ Calculando e Aplicando...';
+
+    try {
+      const res = await window.api.applyAdaptiveRegedit({ dpiMouse, dpiEmu, sensX, sensY, style });
+
+      if (res && res.success) {
+        const s = res.summary || {};
+        const ratioYX = s.ratioYX || (sensY / sensX).toFixed(3);
+        const styleEmoji = { suave: '🌊', equilibrado: '⚡', pesada: '🔥' }[style] || '⚡';
+        const modeDesc = getStyleDescription(sensX, sensY, style);
+
+        if (resultSummary) {
+          resultSummary.innerHTML = [
+            `🖱️ <b>Mouse:</b> ${dpiMouse} DPI &nbsp;|&nbsp; 🎮 <b>Emulador:</b> ${dpiEmu} DPI`,
+            `↔️ <b>Sens X:</b> ${sensX} &nbsp;|&nbsp; ↕️ <b>Sens Y:</b> ${sensY} &nbsp;|&nbsp; <b>Razão Y/X:</b> ${ratioYX}`,
+            `${styleEmoji} <b>Estilo:</b> ${style.charAt(0).toUpperCase() + style.slice(1)}`,
+            `🔬 <b>${modeDesc}</b>`,
+            `⚡ <b>Curva X calculada:</b> fator ${s.scaleX}x &nbsp;|&nbsp; <b>Curva Y:</b> fator ${s.scaleY}x`,
+            `✅ <b>Aplicado em tempo real</b> — sem precisar reiniciar o PC!`,
+          ].join('<br>');
+        }
+        if (resultBox) resultBox.style.display = 'block';
+
+        // Animação de sucesso no botão
+        btnApply.style.background = 'linear-gradient(90deg, #22c55e, #16a34a)';
+        btnApply.textContent = '✅ REGEDIT PERSONALIZADA APLICADA!';
+        setTimeout(() => {
+          btnApply.style.background = 'linear-gradient(90deg, #f59e0b, #ef4444)';
+          btnApply.textContent = '⚡ GERAR & APLICAR MINHA REGEDIT PERSONALIZADA';
+          btnApply.disabled = false;
+          btnApply.style.opacity = '1';
+        }, 4000);
+      } else {
+        showAdaptError(res?.error || 'Erro desconhecido ao aplicar regedit.');
+        resetBtn();
+      }
+    } catch (e) {
+      showAdaptError('Erro de comunicação: ' + e.message);
+      resetBtn();
+    }
+  });
+
+  function showAdaptError(msg) {
+    if (errorMsg) errorMsg.textContent = msg;
+    if (errorBox) errorBox.style.display = 'block';
+  }
+
+  function resetBtn() {
+    btnApply.disabled = false;
+    btnApply.style.opacity = '1';
+    btnApply.textContent = '⚡ GERAR & APLICAR MINHA REGEDIT PERSONALIZADA';
+  }
+
+})();

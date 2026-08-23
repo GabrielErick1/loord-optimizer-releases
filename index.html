@@ -124,13 +124,86 @@
               💡 <i>Nota: Recomendamos sempre manter X e Y padronizados em 2 para puxar Full Capa sem passar da cabeça. Porém, caso sinta a sensibilidade muito alta para o seu estilo de jogo, adapte X e Y como achar melhor!</i>
             </div>
           </div>
-          
+
+          <!-- ════ REGEDIT ADAPTATIVA PERSONALIZADA ════ -->
+          <div class="card" style="border: 2px solid rgba(251, 191, 36, 0.7); background: linear-gradient(135deg, rgba(251,191,36,0.08), rgba(0,0,0,0.6)); box-shadow: 0 0 22px rgba(251,191,36,0.2); margin-bottom: 22px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+              <span style="font-size: 1.3rem;">🧬</span>
+              <span style="font-size: 1.05rem; font-weight: 900; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.5px;">REGEDIT ADAPTATIVA PERSONALIZADA</span>
+              <span style="background: linear-gradient(90deg,#f59e0b,#ef4444); color:#fff; font-size:0.6rem; padding:2px 8px; border-radius:4px; font-weight:900;">🔥 VIP EXCLUSIVO</span>
+            </div>
+            <p style="font-size: 0.82rem; color: #fde68a; margin: 0 0 16px 0; line-height: 1.5;">Preencha seus valores reais do emulador. O sistema vai <strong>calcular e gerar uma regedit única</strong> calibrada para a sua sensibilidade — sem input lag, sem trava, mira grudando na capa.</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+              <div class="input-field">
+                <label for="adapt-dpi-mouse" style="font-size:0.8rem; color:#fde68a; font-weight:700;">🖱️ DPI do Mouse Físico</label>
+                <input type="number" id="adapt-dpi-mouse" value="800" min="100" max="32000" step="100" placeholder="ex: 800, 1600, 3200..." style="margin-top:4px;">
+                <span style="font-size:0.7rem; color:#9ca3af; margin-top:3px; display:block;">Veja no software do seu mouse (G Hub, Synapse...)</span>
+              </div>
+              <div class="input-field">
+                <label for="adapt-dpi-emu" style="font-size:0.8rem; color:#fde68a; font-weight:700;">🎮 DPI do Emulador</label>
+                <input type="number" id="adapt-dpi-emu" value="480" min="100" max="2000" step="10" placeholder="ex: 480, 750..." style="margin-top:4px;">
+                <span style="font-size:0.7rem; color:#9ca3af; margin-top:3px; display:block;">Configurado dentro do BlueStacks / MSI</span>
+              </div>
+              <div class="input-field">
+                <label for="adapt-sens-x" style="font-size:0.8rem; color:#fde68a; font-weight:700;">↔️ Sensibilidade X (Lateral/Giro)</label>
+                <input type="number" id="adapt-sens-x" value="2.00" min="0.10" max="10.00" step="0.01" placeholder="ex: 2.00, 0.34..." style="margin-top:4px;">
+                <span style="font-size:0.7rem; color:#9ca3af; margin-top:3px; display:block;">Sens X nas configurações do Keymap</span>
+              </div>
+              <div class="input-field">
+                <label for="adapt-sens-y" style="font-size:0.8rem; color:#fde68a; font-weight:700;">↕️ Sensibilidade Y (Capa/Subida)</label>
+                <input type="number" id="adapt-sens-y" value="0.40" min="0.10" max="10.00" step="0.01" placeholder="ex: 0.40, 0.36..." style="margin-top:4px;">
+                <span style="font-size:0.7rem; color:#9ca3af; margin-top:3px; display:block;">Sens Y nas configurações do Keymap</span>
+              </div>
+            </div>
+
+            <!-- Estilo da Mira -->
+            <div style="margin-bottom: 16px;">
+              <label style="font-size:0.85rem; color:#fde68a; font-weight:800; display:block; margin-bottom:10px;">⚙️ Estilo de Mira — Como você gosta de jogar?</label>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                <label id="style-label-suave" style="cursor:pointer; border: 2px solid rgba(56,189,248,0.5); border-radius:8px; padding:10px 8px; text-align:center; background: rgba(56,189,248,0.08); transition: all 0.2s;">
+                  <input type="radio" name="adapt-style" value="suave" style="display:none;">
+                  <div style="font-size:1.2rem; margin-bottom:3px;">🌊</div>
+                  <div style="font-size:0.8rem; font-weight:800; color:#38bdf8;">SUAVE</div>
+                  <div style="font-size:0.68rem; color:#7dd3fc; margin-top:2px; line-height:1.3;">Mira fluida e controlada. Bom pra iniciantes e quem usa sens baixa.</div>
+                </label>
+                <label id="style-label-equilibrado" style="cursor:pointer; border: 2px solid rgba(251,191,36,0.8); border-radius:8px; padding:10px 8px; text-align:center; background: rgba(251,191,36,0.15); transition: all 0.2s;">
+                  <input type="radio" name="adapt-style" value="equilibrado" checked style="display:none;">
+                  <div style="font-size:1.2rem; margin-bottom:3px;">⚡</div>
+                  <div style="font-size:0.8rem; font-weight:800; color:#fbbf24;">EQUILIBRADO</div>
+                  <div style="font-size:0.68rem; color:#fde68a; margin-top:2px; line-height:1.3;">Balanceia capa e controle. Recomendado para a maioria.</div>
+                </label>
+                <label id="style-label-pesada" style="cursor:pointer; border: 2px solid rgba(239,68,68,0.5); border-radius:8px; padding:10px 8px; text-align:center; background: rgba(239,68,68,0.08); transition: all 0.2s;">
+                  <input type="radio" name="adapt-style" value="pesada" style="display:none;">
+                  <div style="font-size:1.2rem; margin-bottom:3px;">🔥</div>
+                  <div style="font-size:0.8rem; font-weight:800; color:#f87171;">PESADA</div>
+                  <div style="font-size:0.68rem; color:#fca5a5; margin-top:2px; line-height:1.3;">Mira travada e agressiva. Puxada forte pra cima. Quem usa sens alta.</div>
+                </label>
+              </div>
+            </div>
+
+            <button class="btn btn-primary" id="btn-apply-adaptive-reg" style="width:100%; background: linear-gradient(90deg, #f59e0b, #ef4444); border:none; font-size:0.95rem; font-weight:900; letter-spacing:0.5px; padding:13px; border-radius:8px; cursor:pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(239,68,68,0.35);">
+              ⚡ GERAR &amp; APLICAR MINHA REGEDIT PERSONALIZADA
+            </button>
+
+            <!-- Resultado -->
+            <div id="adaptive-reg-result" style="display:none; margin-top:16px; border-radius:8px; padding:14px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.4);">
+              <div style="font-weight:800; color:#4ade80; font-size:0.9rem; margin-bottom:8px;">✅ Regedit Personalizada Aplicada com Sucesso!</div>
+              <div id="adaptive-reg-summary" style="font-size:0.78rem; color:#bbf7d0; line-height:1.7;"></div>
+            </div>
+            <div id="adaptive-reg-error" style="display:none; margin-top:16px; border-radius:8px; padding:12px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.4);">
+              <div style="font-weight:800; color:#f87171; font-size:0.85rem;">❌ <span id="adaptive-reg-error-msg"></span></div>
+            </div>
+          </div>
+          <!-- ════════════════════════════════════════════════════════════════ -->
+
           <div class="card">
             <h3>Curva de Sensibilidade (Registry)</h3>
             <div class="radio-group">
               <label class="radio-card" style="border: 1px solid rgba(239, 68, 68, 0.8); background: linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(0,0,0,0.6)); box-shadow: 0 0 18px rgba(239, 68, 68, 0.25);">
                 <input type="radio" name="mouse-mode" value="loord-3-sense-full-red" checked>
                 <div class="radio-content">
+
                   <span class="title" style="color: #ff6b6b; font-weight: 800; display: flex; align-items: center; gap: 6px;">⚡ LOORD 3.0 SENSE FULL RED (Ultra Sense + BCD + USB Boost) <span style="background: linear-gradient(90deg, #ef4444, #f97316); color: #fff; font-size: 0.65rem; padding: 2px 7px; border-radius: 4px; font-weight: 900;">SUPREMA 🔥</span></span>
                   <span class="desc">Aplica todas as otimizações supremas: Buffer de Mouse/HID 20, USB sem suspensão, Teclado 0ms, Win32Priority 26, BCD timer 0.5ms e curva 1:1 calibrada para full capa.</span>
                 </div>

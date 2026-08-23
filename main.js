@@ -1063,7 +1063,202 @@ function buildAdaptiveAffinityMap(hw) {
 }
 
 
+// ══════════════════════════════════════════════════════════════════════════════
+// REGEDIT ADAPTATIVA PERSONALIZADA
+// Calcula SmoothMouseX/Y baseado na sensibilidade real do usuário
+// ══════════════════════════════════════════════════════════════════════════════
 
+/**
+ * Converte um número float para hex little-endian de 8 bytes (formato Windows fixed-point 16.16)
+ * A curva SmoothMouseX/Y do Windows usa pontos no formato de ponto fixo: 16 bits inteiro + 16 bits fração
+ */
+function floatToFixedHex(value) {
+  // O Windows armazena como número de 64 bits onde valor = raw / 65536
+  // Na prática, a curva usa inteiros multiplicados por 65536
+  const raw = Math.round(value * 65536);
+  const buf = Buffer.alloc(8);
+  // Little-endian 64-bit int
+  const lo = raw & 0xFFFFFFFF;
+  const hi = Math.floor(raw / 0x100000000);
+  buf.writeUInt32LE(lo >>> 0, 0);
+  buf.writeUInt32LE(hi >>> 0, 4);
+  return buf.toString('hex');
+}
+
+/**
+ * Gera a curva SmoothMouseXCurve ou SmoothMouseYCurve de 5 pontos
+ * Os 5 pontos são pares (velocidade, ganho) que formam a curva de aceleração
+ * Para 1:1 puro: ganho = velocidade (linha reta)
+ * Para pesada: ganho maior nos pontos intermediários (mais sensível)
+ * Para suave: ganho menor (mais controlada)
+ */
+function buildSmoothCurve(sensRatio, style, axis) {
+  // Velocidades base dos 5 pontos (fixas no Windows)
+  const speeds = [0, 0.75, 1.5, 4.0, 8.0];
+  
+  // Fator de ganho base multiplicado pela razão de sensibilidade
+  let styleMul = 1.0;
+  if (style === 'suave')       styleMul = 0.78;
+  else if (style === 'pesada') styleMul = 1.22;
+  else                          styleMul = 1.0; // equilibrado
+  
+  // Eixo Y tem ganho extra para ajudar a puxar capa
+  const axisMul = (axis === 'y') ? 1.0 : 1.0; // não alteramos aqui, a razão já vem do sensRatio
+
+  const hexParts = speeds.map(spd => {
+    const gain = spd * sensRatio * styleMul * axisMul;
+    return floatToFixedHex(gain);
+  });
+
+  return hexParts.join('');
+}
+
+ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
+  if (!systemIsAdmin) {
+    return { success: false, error: 'Privilégios de Administrador requeridos. Execute o programa como Administrador.' };
+  }
+
+  const { dpiMouse, dpiEmu, sensX, sensY, style } = config || {};
+
+  // Validação
+  if (!dpiMouse || !dpiEmu || !sensX || !sensY) {
+    return { success: false, error: 'Preencha todos os campos antes de aplicar.' };
+  }
+
+  try {
+    // ── Calcula a razão de escala real ─────────────────────────────────────
+    // Razão entre o DPI virtual do emulador e o DPI físico do mouse
+    const dpiRatio = parseFloat(dpiEmu) / parseFloat(dpiMouse);
+    
+    // Razão Y/X: define quanto o eixo vertical difere do horizontal
+    const ratioYX = parseFloat(sensY) / parseFloat(sensX);
+    
+    // Fator de escala da curva X: calibrado para que SensX no emu = 1 count = 1 pixel
+    // Quanto maior o DPI do mouse vs emulador, mais "preciso" precisa ser a curva
+    const scaleX = dpiRatio * parseFloat(sensX);
+    const scaleY = dpiRatio * parseFloat(sensY);
+
+    // ── Gera as curvas hex ──────────────────────────────────────────────────
+    const curveXHex = buildSmoothCurve(scaleX, style, 'x');
+    const curveYHex = buildSmoothCurve(scaleY, style, 'y');
+
+    // ── Limpa chaves antigas de outras regedits ────────────────────────────
+    const keysToClean = [
+      'Active','ActiveAC','ActiveDeveloped','ActiveFix','MouseGrab','MouseStickOn',
+      'Fov','MouseTK','Mousetrack','Mousecontrolusb','MouseCP','MouseCL'
+    ];
+    for (const keyName of keysToClean) {
+      try { execSync(`reg delete "HKCU\\Control Panel\\Mouse" /v "${keyName}" /f`, { stdio: 'ignore' }); } catch (_) {}
+    }
+
+    // ── Aplica todas as chaves da Regedit Adaptativa ───────────────────────
+    const regKeys = [
+      // Mouse base — sem aceleração, 1:1 puro
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseSpeed',        type: 'REG_SZ',    value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseThreshold1',   type: 'REG_SZ',    value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseThreshold2',   type: 'REG_SZ',    value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseSensitivity',  type: 'REG_SZ',    value: '10' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseTrails',       type: 'REG_SZ',    value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'SnapToDefaultButton',type: 'REG_SZ',   value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseHoverTime',    type: 'REG_SZ',    value: '4' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseHoverHeight',  type: 'REG_SZ',    value: '4' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseHoverWidth',   type: 'REG_SZ',    value: '4' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'Beep',              type: 'REG_SZ',    value: 'No' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'ExtendedSounds',    type: 'REG_SZ',    value: 'No' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'ActiveWindowTracking', type: 'REG_DWORD', value: 0 },
+      // Curvas calculadas dinamicamente para a sens do usuário
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'SmoothMouseXCurve', type: 'REG_BINARY', value: curveXHex },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'SmoothMouseYCurve', type: 'REG_BINARY', value: curveYHex },
+      // Tag de identificação
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'Active',            type: 'REG_SZ',    value: `LOORD ADAPTATIVA — X:${sensX} Y:${sensY} DPI:${dpiMouse}/${dpiEmu} ${style.toUpperCase()}` },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'ActiveDeveloped',   type: 'REG_SZ',    value: 'Loord Optimizer - Regedit Adaptativa' },
+      // Desktop foco imediato
+      { path: 'HKCU\\Control Panel\\Desktop', name: 'MenuShowDelay',          type: 'REG_SZ',    value: '0' },
+      { path: 'HKCU\\Control Panel\\Desktop', name: 'ForegroundLockTimeout',  type: 'REG_DWORD', value: 0 },
+      { path: 'HKCU\\Control Panel\\Desktop', name: 'ForegroundFlashCount',   type: 'REG_DWORD', value: 0 },
+      // GameDVR off
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_Enabled',                       type: 'REG_DWORD', value: 0 },
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_FSEBehaviorMode',               type: 'REG_DWORD', value: 2 },
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_HonorUserFSEBehaviorMode',      type: 'REG_DWORD', value: 1 },
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_DXGIHonorFSEWindowsCompatible', type: 'REG_DWORD', value: 1 },
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_EFSEFeatureFlags',              type: 'REG_DWORD', value: 0 },
+      { path: 'HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\GameDVR', name: 'AppCaptureEnabled', type: 'REG_DWORD', value: 0 },
+      // Game Mode ligado
+      { path: 'HKCU\\Software\\Microsoft\\GameBar', name: 'AutoGameModeEnabled',       type: 'REG_DWORD', value: 1 },
+      { path: 'HKCU\\Software\\Microsoft\\GameBar', name: 'AllowAutoGameMode',         type: 'REG_DWORD', value: 1 },
+      { path: 'HKCU\\Software\\Microsoft\\GameBar', name: 'UseNexusForGameBarEnabled', type: 'REG_DWORD', value: 0 },
+      // USB sem suspensão
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\USB',                    name: 'DisableSelectiveSuspend', type: 'REG_DWORD', value: 1 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\HidUsb\\Parameters',     name: 'IdleEnabled',             type: 'REG_DWORD', value: 0 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\USBXHCI\\Parameters',    name: 'EnableSelectiveSuspend',  type: 'REG_DWORD', value: 0 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\USBXHCI\\Parameters',    name: 'DisableSelectiveSuspend', type: 'REG_DWORD', value: 1 },
+      // Buffer do driver de mouse (100 para 1000Hz)
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters',   name: 'MouseDataQueueSize',    type: 'REG_DWORD', value: 100 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouhid\\Parameters',     name: 'MouseDataQueueSize',    type: 'REG_DWORD', value: 100 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\kbdclass\\Parameters',   name: 'KeyboardDataQueueSize', type: 'REG_DWORD', value: 100 },
+      // Prioridade IRQ e timers
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl',         name: 'IRQ8Priority',              type: 'REG_DWORD', value: 1 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl',         name: 'Win32PrioritySeparation',   type: 'REG_DWORD', value: 38 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Kernel', name: 'GlobalTimerResolutionRequests', type: 'REG_DWORD', value: 1 },
+      // MMCSS — 100% CPU para o jogo
+      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile', name: 'SystemResponsiveness',    type: 'REG_DWORD', value: 0 },
+      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile', name: 'NetworkThrottlingIndex',  type: 'REG_DWORD', value: 4294967295 },
+      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games', name: 'GPU Priority',       type: 'REG_DWORD', value: 8 },
+      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games', name: 'Priority',          type: 'REG_DWORD', value: 6 },
+      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games', name: 'Scheduling Category', type: 'REG_SZ',    value: 'High' },
+      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games', name: 'SFIO Priority',      type: 'REG_SZ',    value: 'High' },
+      // HKU padrão
+      { path: 'HKU\\.DEFAULT\\Control Panel\\Mouse', name: 'Beep',           type: 'REG_SZ', value: 'No' },
+      { path: 'HKU\\.DEFAULT\\Control Panel\\Mouse', name: 'ExtendedSounds', type: 'REG_SZ', value: 'No' },
+      { path: 'HKU\\.DEFAULT\\Control Panel\\Mouse', name: 'MouseSpeed',     type: 'REG_SZ', value: '0' },
+      { path: 'HKU\\.DEFAULT\\Control Panel\\Mouse', name: 'MouseThreshold1',type: 'REG_SZ', value: '0' },
+      { path: 'HKU\\.DEFAULT\\Control Panel\\Mouse', name: 'MouseThreshold2',type: 'REG_SZ', value: '0' },
+    ];
+
+    for (const item of regKeys) {
+      try {
+        const cmd = `reg add "${item.path}" /v "${item.name}" /t ${item.type} /d "${item.value}" /f`;
+        execSync(cmd, { stdio: 'ignore' });
+      } catch (e) {
+        console.error(`[AdaptiveReg] Erro ao aplicar ${item.name}:`, e.message);
+      }
+    }
+
+    // ── SPI em tempo real (sem reiniciar) ──────────────────────────────────
+    try {
+      const psSpiCmd = `$s=@'
+[DllImport("user32.dll")] public static extern bool SystemParametersInfo(uint a, uint b, int[] c, uint d);
+[DllImport("user32.dll", EntryPoint="SystemParametersInfoW")] public static extern bool SystemParametersInfoPtr(uint a, uint b, IntPtr c, uint d);
+'@
+Add-Type -Namespace W -Name M -MemberDefinition $s -ErrorAction SilentlyContinue
+[W.M]::SystemParametersInfo(4,0,[int[]]@(0,0,0),3)
+[W.M]::SystemParametersInfoPtr(0x71,0,[IntPtr]10,3)
+[W.M]::SystemParametersInfoPtr(0x6B,0,[IntPtr]0,3)
+[W.M]::SystemParametersInfoPtr(0x5F,0,[IntPtr]0,3)
+`;
+      execSync(`powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -Command "${psSpiCmd.replace(/\r?\n/g, '; ')}"`, { stdio: 'ignore' });
+    } catch (e) {}
+
+    // ── Retorno com resumo ────────────────────────────────────────────────
+    return {
+      success: true,
+      summary: {
+        dpiMouse: parseFloat(dpiMouse),
+        dpiEmu: parseFloat(dpiEmu),
+        sensX: parseFloat(sensX),
+        sensY: parseFloat(sensY),
+        style,
+        scaleX: Math.round(scaleX * 1000) / 1000,
+        scaleY: Math.round(scaleY * 1000) / 1000,
+        ratioYX: Math.round(ratioYX * 1000) / 1000,
+        curveXHex: curveXHex.substring(0, 16) + '...',
+        curveYHex: curveYHex.substring(0, 16) + '...',
+      }
+    };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
 
 // ── Configurar Process Lasso automaticamente (Sempre / Always) ────────────
 function configureProcessLasso(hw, emuCores) {
