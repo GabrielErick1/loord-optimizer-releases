@@ -1127,24 +1127,81 @@ function setupAutoUpdater() {
 
         // 4. Atualiza o CARD DA ABA MINHA CONFIG (Imagem 4)
         if (cardStatusTitle) cardStatusTitle.innerHTML = `🚀 <b>Nova Versão v${latV} Disponível!</b>`;
-        if (cardStatusDesc) cardStatusDesc.textContent = `Baixando nova versão em segundo plano (Play Store Style)...`;
+        if (cardStatusDesc) cardStatusDesc.textContent = 'Clique no botão abaixo para baixar e atualizar automaticamente.';
+
+        // Cria barra de progresso no card (se não existir)
+        let progressContainer = document.getElementById('update-progress-container');
+        if (!progressContainer && cardStatusDesc) {
+          progressContainer = document.createElement('div');
+          progressContainer.id = 'update-progress-container';
+          progressContainer.style.cssText = 'display:none; margin-top:10px; width:100%;';
+          progressContainer.innerHTML = `
+            <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:#94a3b8; margin-bottom:4px;">
+              <span id="progress-label">⏳ Preparando download...</span>
+              <span id="progress-percent">0%</span>
+            </div>
+            <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;">
+              <div id="progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #f59e0b, #22c55e); border-radius:4px; transition:width 0.2s ease;"></div>
+            </div>
+            <div id="progress-mb" style="font-size:0.75rem; color:#64748b; margin-top:4px; text-align:right;">0 MB / ? MB</div>
+          `;
+          cardStatusDesc.parentNode.insertBefore(progressContainer, cardStatusDesc.nextSibling);
+        }
 
         // Função unificada de download e instalação
         const startDownloadFlow = async () => {
           if (popupModal) popupModal.style.display = 'none';
 
+          // Mostra barra de progresso
+          if (progressContainer) progressContainer.style.display = 'block';
+
           if (btnInstallNow) {
             btnInstallNow.disabled = true;
-            btnInstallNow.textContent = '⏳ Conectando e baixando...';
+            btnInstallNow.style.background = 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)';
+            btnInstallNow.textContent = '⏳ 0% - Iniciando download...';
           }
           if (btnGlobalNow) {
             btnGlobalNow.disabled = true;
             btnGlobalNow.textContent = '⏳ Baixando...';
           }
+          if (cardStatusTitle) cardStatusTitle.innerHTML = `⏳ <b>Baixando v${latV}...</b>`;
+          if (cardStatusDesc) cardStatusDesc.textContent = 'Download em andamento em segundo plano.';
+
+          // Listener de progresso em TEMPO REAL
+          const progressHandler = window.api.onUpdateDownloadProgress((data) => {
+            if (!data) return;
+            const p = Math.round(data.percent || 0);
+            const rmb = data.receivedMB || '0';
+            const tmb = data.totalMB || '?';
+
+            // Barra de progresso
+            const bar = document.getElementById('progress-bar');
+            const pct = document.getElementById('progress-percent');
+            const label = document.getElementById('progress-label');
+            const mbEl = document.getElementById('progress-mb');
+
+            if (bar) bar.style.width = `${p}%`;
+            if (pct) pct.textContent = `${p}%`;
+            if (label) label.textContent = p < 100 ? `⏳ Baixando...` : `✅ Concluído!`;
+            if (mbEl) mbEl.textContent = `${rmb} MB / ${tmb} MB`;
+
+            // Botão com porcentagem ao vivo
+            if (btnInstallNow) {
+              btnInstallNow.textContent = p < 100 ? `⏳ ${p}% — Baixando (${rmb}/${tmb} MB)...` : `✅ 100% — Concluído!`;
+            }
+          });
 
           const dlRes = await window.api.downloadUpdateProgress(activeDownloadUrl);
 
           if (dlRes && dlRes.success) {
+            // Barra 100% concluída
+            const bar = document.getElementById('progress-bar');
+            const pct = document.getElementById('progress-percent');
+            const label = document.getElementById('progress-label');
+            if (bar) bar.style.width = '100%';
+            if (pct) pct.textContent = '100%';
+            if (label) label.textContent = '✅ Download concluído!';
+
             if (btnInstallNow) {
               btnInstallNow.disabled = false;
               btnInstallNow.style.display = 'inline-flex';
@@ -1168,12 +1225,14 @@ function setupAutoUpdater() {
 
             if (cardStatusTitle) cardStatusTitle.innerHTML = `✅ <b>Download Concluído (100%)!</b>`;
             if (cardStatusDesc) cardStatusDesc.textContent = 'Clique no botão verde para reiniciar e aplicar a nova versão.';
-            alert(`✅ Download da v${latV} concluído com sucesso!\n\nClique em "Reiniciar e Atualizar Agora" para aplicar a atualização.`);
           } else {
+            if (progressContainer) progressContainer.style.display = 'none';
             if (btnInstallNow) {
               btnInstallNow.disabled = false;
-              btnInstallNow.textContent = 'Tentar Novamente';
+              btnInstallNow.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+              btnInstallNow.textContent = `⚡ Baixar e Atualizar (v${latV})`;
             }
+            if (cardStatusTitle) cardStatusTitle.innerHTML = `⚠️ <b>Falha no download. Tente novamente.</b>`;
           }
         };
 
