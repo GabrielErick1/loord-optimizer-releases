@@ -191,6 +191,22 @@
                   <span class="desc">Sensibilidade 10/11 1:1 sem interpolação, prioridade de interrupção IRQ8 em tempo real, Game Mode ativo, MMCSS GPU 8 e buffer ampliado.</span>
                 </div>
               </label>
+
+              <label class="radio-card">
+                <input type="radio" name="mouse-mode" value="rikwich-pro-sense">
+                <div class="radio-content">
+                  <span class="title" style="color: #ec4899; font-weight: 700; display: flex; align-items: center; gap: 6px;">🎯 REGEDIT R!KW!CH PRO (Curva Linear 1:1 & Touch BlueStacks 750 DPI) <span style="background: #db2777; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">VIP HEADSHOT 👑</span></span>
+                  <span class="desc">Curva progressiva para subida de capa perfeita sem tremer, tempo de hover 4ms e calibragem de DPI e touch interno do BlueStacks (750 Menor Largura).</span>
+                </div>
+              </label>
+
+              <label class="radio-card">
+                <input type="radio" name="mouse-mode" value="fov-lock-stick-pro">
+                <div class="radio-content">
+                  <span class="title" style="color: #10b981; font-weight: 700; display: flex; align-items: center; gap: 6px;">🔥 REGEDIT LOCK FOV & MOUSE STICK (Trava Mira & FOV 20k) <span style="background: #059669; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">ULTRA LOCK 🎯</span></span>
+                  <span class="desc">Estabilizador de mira com parâmetros MouseGrab (908), MouseStickOn (10), FOV (20000), MouseTK (810) e DockTarget para máxima fixação no alvo.</span>
+                </div>
+              </label>
             </div>
           </div>
 
@@ -706,6 +722,69 @@
             </div>
 
             <div id="adb-log" style="margin-top:12px; background:#0a0f1a; border-radius:8px; padding:10px; font-family:monospace; font-size:11px; color:#63cab7; max-height:100px; overflow-y:auto; display:none;"></div>
+          </div>
+
+          <!-- Otimizador Competitivo de Pan & BlueStacks/MSI (Anti-Pinar & Stutter Zero) -->
+          <div class="card" style="border: 1px solid rgba(245, 158, 11, 0.4); background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(0,0,0,0.45)); box-shadow: 0 0 15px rgba(245, 158, 11, 0.1);">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <div>
+                <h3 style="margin:0 0 4px 0; color:#fbbf24;">🎯 Otimizador Competitivo de Pan & Engine (Anti-Pinar & Ultra FPS)</h3>
+                <p style="color:#94a3b8; font-size:12px; margin:0;">Injeta velocidade de interpolação Pan (15.0 - 20.0), decodificação ASTC por Hardware na GPU, DirectX sem stutter e High FPS no BlueStacks e MSI.</p>
+              </div>
+              <span class="badge" style="background:#f59e0b; color:#000; font-weight:800;">PRO SENSE 🔥</span>
+            </div>
+
+            <div style="margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+              <!-- Speed do Pan -->
+              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
+                <label style="font-size:11px; color:#fbbf24; font-weight:700; display:block; margin-bottom:4px;">⚡ Speed do Pan (Anti-Pinar / Fluidez):</label>
+                <select id="comp-pan-speed" style="width:100%; padding:6px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
+                  <option value="15.0" selected>15.0 (Recomendado - Fluido & Sem Pinar)</option>
+                  <option value="20.0">20.0 (Ultra Rápido - Telas 144Hz/240Hz)</option>
+                  <option value="10.0">10.0 (Padrão Original BlueStacks)</option>
+                  <option value="25.0">25.0 (Extremo / Resposta Imediata)</option>
+                </select>
+                <span style="font-size:10px; color:#94a3b8; margin-top:3px; display:block;">Elimina o delay de interpolação da câmera entre frames.</span>
+              </div>
+
+              <!-- Sensibilidade X e Y do Keymap -->
+              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05); display:flex; gap:8px;">
+                <div style="flex:1;">
+                  <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">Sens X (Giro):</label>
+                  <input type="number" id="comp-sens-x" value="1.0" step="0.1" min="0.1" max="10.0" style="width:100%; padding:5px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
+                </div>
+                <div style="flex:1;">
+                  <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">Sens Y (Subida):</label>
+                  <input type="number" id="comp-sens-y" value="0.4" step="0.05" min="0.1" max="5.0" style="width:100%; padding:5px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
+                </div>
+              </div>
+
+              <!-- Renderizador Gráfico -->
+              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
+                <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">🎮 Renderizador Gráfico:</label>
+                <select id="comp-graphics-renderer" style="width:100%; padding:6px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
+                  <option value="dx" selected>DirectX (dx - Menos Stutter / GPU NVIDIA/AMD)</option>
+                  <option value="gl">OpenGL (gl - Padrão)</option>
+                  <option value="vulkan">Vulkan (Se suportado)</option>
+                </select>
+              </div>
+
+              <!-- Decodificação ASTC & CPU/RAM -->
+              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
+                <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">🧠 Núcleos de CPU & RAM:</label>
+                <select id="comp-cpu-ram" style="width:100%; padding:6px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
+                  <option value="6-8192" selected>6 Núcleos / 8GB RAM (Recomendado Pro)</option>
+                  <option value="4-4096">4 Núcleos / 4GB RAM (PC Médio)</option>
+                  <option value="6-6144">6 Núcleos / 6GB RAM (Equilibrado)</option>
+                  <option value="8-8192">8 Núcleos / 8GB RAM (PC High-End)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <button class="btn btn-primary btn-sm" id="btn-apply-comp-tweak" style="background: linear-gradient(135deg, #f59e0b, #d97706); color:#000; font-weight:800;">⚡ Aplicar Otimizações Competitivas (Keymap + Engine)</button>
+              <span id="status-comp-tweak" style="display:none; color:#10b981; font-size:12px; font-weight:600;"></span>
+            </div>
           </div>
 
           <!-- Transformar em Android Verdadeiro -->

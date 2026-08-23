@@ -1,0 +1,65 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\Control Panel\Mouse]
+"ActiveWindowTracking"=dword:00000001
+"Beep"="No"
+"DoubleClickHeight"="5"
+"DoubleClickHeight2"="0,95"
+"DoubleClickSpeed"="500"
+"DoubleClickWidth"="5"
+"DoubleClickWidth2"="0,4"
+"ExtendedSounds"="No"
+"ExtendedSounds2"="no"
+"MouseHoverHeight"="2"
+"MouseHoverTime"="4"
+"MouseHoverWidth"="2"
+"MouseSensitivity"="10"
+"MouseSpeed"="0"
+"MouseSpeed2"="0"
+"MouseThreshold1"="0"
+"MouseThreshold2"="0"
+"MouseTrails"="0"
+"SnapToDefaultButton"="0"
+"SwapMouseButtons"="0"
+"MouseThreshold12"="0"
+"MouseThreshold22"="0"
+"SmoothMouseXCurve"=hex:00,00,00,00,00,00,00,00,c0,cc,2c,00,00,00,00,00,80,99,59,\
+  00,00,00,00,00,40,66,86,00,00,00,00,00,00,33,b3,00,00,00,00,00
+"SmoothMouseYCurve"=hex:00,00,00,00,00,00,00,00,00,00,38,00,00,00,00,00,00,00,70,\
+  00,00,00,00,00,00,00,a8,00,00,00,00,00,00,00,e0,00,00,00,00,00
+"DoubleClickSpeed2"="0,28"
+"TcpWindowSize"=dword:0005ae4c
+"TcpNoDelay"=hex(b):7f,14,00,00,00,00,00,00
+"TCPDelAckTicks"=dword:00000005
+"Tcp1323Opts"=dword:00000003
+"TcpMaxDataRetransmissions"=dword:00000003
+"SackOpts"=dword:00000001
+"DefaultTTL"=dword:00007fff
+"Beep2"="No"
+"EnablePMTUDiscovery"=dword:00000001
+"EnablePMTUBHDetect"=dword:00000000
+"Assist"="𝙓 𝗥!𝗞𝗪!𝗖𝗛#0891"
+"ActiveFix"="𝙓 𝗥!𝗞𝗪!𝗖𝗛#0891"
+"ActiveAC"="𝙓 𝗥!𝗞𝗪!𝗖𝗛#0891"
+"ActiveDevoloped"="𝙓 𝗥!𝗞𝗪!𝗖𝗛#0891"
+"Active"="𝙓 𝗥!𝗞𝗪!𝗖𝗛#0891"
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\BlueStacks\Guests\Android\sensibility\0]
+"sensibility"=dword:00000064
+"SMALLESTWIDTH"=dword:000002ee
+"speedofmovement"=dword:00000064
+"touchsensitivyty"=dword:00000102
+"x"=dword:000003e8
+"y"=dword:00000992
+"𝙓 𝗥!𝗞𝗪!𝗖𝗛#0891 gpu"=dword:00000064
+"𝙓 𝗥!𝗞𝗪!𝗖𝗛#0891 cpu"=dword:00000064
+"𝙓 𝗥!𝗞𝗪!𝗖𝗛#0891 dpi"=dword:000004b0
+"generalemulatorsensitivity"=dword:00000064
+"sensitivity"=dword:00000064
+"touchsensitivity"=dword:00000100
+"𝙓 𝗥!𝗞𝗪!𝗖𝗛#0891"=dword:00000064
+
+[HKEY_USERS\.DEFAULT\Control Panel\Mouse]
+"MouseSpeed"="0"
+"MouseThreshold1"="0"
+"MouseThreshold2"="0"

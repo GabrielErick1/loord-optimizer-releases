@@ -2842,6 +2842,142 @@ ipcMain.handle('remove-emulator-ads', async (event, port) => {
   }
 });
 
+// ─── OTIMIZADOR COMPETITIVO DE PAN & BLUESTACKS/MSI ────────────────────────
+ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
+  if (!systemIsAdmin) return { success: false, error: 'Privilégios de Administrador requeridos.' };
+  try {
+    const {
+      panSpeed = 15.0,
+      sensitivityX = 1.0,
+      sensitivityY = 0.4,
+      astcMode = 'hardware',
+      graphicsRenderer = 'dx',
+      cpuCores = '6',
+      ramMb = '6144',
+      enableHighFps = true
+    } = config || {};
+
+    // 1. Matar processos do emulador antes para garantir gravação limpa
+    try {
+      execSync('taskkill /F /IM HD-Player.exe /IM HD-Agent.exe /IM BstkSVC.exe /T >nul 2>&1', { stdio: 'ignore' });
+    } catch (_) {}
+
+    // 2. Modificar bluestacks.conf em todas as instâncias (BlueStacks 5, MSI, etc.)
+    const confDirs = [
+      'C:\\ProgramData\\BlueStacks_nxt',
+      'C:\\ProgramData\\BlueStacks_msi5',
+      'C:\\ProgramData\\BlueStacks_msi2',
+      'C:\\ProgramData\\BlueStacks',
+      'C:\\ProgramData\\BlueStacks_bgp',
+      'C:\\ProgramData\\BlueStacks_bgp_msi'
+    ];
+
+    let confUpdatedCount = 0;
+    for (const dir of confDirs) {
+      const confPath = path.join(dir, 'bluestacks.conf');
+      if (fs.existsSync(confPath)) {
+        let content = fs.readFileSync(confPath, 'utf8');
+        const lines = content.split(/\r?\n/);
+        const newLines = [];
+        for (let line of lines) {
+          if (line.match(/^bst\.instance\.(.*?)\.enable_high_fps=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.enable_high_fps=/)[1];
+            line = `bst.instance.${inst}.enable_high_fps="${enableHighFps ? '1' : '0'}"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.max_fps=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.max_fps=/)[1];
+            line = `bst.instance.${inst}.max_fps="999"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.astc_decoding_mode=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.astc_decoding_mode=/)[1];
+            line = `bst.instance.${inst}.astc_decoding_mode="${astcMode}"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.graphics_renderer=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.graphics_renderer=/)[1];
+            line = `bst.instance.${inst}.graphics_renderer="${graphicsRenderer}"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.cpus=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.cpus=/)[1];
+            line = `bst.instance.${inst}.cpus="${cpuCores}"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.ram=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.ram=/)[1];
+            line = `bst.instance.${inst}.ram="${ramMb}"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.enable_vsync=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.enable_vsync=/)[1];
+            line = `bst.instance.${inst}.enable_vsync="0"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.eco_mode_max_fps=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.eco_mode_max_fps=/)[1];
+            line = `bst.instance.${inst}.eco_mode_max_fps="5"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.prefer_dedicated_gpu=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.prefer_dedicated_gpu=/)[1];
+            line = `bst.instance.${inst}.prefer_dedicated_gpu="1"`;
+          } else if (line.match(/^bst\.instance\.(.*?)\.vulkan_supported=/)) {
+            const inst = line.match(/^bst\.instance\.(.*?)\.vulkan_supported=/)[1];
+            line = `bst.instance.${inst}.vulkan_supported="1"`;
+          }
+          newLines.push(line);
+        }
+        fs.writeFileSync(confPath, newLines.join('\r\n'), 'utf8');
+        confUpdatedCount++;
+      }
+    }
+
+    // 3. Modificar Keymaps do Free Fire (InputMapper)
+    let keymapsUpdatedCount = 0;
+    for (const dir of confDirs) {
+      const inputMapperDirs = [
+        path.join(dir, 'Engine', 'UserData', 'InputMapper'),
+        path.join(dir, 'Engine', 'UserData', 'InputMapper', 'UserFiles')
+      ];
+
+      for (const imDir of inputMapperDirs) {
+        if (fs.existsSync(imDir)) {
+          const files = fs.readdirSync(imDir);
+          for (const file of files) {
+            if (file.toLowerCase().includes('freefire') && file.toLowerCase().endsWith('.cfg')) {
+              const filePath = path.join(imDir, file);
+              try {
+                let content = fs.readFileSync(filePath, 'utf8');
+                let parsed = JSON.parse(content);
+
+                if (parsed && Array.isArray(parsed.ControlSchemes)) {
+                  for (const scheme of parsed.ControlSchemes) {
+                    if (scheme && Array.isArray(scheme.GameControls)) {
+                      for (const ctrl of scheme.GameControls) {
+                        if (ctrl && (ctrl.$type === 'Pan, Bluestacks' || ctrl.$type === 'Pan' || ctrl.Type === 'Pan')) {
+                          ctrl.Speed = parseFloat(panSpeed);
+                          ctrl.Sensitivity = parseFloat(sensitivityX);
+                          ctrl.SensitivityRatioY = parseFloat(sensitivityY);
+                          ctrl.MouseAcceleration = false;
+                        }
+                      }
+                    }
+                  }
+                  fs.writeFileSync(filePath, JSON.stringify(parsed, null, 4), 'utf8');
+                  keymapsUpdatedCount++;
+                }
+              } catch (e) {
+                try {
+                  let raw = fs.readFileSync(filePath, 'utf8');
+                  raw = raw.replace(/"Speed"\s*:\s*[\d\.]+/g, `"Speed" : ${parseFloat(panSpeed).toFixed(1)}`);
+                  raw = raw.replace(/"Sensitivity"\s*:\s*[\d\.]+/g, `"Sensitivity" : ${parseFloat(sensitivityX).toFixed(1)}`);
+                  raw = raw.replace(/"SensitivityRatioY"\s*:\s*[\d\.]+/g, `"SensitivityRatioY" : ${parseFloat(sensitivityY).toFixed(1)}`);
+                  raw = raw.replace(/"MouseAcceleration"\s*:\s*(true|false)/g, `"MouseAcceleration" : false`);
+                  fs.writeFileSync(filePath, raw, 'utf8');
+                  keymapsUpdatedCount++;
+                } catch (_) {}
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return {
+      success: true,
+      message: `🎯 Otimizações aplicadas com sucesso!\n\n✔ Instâncias BlueStacks/MSI atualizadas: ${confUpdatedCount}\n✔ Arquivos de Keymap Free Fire configurados: ${keymapsUpdatedCount}\n✔ Speed do Pan: ${panSpeed} | Sens X: ${sensitivityX} | Sens Y: ${sensitivityY}\n✔ ASTC: ${astcMode} | Render: ${graphicsRenderer} | CPU: ${cpuCores} núcleos | RAM: ${ramMb}MB | FPS: 999 Max`
+    };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
 // ─── RESTAURAR REDE & CONEXÃO (DHCP + FLUSH DNS + LIMPAR HOSTS) ─────────────
 ipcMain.handle('reset-network-dhcp', async () => {
   try {

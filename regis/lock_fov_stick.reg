@@ -1,0 +1,62 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\Control Panel\Mouse]
+"ActiveWindowTracking"=dword:00000001
+"ActiveUser"="嬭炴㤹椰杨桧㕴㘵㜶㠷"
+"Beep"="No"
+"Assist"="㠸〸㤹㘹㠶㠸됸孝嶴嶴嶴嶴嶴嶴嶴듧繝ⷧ孛炴嬭炴㤹椰杨桧㕴㘵㜶㠷㤷㤸〸㜹欹듧⵰㴽㵛孾㵝繝宴纴烧孾孰孛孰ⶴ둛둛둛㭬嬮뒴ⱛ됻ⱛ됮듧㯧둛宴듧㭛됮Ⱞ殴沴듳濧汯汯둩澴둬潛둬濧둬潛潬孬汯둛濧孬潯潬둬둾둾둾둾繾뒴繛듧듧宴橬㥰桪橵桨桨杨桨票杧摦睳獳睤敷睤敷獷獤獡獡慤獡晤㍳㐲㐴㔵㘵㘵㜶㜸㜶㘵㘵㘷㔵"
+"ExtendedSounds"="no"
+"MouseHoverHeight"="100"
+"MouseHoverTime"="900"
+"MouseHoverWidth"="100"
+"MouseSensitivity"="2"
+"MouseSpeed"="4"
+"MouseThreshold1"="7"
+"MouseThreshold2"="11"
+"MouseTrails"="㠸〸㤹㘹㠶㠸됸孝嶴嶴嶴嶴嶴嶴嶴듧繝ⷧ孛炴嬭炴㤹椰杨桧㕴㘵㜶㠷㤷㤸〸㜹欹듧⵰㴽㵛孾㵝繝宴纴烧孾孰孛孰ⶴ둛둛둛㭬嬮뒴ⱛ됻ⱛ됮듧㯧둛宴듧㭛됮Ⱞ殴沴듳濧汯汯둩澴둬潛둬濧둬潛潬孬汯둛濧孬潯潬둬둾둾둾둾繾뒴繛듧듧宴橬㥰桪橵桨桨杨桨票杧摦睳獳睤敷睤敷獷獤獡獡慤獡晤㍳㐲㐴㔵㘵㘵㜶㜸㜶㘵㘵㘷㔵"
+"SmoothMouseXCurve"=hex:65,ef,4f,d4,df,f0,77,69,90,36,37,35,36,35,39,36,39,36,\
+  36,2d,5b,70,34,35,72,34,35,74,72,79,65,72,72,67,6c,6f,7e,b4,5d,3d,5d,2d,5d,\
+  5b,6f,69,75,75,72,74,65,72,66,74,68,79,37,75,35,5d,5b,3d,2d,5d,f3,b4,7e,70,\
+  e7,6f,70,7e,e7,e7,f5,70,7e,e7,6c,e7,7e,70,b4,5d,5b,5d,2d,70,70,68,67,66,74,\
+  65,65,64,72,77,77
+"SmoothMouseYCurve"=hex:66,6f,76,33,35,33,65,36,64,73,36,79,64,75,63,33,37,33,\
+  63,72,34,72,67,35,66,66,98,09,00,00,00,00,00,00,00,00,00,00,00,00,dd,dd,ee,\
+  f4,f0,00,00,03,34,00,00,00,00,00,00,00,00,00,00,00,00,00,00,35,79,37,69,69,\
+  38,6f,70,b4,e7,b4,3d,e7,e7,70,3d,7e,b4,e7,3b,3d,e7,3b,7e,3d,b4,e7,7e,3d,b4,\
+  e7,7e,b4,3d,77,73,66,75,64,75,68,66,64,67,66,7e,7e,5b,5d,5b,73,64,66,67,6a,\
+  67,75,67,66,74,67,67,66,79,37,79,37,64,66,67,66,37,74,66,5d,5d,7e,b4,00,00,\
+  00,00,00,00,05,00,00,00,00,00,00,00,00,0f,00,00,00,00,00,00,00,05,00,00,00,\
+  00,00,00,00,05,f0,00,00,00,00,00,00,00
+"SnapToDefaultButton"="0"
+"SwapMouseButtons"="0"
+"DoubleClickSpeed2"="0,5"
+"DoubleClickWidth2"="0,6"
+"TcpWindowSize"=dword:0005ae4c
+"TcpNoDelay"=hex(b):7f,14,00,00,00,00,00,00
+"TCPDelAckTicks"=dword:00000004
+"Tcp1323Opts"=dword:00000004
+"TcpMaxDataRetransmissions"=dword:00000003
+"SackOpts"=dword:00000001
+"DefaultTTL"=dword:00007fff
+"Beep2"="No"
+"EnablePMTUDiscovery"=dword:00000011
+"EnablePMTUBHDetect"=dword:00000100
+"MouseCP"="55"
+"MouseCL"="55"
+"Mousetrack"="908"
+"Mousecrib"="10"
+"Mousecontrolusb"="1"
+"MouseTK"="810"
+"Fov"="20000"
+"MouseGrab"="908"
+"MouseStickOn"="10"
+"DockTargetMouseDragOutWidth"="1"
+"DockTargetMouseSideMoveWidth"="2"
+"DockTargetMouseWidth"="3"
+"DockTargetPenDragOutWidth"="4"
+"DockTargetPenSideMoveWidth"="2"
+"DoubleClickHeight2"="0,7"
+"DockTargetPenWidth"="1"
+"ExtendedSounds2"="No"
+"MouseSensibility2"="6"
+"MouseSpeed2"="1"

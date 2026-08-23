@@ -2102,3 +2102,40 @@ if (btnPreset720p) {
   });
 }
 
+// ─── Otimizador Competitivo de Pan & BlueStacks/MSI ──────────────────────
+const btnApplyCompTweak = document.getElementById('btn-apply-comp-tweak');
+const statusCompTweak = document.getElementById('status-comp-tweak');
+if (btnApplyCompTweak) {
+  btnApplyCompTweak.addEventListener('click', async () => {
+    const panSpeed = document.getElementById('comp-pan-speed') ? document.getElementById('comp-pan-speed').value : '15.0';
+    const sensX = document.getElementById('comp-sens-x') ? document.getElementById('comp-sens-x').value : '1.0';
+    const sensY = document.getElementById('comp-sens-y') ? document.getElementById('comp-sens-y').value : '0.4';
+    const renderer = document.getElementById('comp-graphics-renderer') ? document.getElementById('comp-graphics-renderer').value : 'dx';
+    const cpuRamVal = document.getElementById('comp-cpu-ram') ? document.getElementById('comp-cpu-ram').value : '6-8192';
+
+    const [cpuCores, ramMb] = cpuRamVal.split('-');
+
+    btnApplyCompTweak.disabled = true;
+    btnApplyCompTweak.textContent = '⏳ Aplicando Otimizações...';
+
+    const res = await window.api.applyCompetitiveEmulatorTweak({
+      panSpeed: parseFloat(panSpeed),
+      sensitivityX: parseFloat(sensX),
+      sensitivityY: parseFloat(sensY),
+      astcMode: 'hardware',
+      graphicsRenderer: renderer,
+      cpuCores: cpuCores,
+      ramMb: ramMb,
+      enableHighFps: true
+    });
+
+    btnApplyCompTweak.disabled = false;
+    btnApplyCompTweak.textContent = '✔️ Otimizações Aplicadas!';
+
+    if (statusCompTweak) {
+      statusCompTweak.style.display = 'block';
+      statusCompTweak.innerText = res && res.message ? res.message : 'Otimizações aplicadas com sucesso!';
+    }
+  });
+}
+
