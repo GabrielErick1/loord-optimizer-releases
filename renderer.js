@@ -2623,24 +2623,51 @@ window.handleApplyAdaptiveRegedit = async function(btn) {
   if (targetBtn) {
     targetBtn.disabled = true;
     targetBtn.style.opacity = '0.7';
-    targetBtn.textContent = '⏳ Injetando Regedit no Windows...';
+    targetBtn.textContent = '⏳ Aplicando Regedit e Otimizações...';
   }
 
   try {
-    const res = await window.api.applyAdaptiveRegedit({ dpiMouse, dpiEmu, sensX, sensY, style: 'custom', styleMul });
+    const panSpeed = document.getElementById('comp-pan-speed')?.value || '25.0';
+    const renderer = document.getElementById('comp-graphics-renderer')?.value || 'gl';
+    const cpuRamVal = document.getElementById('comp-cpu-ram')?.value || 'auto';
+
+    let cpuCores = 'auto';
+    let ramMb = 'auto';
+    if (cpuRamVal !== 'auto' && cpuRamVal.includes('-')) {
+      const parts = cpuRamVal.split('-');
+      cpuCores = parts[0];
+      ramMb = parts[1];
+    }
+
+    // Aplica Regedit no Windows e nos Keymaps
+    const resReg = await window.api.applyAdaptiveRegedit({ dpiMouse, dpiEmu, sensX, sensY, style: 'custom', styleMul });
     
-    if (res && res.success) {
-      const s = res.summary || {};
-      const em = styleMul <= 0.85 ? '🌊' : styleMul >= 1.15 ? '🔥' : '⚡';
+    // Aplica também Pan e Engine no Emulador
+    if (window.api.applyCompetitiveEmulatorTweak) {
+      await window.api.applyCompetitiveEmulatorTweak({
+        panSpeed: parseFloat(panSpeed),
+        sensitivityX: sensX,
+        sensitivityY: sensY,
+        astcMode: 'hardware',
+        graphicsRenderer: renderer,
+        cpuCores: cpuCores,
+        ramMb: ramMb,
+        enableHighFps: true
+      });
+    }
+
+    if (resReg && resReg.success) {
+      const s = resReg.summary || {};
 
       if (resultSummary) {
         resultSummary.innerHTML = [
           `✔ <b>Registro do Windows Calibrado:</b> Curva Adaptativa Injetada (${styleMul.toFixed(2)}x Multiplicador)`,
           `✔ <b>Sensibilidade no Free Fire:</b> Sens X = ${sensX} | Sens Y = ${sensY} (Razão Y/X: ${s.ratioYX || '1.000'})`,
+          `✔ <b>Speed do Pan Injetado:</b> ${panSpeed} (Zero Delay / Anti-Pinar)`,
           `✔ <b>Instâncias BlueStacks/MSI Atualizadas:</b> ${s.emusConfigured || 2} instaladas`,
           `✔ <b>Arquivos de Keymap Free Fire Configurados:</b> ${s.keymapsConfigured || 22} arquivos .cfg`,
           `✔ <b>Latência Zero &amp; Aceleração Desativada:</b> MouseSpeed 0, Thresholds 0, SPI_SETMOUSESPEED 10`,
-          `<div style="margin-top:6px; color:#fde68a;">⚡ <b>Tudo pronto para jogar!</b> Abra o Free Fire e teste sua sensibilidade calibrada sem pinar.</div>`
+          `<div style="margin-top:6px; color:#fde68a;">⚡ <b>Tudo aplicado com sucesso!</b> Abra o Free Fire e teste sua sensibilidade calibrada sem pinar.</div>`
         ].join('<br>');
       }
 
@@ -2651,16 +2678,16 @@ window.handleApplyAdaptiveRegedit = async function(btn) {
 
       if (targetBtn) {
         targetBtn.style.background = 'linear-gradient(90deg, #22c55e, #16a34a)';
-        targetBtn.textContent = '✅ REGEDIT PERSONALIZADA APLICADA COM SUCESSO!';
+        targetBtn.textContent = '✅ REGEDIT & OTIMIZAÇÕES APLICADAS!';
         setTimeout(() => {
           targetBtn.style.background = 'linear-gradient(90deg, #f59e0b, #ef4444)';
-          targetBtn.textContent = '⚡ GERAR & APLICAR MINHA REGEDIT PERSONALIZADA';
+          targetBtn.textContent = '⚡ Aplicar Regedit Adaptativa';
           targetBtn.disabled = false;
           targetBtn.style.opacity = '1';
         }, 4000);
       }
     } else {
-      showAdaptErr(res?.error || 'Erro ao aplicar a Regedit.');
+      showAdaptErr(resReg?.error || 'Erro ao aplicar a Regedit.');
       resetAdaptBtn();
     }
   } catch (e) {
@@ -2680,7 +2707,7 @@ window.handleApplyAdaptiveRegedit = async function(btn) {
     if (targetBtn) {
       targetBtn.disabled = false;
       targetBtn.style.opacity = '1';
-      targetBtn.textContent = '⚡ GERAR & APLICAR MINHA REGEDIT PERSONALIZADA';
+      targetBtn.textContent = '⚡ Aplicar Regedit Adaptativa';
     }
   }
 };
