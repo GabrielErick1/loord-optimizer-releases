@@ -1253,7 +1253,11 @@ if (window.api.onUpdateAvailable) {
   }
 
 
-  // Manual Check Button
+  // Manual Check Button & Global Handler
+  window.handleCheckUpdatesManual = function(btn) {
+    handleCheckUpdates(true);
+  };
+
   if (btnCheckUpdate) {
     btnCheckUpdate.addEventListener('click', () => handleCheckUpdates(true));
   }
@@ -1261,6 +1265,8 @@ if (window.api.onUpdateAvailable) {
   // Auto Check on App Startup
   handleCheckUpdates(false);
 }
+document.addEventListener('DOMContentLoaded', setupAutoUpdater);
+setupAutoUpdater();
 // ═══════════════════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════════════════
 
