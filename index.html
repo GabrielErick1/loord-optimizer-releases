@@ -1587,6 +1587,28 @@
     </div>
   </div>
 
+  <!-- MODAL VIP DE PROGRESSO & SUCESSO DA REGEDIT ADAPTATIVA -->
+  <div id="regedit-progress-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 999999; align-items: center; justify-content: center;">
+    <div style="background: linear-gradient(145deg, #131722, #0d1117); border: 2px solid #22c55e; box-shadow: 0 0 45px rgba(34, 197, 94, 0.4); border-radius: 14px; max-width: 500px; width: 92%; padding: 26px; text-align: center; position: relative; animation: slideDownAlert 0.3s ease-out;" id="regedit-modal-card">
+      <div style="font-size: 2.8rem; margin-bottom: 8px;" id="regedit-modal-icon">⚙️</div>
+      <h2 style="margin: 0 0 6px 0; color: #4ade80; font-size: 1.25rem; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase;" id="regedit-modal-title">PREPARANDO CONFIGURAÇÃO NO SEU PC...</h2>
+      <p style="color: #94a3b8; font-size: 0.82rem; margin: 0 0 16px 0; line-height: 1.5;" id="regedit-modal-desc">Calibrando parâmetros de registro, velocidade de ponteiro e curva sem delay...</p>
+
+      <!-- Barra de progresso -->
+      <div id="regedit-modal-bar-container" style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-bottom: 16px;">
+        <div id="regedit-modal-bar" style="width: 20%; height: 100%; background: linear-gradient(90deg, #f59e0b, #22c55e); border-radius: 4px; transition: width 0.4s ease;"></div>
+      </div>
+
+      <!-- Resumo detalhado (aparece ao concluir) -->
+      <div id="regedit-modal-summary" style="display: none; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px; padding: 12px 14px; margin-bottom: 18px; text-align: left; font-size: 0.8rem; color: #cbd5e1; line-height: 1.6;">
+      </div>
+
+      <button id="btn-regedit-modal-close" style="display: none; width: 100%; background: linear-gradient(90deg, #22c55e, #16a34a); color: #fff; font-size: 0.92rem; font-weight: 900; padding: 12px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(34, 197, 94, 0.4);">
+        ⚡ OK, PRONTO PRA JOGAR!
+      </button>
+    </div>
+  </div>
+
   <script src="renderer.js"></script>
 </body>
 </html>
