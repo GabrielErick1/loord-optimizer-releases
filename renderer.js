@@ -2176,102 +2176,113 @@ async function loadHardwareSpecsForEmulator() {
 }
 loadHardwareSpecsForEmulator();
 
-document.querySelectorAll('#btn-apply-comp-tweak').forEach(btn => {
-  btn.addEventListener('click', async () => {
-    const parentCard = btn.closest('.card') || document;
-    const panSpeed = parsePtBrFloat(parentCard.querySelector('#comp-pan-speed')?.value, 15.0);
-    const sensX = parsePtBrFloat(parentCard.querySelector('#comp-sens-x')?.value, 1.0);
-    const sensY = parsePtBrFloat(parentCard.querySelector('#comp-sens-y')?.value, 0.4);
-    const renderer = parentCard.querySelector('#comp-graphics-renderer')?.value || 'dx';
-    const cpuRamVal = parentCard.querySelector('#comp-cpu-ram')?.value || 'auto';
-    const statusComp = parentCard.querySelector('#status-comp-tweak') || document.getElementById('status-comp-tweak');
+window.handleApplyCompTweak = async function(btn) {
+  const targetBtn = btn || document.getElementById('btn-apply-comp-tweak');
+  const parentCard = targetBtn?.closest('.card') || document;
+  const panSpeed = parsePtBrFloat(parentCard.querySelector('#comp-pan-speed')?.value, 15.0);
+  const sensX = parsePtBrFloat(parentCard.querySelector('#comp-sens-x')?.value, 1.0);
+  const sensY = parsePtBrFloat(parentCard.querySelector('#comp-sens-y')?.value, 0.4);
+  const renderer = parentCard.querySelector('#comp-graphics-renderer')?.value || 'dx';
+  const cpuRamVal = parentCard.querySelector('#comp-cpu-ram')?.value || 'auto';
+  const statusComp = parentCard.querySelector('#status-comp-tweak') || document.getElementById('status-comp-tweak');
 
-    let cpuCores = 'auto';
-    let ramMb = 'auto';
+  let cpuCores = 'auto';
+  let ramMb = 'auto';
 
-    if (cpuRamVal !== 'auto' && cpuRamVal.includes('-')) {
-      const parts = cpuRamVal.split('-');
-      cpuCores = parts[0];
-      ramMb = parts[1];
+  if (cpuRamVal !== 'auto' && cpuRamVal.includes('-')) {
+    const parts = cpuRamVal.split('-');
+    cpuCores = parts[0];
+    ramMb = parts[1];
+  }
+
+  const regModal = document.getElementById('regedit-progress-modal');
+  const regModalIcon = document.getElementById('regedit-modal-icon');
+  const regModalTitle = document.getElementById('regedit-modal-title');
+  const regModalDesc = document.getElementById('regedit-modal-desc');
+  const regModalBar = document.getElementById('regedit-modal-bar');
+  const regModalSummary = document.getElementById('regedit-modal-summary');
+  const btnRegModalClose = document.getElementById('btn-regedit-modal-close');
+
+  if (regModal) {
+    regModal.style.display = 'flex';
+    if (regModalIcon) regModalIcon.textContent = '🎯';
+    if (regModalTitle) {
+      regModalTitle.textContent = 'INJETANDO PAN SPEED & ENGINE NO EMULADOR...';
+      regModalTitle.style.color = '#fbbf24';
     }
+    if (regModalDesc) regModalDesc.textContent = `Aplicando Speed do Pan (${panSpeed}), decodificação ASTC por Hardware e renderização ${renderer.toUpperCase()}...`;
+    if (regModalBar) regModalBar.style.width = '45%';
+    if (regModalSummary) regModalSummary.style.display = 'none';
+    if (btnRegModalClose) btnRegModalClose.style.display = 'none';
+  }
 
-    const regModal = document.getElementById('regedit-progress-modal');
-    const regModalIcon = document.getElementById('regedit-modal-icon');
-    const regModalTitle = document.getElementById('regedit-modal-title');
-    const regModalDesc = document.getElementById('regedit-modal-desc');
-    const regModalBar = document.getElementById('regedit-modal-bar');
-    const regModalSummary = document.getElementById('regedit-modal-summary');
-    const btnRegModalClose = document.getElementById('btn-regedit-modal-close');
+  if (targetBtn) {
+    targetBtn.disabled = true;
+    targetBtn.textContent = '⏳ Injetando no BlueStacks / MSI...';
+  }
+
+  try {
+    if (regModalBar) regModalBar.style.width = '80%';
+    const res = await window.api.applyCompetitiveEmulatorTweak({
+      panSpeed: parseFloat(panSpeed),
+      sensitivityX: parseFloat(sensX),
+      sensitivityY: parseFloat(sensY),
+      astcMode: 'hardware',
+      graphicsRenderer: renderer,
+      cpuCores: cpuCores,
+      ramMb: ramMb,
+      enableHighFps: true
+    });
+
+    if (targetBtn) {
+      targetBtn.disabled = false;
+      targetBtn.textContent = '✔️ Otimizações de Pan Aplicadas!';
+      setTimeout(() => { targetBtn.textContent = '⚡ Aplicar Otimizações Competitivas (Keymap + Engine)'; }, 3500);
+    }
 
     if (regModal) {
-      regModal.style.display = 'flex';
-      if (regModalIcon) regModalIcon.textContent = '🎯';
-      if (regModalTitle) regModalTitle.textContent = 'INJETANDO PAN SPEED & ENGINE NO EMULADOR...';
-      if (regModalDesc) regModalDesc.textContent = `Aplicando Speed do Pan (${panSpeed}), decodificação ASTC por Hardware e renderização ${renderer.toUpperCase()}...`;
-      if (regModalBar) regModalBar.style.width = '45%';
-      if (regModalSummary) regModalSummary.style.display = 'none';
-      if (btnRegModalClose) btnRegModalClose.style.display = 'none';
+      setTimeout(() => {
+        if (regModalBar) regModalBar.style.width = '100%';
+        if (regModalIcon) regModalIcon.textContent = '⚡';
+        if (regModalTitle) {
+          regModalTitle.textContent = 'PAN SPEED & ENGINE APLICADOS COM SUCESSO!';
+          regModalTitle.style.color = '#fbbf24';
+        }
+        if (regModalDesc) regModalDesc.textContent = 'As otimizações de Pan (Sem Pinar) e renderização sem stutter foram injetadas no seu emulador.';
+        if (regModalSummary) {
+          regModalSummary.innerHTML = [
+            `⚡ <b>Speed do Pan:</b> ${panSpeed} (Interpolação rápida sem delay)`,
+            `🎯 <b>Sensibilidade Keymap:</b> X: ${sensX} | Y: ${sensY}`,
+            `🎮 <b>Renderizador Gráfico:</b> ${renderer.toUpperCase()} (ASTC Hardware Ativo)`,
+            `💻 <b>Alocação CPU / RAM:</b> ${cpuCores === 'auto' ? 'Automática Inteligente' : `${cpuCores} Núcleos / ${parseInt(ramMb)/1024}GB RAM`}`,
+            `🚀 <b>Suporte High FPS 240Hz:</b> Ativado`
+          ].join('<br>');
+          regModalSummary.style.display = 'block';
+        }
+        if (btnRegModalClose) btnRegModalClose.style.display = 'block';
+      }, 500);
     }
 
-    btn.disabled = true;
-    const oldText = btn.textContent;
-    btn.textContent = '⏳ Injetando no BlueStacks / MSI...';
-
-    try {
-      if (regModalBar) regModalBar.style.width = '80%';
-      const res = await window.api.applyCompetitiveEmulatorTweak({
-        panSpeed: parseFloat(panSpeed),
-        sensitivityX: parseFloat(sensX),
-        sensitivityY: parseFloat(sensY),
-        astcMode: 'hardware',
-        graphicsRenderer: renderer,
-        cpuCores: cpuCores,
-        ramMb: ramMb,
-        enableHighFps: true
-      });
-
-      btn.disabled = false;
-      btn.textContent = '✔️ Otimizações de Pan Aplicadas!';
-      setTimeout(() => { btn.textContent = oldText; }, 3500);
-
-      if (regModal) {
-        setTimeout(() => {
-          if (regModalBar) regModalBar.style.width = '100%';
-          if (regModalIcon) regModalIcon.textContent = '⚡';
-          if (regModalTitle) {
-            regModalTitle.textContent = 'PAN SPEED & ENGINE APLICADOS COM SUCESSO!';
-            regModalTitle.style.color = '#fbbf24';
-          }
-          if (regModalDesc) regModalDesc.textContent = 'As otimizações de Pan (Sem Pinar) e renderização sem stutter foram injetadas no seu emulador.';
-          if (regModalSummary) {
-            regModalSummary.innerHTML = [
-              `⚡ <b>Speed do Pan:</b> ${panSpeed} (Interpolação rápida sem delay)`,
-              `🎯 <b>Sensibilidade Keymap:</b> X: ${sensX} | Y: ${sensY}`,
-              `🎮 <b>Renderizador Gráfico:</b> ${renderer.toUpperCase()} (ASTC Hardware Ativo)`,
-              `💻 <b>Alocação CPU / RAM:</b> ${cpuCores === 'auto' ? 'Automática Inteligente' : `${cpuCores} Núcleos / ${parseInt(ramMb)/1024}GB RAM`}`,
-              `🚀 <b>Suporte High FPS 240Hz:</b> Ativado`
-            ].join('<br>');
-            regModalSummary.style.display = 'block';
-          }
-          if (btnRegModalClose) btnRegModalClose.style.display = 'block';
-        }, 500);
-      }
-
-      if (statusComp) {
-        statusComp.style.display = 'block';
-        statusComp.innerText = res && res.message ? res.message : 'Otimizações aplicadas com sucesso!';
-      }
-    } catch (e) {
-      btn.disabled = false;
-      btn.textContent = oldText;
-      if (regModal) regModal.style.display = 'none';
-      if (statusComp) {
-        statusComp.style.display = 'block';
-        statusComp.style.color = '#ef4444';
-        statusComp.innerText = 'Erro: ' + e.message;
-      }
+    if (statusComp) {
+      statusComp.style.display = 'block';
+      statusComp.innerText = res && res.message ? res.message : 'Otimizações aplicadas com sucesso!';
     }
-  });
+  } catch (e) {
+    if (targetBtn) {
+      targetBtn.disabled = false;
+      targetBtn.textContent = '⚡ Aplicar Otimizações Competitivas (Keymap + Engine)';
+    }
+    if (regModal) regModal.style.display = 'none';
+    if (statusComp) {
+      statusComp.style.display = 'block';
+      statusComp.style.color = '#ef4444';
+      statusComp.innerText = 'Erro: ' + e.message;
+    }
+  }
+};
+
+document.querySelectorAll('#btn-apply-comp-tweak').forEach(btn => {
+  btn.addEventListener('click', () => window.handleApplyCompTweak(btn));
 });
 
 
@@ -2755,92 +2766,102 @@ function setupAdaptiveRegeditUI() {
     };
   }
 
-  if (btnApply) {
-    btnApply.onclick = async () => {
-      if (resultBox) resultBox.style.display = 'none';
-      if (errorBox)  errorBox.style.display = 'none';
+  window.handleApplyAdaptiveRegedit = async function(btn) {
+    const targetBtn = btn || document.getElementById('btn-apply-adaptive-reg');
+    if (resultBox) resultBox.style.display = 'none';
+    if (errorBox)  errorBox.style.display = 'none';
 
-      const dpiMouse = parsePtBrFloat(inpDpiMouse?.value, 1600);
-      const dpiEmu = parsePtBrFloat(inpDpiEmu?.value, 480);
-      const sensX = parsePtBrFloat(inpSensX?.value, 2.0);
-      const sensY = parsePtBrFloat(inpSensY?.value, 2.0);
-      const styleMul = parsePtBrFloat(document.getElementById('adapt-style-mul-input')?.value, 1.00);
+    const dpiMouse = parsePtBrFloat(inpDpiMouse?.value, 1600);
+    const dpiEmu = parsePtBrFloat(inpDpiEmu?.value, 480);
+    const sensX = parsePtBrFloat(inpSensX?.value, 2.0);
+    const sensY = parsePtBrFloat(inpSensY?.value, 2.0);
+    const styleMul = parsePtBrFloat(document.getElementById('adapt-style-mul-input')?.value, 1.00);
 
-      if (!dpiMouse || dpiMouse < 100) { showAdaptErr('DPI do Mouse inválido. Digite um valor válido (ex: 800, 1600).'); return; }
-      if (!dpiEmu || dpiEmu < 100) { showAdaptErr('DPI do Emulador inválido. Digite um valor válido (ex: 240, 320, 480).'); return; }
-      if (!sensX || sensX < 0.05) { showAdaptErr('Sens X inválida. Digite um valor válido (ex: 1,67 ou 2.0).'); return; }
-      if (!sensY || sensY < 0.05) { showAdaptErr('Sens Y inválida. Digite um valor válido (ex: 0,40 ou 1.0).'); return; }
-      if (isNaN(styleMul) || styleMul < 0.40 || styleMul > 2.00) { showAdaptErr('Multiplicador deve ser entre 0.40 e 2.00.'); return; }
+    if (!dpiMouse || dpiMouse < 100) { showAdaptErr('DPI do Mouse inválido. Digite um valor válido (ex: 800, 1600).'); return; }
+    if (!dpiEmu || dpiEmu < 100) { showAdaptErr('DPI do Emulador inválido. Digite um valor válido (ex: 240, 320, 480).'); return; }
+    if (!sensX || sensX < 0.05) { showAdaptErr('Sens X inválida. Digite um valor válido (ex: 1,67 ou 2.0).'); return; }
+    if (!sensY || sensY < 0.05) { showAdaptErr('Sens Y inválida. Digite um valor válido (ex: 0,40 ou 1.0).'); return; }
+    if (isNaN(styleMul) || styleMul < 0.40 || styleMul > 2.00) { showAdaptErr('Multiplicador deve ser entre 0.40 e 2.00.'); return; }
 
-      // 1. Abre o Modal VIP exibindo a preparação
-      if (regModal) {
-        regModal.style.display = 'flex';
-        if (regModalIcon) regModalIcon.textContent = '⚙️';
-        if (regModalTitle) regModalTitle.textContent = 'PREPARANDO CONFIGURAÇÃO NO SEU PC...';
-        if (regModalDesc) regModalDesc.textContent = 'Calibrando parâmetros de registro, velocidade de ponteiro e curva sem delay...';
-        if (regModalBar) regModalBar.style.width = '35%';
-        if (regModalSummary) regModalSummary.style.display = 'none';
-        if (btnRegModalClose) btnRegModalClose.style.display = 'none';
+    // 1. Abre o Modal VIP exibindo a preparação
+    if (regModal) {
+      regModal.style.display = 'flex';
+      if (regModalIcon) regModalIcon.textContent = '⚙️';
+      if (regModalTitle) {
+        regModalTitle.textContent = 'PREPARANDO CONFIGURAÇÃO NO SEU PC...';
+        regModalTitle.style.color = '#4ade80';
       }
+      if (regModalDesc) regModalDesc.textContent = 'Calibrando parâmetros de registro, velocidade de ponteiro e curva sem delay...';
+      if (regModalBar) regModalBar.style.width = '35%';
+      if (regModalSummary) regModalSummary.style.display = 'none';
+      if (btnRegModalClose) btnRegModalClose.style.display = 'none';
+    }
 
-      btnApply.disabled = true;
-      btnApply.style.opacity = '0.7';
-      btnApply.textContent = '⏳ Injetando no Windows...';
+    if (targetBtn) {
+      targetBtn.disabled = true;
+      targetBtn.style.opacity = '0.7';
+      targetBtn.textContent = '⏳ Injetando no Windows...';
+    }
 
-      try {
-        if (regModalBar) regModalBar.style.width = '75%';
-        const res = await window.api.applyAdaptiveRegedit({ dpiMouse, dpiEmu, sensX, sensY, style: 'custom', styleMul });
-        
-        if (res && res.success) {
-          const s = res.summary || {};
-          const em = styleMul <= 0.85 ? '🌊' : styleMul >= 1.15 ? '🔥' : '⚡';
+    try {
+      if (regModalBar) regModalBar.style.width = '75%';
+      const res = await window.api.applyAdaptiveRegedit({ dpiMouse, dpiEmu, sensX, sensY, style: 'custom', styleMul });
+      
+      if (res && res.success) {
+        const s = res.summary || {};
+        const em = styleMul <= 0.85 ? '🌊' : styleMul >= 1.15 ? '🔥' : '⚡';
 
-          const summaryHtml = [
-            `🖱️ <b>Mouse:</b> ${dpiMouse} DPI &nbsp;|&nbsp; 🎮 <b>Emulador:</b> ${dpiEmu} DPI`,
-            `↔️ <b>Sens X:</b> ${sensX} &nbsp;|&nbsp; ↕️ <b>Sens Y:</b> ${sensY}`,
-            `🔬 <b>Razão Y/X:</b> ${(sensY / sensX).toFixed(3)} — Subida de Capa Calibrada`,
-            `🎚️ ${em} <b>Multiplicador:</b> <span style="color:#fbbf24;font-weight:900;">${styleMul.toFixed(2)}x</span> &nbsp;|&nbsp; Escala X: ${s.scaleX || '1.0'}x Y: ${s.scaleY || '1.0'}x`,
-            `✅ <b>Sensibilidade Aplicada com Sucesso</b> (Sem necessidade de reiniciar!)`,
-          ].join('<br>');
+        const summaryHtml = [
+          `🖱️ <b>Mouse:</b> ${dpiMouse} DPI &nbsp;|&nbsp; 🎮 <b>Emulador:</b> ${dpiEmu} DPI`,
+          `↔️ <b>Sens X:</b> ${sensX} &nbsp;|&nbsp; ↕️ <b>Sens Y:</b> ${sensY}`,
+          `🔬 <b>Razão Y/X:</b> ${(sensY / sensX).toFixed(3)} — Subida de Capa Calibrada`,
+          `🎚️ ${em} <b>Multiplicador:</b> <span style="color:#fbbf24;font-weight:900;">${styleMul.toFixed(2)}x</span> &nbsp;|&nbsp; Escala X: ${s.scaleX || '1.0'}x Y: ${s.scaleY || '1.0'}x`,
+          `✅ <b>Sensibilidade Aplicada com Sucesso</b> (Sem necessidade de reiniciar!)`,
+        ].join('<br>');
 
-          if (resultSummary) resultSummary.innerHTML = summaryHtml;
-          if (resultBox) resultBox.style.display = 'block';
+        if (resultSummary) resultSummary.innerHTML = summaryHtml;
+        if (resultBox) resultBox.style.display = 'block';
 
-          // Atualiza o Modal para tela de sucesso
+        // Atualiza o Modal para tela de sucesso
+        setTimeout(() => {
+          if (regModalBar) regModalBar.style.width = '100%';
+          if (regModalIcon) regModalIcon.textContent = '✅';
+          if (regModalTitle) {
+            regModalTitle.textContent = 'REGEDIT PERSONALIZADA APLICADA COM SUCESSO!';
+            regModalTitle.style.color = '#4ade80';
+          }
+          if (regModalDesc) regModalDesc.textContent = 'As chaves do registro foram injetadas no seu PC. A sensibilidade está calibrada!';
+          if (regModalSummary) {
+            regModalSummary.innerHTML = summaryHtml;
+            regModalSummary.style.display = 'block';
+          }
+          if (btnRegModalClose) btnRegModalClose.style.display = 'block';
+        }, 600);
+
+        if (targetBtn) {
+          targetBtn.style.background = 'linear-gradient(90deg, #22c55e, #16a34a)';
+          targetBtn.textContent = '✅ REGEDIT PERSONALIZADA APLICADA!';
           setTimeout(() => {
-            if (regModalBar) regModalBar.style.width = '100%';
-            if (regModalIcon) regModalIcon.textContent = '✅';
-            if (regModalTitle) {
-              regModalTitle.textContent = 'REGEDIT PERSONALIZADA APLICADA COM SUCESSO!';
-              regModalTitle.style.color = '#4ade80';
-            }
-            if (regModalDesc) regModalDesc.textContent = 'As chaves do registro foram injetadas no seu PC. A sensibilidade está calibrada!';
-            if (regModalSummary) {
-              regModalSummary.innerHTML = summaryHtml;
-              regModalSummary.style.display = 'block';
-            }
-            if (btnRegModalClose) btnRegModalClose.style.display = 'block';
-          }, 600);
-
-          btnApply.style.background = 'linear-gradient(90deg, #22c55e, #16a34a)';
-          btnApply.textContent = '✅ REGEDIT PERSONALIZADA APLICADA!';
-          setTimeout(() => {
-            btnApply.style.background = 'linear-gradient(90deg, #f59e0b, #ef4444)';
-            btnApply.textContent = '⚡ GERAR & APLICAR MINHA REGEDIT PERSONALIZADA';
-            btnApply.disabled = false;
-            btnApply.style.opacity = '1';
+            targetBtn.style.background = 'linear-gradient(90deg, #f59e0b, #ef4444)';
+            targetBtn.textContent = '⚡ GERAR & APLICAR MINHA REGEDIT PERSONALIZADA';
+            targetBtn.disabled = false;
+            targetBtn.style.opacity = '1';
           }, 4000);
-        } else {
-          if (regModal) regModal.style.display = 'none';
-          showAdaptErr(res?.error || 'Erro ao aplicar a Regedit.');
-          resetAdaptBtn();
         }
-      } catch (e) {
+      } else {
         if (regModal) regModal.style.display = 'none';
-        showAdaptErr('Erro: ' + e.message);
+        showAdaptErr(res?.error || 'Erro ao aplicar a Regedit.');
         resetAdaptBtn();
       }
-    };
+    } catch (e) {
+      if (regModal) regModal.style.display = 'none';
+      showAdaptErr('Erro: ' + e.message);
+      resetAdaptBtn();
+    }
+  };
+
+  if (btnApply) {
+    btnApply.onclick = () => window.handleApplyAdaptiveRegedit(btnApply);
   }
 
   function showAdaptErr(msg) {
@@ -2852,10 +2873,11 @@ function setupAdaptiveRegeditUI() {
   }
 
   function resetAdaptBtn() {
-    if (btnApply) {
-      btnApply.disabled = false;
-      btnApply.style.opacity = '1';
-      btnApply.textContent = '⚡ GERAR & APLICAR MINHA REGEDIT PERSONALIZADA';
+    const btn = document.getElementById('btn-apply-adaptive-reg');
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.textContent = '⚡ GERAR & APLICAR MINHA REGEDIT PERSONALIZADA';
     }
   }
 
