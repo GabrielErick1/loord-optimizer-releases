@@ -2228,47 +2228,60 @@ document.querySelectorAll('#btn-apply-comp-tweak').forEach(btn => {
 // REGEDIT ADAPTATIVA — Presets, Slider e Detector de Remada Real
 // ══════════════════════════════════════════════════════════════════════════════
 
+// ══════════════════════════════════════════════════════════════════════════════
+// REGEDIT ADAPTATIVA & DETECTOR DE REMADA (BLINDADO E 100% FUNCIONAL)
+// ══════════════════════════════════════════════════════════════════════════════
+
 const ADAPT_STYLE_PRESETS = { suave: 0.78, equilibrado: 1.00, pesada: 1.22 };
 
-window.setAdaptStyle = function(style) {
+function setAdaptStyle(style) {
   const mul = ADAPT_STYLE_PRESETS[style] ?? 1.00;
   const se = document.getElementById('adapt-style-mul');
   const ie = document.getElementById('adapt-style-mul-input');
   if (se) se.value = mul;
   if (ie) ie.value = mul.toFixed(2);
-  _aHighlight(style); _aMulDesc(mul);
-};
+  _aHighlight(style);
+  _aMulDesc(mul);
+}
+window.setAdaptStyle = setAdaptStyle;
 
-window.syncInputFromSlider = function() {
+function syncInputFromSlider() {
   const se = document.getElementById('adapt-style-mul');
   const ie = document.getElementById('adapt-style-mul-input');
   if (!se || !ie) return;
   const v = parseFloat(se.value);
-  ie.value = v.toFixed(2); _aMulDesc(v); _aHighlightFromMul(v);
-};
+  ie.value = v.toFixed(2);
+  _aMulDesc(v);
+  _aHighlightFromMul(v);
+}
+window.syncInputFromSlider = syncInputFromSlider;
 
-window.syncSliderFromInput = function() {
+function syncSliderFromInput() {
   const se = document.getElementById('adapt-style-mul');
   const ie = document.getElementById('adapt-style-mul-input');
   if (!se || !ie) return;
   let v = parseFloat(ie.value);
   if (isNaN(v)) v = 1.00;
   v = Math.min(2.00, Math.max(0.40, v));
-  se.value = v; ie.value = v.toFixed(2); _aMulDesc(v); _aHighlightFromMul(v);
-};
+  se.value = v;
+  ie.value = v.toFixed(2);
+  _aMulDesc(v);
+  _aHighlightFromMul(v);
+}
+window.syncSliderFromInput = syncSliderFromInput;
 
 function _aMulDesc(mul) {
   const el = document.getElementById('adapt-style-preview');
   if (!el) return;
   let d;
-  if      (mul<=0.60) d='🌊 Extremamente fluida — controle total';
-  else if (mul<=0.85) d='🌊 Suave — precisa, ótima pra sens baixa';
-  else if (mul<=0.95) d='⚡ Levemente suave — precisão + responsividade';
-  else if (mul<=1.05) d='⚡ Equilibrado 1:1 — curva linear padrão';
-  else if (mul<=1.15) d='⚡ Levemente pesada — mais responsiva';
-  else if (mul<=1.40) d='🔥 Pesada — agressiva, ideal sens alta';
-  else if (mul<=1.70) d='🔥 Muito pesada — para quem domina o mouse';
-  else                d='🔥 Ultraagressiva — apenas pra pros';
+  if      (mul <= 0.60) d = '🌊 Extremamente fluida — controle total';
+  else if (mul <= 0.85) d = '🌊 Suave — precisa, ótima pra sens baixa';
+  else if (mul <= 0.95) d = '⚡ Levemente suave — precisão + responsividade';
+  else if (mul <= 1.05) d = '⚡ Equilibrado 1:1 — curva linear padrão';
+  else if (mul <= 1.15) d = '⚡ Levemente pesada — mais responsiva';
+  else if (mul <= 1.40) d = '🔥 Pesada — agressiva, ideal sens alta';
+  else if (mul <= 1.70) d = '🔥 Muito pesada — para quem domina o mouse';
+  else                 d = '🔥 Ultraagressiva — apenas pra pros';
   el.textContent = `${mul.toFixed(2)}x → ${d}`;
 }
 
@@ -2279,15 +2292,19 @@ function _aHighlight(active) {
     pesada:      { b:'rgba(239,68,68,0.9)',   bg:'rgba(239,68,68,0.18)', sh:'rgba(239,68,68,0.35)'  },
   };
   ['suave','equilibrado','pesada'].forEach(s => {
-    const btn = document.getElementById(`style-btn-${s}`); if (!btn) return;
+    const btn = document.getElementById(`style-btn-${s}`);
+    if (!btn) return;
     const c = C[s];
     if (s === active) {
-      btn.style.border=`2px solid ${c.b}`; btn.style.background=c.bg;
-      btn.style.transform='scale(1.04)'; btn.style.boxShadow=`0 0 16px ${c.sh}`;
+      btn.style.border = `2px solid ${c.b}`;
+      btn.style.background = c.bg;
+      btn.style.transform = 'scale(1.04)';
+      btn.style.boxShadow = `0 0 16px ${c.sh}`;
     } else {
-      btn.style.border=`2px solid ${c.b.replace('0.9','0.3')}`;
-      btn.style.background=c.bg.replace('0.18','0.05').replace('0.22','0.05');
-      btn.style.transform='scale(1)'; btn.style.boxShadow='none';
+      btn.style.border = `2px solid ${c.b.replace('0.9','0.3')}`;
+      btn.style.background = c.bg.replace('0.18','0.05').replace('0.22','0.05');
+      btn.style.transform = 'scale(1)';
+      btn.style.boxShadow = 'none';
     }
   });
 }
@@ -2296,15 +2313,18 @@ function _aHighlightFromMul(mul) {
   const e = Object.entries(ADAPT_STYLE_PRESETS).find(([,v]) => Math.abs(v-mul)<=0.03);
   if (e) { _aHighlight(e[0]); return; }
   ['suave','equilibrado','pesada'].forEach(s => {
-    const btn = document.getElementById(`style-btn-${s}`); if (!btn) return;
+    const btn = document.getElementById(`style-btn-${s}`);
+    if (!btn) return;
     const bds={suave:'rgba(56,189,248,0.3)',equilibrado:'rgba(251,191,36,0.3)',pesada:'rgba(239,68,68,0.3)'};
     const bgs={suave:'rgba(56,189,248,0.05)',equilibrado:'rgba(251,191,36,0.05)',pesada:'rgba(239,68,68,0.05)'};
-    btn.style.border=`2px solid ${bds[s]}`; btn.style.background=bgs[s];
-    btn.style.transform='scale(1)'; btn.style.boxShadow='none';
+    btn.style.border = `2px solid ${bds[s]}`;
+    btn.style.background = bgs[s];
+    btn.style.transform = 'scale(1)';
+    btn.style.boxShadow = 'none';
   });
 }
 
-// ── DETECTOR DE REMADA (100% ILUSTRATIVO, INTERATIVO E GAMER) ───────────────
+// ── DETECTOR DE REMADA (CANVAS GAMER ILUSTRATIVO) ───────────────────────────
 let _rSamples = [];
 let _rLastX = null, _rLastY = null, _rLastTime = null;
 let _rAnimFrame = null;
@@ -2314,35 +2334,38 @@ let _rZoneActive = false;
 let _rHasDrawn = false;
 let _rIdlePhase = 0;
 
-function getRemadaCanvas() {
+function updateRemadaCanvasSize() {
   const cv = document.getElementById('remada-canvas');
   if (!cv) return null;
   const z = document.getElementById('remada-zone');
-  if (z) {
-    const rect = z.getBoundingClientRect();
-    const w = Math.round(rect.width) || 700;
-    const h = Math.max(120, Math.round(rect.height) || 120);
-    if (cv.width !== w || cv.height !== h) {
-      cv.width = w;
-      cv.height = h;
-    }
+  const w = z ? (z.clientWidth || z.offsetWidth || 700) : 700;
+  const h = z ? (z.clientHeight || z.offsetHeight || 120) : 120;
+  if (cv.width !== w || cv.height !== h) {
+    cv.width = w;
+    cv.height = h;
   }
   return cv;
 }
 
 function drawRemadaCanvas() {
   const cv = document.getElementById('remada-canvas');
-  if (!cv) return;
+  if (!cv) {
+    _rAnimFrame = requestAnimationFrame(drawRemadaCanvas);
+    return;
+  }
   const ctx = cv.getContext('2d');
-  if (!ctx) return;
+  if (!ctx) {
+    _rAnimFrame = requestAnimationFrame(drawRemadaCanvas);
+    return;
+  }
 
-  const w = cv.width;
-  const h = cv.height;
+  const w = cv.width || 700;
+  const h = cv.height || 120;
   ctx.clearRect(0, 0, w, h);
 
-  // 1. Grade cibernética sutil de fundo
+  // 1. Grade milimétrica neon
   ctx.save();
-  ctx.strokeStyle = 'rgba(168, 85, 247, 0.08)';
+  ctx.strokeStyle = 'rgba(168, 85, 247, 0.12)';
   ctx.lineWidth = 1;
   const gridSize = 24;
   for (let x = 0; x < w; x += gridSize) {
@@ -2352,8 +2375,8 @@ function drawRemadaCanvas() {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
   }
 
-  // Linha central de mira / baseline
-  ctx.strokeStyle = 'rgba(251, 191, 36, 0.2)';
+  // Linha central horizontal
+  ctx.strokeStyle = 'rgba(251, 191, 36, 0.25)';
   ctx.setLineDash([4, 4]);
   ctx.beginPath(); ctx.moveTo(0, h * 0.5); ctx.lineTo(w, h * 0.5); ctx.stroke();
   ctx.setLineDash([]);
@@ -2361,51 +2384,47 @@ function drawRemadaCanvas() {
 
   const now = performance.now();
 
-  // 2. Se o usuário estiver desenhando ou já desenhou:
+  // 2. Traçado do usuário
   if (_rPoints.length > 1) {
-    // Desenha a linha da remada com efeito laser neon
     for (let i = 1; i < _rPoints.length; i++) {
       const p0 = _rPoints[i - 1];
       const p1 = _rPoints[i];
       const age = now - p1.t;
-      const alpha = _rZoneActive ? Math.max(0.2, 1 - age / 1200) : 0.85;
+      const alpha = _rZoneActive ? Math.max(0.3, 1 - age / 1500) : 0.9;
       const spd = p1.spd || 0;
 
-      let r = 56, g = 189, b = 248; // Azul suave
-      if (spd > 8)  { r = 251; g = 191; b = 36; }  // Amarelo
-      if (spd > 20) { r = 239; g = 68;  b = 68; }  // Vermelho
+      let r = 56, g = 189, b = 248;
+      if (spd > 8)  { r = 251; g = 191; b = 36; }
+      if (spd > 20) { r = 239; g = 68;  b = 68; }
 
-      // Brilho externo neon
       ctx.save();
       ctx.beginPath();
       ctx.moveTo(p0.x, p0.y);
       ctx.lineTo(p1.x, p1.y);
-      ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.4})`;
+      ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.45})`;
       ctx.lineWidth = Math.min(10, Math.max(4, 5 + spd * 0.25));
       ctx.lineCap = 'round';
       ctx.stroke();
 
-      // Núcleo brilhante
       ctx.beginPath();
       ctx.moveTo(p0.x, p0.y);
       ctx.lineTo(p1.x, p1.y);
       ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.95})`;
       ctx.lineWidth = 2.5;
       ctx.lineCap = 'round';
-      ctx.shadowBlur = 12;
+      ctx.shadowBlur = 14;
       ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 1)`;
       ctx.stroke();
       ctx.restore();
     }
 
-    // Ponto na ponta atual do mouse
     if (_rZoneActive && _rPoints.length > 0) {
       const last = _rPoints[_rPoints.length - 1];
       ctx.save();
       ctx.beginPath();
       ctx.arc(last.x, last.y, 6, 0, Math.PI * 2);
       ctx.fillStyle = '#fbbf24';
-      ctx.shadowBlur = 16;
+      ctx.shadowBlur = 18;
       ctx.shadowColor = '#f59e0b';
       ctx.fill();
 
@@ -2416,14 +2435,13 @@ function drawRemadaCanvas() {
       ctx.restore();
     }
   } else if (!_rZoneActive && !_rHasDrawn) {
-    // 3. ANIMAÇÃO ILUSTRATIVA DEMONSTRATIVA (Modo Idle)
+    // 3. ANIMAÇÃO ILUSTRATIVA DE PUXADA DE CAPA (Idle)
     _rIdlePhase += 0.035;
     ctx.save();
 
-    // Desenha curva demonstrativa de puxada de capa
     ctx.beginPath();
-    const startX = w * 0.15;
-    const endX = w * 0.85;
+    const startX = w * 0.12;
+    const endX = w * 0.88;
     for (let x = startX; x <= endX; x += 4) {
       const prog = (x - startX) / (endX - startX);
       const wave = Math.sin(prog * Math.PI * 3 + _rIdlePhase) * (h * 0.22);
@@ -2431,38 +2449,37 @@ function drawRemadaCanvas() {
       if (x === startX) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     }
-    ctx.strokeStyle = 'rgba(251, 191, 36, 0.45)';
+    ctx.strokeStyle = 'rgba(251, 191, 36, 0.5)';
     ctx.lineWidth = 3;
     ctx.setLineDash([8, 6]);
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = 'rgba(251, 191, 36, 0.6)';
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = 'rgba(251, 191, 36, 0.7)';
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Partícula viajando na curva
     const ballProg = (Math.sin(_rIdlePhase * 0.8) + 1) / 2;
     const ballX = startX + ballProg * (endX - startX);
     const ballWave = Math.sin(ballProg * Math.PI * 3 + _rIdlePhase) * (h * 0.22);
     const ballY = h * 0.65 - ballProg * (h * 0.35) + ballWave;
 
     ctx.beginPath();
-    ctx.arc(ballX, ballY, 5, 0, Math.PI * 2);
+    ctx.arc(ballX, ballY, 5.5, 0, Math.PI * 2);
     ctx.fillStyle = '#ef4444';
-    ctx.shadowBlur = 14;
+    ctx.shadowBlur = 16;
     ctx.shadowColor = '#ef4444';
     ctx.fill();
 
-    ctx.fillStyle = 'rgba(253, 230, 138, 0.85)';
+    ctx.fillStyle = 'rgba(253, 230, 138, 0.9)';
     ctx.font = 'bold 11px Inter, system-ui, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('⚡ Exemplo de Puxada de Capa — Mova o mouse aqui para capturar seu estilo real', w * 0.5, h * 0.88);
+    ctx.fillText('⚡ Simulação de Puxada de Capa — Mova o mouse aqui para calibrar seu estilo real', w * 0.5, h * 0.88);
     ctx.restore();
   }
 
   _rAnimFrame = requestAnimationFrame(drawRemadaCanvas);
 }
 
-function onRemadaMouseMove(e) {
+function handleRemadaMove(e) {
   const z = document.getElementById('remada-zone');
   if (!z) return;
   const rc = z.getBoundingClientRect();
@@ -2482,7 +2499,6 @@ function onRemadaMouseMove(e) {
       if (spd > 0.05) {
         _rSamples.push({ spd, t: now });
         
-        // Atualiza display ao vivo com estilo HUD gamer
         const lv = document.getElementById('remada-speed-live');
         if (lv) {
           const pxSec = Math.round(spd * 1000);
@@ -2494,14 +2510,14 @@ function onRemadaMouseMove(e) {
   }
 
   _rPoints.push({ x, y, t: now, spd });
-  if (_rPoints.length > 120) _rPoints.shift();
+  if (_rPoints.length > 150) _rPoints.shift();
 
   _rLastX = e.clientX;
   _rLastY = e.clientY;
   _rLastTime = now;
 }
 
-function startRemadaCapture() {
+function handleRemadaEnter() {
   _rZoneActive = true;
   _rSamples = [];
   _rPoints = [];
@@ -2516,7 +2532,7 @@ function startRemadaCapture() {
     z.style.boxShadow = '0 0 25px rgba(251,191,36,0.3)';
   }
 
-  getRemadaCanvas();
+  updateRemadaCanvasSize();
 
   const idleMsg = document.getElementById('remada-idle-msg');
   const activeMsg = document.getElementById('remada-active-msg');
@@ -2524,12 +2540,12 @@ function startRemadaCapture() {
   if (activeMsg) activeMsg.style.display = 'block';
 }
 
-function stopRemadaCapture() {
+function handleRemadaLeave() {
   _rZoneActive = false;
   const z = document.getElementById('remada-zone');
   if (z) {
-    z.style.border = '2px dashed rgba(168,85,247,0.5)';
-    z.style.background = 'rgba(168,85,247,0.04)';
+    z.style.border = '2px dashed rgba(168,85,247,0.6)';
+    z.style.background = 'rgba(10,12,20,0.6)';
     z.style.boxShadow = 'none';
   }
 
@@ -2590,10 +2606,7 @@ function stopRemadaCapture() {
   if (rr) rr.style.display = 'block';
 }
 
-window.startRemadaCapture = startRemadaCapture;
-window.stopRemadaCapture = stopRemadaCapture;
-
-window.applyRemadaResult = function() {
+function applyRemadaResult() {
   if (_rFinalMul === null) return;
   const se = document.getElementById('adapt-style-mul');
   const ie = document.getElementById('adapt-style-mul-input');
@@ -2611,9 +2624,10 @@ window.applyRemadaResult = function() {
       box.style.boxShadow = 'none';
     }, 2500);
   }
-};
+}
+window.applyRemadaResult = applyRemadaResult;
 
-window.resetRemada = function() {
+function resetRemada() {
   _rSamples = [];
   _rFinalMul = null;
   _rPoints = [];
@@ -2625,92 +2639,136 @@ window.resetRemada = function() {
   }
   const rr = document.getElementById('remada-result');
   if (rr) rr.style.display = 'none';
-};
+}
+window.resetRemada = resetRemada;
 
-// Vincula listeners e inicia o loop de renderização do canvas
-document.addEventListener('DOMContentLoaded', () => {
+// ── Inicialização e Binding dos Elementos ────────────────────────────────────
+function setupAdaptiveRegeditUI() {
+  // 1. Botões de Estilo
+  const btnSuave = document.getElementById('style-btn-suave');
+  const btnEq = document.getElementById('style-btn-equilibrado');
+  const btnPes = document.getElementById('style-btn-pesada');
+  if (btnSuave) btnSuave.onclick = () => setAdaptStyle('suave');
+  if (btnEq) btnEq.onclick = () => setAdaptStyle('equilibrado');
+  if (btnPes) btnPes.onclick = () => setAdaptStyle('pesada');
+
+  // 2. Sliders e Inputs
+  const mulSlider = document.getElementById('adapt-style-mul');
+  const mulInput = document.getElementById('adapt-style-mul-input');
+  if (mulSlider) mulSlider.oninput = syncInputFromSlider;
+  if (mulInput) mulInput.oninput = syncSliderFromInput;
+
+  // 3. Zona do Detector de Remada e Botões
   const z = document.getElementById('remada-zone');
   if (z) {
-    z.addEventListener('mouseenter', startRemadaCapture);
-    z.addEventListener('mouseleave', stopRemadaCapture);
-    z.addEventListener('mousemove', onRemadaMouseMove);
+    z.onmouseenter = handleRemadaEnter;
+    z.onmouseleave = handleRemadaLeave;
+    z.onmousemove = handleRemadaMove;
   }
-  getRemadaCanvas();
+  const btnAppRem = document.getElementById('btn-apply-remada-result');
+  if (btnAppRem) btnAppRem.onclick = applyRemadaResult;
+  const btnResRem = document.getElementById('btn-reset-remada');
+  if (btnResRem) btnResRem.onclick = resetRemada;
+
+  // 4. Botão de Aplicar Regedit Adaptativa
+  const btnApply = document.getElementById('btn-apply-adaptive-reg');
+  const inpDpiMouse = document.getElementById('adapt-dpi-mouse');
+  const inpDpiEmu = document.getElementById('adapt-dpi-emu');
+  const inpSensX = document.getElementById('adapt-sens-x');
+  const inpSensY = document.getElementById('adapt-sens-y');
+  const resultBox = document.getElementById('adaptive-reg-result');
+  const resultSummary = document.getElementById('adaptive-reg-summary');
+  const errorBox = document.getElementById('adaptive-reg-error');
+  const errorMsg = document.getElementById('adaptive-reg-error-msg');
+
+  function parsePtBrFloat(val, fallback = 0) {
+    if (typeof val === 'number') return isNaN(val) ? fallback : val;
+    if (!val) return fallback;
+    const clean = String(val).replace(',', '.').trim();
+    const num = parseFloat(clean);
+    return isNaN(num) ? fallback : num;
+  }
+
+  if (btnApply) {
+    btnApply.onclick = async () => {
+      if (resultBox) resultBox.style.display = 'none';
+      if (errorBox)  errorBox.style.display = 'none';
+
+      const dpiMouse = parsePtBrFloat(inpDpiMouse?.value, 1600);
+      const dpiEmu = parsePtBrFloat(inpDpiEmu?.value, 480);
+      const sensX = parsePtBrFloat(inpSensX?.value, 2.0);
+      const sensY = parsePtBrFloat(inpSensY?.value, 2.0);
+      const styleMul = parsePtBrFloat(document.getElementById('adapt-style-mul-input')?.value, 1.00);
+
+      if (!dpiMouse || dpiMouse < 100) { showAdaptErr('DPI do Mouse inválido. Digite um valor válido (ex: 800, 1600).'); return; }
+      if (!dpiEmu || dpiEmu < 100) { showAdaptErr('DPI do Emulador inválido. Digite um valor válido (ex: 240, 320, 480).'); return; }
+      if (!sensX || sensX < 0.05) { showAdaptErr('Sens X inválida. Digite um valor válido (ex: 1,67 ou 2.0).'); return; }
+      if (!sensY || sensY < 0.05) { showAdaptErr('Sens Y inválida. Digite um valor válido (ex: 0,40 ou 1.0).'); return; }
+      if (isNaN(styleMul) || styleMul < 0.40 || styleMul > 2.00) { showAdaptErr('Multiplicador deve ser entre 0.40 e 2.00.'); return; }
+
+      btnApply.disabled = true;
+      btnApply.style.opacity = '0.7';
+      btnApply.textContent = '⏳ Calculando e Injetando Regedit...';
+
+      try {
+        const res = await window.api.applyAdaptiveRegedit({ dpiMouse, dpiEmu, sensX, sensY, style: 'custom', styleMul });
+        if (res && res.success) {
+          const s = res.summary || {};
+          const em = styleMul <= 0.85 ? '🌊' : styleMul >= 1.15 ? '🔥' : '⚡';
+          if (resultSummary) {
+            resultSummary.innerHTML = [
+              `🖱️ <b>Mouse:</b> ${dpiMouse} DPI &nbsp;|&nbsp; 🎮 <b>Emulador:</b> ${dpiEmu} DPI`,
+              `↔️ <b>Sens X:</b> ${sensX} &nbsp;|&nbsp; ↕️ <b>Sens Y:</b> ${sensY}`,
+              `🔬 <b>Razão Y/X:</b> ${(sensY / sensX).toFixed(3)} — Calibrado para Subida de Capa sem Pinar`,
+              `🎚️ ${em} <b>Multiplicador:</b> <span style="color:#fbbf24;font-weight:900;">${styleMul.toFixed(2)}x</span> &nbsp;|&nbsp; Escala X: ${s.scaleX || '1.0'}x Y: ${s.scaleY || '1.0'}x`,
+              `✅ <b>Regedit Injetada no Windows em Tempo Real</b> (Sem necessidade de reiniciar!)`,
+            ].join('<br>');
+          }
+          if (resultBox) {
+            resultBox.style.display = 'block';
+            resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+          btnApply.style.background = 'linear-gradient(90deg, #22c55e, #16a34a)';
+          btnApply.textContent = '✅ REGEDIT PERSONALIZADA APLICADA COM SUCESSO!';
+          setTimeout(() => {
+            btnApply.style.background = 'linear-gradient(90deg, #f59e0b, #ef4444)';
+            btnApply.textContent = '⚡ GERAR & APLICAR MINHA REGEDIT PERSONALIZADA';
+            btnApply.disabled = false;
+            btnApply.style.opacity = '1';
+          }, 4000);
+        } else {
+          showAdaptErr(res?.error || 'Erro ao aplicar a Regedit.');
+          resetAdaptBtn();
+        }
+      } catch (e) {
+        showAdaptErr('Erro: ' + e.message);
+        resetAdaptBtn();
+      }
+    };
+  }
+
+  function showAdaptErr(msg) {
+    if (errorMsg) errorMsg.textContent = msg;
+    if (errorBox) {
+      errorBox.style.display = 'block';
+      errorBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function resetAdaptBtn() {
+    if (btnApply) {
+      btnApply.disabled = false;
+      btnApply.style.opacity = '1';
+      btnApply.textContent = '⚡ GERAR & APLICAR MINHA REGEDIT PERSONALIZADA';
+    }
+  }
+
+  _aHighlight('equilibrado');
+  _aMulDesc(1.00);
+  updateRemadaCanvasSize();
   if (!_rAnimFrame) _rAnimFrame = requestAnimationFrame(drawRemadaCanvas);
-});
+}
 
-(() => {
-  const z = document.getElementById('remada-zone');
-  if (z) {
-    z.addEventListener('mouseenter', startRemadaCapture);
-    z.addEventListener('mouseleave', stopRemadaCapture);
-    z.addEventListener('mousemove', onRemadaMouseMove);
-    getRemadaCanvas();
-    if (!_rAnimFrame) _rAnimFrame = requestAnimationFrame(drawRemadaCanvas);
-  }
-})();
-
-// ── Handler de Aplicação ────────────────────────────────────────────────────
-(function initAdaptiveRegedit() {
-  const btnApply=document.getElementById('btn-apply-adaptive-reg');
-  const inpDpiMouse=document.getElementById('adapt-dpi-mouse');
-  const inpDpiEmu=document.getElementById('adapt-dpi-emu');
-  const inpSensX=document.getElementById('adapt-sens-x');
-  const inpSensY=document.getElementById('adapt-sens-y');
-  const resultBox=document.getElementById('adaptive-reg-result');
-  const resultSummary=document.getElementById('adaptive-reg-summary');
-  const errorBox=document.getElementById('adaptive-reg-error');
-  const errorMsg=document.getElementById('adaptive-reg-error-msg');
-  if (!btnApply) return;
-
-  _aHighlight('equilibrado'); _aMulDesc(1.00);
-
-  function modeDesc(sX,sY){
-    const r=sY/sX;
-    if(r<0.50) return 'Capa Travada (Y muito menor — puxada forte pra cabeça)';
-    if(r<0.85) return 'Head Lock (Y menor — boa subida de capa)';
-    if(r<=1.15) return '1:1 Simétrico (Y ≈ X — mira uniforme)';
-    return 'Y Dominante (Y maior — sobe mais rápido que gira)';
-  }
-
-  btnApply.addEventListener('click', async () => {
-    if(resultBox) resultBox.style.display='none';
-    if(errorBox)  errorBox.style.display='none';
-    const dpiMouse=parseFloat(inpDpiMouse?.value);
-    const dpiEmu=parseFloat(inpDpiEmu?.value);
-    const sensX=parseFloat(inpSensX?.value);
-    const sensY=parseFloat(inpSensY?.value);
-    const styleMul=parseFloat(document.getElementById('adapt-style-mul-input')?.value??'1.00');
-
-    if (!dpiMouse||dpiMouse<100){showE('DPI do Mouse inválido. Mínimo: 100.');return;}
-    if (!dpiEmu||dpiEmu<100){showE('DPI do Emulador inválido. Mínimo: 100.');return;}
-    if (!sensX||sensX<0.1){showE('Sens X inválida. Mínimo: 0.10.');return;}
-    if (!sensY||sensY<0.1){showE('Sens Y inválida. Mínimo: 0.10.');return;}
-    if (isNaN(styleMul)||styleMul<0.40||styleMul>2.00){showE('Multiplicador deve ser entre 0.40 e 2.00.');return;}
-
-    btnApply.disabled=true; btnApply.style.opacity='0.7';
-    btnApply.textContent='⏳ Calculando e Aplicando...';
-
-    try {
-      const res=await window.api.applyAdaptiveRegedit({dpiMouse,dpiEmu,sensX,sensY,style:'custom',styleMul});
-      if (res&&res.success) {
-        const s=res.summary||{};
-        const em=styleMul<=0.85?'🌊':styleMul>=1.15?'🔥':'⚡';
-        if(resultSummary) resultSummary.innerHTML=[
-          `🖱️ <b>Mouse:</b> ${dpiMouse} DPI &nbsp;|&nbsp; 🎮 <b>Emulador:</b> ${dpiEmu} DPI`,
-          `↔️ <b>Sens X:</b> ${sensX} &nbsp;|&nbsp; ↕️ <b>Sens Y:</b> ${sensY}`,
-          `🔬 <b>${modeDesc(sensX,sensY)}</b>`,
-          `🎚️ ${em} <b>Multiplicador:</b> <span style="color:#c084fc;font-weight:900;">${styleMul.toFixed(2)}x</span> &nbsp;|&nbsp; Escala X:${s.scaleX}x Y:${s.scaleY}x`,
-          `✅ <b>Aplicado em tempo real</b> — sem reiniciar o PC!`,
-        ].join('<br>');
-        if(resultBox) resultBox.style.display='block';
-        btnApply.style.background='linear-gradient(90deg,#22c55e,#16a34a)';
-        btnApply.textContent='✅ REGEDIT PERSONALIZADA APLICADA!';
-        setTimeout(()=>{btnApply.style.background='linear-gradient(90deg,#f59e0b,#ef4444)';btnApply.textContent='⚡ GERAR & APLICAR MINHA REGEDIT PERSONALIZADA';btnApply.disabled=false;btnApply.style.opacity='1';},4000);
-      } else { showE(res?.error||'Erro desconhecido.'); resetB(); }
-    } catch(e){ showE('Erro: '+e.message); resetB(); }
-  });
-
-  function showE(msg){if(errorMsg) errorMsg.textContent=msg; if(errorBox) errorBox.style.display='block';}
-  function resetB(){btnApply.disabled=false;btnApply.style.opacity='1';btnApply.textContent='⚡ GERAR & APLICAR MINHA REGEDIT PERSONALIZADA';}
-})();
+window.addEventListener('resize', updateRemadaCanvasSize);
+document.addEventListener('DOMContentLoaded', setupAdaptiveRegeditUI);
+setupAdaptiveRegeditUI();

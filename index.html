@@ -50,9 +50,9 @@
           <button class="nav-item" data-tab="emulador">
             <span class="nav-icon">🎮</span> Emulador
           </button>
-          <button class="nav-item" data-tab="minha-config" style="position: relative;">
-            <span class="nav-icon">💾</span> Minha Config
-            <span id="nav-update-badge" style="display: none; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: linear-gradient(90deg, #ef4444, #f59e0b); color: #fff; font-size: 9px; font-weight: 900; padding: 2px 6px; border-radius: 6px; box-shadow: 0 0 10px rgba(239, 68, 68, 0.8); animation: pulseUpdate 1.5s infinite;">NOVO 🔥</span>
+          <button class="nav-item" data-tab="minha-config" style="position: relative; border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05);">
+            <span class="nav-icon">💾</span> Minha Config &amp; Atualizações
+            <span id="nav-update-badge" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: linear-gradient(90deg, #ef4444, #f59e0b); color: #fff; font-size: 9px; font-weight: 900; padding: 2px 6px; border-radius: 6px; box-shadow: 0 0 10px rgba(239, 68, 68, 0.8); animation: pulseUpdate 1.5s infinite;">v1.7.4 🔥</span>
           </button>
           <button class="nav-item" data-tab="pc-fraco" style="color: #f59e0b; font-weight: 700;">
             <span class="nav-icon">🥔</span> PC Fraco (Ultra FPS)
@@ -209,14 +209,14 @@
                 <!-- Resultado da detecção -->
                 <div id="remada-result" style="display:none; margin-top:10px; padding:10px 12px; background:rgba(168,85,247,0.12); border-radius:8px; border:1px solid rgba(168,85,247,0.4);">
                   <div style="font-size:0.8rem; color:#e9d5ff; line-height:1.7;" id="remada-result-text"></div>
-                  <button onclick="applyRemadaResult()" type="button"
+                  <button id="btn-apply-remada-result" onclick="applyRemadaResult()" type="button"
                     style="margin-top:8px; width:100%; padding:8px; background:linear-gradient(90deg,#7c3aed,#a855f7); border:none; border-radius:6px; color:#fff; font-weight:800; font-size:0.82rem; cursor:pointer; transition:all 0.2s;">
                     ✅ USAR ESTE MULTIPLICADOR NA MINHA REGEDIT
                   </button>
                 </div>
 
                 <div style="display:flex; gap:8px; margin-top:8px;">
-                  <button onclick="resetRemada()" type="button"
+                  <button id="btn-reset-remada" onclick="resetRemada()" type="button"
                     style="flex:1; padding:6px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#9ca3af; font-size:0.75rem; cursor:pointer;">
                     🔄 Resetar
                   </button>
