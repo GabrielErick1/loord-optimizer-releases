@@ -2160,3 +2160,161 @@ if (btnApplyCompTweak) {
   });
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// AUTO-UPDATE ENGINE — BANNER DO TOPO, BADGE NA SIDEBAR & PLAY STORE DOWNLOAD
+// ══════════════════════════════════════════════════════════════════════════════
+(function setupAutoUpdater() {
+  const globalAlert = document.getElementById('global-update-alert');
+  const globalTitle = document.getElementById('global-update-title');
+  const globalBtnVer = document.getElementById('global-update-btn-ver');
+  const btnGlobalUpdate = document.getElementById('btn-global-update-now');
+  const btnGlobalClose = document.getElementById('btn-global-update-close');
+  const navBadge = document.getElementById('nav-update-badge');
+
+  const btnCheckUpdate = document.getElementById('btn-check-update');
+  const btnInstallNow = document.getElementById('btn-install-now');
+  const updateTitle = document.getElementById('update-status-title');
+  const updateDesc = document.getElementById('update-status-desc');
+  const versionBadge = document.getElementById('app-version-badge');
+
+  let latestUpdateInfo = null;
+  let isDownloading = false;
+  let isDownloaded = false;
+
+  if (btnGlobalClose && globalAlert) {
+    btnGlobalClose.onclick = () => {
+      globalAlert.style.display = 'none';
+    };
+  }
+
+  async function checkUpdates(isManual = false) {
+    if (!window.api || !window.api.checkForUpdates) return;
+    if (btnCheckUpdate && isManual) {
+      btnCheckUpdate.disabled = true;
+      btnCheckUpdate.textContent = '⏳ Verificando...';
+    }
+
+    try {
+      const res = await window.api.checkForUpdates();
+      if (res && res.updateAvailable && res.latestVersion) {
+        latestUpdateInfo = res;
+        const tagStr = 'v' + res.latestVersion;
+
+        // 1. Exibe o banner do topo com visual neon
+        if (globalAlert) {
+          if (globalTitle) globalTitle.textContent = `🔥 NOVA VERSÃO ${tagStr} DISPONÍVEL!`;
+          if (globalBtnVer) globalBtnVer.textContent = tagStr;
+          globalAlert.style.display = 'flex';
+        }
+
+        // 2. Exibe a badge pulsante na barra lateral
+        if (navBadge) {
+          navBadge.textContent = `${tagStr} 🔥`;
+          navBadge.style.display = 'inline-block';
+        }
+
+        // 3. Atualiza card na aba Minha Config
+        if (updateTitle) updateTitle.innerHTML = `🚀 Nova Versão <b>${tagStr}</b> Disponível!`;
+        if (updateDesc) updateDesc.textContent = 'Uma nova versão está pronta com melhorias de sensibilidade e estabilidade.';
+        if (versionBadge && res.currentVersion) versionBadge.textContent = 'v' + res.currentVersion;
+
+        // Inicia download em segundo plano automaticamente (Play Store Style)
+        startDownload(res.downloadUrl, tagStr);
+      } else {
+        if (isManual && updateDesc) {
+          updateDesc.textContent = 'Você já está usando a versão mais recente!';
+        }
+      }
+    } catch (e) {
+      console.warn('Erro ao verificar atualizações:', e);
+    } finally {
+      if (btnCheckUpdate && isManual) {
+        btnCheckUpdate.disabled = false;
+        btnCheckUpdate.textContent = '🔍 Verificar Agora';
+      }
+    }
+  }
+
+  async function startDownload(url, tagStr) {
+    if (isDownloading || isDownloaded) return;
+    isDownloading = true;
+
+    if (btnGlobalUpdate) {
+      btnGlobalUpdate.disabled = true;
+      btnGlobalUpdate.innerHTML = `⏳ Baixando ${tagStr}...`;
+    }
+
+    try {
+      await window.api.downloadUpdateProgress(url);
+    } catch (e) {
+      console.warn('Erro ao baixar update:', e);
+      isDownloading = false;
+    }
+  }
+
+  // Progresso de download
+  if (window.api && window.api.onUpdateDownloadProgress) {
+    window.api.onUpdateDownloadProgress((data) => {
+      const p = data?.percent || 0;
+      const mb = data?.receivedMB || '0';
+      if (btnGlobalUpdate) {
+        btnGlobalUpdate.innerHTML = `⏳ Baixando ${p}% (${mb}MB)...`;
+      }
+      if (updateDesc) {
+        updateDesc.textContent = `Baixando nova versão em segundo plano (${p}% - ${mb}MB)...`;
+      }
+    });
+  }
+
+  // Download concluído
+  if (window.api && window.api.onUpdateDownloaded) {
+    window.api.onUpdateDownloaded(() => {
+      isDownloading = false;
+      isDownloaded = true;
+
+      if (btnGlobalUpdate) {
+        btnGlobalUpdate.disabled = false;
+        btnGlobalUpdate.style.background = '#22c55e';
+        btnGlobalUpdate.style.color = '#ffffff';
+        btnGlobalUpdate.innerHTML = '⚡ REINICIAR & ATUALIZAR AGORA';
+      }
+
+      if (btnInstallNow) btnInstallNow.style.display = 'inline-block';
+      if (updateDesc) updateDesc.textContent = '✔ Atualização baixada com sucesso! Clique para instalar agora.';
+    });
+  }
+
+  // Clique no botão de atualizar do banner
+  if (btnGlobalUpdate) {
+    btnGlobalUpdate.onclick = async () => {
+      if (isDownloaded) {
+        if (window.api.installUpdateNow) {
+          await window.api.installUpdateNow();
+        } else if (window.api.installUpdate) {
+          window.api.installUpdate();
+        }
+      } else if (latestUpdateInfo && latestUpdateInfo.downloadUrl) {
+        const tagStr = 'v' + (latestUpdateInfo.latestVersion || '');
+        startDownload(latestUpdateInfo.downloadUrl, tagStr);
+      }
+    };
+  }
+
+  if (btnInstallNow) {
+    btnInstallNow.onclick = async () => {
+      if (window.api.installUpdateNow) {
+        await window.api.installUpdateNow();
+      } else if (window.api.installUpdate) {
+        window.api.installUpdate();
+      }
+    };
+  }
+
+  if (btnCheckUpdate) {
+    btnCheckUpdate.onclick = () => checkUpdates(true);
+  }
+
+  // Verifica atualizações automaticamente após 2 segundos
+  setTimeout(() => checkUpdates(false), 2000);
+})();
+
