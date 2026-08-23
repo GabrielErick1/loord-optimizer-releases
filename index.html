@@ -1549,7 +1549,7 @@
                 <p style="margin: 0; font-size: 12px; color: #94a3b8;">Verifique e receba novas versões e otimizações
                   automaticamente</p>
               </div>
-              <span id="app-version-badge" class="badge badge-success">v1.9.6</span>
+              <span id="app-version-badge" class="badge badge-success">v1.9.7</span>
             </div>
 
             <!-- Update Card Content -->
@@ -1897,7 +1897,43 @@
   style="display: none; width: 100%; background: linear-gradient(90deg, #22c55e, #16a34a); color: #fff; font-size: 0.92rem; font-weight: 900; padding: 12px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(34, 197, 94, 0.4);">
   ⚡ OK, PRONTO PRA JOGAR!
 </button>
-</div>
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- MODAL DE ATUALIZAÇÃO CENTRALIZADO (IMAGEM 1 DE REFERÊNCIA)            -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div id="update-popup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 100000; justify-content: center; align-items: center; padding: 20px;">
+  <div style="background: #11141c; border: 2px solid #f59e0b; border-radius: 16px; width: 100%; max-width: 520px; padding: 28px; text-align: center; box-shadow: 0 0 40px rgba(245, 158, 11, 0.35); animation: popupIn 0.3s ease-out; position: relative;">
+    
+    <div style="font-size: 3rem; margin-bottom: 8px;">🚀</div>
+    
+    <h2 id="update-popup-title" style="margin: 0 0 6px 0; font-size: 1.35rem; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 0.5px;">
+      🚀 NOVA VERSÃO <span id="update-popup-ver-title" style="color: #fbbf24;">v1.9.7</span> DISPONÍVEL!
+    </h2>
+    <p style="margin: 0 0 20px 0; font-size: 0.82rem; color: #94a3b8; line-height: 1.4;">
+      Uma nova versão com melhorias de desempenho e sensibilidade está pronta para você.
+    </p>
+
+    <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 16px; margin-bottom: 22px; text-align: left;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 12px; font-size: 0.85rem; font-weight: 800;">
+        <span style="color: #f87171;">📌 Sua Versão: <b id="update-popup-cur-ver">v1.9.6</b></span>
+        <span style="color: #4ade80;">🔥 Nova Versão: <b id="update-popup-lat-ver">v1.9.7</b></span>
+      </div>
+      <ul style="margin: 0; padding-left: 18px; font-size: 0.8rem; color: #fbbf24; line-height: 1.8;">
+        <li>🧬 <b>Regedit Adaptativa & Detector de Remada</b></li>
+        <li>🎯 <b>Otimizador de Pan & Engine (Anti-Pinar)</b></li>
+        <li>⚡ <b>Melhorias de sensibilidade e estabilidade geral</b></li>
+      </ul>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <button id="btn-update-popup-download" style="width: 100%; background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); color: #fff; font-size: 0.98rem; font-weight: 900; padding: 14px; border: none; border-radius: 10px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4); display: flex; align-items: center; justify-content: center; gap: 8px;">
+        ⚡ BAIXAR & ATUALIZAR AGORA (<span id="update-popup-btn-ver">v1.9.7</span>)
+      </button>
+      <button id="btn-update-popup-close" onclick="document.getElementById('update-popup-modal').style.display='none'" style="width: 100%; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); color: #94a3b8; font-size: 0.85rem; font-weight: 800; padding: 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+        👍 OK, LEMBRAR MAIS TARDE
+      </button>
+    </div>
+
+  </div>
 </div>
 
 <script src="renderer.js"></script>

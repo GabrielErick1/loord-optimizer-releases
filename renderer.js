@@ -1083,10 +1083,25 @@ function setupAutoUpdater() {
 
       if (hasNewVersion) {
         activeDownloadUrl = res.downloadUrl;
-        if (cardStatusTitle) cardStatusTitle.innerHTML = `🚀 <b>Nova Versão v${latV} Disponível!</b>`;
-        if (cardStatusDesc) cardStatusDesc.textContent = 'Clique abaixo para baixar e atualizar automaticamente estilo Play Store.';
 
-        // Exibe banner dinâmico no topo se houver
+        // 1. Atualiza e exibe o MODAL CENTRALIZADO (Imagem 1)
+        const popupModal = document.getElementById('update-popup-modal');
+        const popupVerTitle = document.getElementById('update-popup-ver-title');
+        const popupCurVer = document.getElementById('update-popup-cur-ver');
+        const popupLatVer = document.getElementById('update-popup-lat-ver');
+        const popupBtnVer = document.getElementById('update-popup-btn-ver');
+        const btnPopupDownload = document.getElementById('btn-update-popup-download');
+
+        if (popupVerTitle) popupVerTitle.textContent = `v${latV}`;
+        if (popupCurVer) popupCurVer.textContent = `v${curV}`;
+        if (popupLatVer) popupLatVer.textContent = `v${latV}`;
+        if (popupBtnVer) popupBtnVer.textContent = `v${latV}`;
+
+        if (popupModal) {
+          popupModal.style.display = 'flex';
+        }
+
+        // 2. Atualiza o BANNER SUPERIOR (Imagem 2)
         const alertBanner = document.getElementById('global-update-alert');
         const alertTitle = document.getElementById('global-update-title');
         const alertBtnVer = document.getElementById('global-update-btn-ver');
@@ -1094,41 +1109,45 @@ function setupAutoUpdater() {
         const btnGlobalClose = document.getElementById('btn-global-update-close');
 
         if (alertBanner) {
-          if (alertTitle) alertTitle.textContent = `🔥 NOVA VERSÃO v${latV} DISPONÍVEL!`;
-          if (alertBtnVer) alertBtnVer.textContent = `v${latV}`;
+          if (alertTitle) alertTitle.textContent = `🚀 NOVA VERSÃO v${latV} DISPONÍVEL! Uma nova versão com melhorias de sensibilidade e estabilidade foi lançada.`;
+          if (alertBtnVer) alertBtnVer.textContent = `⚡ ATUALIZAR (v${latV})`;
           alertBanner.style.display = 'flex';
 
           if (btnGlobalClose) {
             btnGlobalClose.onclick = () => { alertBanner.style.display = 'none'; };
           }
-          if (btnGlobalNow) {
-            btnGlobalNow.onclick = () => {
-              const tabConfigBtn = document.querySelector('[data-tab="tab-minha-config"]');
-              if (tabConfigBtn) tabConfigBtn.click();
-              if (btnInstallNow) btnInstallNow.click();
-            };
-          }
         }
 
+        // 3. Atualiza a BADGE DA SIDEBAR (Imagem 3)
         const navBadge = document.getElementById('nav-update-badge');
         if (navBadge) {
           navBadge.textContent = `v${latV} 🔥`;
           navBadge.style.display = 'inline-block';
         }
 
-        if (btnInstallNow) {
-          btnInstallNow.style.display = 'inline-flex';
-          btnInstallNow.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-          btnInstallNow.style.boxShadow = '0 0 15px rgba(16, 185, 129, 0.4)';
-          btnInstallNow.textContent = `⚡ Baixar e Atualizar (v${latV})`;
-          btnInstallNow.onclick = async () => {
+        // 4. Atualiza o CARD DA ABA MINHA CONFIG (Imagem 4)
+        if (cardStatusTitle) cardStatusTitle.innerHTML = `🚀 <b>Nova Versão v${latV} Disponível!</b>`;
+        if (cardStatusDesc) cardStatusDesc.textContent = `Baixando nova versão em segundo plano (Play Store Style)...`;
+
+        // Função unificada de download e instalação
+        const startDownloadFlow = async () => {
+          if (popupModal) popupModal.style.display = 'none';
+
+          if (btnInstallNow) {
             btnInstallNow.disabled = true;
             btnInstallNow.textContent = '⏳ Conectando e baixando...';
-            if (cardStatusDesc) cardStatusDesc.textContent = `Baixando a versão v${latV} em segundo plano estilo Play Store...`;
+          }
+          if (btnGlobalNow) {
+            btnGlobalNow.disabled = true;
+            btnGlobalNow.textContent = '⏳ Baixando...';
+          }
 
-            const dlRes = await window.api.downloadUpdateProgress(activeDownloadUrl);
-            if (dlRes && dlRes.success) {
+          const dlRes = await window.api.downloadUpdateProgress(activeDownloadUrl);
+
+          if (dlRes && dlRes.success) {
+            if (btnInstallNow) {
               btnInstallNow.disabled = false;
+              btnInstallNow.style.display = 'inline-flex';
               btnInstallNow.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
               btnInstallNow.style.boxShadow = '0 0 25px rgba(16, 185, 129, 0.8)';
               btnInstallNow.textContent = `🚀 Reiniciar e Atualizar Agora (v${latV})`;
@@ -1137,22 +1156,48 @@ function setupAutoUpdater() {
                 btnInstallNow.textContent = 'Iniciando Atualização...';
                 window.api.installUpdateNow();
               };
-              if (cardStatusTitle) cardStatusTitle.innerHTML = `✅ <b>Download Concluído (100%)!</b>`;
-              if (cardStatusDesc) cardStatusDesc.textContent = 'Clique no botão verde para reiniciar e aplicar a nova versão.';
-              alert(`✅ Download da v${latV} concluído com sucesso!\n\nClique em "Reiniciar e Atualizar Agora" para aplicar a atualização.`);
-            } else {
+            }
+
+            if (btnGlobalNow) {
+              btnGlobalNow.disabled = false;
+              btnGlobalNow.textContent = `🚀 REINICIAR AGORA (v${latV})`;
+              btnGlobalNow.onclick = () => {
+                window.api.installUpdateNow();
+              };
+            }
+
+            if (cardStatusTitle) cardStatusTitle.innerHTML = `✅ <b>Download Concluído (100%)!</b>`;
+            if (cardStatusDesc) cardStatusDesc.textContent = 'Clique no botão verde para reiniciar e aplicar a nova versão.';
+            alert(`✅ Download da v${latV} concluído com sucesso!\n\nClique em "Reiniciar e Atualizar Agora" para aplicar a atualização.`);
+          } else {
+            if (btnInstallNow) {
               btnInstallNow.disabled = false;
               btnInstallNow.textContent = 'Tentar Novamente';
             }
-          };
+          }
+        };
+
+        if (btnPopupDownload) {
+          btnPopupDownload.onclick = startDownloadFlow;
         }
 
-        if (manual) {
-          alert(`🚀 Nova Atualização Encontrada!\n\n• Sua Versão Atual: v${curV}\n• Nova Versão Disponível: v${latV}\n\nClique no botão "Baixar e Atualizar" para instalar.`);
+        if (btnGlobalNow) {
+          btnGlobalNow.onclick = startDownloadFlow;
+        }
+
+        if (btnInstallNow) {
+          btnInstallNow.style.display = 'inline-flex';
+          btnInstallNow.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+          btnInstallNow.style.boxShadow = '0 0 15px rgba(16, 185, 129, 0.4)';
+          btnInstallNow.textContent = `⚡ Baixar e Atualizar (v${latV})`;
+          btnInstallNow.onclick = startDownloadFlow;
         }
       } else {
         const alertBanner = document.getElementById('global-update-alert');
         if (alertBanner) alertBanner.style.display = 'none';
+
+        const popupModal = document.getElementById('update-popup-modal');
+        if (popupModal) popupModal.style.display = 'none';
 
         if (btnInstallNow) {
           btnInstallNow.style.display = 'none';
