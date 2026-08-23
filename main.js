@@ -3369,9 +3369,31 @@ ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// AUTO-UPDATE ENGINE (Play Store Style) — ORIGINAL FUNCIONAL
+// AUTO-UPDATE ENGINE — ELECTRON-UPDATER + GITHUB RELEASES DUAL ENGINE
 // ══════════════════════════════════════════════════════════════════════════════
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = true;
+autoUpdater.logger = console;
+
 let downloadedInstallerPath = null;
+
+autoUpdater.on('download-progress', (progressObj) => {
+  const percent = Math.round(progressObj.percent || 0);
+  const receivedMB = ((progressObj.transferred || 0) / (1024 * 1024)).toFixed(1);
+  const totalMB = ((progressObj.total || 0) / (1024 * 1024)).toFixed(1);
+  const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
+  if (win && !win.isDestroyed()) {
+    win.webContents.send('update-download-progress', { percent, receivedMB, totalMB });
+  }
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
+  if (win && !win.isDestroyed()) {
+    win.webContents.send('update-download-progress', { percent: 100, receivedMB: '100', totalMB: '100' });
+    win.webContents.send('update-downloaded', info);
+  }
+});
 
 function compareSemver(v1, v2) {
   const p1 = (v1 || '0.0.0').replace(/^v/i, '').split('.').map(Number);
@@ -3388,6 +3410,24 @@ function compareSemver(v1, v2) {
 ipcMain.handle('check-for-updates', async () => {
   const currentVersion = app.getVersion() || '1.0.0';
   try {
+    const result = await autoUpdater.checkForUpdates();
+    const latestVersion = (result?.updateInfo?.version || '').replace(/^v/i, '').trim();
+    if (latestVersion && compareSemver(latestVersion, currentVersion) > 0) {
+      return {
+        updateAvailable: true,
+        hasUpdate: true,
+        currentVersion,
+        latestVersion,
+        downloadUrl: null,
+        releaseNotes: result?.updateInfo?.releaseNotes || ''
+      };
+    }
+  } catch (err) {
+    console.warn('[AutoUpdater] Fallback para verificação via GitHub API:', err.message);
+  }
+
+  // Fallback via GitHub API
+  try {
     const res = await fetch('https://api.github.com/repos/GabrielErick1/loord-optimizer-releases/releases/latest', {
       headers: { 'User-Agent': 'LoordOptimizer-AutoUpdater' }
     });
@@ -3396,14 +3436,13 @@ ipcMain.handle('check-for-updates', async () => {
     }
     const release = await res.json();
     const tag = (release.tag_name || '').replace(/^v/i, '').trim();
-
     if (!tag) {
       return { updateAvailable: false, currentVersion, latestVersion: currentVersion };
     }
 
     const isNewer = compareSemver(tag, currentVersion) > 0;
     let exeAsset = (release.assets || []).find(a => a.name && a.name.toLowerCase().endsWith('.exe') && !a.name.includes('blockmap'));
-    let downloadUrl = exeAsset ? exeAsset.browser_download_url : `https://github.com/GabrielErick1/loord-optimizer-releases/releases/latest/download/Loord-Optimizer-Setup-${tag}.exe`;
+    let downloadUrl = exeAsset ? exeAsset.browser_download_url : `https://github.com/GabrielErick1/loord-optimizer-releases/releases/download/v${tag}/Loord-Optimizer-Setup-${tag}.exe`;
 
     return {
       updateAvailable: isNewer,
@@ -3414,12 +3453,19 @@ ipcMain.handle('check-for-updates', async () => {
       releaseNotes: release.body || ''
     };
   } catch (e) {
-    console.warn('[AutoUpdater] Erro ao verificar atualizações:', e.message);
     return { updateAvailable: false, currentVersion, latestVersion: currentVersion, error: e.message };
   }
 });
 
 ipcMain.handle('download-update-progress', async (event, downloadUrl) => {
+  try {
+    const dlResult = await autoUpdater.downloadUpdate();
+    if (dlResult) return { success: true };
+  } catch (err) {
+    console.warn('[AutoUpdater] Fallback para download nativo via HTTP stream:', err.message);
+  }
+
+  // Streaming nativo de download
   try {
     if (!downloadUrl || !downloadUrl.startsWith('http') || downloadUrl.includes('/tag/')) {
       const res = await fetch('https://api.github.com/repos/GabrielErick1/loord-optimizer-releases/releases/latest', {
@@ -3428,9 +3474,13 @@ ipcMain.handle('download-update-progress', async (event, downloadUrl) => {
       const release = await res.json();
       const exeAsset = (release.assets || []).find(a => a.name && a.name.toLowerCase().endsWith('.exe') && !a.name.includes('blockmap'));
       if (exeAsset) downloadUrl = exeAsset.browser_download_url;
+      else {
+        const tag = (release.tag_name || '').replace(/^v/i, '').trim();
+        downloadUrl = `https://github.com/GabrielErick1/loord-optimizer-releases/releases/download/v${tag}/Loord-Optimizer-Setup-${tag}.exe`;
+      }
     }
 
-    if (!downloadUrl) return { success: false, error: 'URL de download do instalador não encontrada.' };
+    if (!downloadUrl) return { success: false, error: 'URL de download não encontrada.' };
 
     const targetPath = path.join(os.tmpdir(), 'LoordOptimizer_Update_Setup.exe');
     downloadedInstallerPath = targetPath;
@@ -3439,7 +3489,7 @@ ipcMain.handle('download-update-progress', async (event, downloadUrl) => {
       redirect: 'follow',
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
     });
-    if (!response.ok) throw new Error(`HTTP ${response.status} ao baixar arquivo.`);
+    if (!response.ok) throw new Error(`HTTP ${response.status} ao baixar instalador.`);
 
     const totalBytes = Number(response.headers.get('content-length')) || 76000000;
     let receivedBytes = 0;
@@ -3481,7 +3531,7 @@ ipcMain.handle('download-update-progress', async (event, downloadUrl) => {
 
     return { success: true, path: targetPath };
   } catch (e) {
-    console.error('[AutoUpdater] Erro no download da atualização:', e);
+    console.error('[AutoUpdater] Erro fatal no download:', e);
     return { success: false, error: e.message };
   }
 });
@@ -3491,7 +3541,12 @@ ipcMain.on('install-update', () => {
 });
 
 ipcMain.handle('install-update-now', async () => {
-  return performAppUpdate();
+  try {
+    autoUpdater.quitAndInstall(false, true);
+    return { success: true };
+  } catch (_) {
+    return performAppUpdate();
+  }
 });
 
 function performAppUpdate() {
