@@ -3057,214 +3057,7 @@ ipcMain.handle('reset-network-dhcp', async () => {
   }
 });
 
-// ─── AUTO-UPDATE ENGINE (Play Store Style) ──────────────────────────────────
-let downloadedInstallerPath = null;
-const https = require('https');
-const http = require('http');
 
-function downloadFileWithRedirects(url, targetPath, onProgress) {
-  return new Promise((resolve, reject) => {
-    function get(currentUrl, maxRedirects = 10) {
-      if (maxRedirects <= 0) return reject(new Error('Muitos redirecionamentos'));
-
-      const client = currentUrl.startsWith('https') ? https : http;
-      const req = client.get(currentUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': '*/*'
-        }
-      }, (res) => {
-        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-          let nextUrl = res.headers.location;
-          if (!nextUrl.startsWith('http')) {
-            const parsed = new URL(currentUrl);
-            nextUrl = `${parsed.protocol}//${parsed.host}${nextUrl}`;
-          }
-          return get(nextUrl, maxRedirects - 1);
-        }
-
-        if (res.statusCode !== 200) {
-          return reject(new Error(`HTTP ${res.statusCode} ao baixar arquivo.`));
-        }
-
-        const totalBytes = Number(res.headers['content-length']) || 76000000;
-        let receivedBytes = 0;
-        const fileStream = fs.createWriteStream(targetPath);
-        let lastSent = 0;
-
-        res.on('data', (chunk) => {
-          receivedBytes += chunk.length;
-          fileStream.write(chunk);
-          const now = Date.now();
-          if (now - lastSent > 100) {
-            lastSent = now;
-            if (onProgress) {
-              const percent = Math.min(99, Math.round((receivedBytes / totalBytes) * 100));
-              const receivedMB = (receivedBytes / (1024 * 1024)).toFixed(1);
-              const totalMB = (totalBytes / (1024 * 1024)).toFixed(1);
-              onProgress({ percent, receivedMB, totalMB });
-            }
-          }
-        });
-
-        res.on('end', () => {
-          fileStream.end();
-          if (onProgress) {
-            const finalMB = (receivedBytes / (1024 * 1024)).toFixed(1);
-            onProgress({ percent: 100, receivedMB: finalMB, totalMB: finalMB });
-          }
-          resolve(targetPath);
-        });
-
-        res.on('error', (err) => {
-          fileStream.destroy();
-          reject(err);
-        });
-      });
-
-      req.on('error', reject);
-    }
-
-    get(url);
-  });
-}
-
-ipcMain.handle('check-for-updates', async () => {
-  const currentVersion = app.getVersion() || '1.0.0';
-  try {
-    const res = await fetch('https://api.github.com/repos/GabrielErick1/loord-optimizer-releases/releases/latest', {
-      headers: { 'User-Agent': 'LoordOptimizer-AutoUpdater' }
-    });
-    if (!res.ok) {
-      return { updateAvailable: false, currentVersion };
-    }
-    const release = await res.json();
-    const tag = (release.tag_name || '').replace(/^v/i, '').trim();
-
-    if (!tag) {
-      return { updateAvailable: false, currentVersion };
-    }
-
-    // Compare versions (e.g. 1.2.8 > 1.2.7)
-    const isNewer = compareSemver(tag, currentVersion) > 0;
-
-    // Find installer asset (.exe)
-    let exeAsset = (release.assets || []).find(a => a.name && a.name.toLowerCase().endsWith('.exe'));
-    let downloadUrl = exeAsset ? exeAsset.browser_download_url : release.html_url;
-
-    return {
-      updateAvailable: isNewer,
-      currentVersion,
-      latestVersion: tag,
-      downloadUrl,
-      releaseNotes: release.body || ''
-    };
-  } catch (e) {
-    console.warn('[AutoUpdater] Erro ao verificar atualizações:', e.message);
-    return { updateAvailable: false, currentVersion, error: e.message };
-  }
-});
-
-function compareSemver(v1, v2) {
-  const p1 = v1.split('.').map(Number);
-  const p2 = v2.split('.').map(Number);
-  for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
-    const n1 = p1[i] || 0;
-    const n2 = p2[i] || 0;
-    if (n1 > n2) return 1;
-    if (n1 < n2) return -1;
-  }
-  return 0;
-}
-
-ipcMain.handle('download-update-progress', async (event, downloadUrl) => {
-  try {
-    if (!downloadUrl || !downloadUrl.startsWith('http') || downloadUrl.includes('/tag/')) {
-      const res = await fetch('https://api.github.com/repos/GabrielErick1/loord-optimizer-releases/releases/latest', {
-        headers: { 'User-Agent': 'LoordOptimizer-AutoUpdater' }
-      });
-      const release = await res.json();
-      const exeAsset = (release.assets || []).find(a => a.name && a.name.toLowerCase().endsWith('.exe'));
-      if (exeAsset) downloadUrl = exeAsset.browser_download_url;
-    }
-
-    if (!downloadUrl) return { success: false, error: 'URL de download do instalador não encontrada.' };
-
-    const targetPath = path.join(os.tmpdir(), 'LoordOptimizer_Update_Setup.exe');
-    downloadedInstallerPath = targetPath;
-
-    await downloadFileWithRedirects(downloadUrl, targetPath, (data) => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('update-download-progress', data);
-      }
-    });
-
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('update-downloaded', { path: targetPath });
-    }
-
-    return { success: true, path: targetPath };
-  } catch (e) {
-    console.error('[AutoUpdater] Erro no download da atualização:', e);
-    return { success: false, error: e.message };
-  }
-});
-
-ipcMain.on('install-update', () => {
-  performAppUpdate();
-});
-
-ipcMain.handle('install-update-now', async () => {
-  return performAppUpdate();
-});
-
-function performAppUpdate() {
-  const targetPath = downloadedInstallerPath || path.join(os.tmpdir(), 'LoordOptimizer_Update_Setup.exe');
-
-  if (fs.existsSync(targetPath)) {
-    try {
-      const batPath = path.join(os.tmpdir(), 'run_loord_update.cmd');
-      const appExePath = process.execPath;
-
-      const cmdContent = `@echo off
-timeout /t 2 /nobreak >nul
-taskkill /f /im "${path.basename(appExePath)}" >nul 2>&1
-timeout /t 1 /nobreak >nul
-start /wait "" "${targetPath}" /S
-timeout /t 2 /nobreak >nul
-if exist "${appExePath}" (
-    start "" "${appExePath}"
-) else if exist "%LOCALAPPDATA%\\Programs\\loord-optimizer\\Loord Optimizer.exe" (
-    start "" "%LOCALAPPDATA%\\Programs\\loord-optimizer\\Loord Optimizer.exe"
-)
-del "%~f0"
-`;
-      fs.writeFileSync(batPath, cmdContent, 'utf8');
-
-      const { spawn } = require('child_process');
-      const child = spawn('cmd.exe', ['/c', batPath], {
-        detached: true,
-        stdio: 'ignore',
-        windowsHide: true
-      });
-      child.unref();
-
-      setTimeout(() => {
-        app.isQuitting = true;
-        app.exit(0);
-      }, 400);
-
-      return { success: true };
-    } catch (e) {
-      console.error('[AutoUpdater] Erro ao executar updater script:', e);
-      return { success: false, error: e.message };
-    }
-  } else {
-    const { shell } = require('electron');
-    shell.openExternal('https://github.com/GabrielErick1/loord-optimizer-releases/releases/latest');
-    return { success: false, error: 'Arquivo do instalador não encontrado.' };
-  }
-}
 
 // ── REGEDIT ADAPTATIVA HANDLER (INJEÇÃO NO WINDOWS EM TEMPO REAL) ────────────
 ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
@@ -3444,3 +3237,214 @@ ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
     };
   }
 });
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AUTO-UPDATE ENGINE — GITHUB RELEASES & BACKGROUND DOWNLOADER
+// ══════════════════════════════════════════════════════════════════════════════
+let downloadedInstallerPath = null;
+const https = require('https');
+const http = require('http');
+
+function compareVersions(v1, v2) {
+  const p1 = (v1 || '0.0.0').replace(/^v/, '').split('.').map(n => parseInt(n) || 0);
+  const p2 = (v2 || '0.0.0').replace(/^v/, '').split('.').map(n => parseInt(n) || 0);
+  for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+    const num1 = p1[i] || 0;
+    const num2 = p2[i] || 0;
+    if (num1 > num2) return 1;
+    if (num1 < num2) return -1;
+  }
+  return 0;
+}
+
+ipcMain.handle('check-for-updates', async (event) => {
+  return new Promise((resolve) => {
+    const curVer = app.getVersion();
+    const options = {
+      hostname: 'api.github.com',
+      path: '/repos/GabrielErick1/loord-optimizer-releases/releases/latest',
+      method: 'GET',
+      headers: {
+        'User-Agent': 'LoordOptimizer-AutoUpdater'
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        try {
+          if (res.statusCode !== 200) {
+            return resolve({ updateAvailable: false, error: `GitHub API error ${res.statusCode}`, currentVersion: curVer });
+          }
+          const release = JSON.parse(data);
+          const tag = release.tag_name || '';
+          const latestVer = tag.replace(/^v/, '');
+
+          const isNewer = compareVersions(latestVer, curVer) > 0;
+
+          let downloadUrl = null;
+          if (release.assets && Array.isArray(release.assets)) {
+            const setupAsset = release.assets.find(a => a.name && a.name.endsWith('.exe') && !a.name.includes('blockmap'));
+            if (setupAsset) downloadUrl = setupAsset.browser_download_url;
+          }
+
+          if (isNewer && downloadUrl) {
+            resolve({
+              updateAvailable: true,
+              latestVersion: latestVer,
+              currentVersion: curVer,
+              downloadUrl: downloadUrl,
+              releaseNotes: release.body || ''
+            });
+          } else {
+            resolve({
+              updateAvailable: false,
+              latestVersion: latestVer,
+              currentVersion: curVer
+            });
+          }
+        } catch (err) {
+          resolve({ updateAvailable: false, error: err.message, currentVersion: curVer });
+        }
+      });
+    });
+
+    req.on('error', (err) => {
+      resolve({ updateAvailable: false, error: err.message, currentVersion: curVer });
+    });
+
+    req.setTimeout(8000, () => {
+      req.destroy();
+      resolve({ updateAvailable: false, error: 'Timeout ao checar atualizações', currentVersion: curVer });
+    });
+
+    req.end();
+  });
+});
+
+function followRedirectsDownload(url, targetPath, onProgress, onComplete, onError) {
+  const client = url.startsWith('https') ? https : http;
+  client.get(url, { headers: { 'User-Agent': 'LoordOptimizer-AutoUpdater' } }, (res) => {
+    if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+      return followRedirectsDownload(res.headers.location, targetPath, onProgress, onComplete, onError);
+    }
+    if (res.statusCode !== 200) {
+      return onError(new Error(`Download falhou com status ${res.statusCode}`));
+    }
+
+    const totalBytes = parseInt(res.headers['content-length'] || '0', 10);
+    let receivedBytes = 0;
+    const fileStream = fs.createWriteStream(targetPath);
+
+    res.on('data', (chunk) => {
+      receivedBytes += chunk.length;
+      if (totalBytes > 0) {
+        const percent = Math.floor((receivedBytes / totalBytes) * 100);
+        const receivedMB = (receivedBytes / (1024 * 1024)).toFixed(1);
+        const totalMB = (totalBytes / (1024 * 1024)).toFixed(1);
+        onProgress({ percent, receivedMB, totalMB });
+      }
+    });
+
+    res.pipe(fileStream);
+
+    fileStream.on('finish', () => {
+      fileStream.close(() => {
+        onComplete();
+      });
+    });
+
+    fileStream.on('error', (err) => {
+      fs.unlink(targetPath, () => {});
+      onError(err);
+    });
+  }).on('error', onError);
+}
+
+ipcMain.handle('download-update-progress', async (event, downloadUrl) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const tempDir = app.getPath('temp');
+      const targetExe = path.join(tempDir, `Loord-Optimizer-Update-${Date.now()}.exe`);
+      const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
+
+      followRedirectsDownload(
+        downloadUrl,
+        targetExe,
+        (progress) => {
+          if (win && !win.isDestroyed()) {
+            win.webContents.send('update-download-progress', progress);
+          }
+        },
+        () => {
+          downloadedInstallerPath = targetExe;
+          if (win && !win.isDestroyed()) {
+            win.webContents.send('update-downloaded', { path: targetExe });
+          }
+          resolve({ success: true, path: targetExe });
+        },
+        (err) => {
+          console.error('[AutoUpdater] Erro ao baixar:', err);
+          if (win && !win.isDestroyed()) {
+            win.webContents.send('update-error', err.message);
+          }
+          reject(err);
+        }
+      );
+    } catch (e) {
+      reject(e);
+    }
+  });
+});
+
+ipcMain.handle('install-update-now', async () => {
+  try {
+    if (downloadedInstallerPath && fs.existsSync(downloadedInstallerPath)) {
+      const batPath = path.join(app.getPath('temp'), 'install_loord_update.bat');
+      const cmdContent = `@echo off
+timeout /t 1 /nobreak >nul
+start "" "${downloadedInstallerPath}"
+del "%~f0"
+`;
+      fs.writeFileSync(batPath, cmdContent, 'utf8');
+
+      const { spawn } = require('child_process');
+      const child = spawn('cmd.exe', ['/c', batPath], {
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: true
+      });
+      child.unref();
+
+      setTimeout(() => {
+        app.isQuitting = true;
+        app.exit(0);
+      }, 400);
+
+      return { success: true };
+    } else {
+      const { shell } = require('electron');
+      shell.openExternal('https://github.com/GabrielErick1/loord-optimizer-releases/releases/latest');
+      return { success: false, error: 'Instalador não encontrado, abrindo no navegador.' };
+    }
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.on('install-update', () => {
+  if (downloadedInstallerPath && fs.existsSync(downloadedInstallerPath)) {
+    const { spawn } = require('child_process');
+    const child = spawn(downloadedInstallerPath, [], {
+      detached: true,
+      stdio: 'ignore'
+    });
+    child.unref();
+    setTimeout(() => {
+      app.isQuitting = true;
+      app.exit(0);
+    }, 400);
+  }
+});
+
