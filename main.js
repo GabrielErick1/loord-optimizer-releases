@@ -1789,12 +1789,6 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
       } catch (e) {}
     }
 
-    // MouseHoverTime 41 (Hex 29)
-    try {
-      execSync('reg add "HKCU\\Control Panel\\Mouse" /v MouseHoverTime /t REG_DWORD /d 41 /f', { stdio: 'ignore' });
-      execSync('reg add "HKU\\.DEFAULT\\Control Panel\\Mouse" /v MouseHoverTime /t REG_DWORD /d 41 /f', { stdio: 'ignore' });
-    } catch (e) {}
-
     // Polling Rate buffer
     let mouseQueueSize = 100;
     if (pollingRate === '8000') mouseQueueSize = 300;
@@ -1806,9 +1800,19 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
       execSync(`reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters" /v MouseDataQueueSize /t REG_DWORD /d ${mouseQueueSize} /f /reg:64`, { stdio: 'ignore' });
     } catch (_) {}
 
-    // Atualizar sensibilidade e curva de mouse no Windows em tempo real
+    // Atualizar sensibilidade e curva de mouse no Windows em tempo real (sem precisar reiniciar)
     try {
-      execSync(`powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Add-Type '[DllImport(\\"user32.dll\\")] public static extern bool SystemParametersInfo(int a,int b,IntPtr c,int d);' -Name U -Namespace W -PassThru | ForEach-Object { $null = $_::SystemParametersInfo(0x0004,0,[IntPtr]::Zero,0x0003); $null = $_::SystemParametersInfo(0x0071,10,[IntPtr]::Zero,0x0003); $null = $_::SystemParametersInfo(0x0017,0,[IntPtr]::Zero,0x0003); $null = $_::SystemParametersInfo(0x000B,31,[IntPtr]::Zero,0x0003) }"`, { stdio: 'ignore' });
+      const psSpiCmd = `$s=@'
+[DllImport("user32.dll")] public static extern bool SystemParametersInfo(uint a, uint b, int[] c, uint d);
+[DllImport("user32.dll", EntryPoint="SystemParametersInfoW")] public static extern bool SystemParametersInfoPtr(uint a, uint b, IntPtr c, uint d);
+'@
+Add-Type -Namespace W -Name M -MemberDefinition $s -ErrorAction SilentlyContinue
+[W.M]::SystemParametersInfo(4,0,[int[]]@(0,0,0),3)
+[W.M]::SystemParametersInfoPtr(0x71,0,[IntPtr]10,3)
+[W.M]::SystemParametersInfoPtr(0x6B,0,[IntPtr]0,3)
+[W.M]::SystemParametersInfoPtr(0x5F,0,[IntPtr]0,3)
+`;
+      execSync(`powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -Command "${psSpiCmd.replace(/\r?\n/g, '; ')}"`, { stdio: 'ignore' });
     } catch (e) {}
 
     return { 

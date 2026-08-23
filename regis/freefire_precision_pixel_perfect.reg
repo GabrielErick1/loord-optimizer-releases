@@ -1,0 +1,102 @@
+Windows Registry Editor Version 5.00
+
+; ================================================================
+;   FREE FIRE - PERFIL PRECISION (mira pixel-perfect)
+;
+;   FILOSOFIA DO PRECISION:
+;   Diferente do perfil speed/flick (mira solta e rapida), o
+;   precision garante que CADA count do sensor vira EXATAMENTE
+;   1 pixel, sempre. Zero aceleracao, zero curva, zero suavizacao,
+;   zero interferencia externa no ponteiro. Resultado: rastreamento
+;   firme que assenta NA cabeca e nao escapa no micro-ajuste.
+;
+;   GUARDIOES DE PRECISAO nesta versao:
+;   - SnapToDefaultButton OFF: nada "puxa" seu cursor pro botao
+;   - MouseTrails OFF: sem rastro fantasma do cursor
+;   - Sensibilidade TRAVADA em 10 (nao use abaixo de 10 em modo
+;     precision: o Windows descarta movimentos e cria jitter,
+;     inimigo mortal da mira precisa)
+;   - Curvas SmoothMouse restauradas ao padrao limpo da Microsoft
+;   - Aceleracao OFF nas 3 chaves (impossivel religar por app)
+;
+;   REGRA DE OURO PRECISION:
+;   O peso da mira se ajusta DENTRO do jogo/emulador, nunca aqui.
+;   Aqui e sagrado: 1 count = 1 pixel, ponto final.
+;
+;   COMO USAR:
+;   1. Importe ESTA versao (substitui a anterior - use uma ou outra,
+;      nunca as duas mentalidades juntas)
+;   2. REINICIAR O PC
+;   3. DPI do mouse fisico FIXO em um estagio (800 ou 1600) - mude
+;      DPI = perde memoria muscular
+; ================================================================
+
+; ---------- nucleo precision: 1:1 absoluto ----------
+[HKEY_CURRENT_USER\Control Panel\Mouse]
+"MouseSpeed"="0"
+"MouseThreshold1"="0"
+"MouseThreshold2"="0"
+"MouseSensitivity"="10"
+"MouseHoverTime"="10"
+"SnapToDefaultButton"="0"
+"MouseTrails"="0"
+"SmoothMouseXCurve"=hex:00,00,00,00,00,00,00,00,15,6e,00,00,00,00,00,00,\
+  00,40,01,00,00,00,00,00,29,dc,03,00,00,00,00,00,00,00,28,00,00,00,00,00,\
+  ff,ff,0f,00,00,00,00,00
+"SmoothMouseYCurve"=hex:00,00,00,00,00,00,00,00,fd,11,01,00,00,00,00,00,\
+  00,24,04,00,00,00,00,00,00,fc,12,00,00,00,00,00,00,c0,bb,01,00,00,00,00,\
+  00,00,58,02,00,00,00,00
+
+; ---------- menus instantaneos + foco sempre no jogo ----------
+[HKEY_CURRENT_USER\Control Panel\Desktop]
+"MenuShowDelay"="0"
+"ForegroundLockTimeout"=dword:00000000
+"ForegroundFlashCount"=dword:00000000
+
+; ---------- Game DVR off (menos input lag) ----------
+[HKEY_CURRENT_USER\System\GameConfigStore]
+"GameDVR_Enabled"=dword:00000000
+"GameDVR_FSEBehaviorMode"=dword:00000002
+"GameDVR_HonorUserFSEBehaviorMode"=dword:00000001
+"GameDVR_DXGIHonorFSEWindowsCompatible"=dword:00000001
+"GameDVR_EFSEFeatureFlags"=dword:00000000
+
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\GameDVR]
+"AppCaptureEnabled"=dword:00000000
+
+; ---------- Game Mode ON ----------
+[HKEY_CURRENT_USER\Software\Microsoft\GameBar]
+"AutoGameModeEnabled"=dword:00000001
+"AllowAutoGameMode"=dword:00000001
+"UseNexusForGameBarEnabled"=dword:00000000
+
+; ---------- USB: sem suspensao seletiva (sensor nunca dorme) ----------
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\USB]
+"DisableSelectiveSuspend"=dword:00000001
+
+; ---------- filas de entrada ampliadas (sem input perdido) ----------
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\mouclass\Parameters]
+"MouseDataQueueSize"=dword:00000064
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\kbdclass\Parameters]
+"KeyboardDataQueueSize"=dword:00000064
+
+; ---------- prioridade de interrupcao (timer do sistema) ----------
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\PriorityControl]
+"IRQ8Priority"=dword:00000001
+"Win32PrioritySeparation"=dword:00000026
+
+; ---------- timer de alta resolucao para jogos (Windows 11) ----------
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Kernel]
+"GlobalTimerResolutionRequests"=dword:00000001
+
+; ---------- MMCSS: jogos com prioridade maxima de CPU/GPU ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile]
+"SystemResponsiveness"=dword:00000000
+"NetworkThrottlingIndex"=dword:ffffffff
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games]
+"GPU Priority"=dword:00000008
+"Priority"=dword:00000006
+"Scheduling Category"="High"
+"SFIO Priority"="High"

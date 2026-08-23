@@ -608,5 +608,45 @@ module.exports = {
       { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseSpeed2', type: 'REG_SZ', value: '1' },
       ...commonLatencyKeys
     ]
+  },
+  'ff-precision-pixel-perfect': {
+    name: 'FREE FIRE PRECISION 1:1 (Pixel-Perfect & Zero Jitter / Head Lock)',
+    fix: '1.0',
+    keys: [
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseSpeed', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseThreshold1', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseThreshold2', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseSensitivity', type: 'REG_SZ', value: '10' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseHoverTime', type: 'REG_SZ', value: '10' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'SnapToDefaultButton', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseTrails', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'SmoothMouseXCurve', type: 'REG_BINARY', value: '0000000000000000156e000000000000004001000000000029dc0300000000000000280000000000ffff0f0000000000' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'SmoothMouseYCurve', type: 'REG_BINARY', value: '0000000000000000fd11010000000000002404000000000000fc12000000000000c0bb0100000000000058020000000000' },
+      { path: 'HKCU\\Control Panel\\Desktop', name: 'MenuShowDelay', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Desktop', name: 'ForegroundLockTimeout', type: 'REG_DWORD', value: 0 },
+      { path: 'HKCU\\Control Panel\\Desktop', name: 'ForegroundFlashCount', type: 'REG_DWORD', value: 0 },
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_Enabled', type: 'REG_DWORD', value: 0 },
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_FSEBehaviorMode', type: 'REG_DWORD', value: 2 },
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_HonorUserFSEBehaviorMode', type: 'REG_DWORD', value: 1 },
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_DXGIHonorFSEWindowsCompatible', type: 'REG_DWORD', value: 1 },
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_EFSEFeatureFlags', type: 'REG_DWORD', value: 0 },
+      { path: 'HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\GameDVR', name: 'AppCaptureEnabled', type: 'REG_DWORD', value: 0 },
+      { path: 'HKCU\\Software\\Microsoft\\GameBar', name: 'AutoGameModeEnabled', type: 'REG_DWORD', value: 1 },
+      { path: 'HKCU\\Software\\Microsoft\\GameBar', name: 'AllowAutoGameMode', type: 'REG_DWORD', value: 1 },
+      { path: 'HKCU\\Software\\Microsoft\\GameBar', name: 'UseNexusForGameBarEnabled', type: 'REG_DWORD', value: 0 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\USB', name: 'DisableSelectiveSuspend', type: 'REG_DWORD', value: 1 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters', name: 'MouseDataQueueSize', type: 'REG_DWORD', value: 100 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\kbdclass\\Parameters', name: 'KeyboardDataQueueSize', type: 'REG_DWORD', value: 100 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl', name: 'IRQ8Priority', type: 'REG_DWORD', value: 1 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl', name: 'Win32PrioritySeparation', type: 'REG_DWORD', value: 38 },
+      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Kernel', name: 'GlobalTimerResolutionRequests', type: 'REG_DWORD', value: 1 },
+      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile', name: 'SystemResponsiveness', type: 'REG_DWORD', value: 0 },
+      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile', name: 'NetworkThrottlingIndex', type: 'REG_DWORD', value: 4294967295 },
+      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games', name: 'GPU Priority', type: 'REG_DWORD', value: 8 },
+      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games', name: 'Priority', type: 'REG_DWORD', value: 6 },
+      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games', name: 'Scheduling Category', type: 'REG_SZ', value: 'High' },
+      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games', name: 'SFIO Priority', type: 'REG_SZ', value: 'High' },
+      ...commonLatencyKeys
+    ]
   }
 };
