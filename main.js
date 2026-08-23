@@ -46,7 +46,7 @@ const backupDir = path.join(app.getPath('userData'), 'Backup_Sensibilidade');
 
 // Ensure backup directory exists
 if (!fs.existsSync(backupDir)) {
-  try { fs.mkdirSync(backupDir, { recursive: true }); } catch (_) {}
+  try { fs.mkdirSync(backupDir, { recursive: true }); } catch (_) { }
 }
 
 function createInitialSystemBackup() {
@@ -57,17 +57,17 @@ function createInitialSystemBackup() {
 
     const mouseBak = path.join(backupDir, 'Mouse_Original.reg');
     if (!fs.existsSync(mouseBak)) {
-      try { execSync(`reg export "HKCU\\Control Panel\\Mouse" "${mouseBak}" /y`, { stdio: 'ignore' }); } catch (_) {}
+      try { execSync(`reg export "HKCU\\Control Panel\\Mouse" "${mouseBak}" /y`, { stdio: 'ignore' }); } catch (_) { }
     }
 
     const sysProfileBak = path.join(backupDir, 'SystemProfile_Original.reg');
     if (!fs.existsSync(sysProfileBak)) {
-      try { execSync(`reg export "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" "${sysProfileBak}" /y`, { stdio: 'ignore' }); } catch (_) {}
+      try { execSync(`reg export "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" "${sysProfileBak}" /y`, { stdio: 'ignore' }); } catch (_) { }
     }
 
     const priorityBak = path.join(backupDir, 'PriorityControl_Original.reg');
     if (!fs.existsSync(priorityBak)) {
-      try { execSync(`reg export "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" "${priorityBak}" /y`, { stdio: 'ignore' }); } catch (_) {}
+      try { execSync(`reg export "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" "${priorityBak}" /y`, { stdio: 'ignore' }); } catch (_) { }
     }
 
     const confPaths = [
@@ -82,7 +82,7 @@ function createInitialSystemBackup() {
     for (const item of confPaths) {
       const dest = path.join(backupDir, item.key);
       if (!fs.existsSync(dest) && fs.existsSync(item.path)) {
-        try { fs.copyFileSync(item.path, dest); } catch (_) {}
+        try { fs.copyFileSync(item.path, dest); } catch (_) { }
       }
     }
   } catch (e) {
@@ -185,11 +185,11 @@ app.on('will-quit', () => {
   if (macroProcess) {
     try {
       macroProcess.kill('SIGTERM');
-    } catch (e) {}
+    } catch (e) { }
   }
   try {
     execSync('taskkill /f /fi "WINDOWTITLE eq MacroCapaFreeFire*"', { stdio: 'ignore' });
-  } catch (e) {}
+  } catch (e) { }
 });
 
 // Helper: execute command asynchronously
@@ -213,10 +213,10 @@ function cleanHostsFileOfBluestacks() {
           .filter(line => !line.includes('bluestacks.com'))
           .join('\r\n');
         fs.writeFileSync(hostsPath, cleaned, 'utf8');
-        try { execSync('ipconfig /flushdns', { stdio: 'ignore' }); } catch (_) {}
+        try { execSync('ipconfig /flushdns', { stdio: 'ignore' }); } catch (_) { }
       }
     }
-  } catch (_) {}
+  } catch (_) { }
 }
 
 // IPC Handlers
@@ -260,7 +260,7 @@ function getMachineUuid() {
     if (match && match[1] && match[1].length > 10) {
       return match[1].trim();
     }
-  } catch (_) {}
+  } catch (_) { }
 
   // 2. Tenta via CimInstance
   try {
@@ -269,7 +269,7 @@ function getMachineUuid() {
     if (uuid && uuid.length > 10 && !uuid.includes('00000000')) {
       return uuid;
     }
-  } catch (_) {}
+  } catch (_) { }
 
   // 3. Tenta via WMIC
   try {
@@ -281,13 +281,13 @@ function getMachineUuid() {
         return uuid;
       }
     }
-  } catch (_) {}
+  } catch (_) { }
 
   // 4. Fallback estável por hostname e processador
   try {
     const fallbackId = `${os.hostname()}-${os.platform()}-${os.arch()}-${os.cpus()[0]?.model || 'CPU'}`;
     return crypto.createHash('md5').update(fallbackId).digest('hex').toUpperCase();
-  } catch (_) {}
+  } catch (_) { }
 
   return 'UNKNOWN-UUID-FALLBACK';
 }
@@ -318,7 +318,7 @@ function findAdb() {
         if (fs.existsSync(candidate)) return candidate;
       }
     }
-  } catch (_) {}
+  } catch (_) { }
 
   // 2. Lista completa de caminhos padrão de todos os emuladores (MSI App Player 4/5, BlueStacks 4/5, LDPlayer, Nox, MEmu)
   const candidates = [
@@ -345,7 +345,7 @@ function findAdb() {
       try {
         execSync(`"${c}" version`, { stdio: 'ignore' });
         return c;
-      } catch (_) {}
+      } catch (_) { }
     }
   }
   return null;
@@ -391,7 +391,7 @@ function getActiveAdbTargets(port) {
         const content = fs.readFileSync(cp, 'utf8');
         const matches = content.matchAll(/(?:status\.adb_port|adb_port)="(\d+)"/g);
         for (const m of matches) scanPorts.add(parseInt(m[1]));
-      } catch (_) {}
+      } catch (_) { }
     }
   }
 
@@ -400,7 +400,7 @@ function getActiveAdbTargets(port) {
 
   // 3. Conectar rapidamente sem travar a thread
   for (const p of scanPorts) {
-    try { execSync(`"${adb}" connect 127.0.0.1:${p}`, { timeout: 400, stdio: 'ignore' }); } catch (_) {}
+    try { execSync(`"${adb}" connect 127.0.0.1:${p}`, { timeout: 400, stdio: 'ignore' }); } catch (_) { }
   }
 
   // 4. Ler todos os dispositivos reconhecidos por `adb devices`
@@ -414,7 +414,7 @@ function getActiveAdbTargets(port) {
         targets.add(match[1]); // Ex: "emulator-5554", "127.0.0.1:5555", etc.
       }
     }
-  } catch (_) {}
+  } catch (_) { }
 
   if (targets.size > 0) {
     return Array.from(targets);
@@ -562,7 +562,7 @@ function updateBluestacksInstanceKeys(confPath, keysToUpdateByInstance) {
   try {
     let content = fs.readFileSync(confPath, 'utf8');
     const lines = content.split(/\r?\n/);
-    
+
     // Identificar todas as instâncias existentes no arquivo (ex: Pie64, Nougat32, etc.)
     const instanceNames = new Set();
     for (const line of lines) {
@@ -581,8 +581,8 @@ function updateBluestacksInstanceKeys(confPath, keysToUpdateByInstance) {
 
     let updatedLines = [...lines];
     for (const inst of instanceNames) {
-      const keysForInst = typeof keysToUpdateByInstance === 'function' 
-        ? keysToUpdateByInstance(inst) 
+      const keysForInst = typeof keysToUpdateByInstance === 'function'
+        ? keysToUpdateByInstance(inst)
         : keysToUpdateByInstance;
 
       for (const [subKey, val] of Object.entries(keysForInst)) {
@@ -639,7 +639,7 @@ ipcMain.handle('change-device-profile', async (event, profile) => {
     for (const t of targets) {
       try {
         execSync(`"${adb}" -s ${t} shell "setprop ro.product.brand \\"${targetBrand}\\"; setprop ro.product.manufacturer \\"${targetManufacturer}\\"; setprop ro.product.model \\"${targetModel}\\"; setprop ro.product.device \\"${targetModel}\\"; setprop ro.build.product \\"${targetModel}\\""`, { timeout: 2500, stdio: 'ignore' });
-      } catch (_) {}
+      } catch (_) { }
     }
   }
 
@@ -650,7 +650,7 @@ ipcMain.handle('restart-bluestacks', async () => {
   try {
     try {
       execSync('taskkill /f /im HD-Player.exe', { stdio: 'ignore' });
-    } catch (_) {}
+    } catch (_) { }
 
     await new Promise(r => setTimeout(r, 1500));
 
@@ -694,7 +694,7 @@ ipcMain.handle('flash-system-tweaks', async (event, port) => {
       try {
         execSync(`"${adb}" -s ${t} shell "${tw}"`, { encoding: 'utf8', timeout: 3000, stdio: 'ignore' });
         applied++;
-      } catch (e) {}
+      } catch (e) { }
     }
   }
 
@@ -721,7 +721,7 @@ function sanitizeBluestacksConfFiles() {
           return true;
         });
         fs.writeFileSync(f, filtered.join('\r\n'), 'utf8');
-      } catch (_) {}
+      } catch (_) { }
     }
   }
 }
@@ -765,7 +765,7 @@ ipcMain.handle('convert-to-real-android', async (event, port) => {
         try {
           execSync(`"${adb}" -s ${t} shell "${tw}"`, { timeout: 1500, stdio: 'ignore' });
           applied++;
-        } catch (_) {}
+        } catch (_) { }
       }
     }
   }
@@ -780,7 +780,7 @@ ipcMain.handle('restore-default-android', async (event, port) => {
 
   try {
     execSync(`"${adb}" connect 127.0.0.1:${p}`, { encoding: 'utf8', timeout: 5000, stdio: 'ignore' });
-  } catch (_) {}
+  } catch (_) { }
 
   const actions = [
     'pm enable com.bluestacks.home',
@@ -791,7 +791,7 @@ ipcMain.handle('restore-default-android', async (event, port) => {
   for (const act of actions) {
     try {
       execSync(`"${adb}" -s 127.0.0.1:${p} shell "${act}"`, { encoding: 'utf8', timeout: 5000, stdio: 'ignore' });
-    } catch (e) {}
+    } catch (e) { }
   }
 
   return { success: true };
@@ -825,7 +825,7 @@ ipcMain.handle('set-android-dpi', async (event, dpiValue, port) => {
         execSync(`"${adb}" connect 127.0.0.1:${p}`, { timeout: 1500, stdio: 'ignore' });
         execSync(`"${adb}" -s 127.0.0.1:${p} shell wm density ${targetDpi}`, { timeout: 3000, stdio: 'ignore' });
         adbDone = true;
-      } catch (_) {}
+      } catch (_) { }
     }
   }
 
@@ -912,12 +912,12 @@ ipcMain.handle('apply-touch-engine-profile', async (event, profile, port) => {
           try {
             execSync(`"${adb}" -s 127.0.0.1:${p} shell "${tw}"`, { timeout: 2500, stdio: 'ignore' });
             appliedCount++;
-          } catch (_) {}
+          } catch (_) { }
         }
         try {
           execSync(`"${adb}" -s 127.0.0.1:${p} shell wm density ${dpi}`, { timeout: 2500, stdio: 'ignore' });
-        } catch (_) {}
-      } catch (_) {}
+        } catch (_) { }
+      } catch (_) { }
     }
   }
 
@@ -984,11 +984,11 @@ function detectHardwareProfile() {
       physicalCores = physical;
       hasHT = logicalCount > physical;
     }
-  } catch (_) {}
+  } catch (_) { }
 
   // Detect CPU brand (Intel / AMD / other)
   const isIntel = cpuModel.toLowerCase().includes('intel');
-  const isAMD   = cpuModel.toLowerCase().includes('amd') || cpuModel.toLowerCase().includes('ryzen');
+  const isAMD = cpuModel.toLowerCase().includes('amd') || cpuModel.toLowerCase().includes('ryzen');
 
   // Detect GPU
   let gpuName = 'Desconhecida';
@@ -997,13 +997,13 @@ function detectHardwareProfile() {
       'powershell -NoProfile -Command "(Get-CimInstance Win32_VideoController | Select-Object -First 1 -ExpandProperty Name)"',
       { encoding: 'utf8', timeout: 4000 }
     ).trim();
-  } catch (_) {}
+  } catch (_) { }
 
   // Performance profile tier based on hardware
   let tier;
   if (physicalCores >= 16 || totalRamMB >= 32768) tier = 'ultra';
   else if (physicalCores >= 8 || totalRamMB >= 16384) tier = 'high';
-  else if (physicalCores >= 4 || totalRamMB >= 8192)  tier = 'medium';
+  else if (physicalCores >= 4 || totalRamMB >= 8192) tier = 'medium';
   else tier = 'low';
 
   return { logicalCount, physicalCores, hasHT, isIntel, isAMD, cpuModel, totalRamMB, gpuName, tier };
@@ -1034,231 +1034,36 @@ function buildAdaptiveAffinityMap(hw) {
     // Intel HyperThreading / AMD SMT:
     // Núcleos físicos = índices PARES (0, 2, 4, 6, 8, 10, 12...)
     emuCores = all.filter(c => c % 2 === 0);
-    bgCores  = all.filter(c => c % 2 !== 0);
+    bgCores = all.filter(c => c % 2 !== 0);
     midCores = emuCores.filter(c => c >= emuCores[Math.floor(emuCores.length / 2)]);
   } else {
     // AMD / No HT: physical = logical
     const osReserve = physicalCores <= 2 ? 0 : 1;
     emuCores = all.filter(c => c >= osReserve);
-    bgCores  = all.filter(c => c < osReserve);
+    bgCores = all.filter(c => c < osReserve);
     midCores = all.filter(c => c >= osReserve && c < osReserve + Math.ceil((cap - osReserve) / 2));
   }
 
   // Safety fallbacks
   if (emuCores.length === 0) emuCores = all;
-  if (bgCores.length  === 0) bgCores  = [0];
+  if (bgCores.length === 0) bgCores = [0];
   if (midCores.length === 0) midCores = emuCores;
 
   return {
-    'HD-Player':           mask(emuCores),
-    'BlueStacks':          mask(emuCores),
-    'BlueStacksHelper':    mask(emuCores),
-    'Discord':             mask(bgCores),
+    'HD-Player': mask(emuCores),
+    'BlueStacks': mask(emuCores),
+    'BlueStacksHelper': mask(emuCores),
+    'Discord': mask(bgCores),
     'DiscordSystemHelper': mask(bgCores),
-    'chrome':              mask(midCores),
-    'RTSS':                mask(midCores),
-    'MSIAfterburner':      mask(midCores),
+    'chrome': mask(midCores),
+    'RTSS': mask(midCores),
+    'MSIAfterburner': mask(midCores),
     _meta: { emuCores, bgCores, midCores }
   };
 }
 
 
-// ══════════════════════════════════════════════════════════════════════════════
-// REGEDIT ADAPTATIVA PERSONALIZADA
-// Calcula SmoothMouseX/Y baseado na sensibilidade real do usuário
-// ══════════════════════════════════════════════════════════════════════════════
 
-/**
- * Converte um número float para hex little-endian de 8 bytes (formato Windows fixed-point 16.16)
- * A curva SmoothMouseX/Y do Windows usa pontos no formato de ponto fixo: 16 bits inteiro + 16 bits fração
- */
-function floatToFixedHex(value) {
-  // O Windows armazena como número de 64 bits onde valor = raw / 65536
-  // Na prática, a curva usa inteiros multiplicados por 65536
-  const raw = Math.round(value * 65536);
-  const buf = Buffer.alloc(8);
-  // Little-endian 64-bit int
-  const lo = raw & 0xFFFFFFFF;
-  const hi = Math.floor(raw / 0x100000000);
-  buf.writeUInt32LE(lo >>> 0, 0);
-  buf.writeUInt32LE(hi >>> 0, 4);
-  return buf.toString('hex');
-}
-
-/**
- * Gera a curva SmoothMouseXCurve ou SmoothMouseYCurve de 5 pontos
- * Os 5 pontos são pares (velocidade, ganho) que formam a curva de aceleração
- * Para 1:1 puro: ganho = velocidade (linha reta)
- * Para pesada: ganho maior nos pontos intermediários (mais sensível)
- * Para suave: ganho menor (mais controlada)
- */
-function buildSmoothCurve(sensRatio, style, axis) {
-  // Velocidades base dos 5 pontos (fixas no Windows)
-  const speeds = [0, 0.75, 1.5, 4.0, 8.0];
-  
-  // Fator de ganho base multiplicado pela razão de sensibilidade
-  let styleMul = 1.0;
-  if (style === 'suave')       styleMul = 0.78;
-  else if (style === 'pesada') styleMul = 1.22;
-  else                          styleMul = 1.0; // equilibrado
-  
-  // Eixo Y tem ganho extra para ajudar a puxar capa
-  const axisMul = (axis === 'y') ? 1.0 : 1.0; // não alteramos aqui, a razão já vem do sensRatio
-
-  const hexParts = speeds.map(spd => {
-    const gain = spd * sensRatio * styleMul * axisMul;
-    return floatToFixedHex(gain);
-  });
-
-  return hexParts.join('');
-}
-
-ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
-  if (!systemIsAdmin) {
-    return { success: false, error: 'Privilégios de Administrador requeridos. Execute o programa como Administrador.' };
-  }
-
-  const { dpiMouse, dpiEmu, sensX, sensY, style } = config || {};
-
-  // Validação
-  if (!dpiMouse || !dpiEmu || !sensX || !sensY) {
-    return { success: false, error: 'Preencha todos os campos antes de aplicar.' };
-  }
-
-  try {
-    // ── Calcula a razão de escala real ─────────────────────────────────────
-    // Razão entre o DPI virtual do emulador e o DPI físico do mouse
-    const dpiRatio = parseFloat(dpiEmu) / parseFloat(dpiMouse);
-    
-    // Razão Y/X: define quanto o eixo vertical difere do horizontal
-    const ratioYX = parseFloat(sensY) / parseFloat(sensX);
-    
-    // Fator de escala da curva X: calibrado para que SensX no emu = 1 count = 1 pixel
-    // Quanto maior o DPI do mouse vs emulador, mais "preciso" precisa ser a curva
-    const scaleX = dpiRatio * parseFloat(sensX);
-    const scaleY = dpiRatio * parseFloat(sensY);
-
-    // ── Gera as curvas hex ──────────────────────────────────────────────────
-    const curveXHex = buildSmoothCurve(scaleX, style, 'x');
-    const curveYHex = buildSmoothCurve(scaleY, style, 'y');
-
-    // ── Limpa chaves antigas de outras regedits ────────────────────────────
-    const keysToClean = [
-      'Active','ActiveAC','ActiveDeveloped','ActiveFix','MouseGrab','MouseStickOn',
-      'Fov','MouseTK','Mousetrack','Mousecontrolusb','MouseCP','MouseCL'
-    ];
-    for (const keyName of keysToClean) {
-      try { execSync(`reg delete "HKCU\\Control Panel\\Mouse" /v "${keyName}" /f`, { stdio: 'ignore' }); } catch (_) {}
-    }
-
-    // ── Aplica todas as chaves da Regedit Adaptativa ───────────────────────
-    const regKeys = [
-      // Mouse base — sem aceleração, 1:1 puro
-      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseSpeed',        type: 'REG_SZ',    value: '0' },
-      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseThreshold1',   type: 'REG_SZ',    value: '0' },
-      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseThreshold2',   type: 'REG_SZ',    value: '0' },
-      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseSensitivity',  type: 'REG_SZ',    value: '10' },
-      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseTrails',       type: 'REG_SZ',    value: '0' },
-      { path: 'HKCU\\Control Panel\\Mouse', name: 'SnapToDefaultButton',type: 'REG_SZ',   value: '0' },
-      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseHoverTime',    type: 'REG_SZ',    value: '4' },
-      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseHoverHeight',  type: 'REG_SZ',    value: '4' },
-      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseHoverWidth',   type: 'REG_SZ',    value: '4' },
-      { path: 'HKCU\\Control Panel\\Mouse', name: 'Beep',              type: 'REG_SZ',    value: 'No' },
-      { path: 'HKCU\\Control Panel\\Mouse', name: 'ExtendedSounds',    type: 'REG_SZ',    value: 'No' },
-      { path: 'HKCU\\Control Panel\\Mouse', name: 'ActiveWindowTracking', type: 'REG_DWORD', value: 0 },
-      // Curvas calculadas dinamicamente para a sens do usuário
-      { path: 'HKCU\\Control Panel\\Mouse', name: 'SmoothMouseXCurve', type: 'REG_BINARY', value: curveXHex },
-      { path: 'HKCU\\Control Panel\\Mouse', name: 'SmoothMouseYCurve', type: 'REG_BINARY', value: curveYHex },
-      // Tag de identificação
-      { path: 'HKCU\\Control Panel\\Mouse', name: 'Active',            type: 'REG_SZ',    value: `LOORD ADAPTATIVA — X:${sensX} Y:${sensY} DPI:${dpiMouse}/${dpiEmu} ${style.toUpperCase()}` },
-      { path: 'HKCU\\Control Panel\\Mouse', name: 'ActiveDeveloped',   type: 'REG_SZ',    value: 'Loord Optimizer - Regedit Adaptativa' },
-      // Desktop foco imediato
-      { path: 'HKCU\\Control Panel\\Desktop', name: 'MenuShowDelay',          type: 'REG_SZ',    value: '0' },
-      { path: 'HKCU\\Control Panel\\Desktop', name: 'ForegroundLockTimeout',  type: 'REG_DWORD', value: 0 },
-      { path: 'HKCU\\Control Panel\\Desktop', name: 'ForegroundFlashCount',   type: 'REG_DWORD', value: 0 },
-      // GameDVR off
-      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_Enabled',                       type: 'REG_DWORD', value: 0 },
-      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_FSEBehaviorMode',               type: 'REG_DWORD', value: 2 },
-      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_HonorUserFSEBehaviorMode',      type: 'REG_DWORD', value: 1 },
-      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_DXGIHonorFSEWindowsCompatible', type: 'REG_DWORD', value: 1 },
-      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_EFSEFeatureFlags',              type: 'REG_DWORD', value: 0 },
-      { path: 'HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\GameDVR', name: 'AppCaptureEnabled', type: 'REG_DWORD', value: 0 },
-      // Game Mode ligado
-      { path: 'HKCU\\Software\\Microsoft\\GameBar', name: 'AutoGameModeEnabled',       type: 'REG_DWORD', value: 1 },
-      { path: 'HKCU\\Software\\Microsoft\\GameBar', name: 'AllowAutoGameMode',         type: 'REG_DWORD', value: 1 },
-      { path: 'HKCU\\Software\\Microsoft\\GameBar', name: 'UseNexusForGameBarEnabled', type: 'REG_DWORD', value: 0 },
-      // USB sem suspensão
-      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\USB',                    name: 'DisableSelectiveSuspend', type: 'REG_DWORD', value: 1 },
-      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\HidUsb\\Parameters',     name: 'IdleEnabled',             type: 'REG_DWORD', value: 0 },
-      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\USBXHCI\\Parameters',    name: 'EnableSelectiveSuspend',  type: 'REG_DWORD', value: 0 },
-      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\USBXHCI\\Parameters',    name: 'DisableSelectiveSuspend', type: 'REG_DWORD', value: 1 },
-      // Buffer do driver de mouse (100 para 1000Hz)
-      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters',   name: 'MouseDataQueueSize',    type: 'REG_DWORD', value: 100 },
-      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouhid\\Parameters',     name: 'MouseDataQueueSize',    type: 'REG_DWORD', value: 100 },
-      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\kbdclass\\Parameters',   name: 'KeyboardDataQueueSize', type: 'REG_DWORD', value: 100 },
-      // Prioridade IRQ e timers
-      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl',         name: 'IRQ8Priority',              type: 'REG_DWORD', value: 1 },
-      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl',         name: 'Win32PrioritySeparation',   type: 'REG_DWORD', value: 38 },
-      { path: 'HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Kernel', name: 'GlobalTimerResolutionRequests', type: 'REG_DWORD', value: 1 },
-      // MMCSS — 100% CPU para o jogo
-      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile', name: 'SystemResponsiveness',    type: 'REG_DWORD', value: 0 },
-      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile', name: 'NetworkThrottlingIndex',  type: 'REG_DWORD', value: 4294967295 },
-      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games', name: 'GPU Priority',       type: 'REG_DWORD', value: 8 },
-      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games', name: 'Priority',          type: 'REG_DWORD', value: 6 },
-      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games', name: 'Scheduling Category', type: 'REG_SZ',    value: 'High' },
-      { path: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games', name: 'SFIO Priority',      type: 'REG_SZ',    value: 'High' },
-      // HKU padrão
-      { path: 'HKU\\.DEFAULT\\Control Panel\\Mouse', name: 'Beep',           type: 'REG_SZ', value: 'No' },
-      { path: 'HKU\\.DEFAULT\\Control Panel\\Mouse', name: 'ExtendedSounds', type: 'REG_SZ', value: 'No' },
-      { path: 'HKU\\.DEFAULT\\Control Panel\\Mouse', name: 'MouseSpeed',     type: 'REG_SZ', value: '0' },
-      { path: 'HKU\\.DEFAULT\\Control Panel\\Mouse', name: 'MouseThreshold1',type: 'REG_SZ', value: '0' },
-      { path: 'HKU\\.DEFAULT\\Control Panel\\Mouse', name: 'MouseThreshold2',type: 'REG_SZ', value: '0' },
-    ];
-
-    for (const item of regKeys) {
-      try {
-        const cmd = `reg add "${item.path}" /v "${item.name}" /t ${item.type} /d "${item.value}" /f`;
-        execSync(cmd, { stdio: 'ignore' });
-      } catch (e) {
-        console.error(`[AdaptiveReg] Erro ao aplicar ${item.name}:`, e.message);
-      }
-    }
-
-    // ── SPI em tempo real (sem reiniciar) ──────────────────────────────────
-    try {
-      const psSpiCmd = `$s=@'
-[DllImport("user32.dll")] public static extern bool SystemParametersInfo(uint a, uint b, int[] c, uint d);
-[DllImport("user32.dll", EntryPoint="SystemParametersInfoW")] public static extern bool SystemParametersInfoPtr(uint a, uint b, IntPtr c, uint d);
-'@
-Add-Type -Namespace W -Name M -MemberDefinition $s -ErrorAction SilentlyContinue
-[W.M]::SystemParametersInfo(4,0,[int[]]@(0,0,0),3)
-[W.M]::SystemParametersInfoPtr(0x71,0,[IntPtr]10,3)
-[W.M]::SystemParametersInfoPtr(0x6B,0,[IntPtr]0,3)
-[W.M]::SystemParametersInfoPtr(0x5F,0,[IntPtr]0,3)
-`;
-      execSync(`powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -Command "${psSpiCmd.replace(/\r?\n/g, '; ')}"`, { stdio: 'ignore' });
-    } catch (e) {}
-
-    // ── Retorno com resumo ────────────────────────────────────────────────
-    return {
-      success: true,
-      summary: {
-        dpiMouse: parseFloat(dpiMouse),
-        dpiEmu: parseFloat(dpiEmu),
-        sensX: parseFloat(sensX),
-        sensY: parseFloat(sensY),
-        style,
-        scaleX: Math.round(scaleX * 1000) / 1000,
-        scaleY: Math.round(scaleY * 1000) / 1000,
-        ratioYX: Math.round(ratioYX * 1000) / 1000,
-        curveXHex: curveXHex.substring(0, 16) + '...',
-        curveYHex: curveYHex.substring(0, 16) + '...',
-      }
-    };
-  } catch (e) {
-    return { success: false, error: e.message };
-  }
-});
 
 // ── Configurar Process Lasso automaticamente (Sempre / Always) ────────────
 function configureProcessLasso(hw, emuCores) {
@@ -1325,8 +1130,8 @@ function configureProcessLasso(hw, emuCores) {
         }
 
         const nextSectionIdx = fullText.indexOf('[', sectionIdx + sectionHeader.length);
-        const sectionBody = nextSectionIdx === -1 
-          ? fullText.substring(sectionIdx) 
+        const sectionBody = nextSectionIdx === -1
+          ? fullText.substring(sectionIdx)
           : fullText.substring(sectionIdx, nextSectionIdx);
 
         const keyRegex = new RegExp(`^(${key}\\s*=)(.*)$`, 'm');
@@ -1350,8 +1155,8 @@ function configureProcessLasso(hw, emuCores) {
         const sectionIdx = fullText.indexOf(sectionHeader);
         if (sectionIdx === -1) return fullText;
         const nextSectionIdx = fullText.indexOf('[', sectionIdx + sectionHeader.length);
-        const sectionBody = nextSectionIdx === -1 
-          ? fullText.substring(sectionIdx) 
+        const sectionBody = nextSectionIdx === -1
+          ? fullText.substring(sectionIdx)
           : fullText.substring(sectionIdx, nextSectionIdx);
         const keyRegex = new RegExp(`^${key}\\s*=.*$\\r?\\n?`, 'm');
         const newSectionBody = sectionBody.replace(keyRegex, '');
@@ -1377,8 +1182,8 @@ function configureProcessLasso(hw, emuCores) {
         const sectionIdx = fullText.indexOf(sectionHeader);
         if (sectionIdx === -1) return '';
         const nextSectionIdx = fullText.indexOf('[', sectionIdx + sectionHeader.length);
-        const sectionBody = nextSectionIdx === -1 
-          ? fullText.substring(sectionIdx) 
+        const sectionBody = nextSectionIdx === -1
+          ? fullText.substring(sectionIdx)
           : fullText.substring(sectionIdx, nextSectionIdx);
         const match = sectionBody.match(new RegExp(`^${key}\\s*=(.*)$`, 'm'));
         return match ? match[1].trim() : '';
@@ -1444,7 +1249,7 @@ function configureProcessLasso(hw, emuCores) {
     if (fs.existsSync(govExe)) {
       execSync(`powershell -NoProfile -Command "Get-Process ProcessGovernor -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 200; Start-Process '${govExe}' -WindowStyle Hidden -ErrorAction SilentlyContinue"`, { stdio: 'ignore', timeout: 5000 });
     }
-  } catch (_) {}
+  } catch (_) { }
 
   return configured;
 }
@@ -1461,13 +1266,13 @@ ipcMain.handle('boost-game-turbo', async () => {
 
     // Memory threshold based on RAM: clear standby when free RAM < threshold
     const standbyThreshMB = totalRamMB >= 32768 ? 8192
-                          : totalRamMB >= 16384 ? 6000
-                          : totalRamMB >= 8192  ? 3000
-                          : 1500;
+      : totalRamMB >= 16384 ? 6000
+        : totalRamMB >= 8192 ? 3000
+          : 1500;
 
     // ── 1. Power Plan (Ultimate / Highest Performance) ────────────────────
-    try { execSync('powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61', { stdio: 'ignore' }); } catch (_) {}
-    try { execSync('powercfg -setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c', { stdio: 'ignore' }); } catch (_) {}
+    try { execSync('powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61', { stdio: 'ignore' }); } catch (_) { }
+    try { execSync('powercfg -setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c', { stdio: 'ignore' }); } catch (_) { }
 
     // ── 2. Core Parking OFF + Desempenho Máximo da CPU ───────────────────
     try {
@@ -1476,45 +1281,45 @@ ipcMain.handle('boost-game-turbo', async () => {
       execSync('powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMAXCORES 100', { stdio: 'ignore' });
       execSync('powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PERFEPP 0', { stdio: 'ignore' });
       execSync('powercfg -setactive SCHEME_CURRENT', { stdio: 'ignore' });
-    } catch (_) {}
+    } catch (_) { }
 
     // ── 3. Induzir Modo de Desempenho no Windows (Power Throttling OFF) ──
     try {
       execSync('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerThrottling" /v PowerThrottlingOff /t REG_DWORD /d 1 /f', { stdio: 'ignore' });
-    } catch (_) {}
+    } catch (_) { }
 
     // ── 4. IFEO Registry Priority (Excluir de Throttling) ─────────────────
     const IFEO = 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options';
     for (const exe of ['HD-Player.exe', 'BlueStacks.exe', 'BlueStacksHelper.exe']) {
-      try { execSync(`reg add "${IFEO}\\${exe}\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f /reg:64`, { stdio: 'ignore' }); } catch (_) {}
-      try { execSync(`reg add "${IFEO}\\${exe}\\PerfOptions" /v IoPriority /t REG_DWORD /d 3 /f /reg:64`, { stdio: 'ignore' }); } catch (_) {}
+      try { execSync(`reg add "${IFEO}\\${exe}\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f /reg:64`, { stdio: 'ignore' }); } catch (_) { }
+      try { execSync(`reg add "${IFEO}\\${exe}\\PerfOptions" /v IoPriority /t REG_DWORD /d 3 /f /reg:64`, { stdio: 'ignore' }); } catch (_) { }
     }
     // Throttle background apps
     for (const exe of ['Discord.exe', 'DiscordSystemHelper.exe', 'chrome.exe', 'msedge.exe']) {
-      try { execSync(`reg add "${IFEO}\\${exe}\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 2 /f /reg:64`, { stdio: 'ignore' }); } catch (_) {}
+      try { execSync(`reg add "${IFEO}\\${exe}\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 2 /f /reg:64`, { stdio: 'ignore' }); } catch (_) { }
     }
 
     // ── 5. Win32 & Memory Registry (Excluir do ProBalance / Foco Total) ──
-    try { execSync('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 26 /f', { stdio: 'ignore' }); } catch (_) {}
-    try { execSync('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v DisablePagingExecutive /t REG_DWORD /d 1 /f', { stdio: 'ignore' }); } catch (_) {}
-    try { execSync('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v LargeSystemCache /t REG_DWORD /d 0 /f', { stdio: 'ignore' }); } catch (_) {}
+    try { execSync('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 26 /f', { stdio: 'ignore' }); } catch (_) { }
+    try { execSync('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v DisablePagingExecutive /t REG_DWORD /d 1 /f', { stdio: 'ignore' }); } catch (_) { }
+    try { execSync('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v LargeSystemCache /t REG_DWORD /d 0 /f', { stdio: 'ignore' }); } catch (_) { }
 
     // ── 6. GPU & Multimedia Priority ─────────────────────────────────────
     const GPUREG = 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games';
     const gpuPri = tier === 'ultra' ? 8 : tier === 'high' ? 8 : 6;
-    try { execSync(`reg add "${GPUREG}" /v "GPU Priority" /t REG_DWORD /d ${gpuPri} /f`, { stdio: 'ignore' }); } catch (_) {}
-    try { execSync(`reg add "${GPUREG}" /v Priority /t REG_DWORD /d 6 /f`, { stdio: 'ignore' }); } catch (_) {}
-    try { execSync(`reg add "${GPUREG}" /v "Scheduling Category" /t REG_SZ /d "High" /f`, { stdio: 'ignore' }); } catch (_) {}
-    try { execSync(`reg add "${GPUREG}" /v "SFIO Priority" /t REG_SZ /d "High" /f`, { stdio: 'ignore' }); } catch (_) {}
+    try { execSync(`reg add "${GPUREG}" /v "GPU Priority" /t REG_DWORD /d ${gpuPri} /f`, { stdio: 'ignore' }); } catch (_) { }
+    try { execSync(`reg add "${GPUREG}" /v Priority /t REG_DWORD /d 6 /f`, { stdio: 'ignore' }); } catch (_) { }
+    try { execSync(`reg add "${GPUREG}" /v "Scheduling Category" /t REG_SZ /d "High" /f`, { stdio: 'ignore' }); } catch (_) { }
+    try { execSync(`reg add "${GPUREG}" /v "SFIO Priority" /t REG_SZ /d "High" /f`, { stdio: 'ignore' }); } catch (_) { }
 
     // ── 7. Timer Resolution ───────────────────────────────────────────────
-    try { execSync('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\kernel" /v GlobalTimerResolutionRequests /t REG_DWORD /d 1 /f', { stdio: 'ignore' }); } catch (_) {}
+    try { execSync('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\kernel" /v GlobalTimerResolutionRequests /t REG_DWORD /d 1 /f', { stdio: 'ignore' }); } catch (_) { }
 
     // ── 8. Network / TCP No-Nagle ─────────────────────────────────────────
     try {
       const tcpPS = `Get-ChildItem -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces" | ForEach-Object { Set-ItemProperty -Path $_.PSPath -Name "TcpAckFrequency" -Value 1 -ErrorAction SilentlyContinue; Set-ItemProperty -Path $_.PSPath -Name "TCPNoDelay" -Value 1 -ErrorAction SilentlyContinue }`;
       execSync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${tcpPS.replace(/"/g, '\\"')}"`, { stdio: 'ignore', timeout: 8000 });
-    } catch (_) {}
+    } catch (_) { }
 
     // ── 9. Configurações de afinidade viva ignoradas conforme solicitação ───
     // O usuário solicitou não alterar a afinidade "Atual" dos processos em execução,
@@ -1523,13 +1328,13 @@ ipcMain.handle('boost-game-turbo', async () => {
     // ── 10. SmartTrim: clear standby list + working sets ──────────────────
     try {
       execSync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "Clear-DnsClientCache; [System.GC]::Collect(); Get-Process | Where-Object { $_.WorkingSet64 -gt 150MB -and $_.Name -notmatch 'HD-Player|BlueStacks' } | ForEach-Object { try { $_.MinWorkingSet = 4096 } catch {} }"`, { stdio: 'ignore', timeout: 8000 });
-    } catch (_) {}
+    } catch (_) { }
 
     // ── 11. Windows Game Mode + No Xbox DVR ─────────────────────────────
-    try { execSync('reg add "HKCU\\Software\\Microsoft\\GameBar" /v AllowAutoGameMode /t REG_DWORD /d 1 /f', { stdio: 'ignore' }); } catch (_) {}
-    try { execSync('reg add "HKCU\\Software\\Microsoft\\GameBar" /v AutoGameModeEnabled /t REG_DWORD /d 1 /f', { stdio: 'ignore' }); } catch (_) {}
-    try { execSync('reg add "HKCU\\System\\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f', { stdio: 'ignore' }); } catch (_) {}
-    try { execSync('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v AllowGameDVR /t REG_DWORD /d 0 /f', { stdio: 'ignore' }); } catch (_) {}
+    try { execSync('reg add "HKCU\\Software\\Microsoft\\GameBar" /v AllowAutoGameMode /t REG_DWORD /d 1 /f', { stdio: 'ignore' }); } catch (_) { }
+    try { execSync('reg add "HKCU\\Software\\Microsoft\\GameBar" /v AutoGameModeEnabled /t REG_DWORD /d 1 /f', { stdio: 'ignore' }); } catch (_) { }
+    try { execSync('reg add "HKCU\\System\\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f', { stdio: 'ignore' }); } catch (_) { }
+    try { execSync('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v AllowGameDVR /t REG_DWORD /d 0 /f', { stdio: 'ignore' }); } catch (_) { }
 
     // ── 12. Integração Automática com Process Lasso (se presente) ────────
     const processLassoConfigured = configureProcessLasso(hw, _meta.emuCores);
@@ -1808,29 +1613,29 @@ ipcMain.handle('optimize-windows-master', async () => {
     for (const cmd of directCommands) {
       try {
         execSync(cmd, { stdio: 'ignore' });
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // 9. Nagle por Interface de Rede & Desativação de IPv6 para menor latência DNS
     try {
       execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Get-NetAdapter | Foreach-Object { $key = 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\' + $_.InterfaceGuid; if (Test-Path $key) { Set-ItemProperty -Path $key -Name TcpAckFrequency -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue; Set-ItemProperty -Path $key -Name TCPNoDelay -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue; Set-ItemProperty -Path $key -Name TcpDelAckTicks -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue } }; Get-NetAdapterBinding -ComponentID ms_tcpip6 | Disable-NetAdapterBinding -ErrorAction SilentlyContinue"`, { stdio: 'ignore' });
-    } catch (_) {}
+    } catch (_) { }
 
     // 10. Limpar Shaders DirectX Cache, D3D e Temp sem falhas
     try {
       execSync('cmd.exe /c "del /q /f /s \"%TEMP%\\*\" & del /q /f /s \"C:\\Windows\\Temp\\*\" & del /q /f /s \"%LOCALAPPDATA%\\D3DSCache\\*\" & del /q /f /s \"%LOCALAPPDATA%\\NVIDIA\\DXCache\\*\" & del /q /f /s \"%LOCALAPPDATA%\\AMD\\DxCache\\*\" & ipconfig /flushdns & exit /b 0"', { stdio: 'ignore' });
-    } catch (e) {}
+    } catch (e) { }
 
     // 11. Redução de processos em segundo plano e purga de RAM
     try {
       const procScript = getPhysicalScriptPath('otimizar_processos.ps1');
       execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${procScript}"`, { stdio: 'ignore' });
-    } catch (e) {}
+    } catch (e) { }
 
     try {
       const ramScript = getPhysicalScriptPath('clean_ram.ps1');
       execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${ramScript}"`, { stdio: 'ignore' });
-    } catch (e) {}
+    } catch (e) { }
 
     return { success: true };
   } catch (e) {
@@ -1949,7 +1754,7 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
     for (const keyName of keysToClean) {
       try {
         execSync(`reg delete "HKCU\\Control Panel\\Mouse" /v "${keyName}" /f`, { stdio: 'ignore' });
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Aplicar as chaves exatas da Regedit selecionada
@@ -1966,11 +1771,11 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
 
     if (mouseMode === 'loord-3-sense-full-red') {
       try {
-        await runCmd('bcdedit /set useplatformclock false').catch(() => {});
-        await runCmd('bcdedit /set disabledynamictick yes').catch(() => {});
-        await runCmd('bcdedit /deletevalue useplatformtick').catch(() => {});
-        await runCmd('bcdedit /timeout 5').catch(() => {});
-      } catch (e) {}
+        await runCmd('bcdedit /set useplatformclock false').catch(() => { });
+        await runCmd('bcdedit /set disabledynamictick yes').catch(() => { });
+        await runCmd('bcdedit /deletevalue useplatformtick').catch(() => { });
+        await runCmd('bcdedit /timeout 5').catch(() => { });
+      } catch (e) { }
     }
 
     if (mouseMode === 'ultra-emu-boost') {
@@ -1981,7 +1786,7 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
         execSync('wmic process where name="HD-Player.exe" CALL setpriority "high priority"', { stdio: 'ignore' });
         execSync('wmic process where name="MSIAppPlayer.exe" CALL setpriority "high priority"', { stdio: 'ignore' });
         execSync('wmic process where name="MEmuHeadless.exe" CALL setpriority "high priority"', { stdio: 'ignore' });
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Polling Rate buffer
@@ -1993,7 +1798,7 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
 
     try {
       execSync(`reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters" /v MouseDataQueueSize /t REG_DWORD /d ${mouseQueueSize} /f /reg:64`, { stdio: 'ignore' });
-    } catch (_) {}
+    } catch (_) { }
 
     // Atualizar sensibilidade e curva de mouse no Windows em tempo real (sem precisar reiniciar)
     try {
@@ -2008,10 +1813,10 @@ Add-Type -Namespace W -Name M -MemberDefinition $s -ErrorAction SilentlyContinue
 [W.M]::SystemParametersInfoPtr(0x5F,0,[IntPtr]0,3)
 `;
       execSync(`powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -Command "${psSpiCmd.replace(/\r?\n/g, '; ')}"`, { stdio: 'ignore' });
-    } catch (e) {}
+    } catch (e) { }
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       regName: selectedRegConfig ? selectedRegConfig.name : 'Regedit Customizada',
       message: 'Regedit de sensibilidade aplicada com sucesso no Windows!'
     };
@@ -2047,8 +1852,8 @@ ipcMain.handle('restore-backup', async () => {
       }
     }
 
-    await runCmd('bcdedit /deletevalue useplatformtick').catch(() => {});
-    await runCmd('bcdedit /deletevalue disabledynamictick').catch(() => {});
+    await runCmd('bcdedit /deletevalue useplatformtick').catch(() => { });
+    await runCmd('bcdedit /deletevalue disabledynamictick').catch(() => { });
     return { success: true };
   } catch (e) {
     return { success: false, error: e.message };
@@ -2059,7 +1864,7 @@ ipcMain.handle('restore-backup', async () => {
 ipcMain.handle('revert-all-tweaks-on-revoke', async () => {
   try {
     // 1. Parar macros e cleaners em execução
-    await killMacroProcess().catch(() => {});
+    await killMacroProcess().catch(() => { });
 
     // 2. Restaurar backups do registro (.reg) e arquivos de configuração bluestacks.conf
     try {
@@ -2082,11 +1887,11 @@ ipcMain.handle('revert-all-tweaks-on-revoke', async () => {
 
         for (const item of pathsToRestore) {
           if (fs.existsSync(path.join(backupDir, item.key)) && fs.existsSync(path.dirname(item.path))) {
-            try { fs.copyFileSync(path.join(backupDir, item.key), item.path); } catch (_) {}
+            try { fs.copyFileSync(path.join(backupDir, item.key), item.path); } catch (_) { }
           }
         }
       }
-    } catch (_) {}
+    } catch (_) { }
 
     // 3. Reset explícito do Mouse para padrão absoluto do Windows (Sensibilidade normal 10, sem curvas customizadas)
     const mouseResetCmds = [
@@ -2102,7 +1907,7 @@ ipcMain.handle('revert-all-tweaks-on-revoke', async () => {
       'reg add "HKCU\\Control Panel\\Keyboard" /v KeyboardSpeed /t REG_SZ /d "31" /f'
     ];
     for (const cmd of mouseResetCmds) {
-      await runCmd(cmd).catch(() => {});
+      await runCmd(cmd).catch(() => { });
     }
 
     // Atualizar parâmetros do mouse na API Win32 ao vivo
@@ -2116,7 +1921,7 @@ public class WinMouse {
 }
 "@; [WinMouse]::SystemParametersInfo(0x0071, 10, [IntPtr]::Zero, 3); [WinMouse]::SystemParametersInfo(0x0004, 0, [IntPtr]::Zero, 3); [WinMouse]::SystemParametersInfo(0x0017, 1, [IntPtr]::Zero, 3); [WinMouse]::SystemParametersInfo(0x000B, 31, [IntPtr]::Zero, 3);`;
       execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psMouseRefresh.replace(/\r?\n/g, ' ')}"`, { stdio: 'ignore' });
-    } catch (_) {}
+    } catch (_) { }
 
     // 4. Limpar regras do Process Lasso se prolasso.ini existir
     const possibleLassoPaths = [
@@ -2135,16 +1940,16 @@ public class WinMouse {
           text = text.replace(/DefaultGPUPriorities=.*\r?\n?/g, '');
           fs.writeFileSync(iniPath, text, 'utf8');
         }
-      } catch (_) {}
+      } catch (_) { }
     }
 
     // 5. Reverter DNS para DHCP Automático do Windows e limpar hosts
-    await runCmd('powershell -NoProfile -Command "Get-NetAdapter | Where-Object Status -eq Up | ForEach-Object { netsh interface ip set dns name=\\\"$($_.Name)\\\" source=dhcp; netsh interface ip set wins name=\\\"$($_.Name)\\\" source=dhcp }"').catch(() => {});
+    await runCmd('powershell -NoProfile -Command "Get-NetAdapter | Where-Object Status -eq Up | ForEach-Object { netsh interface ip set dns name=\\\"$($_.Name)\\\" source=dhcp; netsh interface ip set wins name=\\\"$($_.Name)\\\" source=dhcp }"').catch(() => { });
     cleanHostsFileOfBluestacks();
-    await runCmd('ipconfig /flushdns').catch(() => {});
+    await runCmd('ipconfig /flushdns').catch(() => { });
 
     // 6. Reverter Plano de Energia para o padrão Equilibrado
-    await runCmd('powercfg -setactive 381b4222-f694-41f0-9685-ff5bb260df2e').catch(() => {});
+    await runCmd('powercfg -setactive 381b4222-f694-41f0-9685-ff5bb260df2e').catch(() => { });
 
     // 7. Reverter Tweaks de Sistema, Memória, Svchost e Prioridades
     const resetCmds = [
@@ -2165,7 +1970,7 @@ public class WinMouse {
       'bcdedit /deletevalue bootux'
     ];
     for (const cmd of resetCmds) {
-      await runCmd(cmd).catch(() => {});
+      await runCmd(cmd).catch(() => { });
     }
 
     // 8. Reativar serviços padrão do Windows
@@ -2183,7 +1988,7 @@ public class WinMouse {
       'sc config "dosvc" start= demand'
     ];
     for (const svc of servicesToRestore) {
-      await runCmd(svc).catch(() => {});
+      await runCmd(svc).catch(() => { });
     }
 
     // 9. Reverter Tweaks do Android e Touch Engine via ADB
@@ -2200,7 +2005,7 @@ public class WinMouse {
           await runCmd(`"${adb}" -s 127.0.0.1:${p} shell setprop view.touch_slop 8`);
           await runCmd(`"${adb}" -s 127.0.0.1:${p} shell setprop touch.pressure.scale 1`);
           await runCmd(`"${adb}" -s 127.0.0.1:${p} shell setprop windowsmgr.max_events_per_sec 60`);
-        } catch (_) {}
+        } catch (_) { }
       }
     }
 
@@ -2273,13 +2078,13 @@ ipcMain.handle('apply-single-tweak', async (event, tweakId) => {
     if (tweakId.startsWith('mouse-') || tweakId === 'remove-kbd-delay') {
       try {
         execSync(`powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Add-Type '[DllImport(\"user32.dll\")] public static extern bool SystemParametersInfo(int a,int b,IntPtr c,int d);' -Name U -Namespace W -PassThru | ForEach-Object { $null = $_::SystemParametersInfo(0x0004,0,[IntPtr]::Zero,0x0003); $null = $_::SystemParametersInfo(0x0071,10,[IntPtr]::Zero,0x0003) }"`, { stdio: 'ignore' });
-      } catch (e) {}
+      } catch (e) { }
     }
 
     if (tweakId === 'freefire-delay') {
       try {
         execSync(`powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Get-Process HD-Player,dnplayer,LdBoxHeadless,Nox -ErrorAction SilentlyContinue | ForEach-Object { try{$_.PriorityClass='High'}catch{} }"`, { stdio: 'ignore' });
-      } catch (e) {}
+      } catch (e) { }
     }
 
     return { success: true };
@@ -2584,19 +2389,19 @@ ipcMain.handle('optimize-pc-fraco', async () => {
     ];
 
     for (const cmd of lowEndTweaks) {
-      try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
+      try { execSync(cmd, { stdio: 'ignore' }); } catch (_) { }
     }
 
     // Purgar processos desnecessários e limpar RAM
     try {
       const procScript = getPhysicalScriptPath('otimizar_processos.ps1');
       execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${procScript}"`, { stdio: 'ignore' });
-    } catch (_) {}
+    } catch (_) { }
 
     try {
       const ramScript = getPhysicalScriptPath('clean_ram.ps1');
       execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${ramScript}"`, { stdio: 'ignore' });
-    } catch (_) {}
+    } catch (_) { }
 
     return { success: true, message: 'Otimização para PC Fraco aplicada com sucesso!' };
   } catch (e) {
@@ -2727,7 +2532,7 @@ ipcMain.handle('set-fixed-pagefile', async () => {
   try {
     // Configura Pagefile fixo de 6GB (6144MB) no drive C: para evitar congelamentos e falta de RAM
     const cmd = 'wmic pagefilesetting where name="C:\\\\pagefile.sys" set InitialSize=6144,MaximumSize=6144';
-    try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
+    try { execSync(cmd, { stdio: 'ignore' }); } catch (_) { }
     execSync('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v PagingFiles /t REG_MULTI_SZ /d "C:\\pagefile.sys 6144 6144" /f /reg:64', { stdio: 'ignore' });
     return { success: true, message: 'Memória Virtual (Pagefile) fixada em 6GB com sucesso!' };
   } catch (e) {
@@ -2785,16 +2590,16 @@ ipcMain.handle('disable-windows-defender-permanent', async () => {
     ];
 
     for (const cmd of defenderCommands) {
-      try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
+      try { execSync(cmd, { stdio: 'ignore' }); } catch (_) { }
     }
 
     try {
       execSync('powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Set-MpPreference -DisableRealtimeMonitoring $true -DisableBehaviorMonitoring $true -DisableBlockAtFirstSeen $true -DisableIOAVProtection $true -DisableScriptScanning $true -SubmitSamplesConsent 2 -MAPSReporting 0 -ErrorAction SilentlyContinue"', { stdio: 'ignore' });
-    } catch (_) {}
+    } catch (_) { }
 
-    return { 
-      success: true, 
-      message: '🛡️ Windows Defender e Proteção em Tempo Real desativados com sucesso! Reinicie o computador para aplicar 100% das alterações.' 
+    return {
+      success: true,
+      message: '🛡️ Windows Defender e Proteção em Tempo Real desativados com sucesso! Reinicie o computador para aplicar 100% das alterações.'
     };
   } catch (e) {
     return { success: false, error: e.message };
@@ -2951,7 +2756,7 @@ ipcMain.handle('transform-windows-lite', async () => {
     ];
 
     for (const cmd of liteCommands) {
-      try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
+      try { execSync(cmd, { stdio: 'ignore' }); } catch (_) { }
     }
 
     // 15. Remover bloatware nativo permanente (AppX + ProvisionedPackage)
@@ -2972,29 +2777,29 @@ ipcMain.handle('transform-windows-lite', async () => {
         Get-AppxProvisionedPackage -Online | Where-Object DisplayName -like "*$a*" | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue;
       }`;
       execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psBloatCmd.replace(/\r?\n/g, ' ')}"`, { stdio: 'ignore' });
-    } catch (_) {}
+    } catch (_) { }
 
     // Otimizar Nagle TCP em adaptadores de rede físicos sem afetar adaptadores virtuais do emulador
     try {
       cleanHostsFileOfBluestacks();
       execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Get-NetAdapter | Where-Object Status -eq 'Up' | Foreach-Object { $key = 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\' + $_.InterfaceGuid; if (Test-Path $key) { Set-ItemProperty -Path $key -Name TcpAckFrequency -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue; Set-ItemProperty -Path $key -Name TCPNoDelay -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue; Set-ItemProperty -Path $key -Name TcpDelAckTicks -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue } }; Get-NetAdapterBinding -ComponentID ms_tcpip6 | Enable-NetAdapterBinding -ErrorAction SilentlyContinue"`, { stdio: 'ignore' });
       execSync('ipconfig /flushdns', { stdio: 'ignore' });
-    } catch (_) {}
+    } catch (_) { }
 
     // Purgar processos desnecessários e limpar RAM
     try {
       const procScript = getPhysicalScriptPath('otimizar_processos.ps1');
       execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${procScript}"`, { stdio: 'ignore' });
-    } catch (_) {}
+    } catch (_) { }
 
     try {
       const ramScript = getPhysicalScriptPath('clean_ram.ps1');
       execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${ramScript}"`, { stdio: 'ignore' });
-    } catch (_) {}
+    } catch (_) { }
 
-    return { 
-      success: true, 
-      message: '🚀 Transformação em Windows Lite Gamer concluída com sucesso! Seu Windows agora está no padrão Ghost Spectre / ReviOS (Kernel na RAM, Svchosts agrupados e 0% bloatware).' 
+    return {
+      success: true,
+      message: '🚀 Transformação em Windows Lite Gamer concluída com sucesso! Seu Windows agora está no padrão Ghost Spectre / ReviOS (Kernel na RAM, Svchosts agrupados e 0% bloatware).'
     };
   } catch (e) {
     return { success: false, error: e.message };
@@ -3031,10 +2836,10 @@ ipcMain.handle('remove-emulator-ads', async (event, port) => {
       }
     }
 
-    return { 
-      success: true, 
-      adbSuccess, 
-      message: '🚫 Anúncios do emulador, App Center e propagandas desativados com sucesso!' 
+    return {
+      success: true,
+      adbSuccess,
+      message: '🚫 Anúncios do emulador, App Center e propagandas desativados com sucesso!'
     };
   } catch (e) {
     return { success: false, error: e.message };
@@ -3112,7 +2917,7 @@ ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
     // 1. Matar processos do emulador antes para garantir gravação limpa
     try {
       execSync('taskkill /F /IM HD-Player.exe /IM HD-Agent.exe /IM BstkSVC.exe /T >nul 2>&1', { stdio: 'ignore' });
-    } catch (_) {}
+    } catch (_) { }
 
     // 2. Modificar bluestacks.conf em todas as instâncias (BlueStacks 5, MSI, etc.)
     const confDirs = [
@@ -3213,7 +3018,7 @@ ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
                   raw = raw.replace(/"MouseAcceleration"\s*:\s*(true|false)/g, `"MouseAcceleration" : false`);
                   fs.writeFileSync(filePath, raw, 'utf8');
                   keymapsUpdatedCount++;
-                } catch (_) {}
+                } catch (_) { }
               }
             }
           }
@@ -3237,15 +3042,15 @@ ipcMain.handle('reset-network-dhcp', async () => {
 
     try {
       execSync('powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Get-NetAdapter | Where-Object Status -eq \'Up\' | ForEach-Object { netsh interface ip set dns name=\\\"$($_.Name)\\\" source=dhcp; netsh interface ip set wins name=\\\"$($_.Name)\\\" source=dhcp }"', { stdio: 'ignore' });
-    } catch (_) {}
+    } catch (_) { }
 
     try {
       execSync('ipconfig /flushdns', { stdio: 'ignore' });
-    } catch (_) {}
+    } catch (_) { }
 
-    return { 
-      success: true, 
-      message: '✔ Conexão de rede restaurada para o padrão (DHCP Automático, DNS limpo e arquivo Hosts reparado)!\n\nAgora o BlueStacks conseguirá carregar a lista de Perfis de Telefone normalmente.' 
+    return {
+      success: true,
+      message: '✔ Conexão de rede restaurada para o padrão (DHCP Automático, DNS limpo e arquivo Hosts reparado)!\n\nAgora o BlueStacks conseguirá carregar a lista de Perfis de Telefone normalmente.'
     };
   } catch (e) {
     return { success: false, error: e.message };
@@ -3342,7 +3147,7 @@ ipcMain.handle('check-for-updates', async () => {
 
     // Compare versions (e.g. 1.2.8 > 1.2.7)
     const isNewer = compareSemver(tag, currentVersion) > 0;
-    
+
     // Find installer asset (.exe)
     let exeAsset = (release.assets || []).find(a => a.name && a.name.toLowerCase().endsWith('.exe'));
     let downloadUrl = exeAsset ? exeAsset.browser_download_url : release.html_url;
@@ -3420,7 +3225,7 @@ function performAppUpdate() {
     try {
       const batPath = path.join(os.tmpdir(), 'run_loord_update.cmd');
       const appExePath = process.execPath;
-      
+
       const cmdContent = `@echo off
 timeout /t 2 /nobreak >nul
 taskkill /f /im "${path.basename(appExePath)}" >nul 2>&1
@@ -3461,148 +3266,5 @@ del "%~f0"
   }
 }
 
-// ── REGEDIT ADAPTATIVA HANDLER (INJEÇÃO NO WINDOWS EM TEMPO REAL) ────────────
-ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
-  try {
-    const { dpiMouse = 1600, dpiEmu = 480, sensX = 2.0, sensY = 2.0, styleMul = 1.0 } = config || {};
 
-    const ratioYX = sensY / (sensX || 1.0);
-    const scaleX = (sensX * (dpiMouse / 800) * styleMul).toFixed(2);
-    const scaleY = (sensY * (dpiEmu / 320) * styleMul).toFixed(2);
 
-    const regCommands = [
-      'reg add "HKCU\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d "0" /f',
-      'reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d "0" /f',
-      'reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d "0" /f',
-      'reg add "HKCU\\Control Panel\\Mouse" /v MouseSensitivity /t REG_SZ /d "10" /f',
-      'reg add "HKCU\\Control Panel\\Mouse" /v SmoothMouseXCurve /t REG_BINARY /d 00000000000000000000000000000000000000000000000000000000000000000000000000000000 /f',
-      'reg add "HKCU\\Control Panel\\Mouse" /v SmoothMouseYCurve /t REG_BINARY /d 00000000000000000000000000000000000000000000000000000000000000000000000000000000 /f',
-      'reg add "HKCU\\Control Panel\\Desktop" /v ForegroundLockTimeout /t REG_DWORD /d 0 /f',
-      'reg add "HKCU\\Control Panel\\Desktop" /v MenuShowDelay /t REG_SZ /d "0" /f',
-      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters" /v MouseDataQueueSize /t REG_DWORD /d 32 /f',
-      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\kbdclass\\Parameters" /v KeyboardDataQueueSize /t REG_DWORD /d 32 /f'
-    ];
-
-    for (const cmd of regCommands) {
-      try {
-        execSync(cmd, { stdio: 'ignore' });
-      } catch (_) {}
-    }
-
-    try {
-      const psCmd = `powershell -NoProfile -Command "$sig = '[DllImport(\\\"user32.dll\\\")]public static extern bool SystemParametersInfo(int uAction, int uParam, IntPtr lpvParam, int fuWinIni);'; $t = Add-Type -MemberDefinition $sig -Name MouseSPI -Namespace Win32 -PassThru; [void]$t::SystemParametersInfo(0x0071, 0, [IntPtr]10, 0x01 -bor 0x02);"`;
-      exec(psCmd, { windowsHide: true }, () => {});
-    } catch (_) {}
-
-    return {
-      success: true,
-      message: 'Regedit Adaptativa aplicada com sucesso no Windows!',
-      summary: {
-        scaleX,
-        scaleY,
-        ratioYX: ratioYX.toFixed(2),
-        dpiMouse,
-        dpiEmu,
-        styleMul
-      }
-    };
-  } catch (err) {
-    console.error('Erro ao aplicar regedit adaptativa:', err);
-    return {
-      success: false,
-      error: err.message || 'Falha ao aplicar regedit adaptativa'
-    };
-  }
-});
-
-// ── OTIMIZADOR COMPETITIVO DE PAN & ENGINE HANDLER ─────────────────────────
-ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
-  try {
-    const {
-      panSpeed = 15.0,
-      sensitivityX = 1.0,
-      sensitivityY = 0.4,
-      astcMode = 'hardware',
-      graphicsRenderer = 'dx',
-      cpuCores = 'auto',
-      ramMb = 'auto',
-      enableHighFps = true
-    } = config || {};
-
-    const confPaths = [
-      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_nxt', 'bluestacks.conf'),
-      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_msi5', 'bluestacks.conf'),
-      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_arab', 'bluestacks.conf')
-    ];
-
-    let modifiedCount = 0;
-
-    for (const confPath of confPaths) {
-      try {
-        if (!fs.existsSync(confPath)) continue;
-        let content = fs.readFileSync(confPath, 'utf8');
-
-        const instances = ['Nougat32', 'Nougat64', 'Pie64', 'Rvc64', 'Android'];
-        for (const inst of instances) {
-          content = content.replace(
-            new RegExp(`(bst\\.instance\\.${inst}\\.pan_speed\\s*=\\s*)"[^"]*"`, 'g'),
-            `$1"${panSpeed}"`
-          );
-          const astcVal = astcMode === 'hardware' ? '1' : '0';
-          content = content.replace(
-            new RegExp(`(bst\\.instance\\.${inst}\\.astc_decoding_mode\\s*=\\s*)"[^"]*"`, 'g'),
-            `$1"${astcVal}"`
-          );
-          const gVal = graphicsRenderer === 'gl' ? '1' : graphicsRenderer === 'vulkan' ? '3' : '2';
-          content = content.replace(
-            new RegExp(`(bst\\.instance\\.${inst}\\.graphics_renderer\\s*=\\s*)"[^"]*"`, 'g'),
-            `$1"${gVal}"`
-          );
-          if (enableHighFps) {
-            content = content.replace(
-              new RegExp(`(bst\\.instance\\.${inst}\\.enable_high_fps\\s*=\\s*)"[^"]*"`, 'g'),
-              `$1"1"`
-            );
-            content = content.replace(
-              new RegExp(`(bst\\.instance\\.${inst}\\.max_fps\\s*=\\s*)"[^"]*"`, 'g'),
-              `$1"240"`
-            );
-          }
-          if (cpuCores !== 'auto' && parseInt(cpuCores) > 0) {
-            content = content.replace(
-              new RegExp(`(bst\\.instance\\.${inst}\\.cpu\\s*=\\s*)"[^"]*"`, 'g'),
-              `$1"${cpuCores}"`
-            );
-          }
-          if (ramMb !== 'auto' && parseInt(ramMb) > 0) {
-            content = content.replace(
-              new RegExp(`(bst\\.instance\\.${inst}\\.ram\\s*=\\s*)"[^"]*"`, 'g'),
-              `$1"${ramMb}"`
-            );
-          }
-        }
-
-        fs.writeFileSync(confPath, content, 'utf8');
-        modifiedCount++;
-      } catch (_) {}
-    }
-
-    try {
-      execSync('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\HD-Player.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f', { stdio: 'ignore' });
-      execSync('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\HD-Player.exe\\PerfOptions" /v IoPriority /t REG_DWORD /d 3 /f', { stdio: 'ignore' });
-      execSync('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\MSIAppPlayer.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f', { stdio: 'ignore' });
-    } catch (_) {}
-
-    return {
-      success: true,
-      message: `Speed do Pan (${panSpeed}) e Otimizações de Engine injetadas com sucesso!`,
-      details: { panSpeed, sensitivityX, sensitivityY, renderer: graphicsRenderer }
-    };
-  } catch (err) {
-    console.error('Erro ao aplicar otimizações competitivas:', err);
-    return {
-      success: false,
-      error: err.message || 'Erro ao aplicar otimizações competitivas'
-    };
-  }
-});

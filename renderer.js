@@ -182,17 +182,17 @@ async function applySingleTweak(tweakId) {
   }
 
   const res = await window.api.applySingleTweak(tweakId);
-  
+
   if (res && res.success) {
     setTweakStatus(`Módulo ${title} aplicado com sucesso!`);
     if (card) card.classList.add('applied');
     if (btn) btn.textContent = 'APLICADO';
-    
+
     // Save state
     let applied = [];
     const raw = localStorage.getItem('ffopt_applied_tweaks');
     if (raw) {
-      try { applied = JSON.parse(raw); } catch(e) {}
+      try { applied = JSON.parse(raw); } catch (e) { }
     }
     if (!applied.includes(tweakId)) {
       applied.push(tweakId);
@@ -203,7 +203,7 @@ async function applySingleTweak(tweakId) {
     if (card) card.classList.add('applied');
     if (btn) btn.textContent = 'APLICADO';
   }
-  
+
   if (btn) {
     btn.disabled = false;
   }
@@ -231,14 +231,14 @@ if (btnApplyAllModules) {
   btnApplyAllModules.addEventListener('click', async () => {
     btnApplyAllModules.disabled = true;
     btnApplyAllModules.textContent = '⚡ Aplicando módulos...';
-    
+
     for (const tweakId of allTweakIds) {
       await applySingleTweak(tweakId);
     }
-    
+
     btnApplyAllModules.disabled = false;
     btnApplyAllModules.textContent = '⚡ Aplicar Módulos';
-    
+
     const reboot = confirm('Todos os 35 módulos de otimização de sistema, latência de jogos e input foram aplicados com sucesso no Windows!\n\nDeseja REINICIAR o computador agora para que todas as configurações entrem em vigor de forma 100% estável?');
     if (reboot) {
       await window.api.rebootComputer();
@@ -338,7 +338,7 @@ btnCleanRam.addEventListener('click', async () => {
   tweakStatusText.textContent = 'Limpando memória RAM...';
   const btnText = btnCleanRam.innerHTML;
   btnCleanRam.disabled = true;
-  
+
   const result = await window.api.cleanRam();
   if (result.success) {
     tweakStatusText.textContent = 'Memória RAM liberada com sucesso!';
@@ -497,7 +497,7 @@ const statusMessage = document.getElementById('status-message');
 async function checkStatus() {
   try {
     const status = await window.api.checkBlueStacksStatus();
-    
+
     // Update labels/badges
     if (statusMsi) {
       if (status && status.msi5Installed) {
@@ -630,14 +630,14 @@ let activeLicenseCheckTimer = null;
 
 async function checkActivation() {
   if (!activationScreen) return true;
-  
+
   let uuid = '';
   try {
     uuid = await window.api.getUuid();
   } catch (e) {
     uuid = 'UNKNOWN-UUID';
   }
-  
+
   if (displayUuidInput) {
     displayUuidInput.value = uuid;
   }
@@ -662,7 +662,7 @@ async function checkActivation() {
         body: JSON.stringify({ uuid, key: savedKey })
       });
       const data = await response.json();
-      
+
       if (data && data.success) {
         updateLicenseBadge(true, data.clientName, data.licenseType, data.timeRemainingStr);
         activationScreen.style.display = 'none';
@@ -677,7 +677,7 @@ async function checkActivation() {
         // Reverter 100% de todas as otimizações e registros automaticamente
         try {
           await window.api.revertAllTweaksOnRevoke();
-        } catch (_) {}
+        } catch (_) { }
 
         if (activationError) {
           activationError.textContent = `❌ ${data.error || 'Licença expirada, revogada ou não encontrada no sistema. O computador foi restaurado ao estado original.'}`;
@@ -692,7 +692,7 @@ async function checkActivation() {
   // Se não tem chave ou chave é inválida: mostrar tela de ativação bloqueando o app
   updateLicenseBadge(false);
   activationScreen.style.display = 'flex';
-  
+
   if (btnActivate) {
     btnActivate.onclick = async () => {
       const key = inputKey.value.trim().toUpperCase();
@@ -703,7 +703,7 @@ async function checkActivation() {
         }
         return;
       }
-      
+
       btnActivate.disabled = true;
       btnActivate.textContent = 'Verificando na Nuvem...';
       if (activationError) activationError.style.display = 'none';
@@ -716,7 +716,7 @@ async function checkActivation() {
           body: JSON.stringify({ uuid: myUuid, key })
         });
         const webData = await webRes.json();
-        
+
         if (webData && webData.success) {
           localStorage.setItem('activation_key', key);
           if (webData.clientName) {
@@ -725,7 +725,7 @@ async function checkActivation() {
           updateLicenseBadge(true, webData.clientName, webData.licenseType, webData.timeRemainingStr);
           activationScreen.style.display = 'none';
           startLicenseHeartbeat(myUuid, key);
-          
+
           await loadAllSettings();
           restoreAppliedTweaks();
           bindSaveListeners();
@@ -770,11 +770,11 @@ function startLicenseHeartbeat(uuid, key) {
         localStorage.removeItem('activation_key');
         localStorage.removeItem('client_name');
         localStorage.removeItem('ffopt_applied_tweaks');
-        
+
         // Reverter 100% de todos os tweaks, registros, DNS e emulador de volta ao padrão do Windows
         try {
           await window.api.revertAllTweaksOnRevoke();
-        } catch (_) {}
+        } catch (_) { }
 
         updateLicenseBadge(false);
         if (activationError) {
@@ -786,7 +786,7 @@ function startLicenseHeartbeat(uuid, key) {
       } else {
         updateLicenseBadge(true, data.clientName, data.licenseType, data.timeRemainingStr);
       }
-    } catch (e) {}
+    } catch (e) { }
   }, 25000); // Checa a cada 25 segundos
 }
 
@@ -794,12 +794,12 @@ function startLicenseHeartbeat(uuid, key) {
 function updateLicenseBadge(isActivated, clientName, licenseType, timeRemainingStr) {
   const versionLabel = document.querySelector('.version-label');
   const versionSub = document.querySelector('.version-sub');
-  
+
   if (clientName && clientName.trim() && clientName !== 'Cliente VIP') {
     localStorage.setItem('client_name', clientName.trim());
   }
   const name = localStorage.getItem('client_name') || (clientName && clientName.trim() ? clientName.trim() : 'Cliente VIP');
-  
+
   if (isActivated) {
     if (versionLabel) {
       if (licenseType === 'temporary' && timeRemainingStr) {
@@ -841,7 +841,7 @@ const settingsFields = [
 
 function saveAllSettings() {
   const settings = {};
-  
+
   // Save standard fields
   settingsFields.forEach(field => {
     const el = document.getElementById(field.id);
@@ -871,10 +871,10 @@ function saveAllSettings() {
 async function loadAllSettings() {
   const raw = localStorage.getItem('ffopt_settings');
   if (!raw) return;
-  
+
   try {
     const settings = JSON.parse(raw);
-    
+
     // Load standard fields
     settingsFields.forEach(field => {
       const el = document.getElementById(field.id);
@@ -970,12 +970,12 @@ async function initApp() {
   const isActivated = await checkActivation();
 
   appIsAdmin = await window.api.checkAdmin();
-  
+
   if (!appIsAdmin) {
     statusMessage.textContent = '❌ MODO SEM ADMINISTRADOR: Abra como Admin para aplicar alterações!';
     statusMessage.style.color = '#ef4444';
     tweakStatusText.textContent = 'Modo de visualização (Sem Admin).';
-    
+
     // Render top warning banner
     const content = document.querySelector('.content-area');
     const banner = document.createElement('div');
@@ -1016,7 +1016,7 @@ async function initApp() {
           // Reverter 100% de todas as otimizações e registros automaticamente
           try {
             await window.api.revertAllTweaksOnRevoke();
-          } catch (_) {}
+          } catch (_) { }
 
           const reason = data.error || 'Sua licença foi encerrada.';
           alert(`🔒 Acesso encerrado!\n\n${reason}\n\nTodas as otimizações e registros aplicados foram restaurados ao padrão original do seu computador.`);
@@ -1110,53 +1110,15 @@ if (window.api.onUpdateAvailable) {
   document.body.appendChild(updateBanner);
 
   const updTitle = document.getElementById('upd-title');
-  const updSub   = document.getElementById('upd-sub');
-  const updBtn   = document.getElementById('update-btn');
+  const updSub = document.getElementById('upd-sub');
+  const updBtn = document.getElementById('update-btn');
 
   const cardStatusTitle = document.getElementById('update-status-title');
-  const cardStatusDesc  = document.getElementById('update-status-desc');
-  const btnCheckUpdate  = document.getElementById('btn-check-update');
-  const btnInstallNow   = document.getElementById('btn-install-now');
+  const cardStatusDesc = document.getElementById('update-status-desc');
+  const btnCheckUpdate = document.getElementById('btn-check-update');
+  const btnInstallNow = document.getElementById('btn-install-now');
 
   let activeDownloadUrl = null;
-
-  // Elementos do Modal de Atualização
-  const updateModal = document.getElementById('update-modal');
-  const btnModalDownload = document.getElementById('btn-modal-update-download');
-  const btnModalOk = document.getElementById('btn-modal-update-ok');
-  const modalCurrVer = document.getElementById('modal-curr-ver');
-  const modalNewVer = document.getElementById('modal-new-ver');
-  const modalTitle = document.getElementById('modal-update-title');
-  const navUpdateBadge = document.getElementById('nav-update-badge');
-  const globalAlert = document.getElementById('global-update-alert');
-  const btnGlobalUpdateAction = document.getElementById('btn-global-update-action');
-  const btnGlobalUpdateClose = document.getElementById('btn-global-update-close');
-
-  if (btnModalOk && updateModal) {
-    btnModalOk.addEventListener('click', () => {
-      updateModal.style.display = 'none';
-    });
-  }
-
-  if (btnGlobalUpdateClose && globalAlert) {
-    btnGlobalUpdateClose.addEventListener('click', () => {
-      globalAlert.style.display = 'none';
-    });
-  }
-
-  function startUpdateDownloadFlow(latestVer) {
-    if (updateModal) updateModal.style.display = 'none';
-    const tabBtn = document.querySelector('[data-tab="minha-config"]');
-    if (tabBtn) tabBtn.click();
-    if (btnInstallNow) btnInstallNow.click();
-  }
-
-  if (btnModalDownload) {
-    btnModalDownload.addEventListener('click', () => startUpdateDownloadFlow());
-  }
-  if (btnGlobalUpdateAction) {
-    btnGlobalUpdateAction.addEventListener('click', () => startUpdateDownloadFlow());
-  }
 
   async function handleCheckUpdates(manual = false) {
     if (btnCheckUpdate) {
@@ -1168,7 +1130,7 @@ if (window.api.onUpdateAvailable) {
 
     try {
       const res = await window.api.checkForUpdates();
-      
+
       const badge = document.getElementById('app-version-badge');
       if (badge && res && res.currentVersion) {
         badge.textContent = `v${res.currentVersion}`;
@@ -1183,36 +1145,9 @@ if (window.api.onUpdateAvailable) {
 
       if (hasNewVersion) {
         activeDownloadUrl = res.downloadUrl;
-
-        // 1. Ativa o badge na sidebar "Minha Config"
-        if (navUpdateBadge) {
-          navUpdateBadge.style.display = 'inline-block';
-          navUpdateBadge.textContent = `v${res.latestVersion} 🔥`;
-        }
-
-        // 2. Ativa o Banner Global no Topo
-        if (globalAlert) {
-          globalAlert.style.display = 'flex';
-          const txt = document.getElementById('global-update-text');
-          const sub = document.getElementById('global-update-subtext');
-          if (txt) txt.textContent = `🔥 NOVA VERSÃO v${res.latestVersion} DISPONÍVEL!`;
-          if (sub) sub.textContent = `Uma nova versão com melhorias de sensibilidade e estabilidade foi lançada.`;
-          if (btnGlobalUpdateAction) btnGlobalUpdateAction.textContent = `⚡ ATUALIZAR (v${res.latestVersion})`;
-        }
-
-        // 3. Abre o Modal Pop-up na tela
-        if (updateModal) {
-          if (modalCurrVer) modalCurrVer.textContent = `v${res.currentVersion}`;
-          if (modalNewVer) modalNewVer.textContent = `v${res.latestVersion}`;
-          if (modalTitle) modalTitle.textContent = `🚀 NOVA VERSÃO v${res.latestVersion} DISPONÍVEL!`;
-          if (btnModalDownload) btnModalDownload.textContent = `⚡ BAIXAR & ATUALIZAR AGORA (v${res.latestVersion})`;
-          updateModal.style.display = 'flex';
-        }
-
-        // 4. Atualiza o Card em Minha Config
         if (cardStatusTitle) cardStatusTitle.textContent = `🚀 Nova Versão v${res.latestVersion} Disponível!`;
         if (cardStatusDesc) cardStatusDesc.textContent = `Clique abaixo para baixar e atualizar automaticamente estilo Play Store.`;
-        
+
         if (btnInstallNow) {
           btnInstallNow.style.display = 'inline-block';
           btnInstallNow.textContent = `⚡ Baixar e Atualizar (v${res.latestVersion})`;
@@ -1234,6 +1169,7 @@ if (window.api.onUpdateAvailable) {
               };
               if (cardStatusTitle) cardStatusTitle.textContent = '✅ Download Concluído (100%)!';
               if (cardStatusDesc) cardStatusDesc.textContent = 'Clique no botão verde para reiniciar e aplicar a nova versão.';
+              alert(`✅ Download da v${res.latestVersion} concluído com sucesso!\n\nClique em "Reiniciar e Atualizar Agora" para aplicar a atualização.`);
             } else {
               btnInstallNow.disabled = false;
               btnInstallNow.textContent = 'Tentar Novamente';
@@ -1241,15 +1177,16 @@ if (window.api.onUpdateAvailable) {
             }
           };
         }
+
+        if (manual) {
+          alert(`🚀 Nova Atualização Encontrada!\n\n• Sua Versão Atual: v${res.currentVersion}\n• Nova Versão Disponível: v${res.latestVersion}\n\nClique no botão "Baixar e Atualizar" para instalar.`);
+        }
       } else {
-        if (navUpdateBadge) navUpdateBadge.style.display = 'none';
-        if (globalAlert) globalAlert.style.display = 'none';
-        if (updateModal) updateModal.style.display = 'none';
         if (btnInstallNow) btnInstallNow.style.display = 'none';
         if (cardStatusTitle) cardStatusTitle.textContent = '✔️ Você está na versão mais recente';
-        if (cardStatusDesc) cardStatusDesc.textContent = `Seu Loord Optimizer está 100% atualizado (v${res?.currentVersion || '1.7.1'}).`;
+        if (cardStatusDesc) cardStatusDesc.textContent = `Seu Loord Optimizer está 100% atualizado (v${res?.currentVersion || '1.0.8'}).`;
         if (manual) {
-          alert(`✔️ Seu Loord Optimizer já está na versão mais recente (v${res?.currentVersion || '1.7.1'})!`);
+          alert(`✔️ Seu Loord Optimizer já está na versão mais recente (v${res?.currentVersion || '1.0.8'})!`);
         }
       }
     } catch (e) {
@@ -1290,17 +1227,17 @@ if (window.api.onUpdateAvailable) {
 //  ADB EMULATOR OPTIMIZER
 // ═══════════════════════════════════════════════════════════════════════
 (function adbUI() {
-  const adbStatusBadge  = document.getElementById('adb-status-badge');
-  const adbLog          = document.getElementById('adb-log');
-  const btnConnect      = document.getElementById('btn-adb-connect');
-  const btnAutoDetect   = document.getElementById('btn-adb-autodetect');
-  const portInput       = document.getElementById('adb-port-input');
+  const adbStatusBadge = document.getElementById('adb-status-badge');
+  const adbLog = document.getElementById('adb-log');
+  const btnConnect = document.getElementById('btn-adb-connect');
+  const btnAutoDetect = document.getElementById('btn-adb-autodetect');
+  const portInput = document.getElementById('adb-port-input');
   const btnFullOptimize = document.getElementById('btn-adb-full-optimize');
-  const btnAnims        = document.getElementById('btn-adb-anims');
-  const btnBg           = document.getElementById('btn-adb-bg');
-  const btnCache        = document.getElementById('btn-adb-cache');
-  const btnDpi          = document.getElementById('btn-adb-dpi');
-  const btnUninstall    = document.getElementById('btn-adb-uninstall');
+  const btnAnims = document.getElementById('btn-adb-anims');
+  const btnBg = document.getElementById('btn-adb-bg');
+  const btnCache = document.getElementById('btn-adb-cache');
+  const btnDpi = document.getElementById('btn-adb-dpi');
+  const btnUninstall = document.getElementById('btn-adb-uninstall');
 
   if (!btnConnect) return;
 
@@ -1441,9 +1378,9 @@ if (window.api.onUpdateAvailable) {
 
   // ── DPI Personalizada do Android ──────────────────────────────────
   const inputCustomDpi = document.getElementById('custom-adb-dpi');
-  const btnApplyDpi    = document.getElementById('btn-apply-custom-dpi');
-  const btnResetDpi    = document.getElementById('btn-reset-custom-dpi');
-  const presetDpiBtns  = document.querySelectorAll('.preset-dpi-btn');
+  const btnApplyDpi = document.getElementById('btn-apply-custom-dpi');
+  const btnResetDpi = document.getElementById('btn-reset-custom-dpi');
+  const presetDpiBtns = document.querySelectorAll('.preset-dpi-btn');
 
   presetDpiBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1518,8 +1455,8 @@ if (window.api.onUpdateAvailable) {
 
   // ── Desbloquear FPS com Hz da Tela ───────────────────────────────
   const inputScreenHz = document.getElementById('input-screen-hz');
-  const btnUnlockFps  = document.getElementById('btn-unlock-fps');
-  const presetHzBtns  = document.querySelectorAll('.preset-hz-btn');
+  const btnUnlockFps = document.getElementById('btn-unlock-fps');
+  const presetHzBtns = document.querySelectorAll('.preset-hz-btn');
 
   presetHzBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1535,7 +1472,7 @@ if (window.api.onUpdateAvailable) {
       const hzVal = inputScreenHz?.value?.trim() || '240';
       btnUnlockFps.disabled = true;
       btnUnlockFps.textContent = 'Aplicando...';
-      
+
       const res = await window.api.unlockFpsHz(hzVal);
       if (res && res.success) {
         setApplied('badge-unlock-fps');
@@ -1555,7 +1492,7 @@ if (window.api.onUpdateAvailable) {
     btnRemoveFfDelay.addEventListener('click', async () => {
       btnRemoveFfDelay.disabled = true;
       btnRemoveFfDelay.textContent = 'Removendo delay...';
-      
+
       const res = await window.api.removeFreeFireDelay();
       if (res && res.success) {
         setApplied('badge-ff-delay');
@@ -1578,14 +1515,14 @@ if (window.api.onUpdateAvailable) {
   const btnApplyDevice = document.getElementById('btn-apply-device');
 
   const DEVICE_PROFILES = {
-    'asus_rog_8':  { brand: 'asus', manufacturer: 'asus', model: 'ASUS_AI2401_D', carrier: 'se_72405' },
-    'asus_rog_6':  { brand: 'asus', manufacturer: 'asus', model: 'ASUS_AI2201', carrier: 'se_72405' },
-    'asus_rog_5':  { brand: 'asus', manufacturer: 'asus', model: 'ASUS_I005D', carrier: 'se_72405' },
+    'asus_rog_8': { brand: 'asus', manufacturer: 'asus', model: 'ASUS_AI2401_D', carrier: 'se_72405' },
+    'asus_rog_6': { brand: 'asus', manufacturer: 'asus', model: 'ASUS_AI2201', carrier: 'se_72405' },
+    'asus_rog_5': { brand: 'asus', manufacturer: 'asus', model: 'ASUS_I005D', carrier: 'se_72405' },
     'samsung_s24': { brand: 'samsung', manufacturer: 'samsung', model: 'SM-S928B', carrier: 'se_72405' },
     'samsung_s23': { brand: 'samsung', manufacturer: 'samsung', model: 'SM-S918B', carrier: 'se_72405' },
-    'blackshark_5':{ brand: 'blackshark', manufacturer: 'blackshark', model: 'SHARK KTUS-H0', carrier: 'se_72405' },
-    'redmagic_9':  { brand: 'nubia', manufacturer: 'nubia', model: 'NX769J', carrier: 'se_72405' },
-    'oneplus_12':  { brand: 'OnePlus', manufacturer: 'OnePlus', model: 'CPH2581', carrier: 'se_72405' }
+    'blackshark_5': { brand: 'blackshark', manufacturer: 'blackshark', model: 'SHARK KTUS-H0', carrier: 'se_72405' },
+    'redmagic_9': { brand: 'nubia', manufacturer: 'nubia', model: 'NX769J', carrier: 'se_72405' },
+    'oneplus_12': { brand: 'OnePlus', manufacturer: 'OnePlus', model: 'CPH2581', carrier: 'se_72405' }
   };
 
   if (selectDevice) {
@@ -1645,7 +1582,7 @@ if (window.api.onUpdateAvailable) {
       btnFlashRom.disabled = true;
       btnFlashRom.textContent = 'Flasheando tweaks...';
       logAdb('Injetando tweaks de aceleração de GPU e Dalvik VM no Android...');
-      
+
       const res = await window.api.flashSystemTweaks(adbPort);
       if (res && res.success) {
         setApplied('badge-flash-rom');
@@ -1725,15 +1662,15 @@ if (window.api.onUpdateAvailable) {
 
   // ── Desinstalar Bloatware ─────────────────────────────────────────
   const BLOATWARE_MAP = {
-    'uninst-ads':           ['com.bluestacks.gamecenter', 'com.bluestacks.appmart', 'com.bluestacks.gamepedia', 'gg.now.ads.service', 'gg.now.billing.service2', 'gg.now.billing.interceptor', 'com.bluestacks.hyperdesk', 'com.bluestacks.search', 'com.bluestacks.bstxservice'],
+    'uninst-ads': ['com.bluestacks.gamecenter', 'com.bluestacks.appmart', 'com.bluestacks.gamepedia', 'gg.now.ads.service', 'gg.now.billing.service2', 'gg.now.billing.interceptor', 'com.bluestacks.hyperdesk', 'com.bluestacks.search', 'com.bluestacks.bstxservice'],
     'uninst-google-search': ['com.google.android.googlequicksearchbox', 'com.google.android.apps.searchlite', 'com.google.android.katniss'],
-    'uninst-browser':       ['com.android.chrome', 'com.android.browser', 'com.google.android.browser', 'com.sec.android.app.sbrowser', 'org.chromium.chrome'],
-    'uninst-files':         ['com.android.documentsui', 'com.android.externalstorage', 'com.estrongs.android.pop', 'com.android.providers.downloads.ui', 'com.bluestacks.filemanager', 'com.bluestacks.windowsfilemanager'],
-    'uninst-telephony':     ['com.android.providers.telephony', 'com.android.phone', 'com.android.providers.contacts', 'com.android.captiveportallogin', 'com.android.cellbroadcastreceiver', 'com.android.stk'],
-    'uninst-email':         ['com.android.email', 'com.google.android.gm', 'com.android.calendar', 'com.google.android.calendar', 'com.google.android.syncadapters.calendar', 'com.google.android.syncadapters.contacts'],
-    'uninst-media':         ['com.google.android.apps.maps', 'com.google.android.youtube', 'com.google.android.music', 'com.android.music', 'com.google.android.apps.youtube.music', 'com.google.android.videos'],
-    'uninst-docs':          ['com.google.android.apps.docs', 'com.google.android.apps.docs.editors.docs', 'com.google.android.apps.sheets', 'com.google.android.apps.slides', 'com.google.android.play.games', 'com.google.android.gms.setup'],
-    'uninst-playstore':     ['com.android.vending', 'com.google.android.gms', 'com.google.android.gsf', 'com.google.android.feedback', 'com.google.android.partnersetup', 'com.google.android.setupwizard', 'com.google.android.backuptransport', 'com.google.android.onetimeinitializer']
+    'uninst-browser': ['com.android.chrome', 'com.android.browser', 'com.google.android.browser', 'com.sec.android.app.sbrowser', 'org.chromium.chrome'],
+    'uninst-files': ['com.android.documentsui', 'com.android.externalstorage', 'com.estrongs.android.pop', 'com.android.providers.downloads.ui', 'com.bluestacks.filemanager', 'com.bluestacks.windowsfilemanager'],
+    'uninst-telephony': ['com.android.providers.telephony', 'com.android.phone', 'com.android.providers.contacts', 'com.android.captiveportallogin', 'com.android.cellbroadcastreceiver', 'com.android.stk'],
+    'uninst-email': ['com.android.email', 'com.google.android.gm', 'com.android.calendar', 'com.google.android.calendar', 'com.google.android.syncadapters.calendar', 'com.google.android.syncadapters.contacts'],
+    'uninst-media': ['com.google.android.apps.maps', 'com.google.android.youtube', 'com.google.android.music', 'com.android.music', 'com.google.android.apps.youtube.music', 'com.google.android.videos'],
+    'uninst-docs': ['com.google.android.apps.docs', 'com.google.android.apps.docs.editors.docs', 'com.google.android.apps.sheets', 'com.google.android.apps.slides', 'com.google.android.play.games', 'com.google.android.gms.setup'],
+    'uninst-playstore': ['com.android.vending', 'com.google.android.gms', 'com.google.android.gsf', 'com.google.android.feedback', 'com.google.android.partnersetup', 'com.google.android.setupwizard', 'com.google.android.backuptransport', 'com.google.android.onetimeinitializer']
   };
 
   btnUninstall.addEventListener('click', async () => {
@@ -1752,7 +1689,7 @@ if (window.api.onUpdateAvailable) {
     let ok = 0, fail = 0;
     for (const r of results) {
       if (r.ok) { logAdb(`✔ ${r.pkg} (removido/desativado)`, '#28c385'); ok++; }
-      else       { logAdb(`✗ ${r.pkg} (não instalado)`, '#64748b'); fail++; }
+      else { logAdb(`✗ ${r.pkg} (não instalado)`, '#64748b'); fail++; }
     }
     logAdb(`Concluído: ${ok} pacotes desinstalados/desativados com sucesso!`, '#63cab7');
     setApplied('badge-adb-uninstall');
@@ -1829,7 +1766,7 @@ if (btnApplyDns) {
     const val = selectGamerDns?.value || 'cloudflare';
     btnApplyDns.disabled = true;
     btnApplyDns.textContent = 'Aplicando...';
-    
+
     const res = await window.api.setGamerDns(val);
     if (res && res.success) {
       if (badgeDnsApplied) {
@@ -1900,9 +1837,9 @@ if (btnGameBooster) {
       }
 
       const hw = res.hw || {};
-      const brand  = hw.isIntel ? 'Intel' : hw.isAMD ? 'AMD/Ryzen' : 'Outro';
-      const htInfo = hw.hasHT   ? 'Sim (HyperThreading)' : 'Não (físicos puros)';
-      const ramGB  = hw.totalRamMB ? (hw.totalRamMB / 1024).toFixed(1) : '?';
+      const brand = hw.isIntel ? 'Intel' : hw.isAMD ? 'AMD/Ryzen' : 'Outro';
+      const htInfo = hw.hasHT ? 'Sim (HyperThreading)' : 'Não (físicos puros)';
+      const ramGB = hw.totalRamMB ? (hw.totalRamMB / 1024).toFixed(1) : '?';
       const tierPT = { ultra: '🏆 ULTRA', high: '🥇 HIGH', medium: '🥈 MÉDIO', low: '🥉 BÁSICO' }[hw.tier] || '?';
 
       // Mostrar corretamente: núcleos físicos (pares) vs lógicos (ímpares)
@@ -1920,16 +1857,16 @@ if (btnGameBooster) {
         bgStr = 'Núcleo 0 (SO)';
       }
 
-      const lassoText = res.processLassoConfigured 
+      const lassoText = res.processLassoConfigured
         ? `── Process Lasso Integrado ──────\n` +
-          `✅ Induzir Modo de Desempenho: ATIVADO\n` +
-          `✅ Excluir do ProBalance: ATIVADO (Anti-Lag)\n` +
-          `✅ SmartTrim (RAM Standby Purge): ATIVADO\n` +
-          `✅ Afinidade Pares (Físicos): APLICADA\n\n`
+        `✅ Induzir Modo de Desempenho: ATIVADO\n` +
+        `✅ Excluir do ProBalance: ATIVADO (Anti-Lag)\n` +
+        `✅ SmartTrim (RAM Standby Purge): ATIVADO\n` +
+        `✅ Afinidade Pares (Físicos): APLICADA\n\n`
         : `── Otimizações do Sistema ───────\n` +
-          `✅ Modo de Desempenho: ATIVADO\n` +
-          `✅ Throttling do Windows: DESATIVADO\n` +
-          `✅ SmartTrim de RAM: ATIVADO\n\n`;
+        `✅ Modo de Desempenho: ATIVADO\n` +
+        `✅ Throttling do Windows: DESATIVADO\n` +
+        `✅ SmartTrim de RAM: ATIVADO\n\n`;
 
       alert(
         `🔥 GAME BOOSTER ATIVADO!\n` +
@@ -2143,6 +2080,18 @@ if (btnPresetPotato) {
   });
 }
 
+const btnPresetSmooth = document.getElementById('btn-preset-smooth');
+if (btnPresetSmooth) {
+  btnPresetSmooth.addEventListener('click', async () => {
+    const res = await window.api.applyLowEndEmulatorConfig('540p-balanced');
+    if (statusEmuPreset) {
+      statusEmuPreset.style.display = 'block';
+      statusEmuPreset.textContent = '⚡ Perfil 540p (960x540, 240 DPI, 2 CPU, 2GB RAM) aplicado no BlueStacks/MSI!';
+    }
+  });
+}
+
+const btnPreset720p = document.getElementById('btn-preset-720p');
 if (btnPreset720p) {
   btnPreset720p.addEventListener('click', async () => {
     const res = await window.api.applyLowEndEmulatorConfig('720p-smooth');
@@ -2153,76 +2102,43 @@ if (btnPreset720p) {
   });
 }
 
-function parsePtBrFloat(val, fallback = 0) {
-  if (typeof val === 'number') return isNaN(val) ? fallback : val;
-  if (!val) return fallback;
-  const clean = String(val).replace(',', '.').trim();
-  const num = parseFloat(clean);
-  return isNaN(num) ? fallback : num;
-}
-
 // ─── Otimizador Competitivo de Pan & BlueStacks/MSI ──────────────────────
+const btnApplyCompTweak = document.getElementById('btn-apply-comp-tweak');
+const statusCompTweak = document.getElementById('status-comp-tweak');
+const optCpuRamAuto = document.getElementById('opt-cpu-ram-auto');
+
 async function loadHardwareSpecsForEmulator() {
   try {
-    if (window.api && window.api.getSystemHardwareInfo) {
+    if (window.api && window.api.getSystemHardwareInfo && optCpuRamAuto) {
       const info = await window.api.getSystemHardwareInfo();
       if (info) {
-        document.querySelectorAll('[id^="opt-cpu-ram-auto"]').forEach(el => {
-          el.textContent = `⚡ Automático (Seu PC: ${info.totalCores}C / ${info.totalRamGB}GB RAM -> Alocar: ${info.recommendedCores}C / ${info.recommendedRamMB / 1024}GB)`;
-        });
+        optCpuRamAuto.textContent = `⚡ Automático (Seu PC: ${info.totalCores}C / ${info.totalRamGB}GB RAM -> Alocar: ${info.recommendedCores}C / ${info.recommendedRamMB / 1024}GB)`;
       }
     }
-  } catch (_) {}
+  } catch (_) { }
 }
 loadHardwareSpecsForEmulator();
 
-window.handleApplyCompTweak = async function(btn) {
-  const targetBtn = btn || document.getElementById('btn-apply-comp-tweak');
-  const parentCard = targetBtn?.closest('.card') || document;
-  const panSpeed = parsePtBrFloat(parentCard.querySelector('#comp-pan-speed')?.value, 15.0);
-  const sensX = parsePtBrFloat(parentCard.querySelector('#comp-sens-x')?.value, 1.0);
-  const sensY = parsePtBrFloat(parentCard.querySelector('#comp-sens-y')?.value, 0.4);
-  const renderer = parentCard.querySelector('#comp-graphics-renderer')?.value || 'dx';
-  const cpuRamVal = parentCard.querySelector('#comp-cpu-ram')?.value || 'auto';
-  const statusComp = parentCard.querySelector('#status-comp-tweak') || document.getElementById('status-comp-tweak');
+if (btnApplyCompTweak) {
+  btnApplyCompTweak.addEventListener('click', async () => {
+    const panSpeed = document.getElementById('comp-pan-speed') ? document.getElementById('comp-pan-speed').value : '15.0';
+    const sensX = document.getElementById('comp-sens-x') ? document.getElementById('comp-sens-x').value : '1.0';
+    const sensY = document.getElementById('comp-sens-y') ? document.getElementById('comp-sens-y').value : '0.4';
+    const renderer = document.getElementById('comp-graphics-renderer') ? document.getElementById('comp-graphics-renderer').value : 'dx';
+    const cpuRamVal = document.getElementById('comp-cpu-ram') ? document.getElementById('comp-cpu-ram').value : 'auto';
 
-  let cpuCores = 'auto';
-  let ramMb = 'auto';
+    let cpuCores = 'auto';
+    let ramMb = 'auto';
 
-  if (cpuRamVal !== 'auto' && cpuRamVal.includes('-')) {
-    const parts = cpuRamVal.split('-');
-    cpuCores = parts[0];
-    ramMb = parts[1];
-  }
-
-  const regModal = document.getElementById('regedit-progress-modal');
-  const regModalIcon = document.getElementById('regedit-modal-icon');
-  const regModalTitle = document.getElementById('regedit-modal-title');
-  const regModalDesc = document.getElementById('regedit-modal-desc');
-  const regModalBar = document.getElementById('regedit-modal-bar');
-  const regModalSummary = document.getElementById('regedit-modal-summary');
-  const btnRegModalClose = document.getElementById('btn-regedit-modal-close');
-
-  if (regModal) {
-    regModal.style.display = 'flex';
-    if (regModalIcon) regModalIcon.textContent = '🎯';
-    if (regModalTitle) {
-      regModalTitle.textContent = 'INJETANDO PAN SPEED & ENGINE NO EMULADOR...';
-      regModalTitle.style.color = '#fbbf24';
+    if (cpuRamVal !== 'auto' && cpuRamVal.includes('-')) {
+      const parts = cpuRamVal.split('-');
+      cpuCores = parts[0];
+      ramMb = parts[1];
     }
-    if (regModalDesc) regModalDesc.textContent = `Aplicando Speed do Pan (${panSpeed}), decodificação ASTC por Hardware e renderização ${renderer.toUpperCase()}...`;
-    if (regModalBar) regModalBar.style.width = '45%';
-    if (regModalSummary) regModalSummary.style.display = 'none';
-    if (btnRegModalClose) btnRegModalClose.style.display = 'none';
-  }
 
-  if (targetBtn) {
-    targetBtn.disabled = true;
-    targetBtn.textContent = '⏳ Injetando no BlueStacks / MSI...';
-  }
+    btnApplyCompTweak.disabled = true;
+    btnApplyCompTweak.textContent = '⏳ Aplicando Otimizações...';
 
-  try {
-    if (regModalBar) regModalBar.style.width = '80%';
     const res = await window.api.applyCompetitiveEmulatorTweak({
       panSpeed: parseFloat(panSpeed),
       sensitivityX: parseFloat(sensX),
@@ -2234,659 +2150,13 @@ window.handleApplyCompTweak = async function(btn) {
       enableHighFps: true
     });
 
-    if (targetBtn) {
-      targetBtn.disabled = false;
-      targetBtn.textContent = '✔️ Otimizações de Pan Aplicadas!';
-      setTimeout(() => { targetBtn.textContent = '⚡ Aplicar Otimizações Competitivas (Keymap + Engine)'; }, 3500);
-    }
+    btnApplyCompTweak.disabled = false;
+    btnApplyCompTweak.textContent = '✔️ Otimizações Aplicadas!';
 
-    if (regModal) {
-      setTimeout(() => {
-        if (regModalBar) regModalBar.style.width = '100%';
-        if (regModalIcon) regModalIcon.textContent = '⚡';
-        if (regModalTitle) {
-          regModalTitle.textContent = 'PAN SPEED & ENGINE APLICADOS COM SUCESSO!';
-          regModalTitle.style.color = '#fbbf24';
-        }
-        if (regModalDesc) regModalDesc.textContent = 'As otimizações de Pan (Sem Pinar) e renderização sem stutter foram injetadas no seu emulador.';
-        if (regModalSummary) {
-          regModalSummary.innerHTML = [
-            `⚡ <b>Speed do Pan:</b> ${panSpeed} (Interpolação rápida sem delay)`,
-            `🎯 <b>Sensibilidade Keymap:</b> X: ${sensX} | Y: ${sensY}`,
-            `🎮 <b>Renderizador Gráfico:</b> ${renderer.toUpperCase()} (ASTC Hardware Ativo)`,
-            `💻 <b>Alocação CPU / RAM:</b> ${cpuCores === 'auto' ? 'Automática Inteligente' : `${cpuCores} Núcleos / ${parseInt(ramMb)/1024}GB RAM`}`,
-            `🚀 <b>Suporte High FPS 240Hz:</b> Ativado`
-          ].join('<br>');
-          regModalSummary.style.display = 'block';
-        }
-        if (btnRegModalClose) btnRegModalClose.style.display = 'block';
-      }, 500);
-    }
-
-    if (statusComp) {
-      statusComp.style.display = 'block';
-      statusComp.innerText = res && res.message ? res.message : 'Otimizações aplicadas com sucesso!';
-    }
-  } catch (e) {
-    if (targetBtn) {
-      targetBtn.disabled = false;
-      targetBtn.textContent = '⚡ Aplicar Otimizações Competitivas (Keymap + Engine)';
-    }
-    if (regModal) regModal.style.display = 'none';
-    if (statusComp) {
-      statusComp.style.display = 'block';
-      statusComp.style.color = '#ef4444';
-      statusComp.innerText = 'Erro: ' + e.message;
-    }
-  }
-};
-
-document.querySelectorAll('#btn-apply-comp-tweak').forEach(btn => {
-  btn.addEventListener('click', () => window.handleApplyCompTweak(btn));
-});
-
-
-// ══════════════════════════════════════════════════════════════════════════════
-// REGEDIT ADAPTATIVA — Presets, Slider e Detector de Remada Real
-// ══════════════════════════════════════════════════════════════════════════════
-
-// ══════════════════════════════════════════════════════════════════════════════
-// REGEDIT ADAPTATIVA & DETECTOR DE REMADA (BLINDADO E 100% FUNCIONAL)
-// ══════════════════════════════════════════════════════════════════════════════
-
-const ADAPT_STYLE_PRESETS = { suave: 0.78, equilibrado: 1.00, pesada: 1.22 };
-
-function setAdaptStyle(style) {
-  const mul = ADAPT_STYLE_PRESETS[style] ?? 1.00;
-  const se = document.getElementById('adapt-style-mul');
-  const ie = document.getElementById('adapt-style-mul-input');
-  if (se) se.value = mul;
-  if (ie) ie.value = mul.toFixed(2);
-  _aHighlight(style);
-  _aMulDesc(mul);
-}
-window.setAdaptStyle = setAdaptStyle;
-
-function syncInputFromSlider() {
-  const se = document.getElementById('adapt-style-mul');
-  const ie = document.getElementById('adapt-style-mul-input');
-  if (!se || !ie) return;
-  const v = parseFloat(se.value);
-  ie.value = v.toFixed(2);
-  _aMulDesc(v);
-  _aHighlightFromMul(v);
-}
-window.syncInputFromSlider = syncInputFromSlider;
-
-function syncSliderFromInput() {
-  const se = document.getElementById('adapt-style-mul');
-  const ie = document.getElementById('adapt-style-mul-input');
-  if (!se || !ie) return;
-  let v = parseFloat(ie.value);
-  if (isNaN(v)) v = 1.00;
-  v = Math.min(2.00, Math.max(0.40, v));
-  se.value = v;
-  ie.value = v.toFixed(2);
-  _aMulDesc(v);
-  _aHighlightFromMul(v);
-}
-window.syncSliderFromInput = syncSliderFromInput;
-
-function _aMulDesc(mul) {
-  const el = document.getElementById('adapt-style-preview');
-  if (!el) return;
-  let d;
-  if      (mul <= 0.60) d = '🌊 Extremamente fluida — controle total';
-  else if (mul <= 0.85) d = '🌊 Suave — precisa, ótima pra sens baixa';
-  else if (mul <= 0.95) d = '⚡ Levemente suave — precisão + responsividade';
-  else if (mul <= 1.05) d = '⚡ Equilibrado 1:1 — curva linear padrão';
-  else if (mul <= 1.15) d = '⚡ Levemente pesada — mais responsiva';
-  else if (mul <= 1.40) d = '🔥 Pesada — agressiva, ideal sens alta';
-  else if (mul <= 1.70) d = '🔥 Muito pesada — para quem domina o mouse';
-  else                 d = '🔥 Ultraagressiva — apenas pra pros';
-  el.textContent = `${mul.toFixed(2)}x → ${d}`;
-}
-
-function _aHighlight(active) {
-  const C = {
-    suave:       { b:'rgba(56,189,248,0.9)',  bg:'rgba(56,189,248,0.18)', sh:'rgba(56,189,248,0.35)' },
-    equilibrado: { b:'rgba(251,191,36,0.9)',  bg:'rgba(251,191,36,0.22)',sh:'rgba(251,191,36,0.35)' },
-    pesada:      { b:'rgba(239,68,68,0.9)',   bg:'rgba(239,68,68,0.18)', sh:'rgba(239,68,68,0.35)'  },
-  };
-  ['suave','equilibrado','pesada'].forEach(s => {
-    const btn = document.getElementById(`style-btn-${s}`);
-    if (!btn) return;
-    const c = C[s];
-    if (s === active) {
-      btn.style.border = `2px solid ${c.b}`;
-      btn.style.background = c.bg;
-      btn.style.transform = 'scale(1.04)';
-      btn.style.boxShadow = `0 0 16px ${c.sh}`;
-    } else {
-      btn.style.border = `2px solid ${c.b.replace('0.9','0.3')}`;
-      btn.style.background = c.bg.replace('0.18','0.05').replace('0.22','0.05');
-      btn.style.transform = 'scale(1)';
-      btn.style.boxShadow = 'none';
+    if (statusCompTweak) {
+      statusCompTweak.style.display = 'block';
+      statusCompTweak.innerText = res && res.message ? res.message : 'Otimizações aplicadas com sucesso!';
     }
   });
 }
 
-function _aHighlightFromMul(mul) {
-  const e = Object.entries(ADAPT_STYLE_PRESETS).find(([,v]) => Math.abs(v-mul)<=0.03);
-  if (e) { _aHighlight(e[0]); return; }
-  ['suave','equilibrado','pesada'].forEach(s => {
-    const btn = document.getElementById(`style-btn-${s}`);
-    if (!btn) return;
-    const bds={suave:'rgba(56,189,248,0.3)',equilibrado:'rgba(251,191,36,0.3)',pesada:'rgba(239,68,68,0.3)'};
-    const bgs={suave:'rgba(56,189,248,0.05)',equilibrado:'rgba(251,191,36,0.05)',pesada:'rgba(239,68,68,0.05)'};
-    btn.style.border = `2px solid ${bds[s]}`;
-    btn.style.background = bgs[s];
-    btn.style.transform = 'scale(1)';
-    btn.style.boxShadow = 'none';
-  });
-}
-
-// ── DETECTOR DE REMADA (CANVAS GAMER ILUSTRATIVO) ───────────────────────────
-let _rSamples = [];
-let _rLastX = null, _rLastY = null, _rLastTime = null;
-let _rAnimFrame = null;
-let _rFinalMul = null;
-let _rPoints = [];
-let _rZoneActive = false;
-let _rHasDrawn = false;
-let _rIdlePhase = 0;
-
-function updateRemadaCanvasSize() {
-  const cv = document.getElementById('remada-canvas');
-  if (!cv) return null;
-  const z = document.getElementById('remada-zone');
-  const w = z ? (z.clientWidth || z.offsetWidth || 700) : 700;
-  const h = z ? (z.clientHeight || z.offsetHeight || 120) : 120;
-  if (cv.width !== w || cv.height !== h) {
-    cv.width = w;
-    cv.height = h;
-  }
-  return cv;
-}
-
-function drawRemadaCanvas() {
-  const cv = document.getElementById('remada-canvas');
-  if (!cv) {
-    _rAnimFrame = requestAnimationFrame(drawRemadaCanvas);
-    return;
-  }
-  const ctx = cv.getContext('2d');
-  if (!ctx) {
-    _rAnimFrame = requestAnimationFrame(drawRemadaCanvas);
-    return;
-  }
-
-  const w = cv.width || 700;
-  const h = cv.height || 120;
-  ctx.clearRect(0, 0, w, h);
-
-  // 1. Grade milimétrica neon
-  ctx.save();
-  ctx.strokeStyle = 'rgba(168, 85, 247, 0.12)';
-  ctx.lineWidth = 1;
-  const gridSize = 24;
-  for (let x = 0; x < w; x += gridSize) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-  }
-  for (let y = 0; y < h; y += gridSize) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-  }
-
-  // Linha central horizontal
-  ctx.strokeStyle = 'rgba(251, 191, 36, 0.25)';
-  ctx.setLineDash([4, 4]);
-  ctx.beginPath(); ctx.moveTo(0, h * 0.5); ctx.lineTo(w, h * 0.5); ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.restore();
-
-  const now = performance.now();
-
-  // 2. Traçado do usuário
-  if (_rPoints.length > 1) {
-    for (let i = 1; i < _rPoints.length; i++) {
-      const p0 = _rPoints[i - 1];
-      const p1 = _rPoints[i];
-      const age = now - p1.t;
-      const alpha = _rZoneActive ? Math.max(0.3, 1 - age / 1500) : 0.9;
-      const spd = p1.spd || 0;
-
-      let r = 56, g = 189, b = 248;
-      if (spd > 8)  { r = 251; g = 191; b = 36; }
-      if (spd > 20) { r = 239; g = 68;  b = 68; }
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(p0.x, p0.y);
-      ctx.lineTo(p1.x, p1.y);
-      ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.45})`;
-      ctx.lineWidth = Math.min(10, Math.max(4, 5 + spd * 0.25));
-      ctx.lineCap = 'round';
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(p0.x, p0.y);
-      ctx.lineTo(p1.x, p1.y);
-      ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.95})`;
-      ctx.lineWidth = 2.5;
-      ctx.lineCap = 'round';
-      ctx.shadowBlur = 14;
-      ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 1)`;
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    if (_rZoneActive && _rPoints.length > 0) {
-      const last = _rPoints[_rPoints.length - 1];
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(last.x, last.y, 6, 0, Math.PI * 2);
-      ctx.fillStyle = '#fbbf24';
-      ctx.shadowBlur = 18;
-      ctx.shadowColor = '#f59e0b';
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(last.x, last.y, 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
-      ctx.restore();
-    }
-  } else if (!_rZoneActive && !_rHasDrawn) {
-    // 3. ANIMAÇÃO ILUSTRATIVA DE PUXADA DE CAPA (Idle)
-    _rIdlePhase += 0.035;
-    ctx.save();
-
-    ctx.beginPath();
-    const startX = w * 0.12;
-    const endX = w * 0.88;
-    for (let x = startX; x <= endX; x += 4) {
-      const prog = (x - startX) / (endX - startX);
-      const wave = Math.sin(prog * Math.PI * 3 + _rIdlePhase) * (h * 0.22);
-      const y = h * 0.65 - prog * (h * 0.35) + wave;
-      if (x === startX) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.strokeStyle = 'rgba(251, 191, 36, 0.5)';
-    ctx.lineWidth = 3;
-    ctx.setLineDash([8, 6]);
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = 'rgba(251, 191, 36, 0.7)';
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    const ballProg = (Math.sin(_rIdlePhase * 0.8) + 1) / 2;
-    const ballX = startX + ballProg * (endX - startX);
-    const ballWave = Math.sin(ballProg * Math.PI * 3 + _rIdlePhase) * (h * 0.22);
-    const ballY = h * 0.65 - ballProg * (h * 0.35) + ballWave;
-
-    ctx.beginPath();
-    ctx.arc(ballX, ballY, 5.5, 0, Math.PI * 2);
-    ctx.fillStyle = '#ef4444';
-    ctx.shadowBlur = 16;
-    ctx.shadowColor = '#ef4444';
-    ctx.fill();
-
-    ctx.fillStyle = 'rgba(253, 230, 138, 0.9)';
-    ctx.font = 'bold 11px Inter, system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('⚡ Simulação de Puxada de Capa — Mova o mouse aqui para calibrar seu estilo real', w * 0.5, h * 0.88);
-    ctx.restore();
-  }
-
-  _rAnimFrame = requestAnimationFrame(drawRemadaCanvas);
-}
-
-function handleRemadaMove(e) {
-  const z = document.getElementById('remada-zone');
-  if (!z) return;
-  const rc = z.getBoundingClientRect();
-  const x = e.clientX - rc.left;
-  const y = e.clientY - rc.top;
-  const now = performance.now();
-
-  _rHasDrawn = true;
-
-  let spd = 0;
-  if (_rLastX !== null && _rLastTime !== null) {
-    const dx = e.clientX - _rLastX;
-    const dy = e.clientY - _rLastY;
-    const dt = now - _rLastTime;
-    if (dt > 0) {
-      spd = Math.sqrt(dx * dx + dy * dy) / dt;
-      if (spd > 0.05) {
-        _rSamples.push({ spd, t: now });
-        
-        const lv = document.getElementById('remada-speed-live');
-        if (lv) {
-          const pxSec = Math.round(spd * 1000);
-          const label = spd <= 8 ? '🌊 Puxada Suave / Precisa' : spd <= 22 ? '⚡ Puxada Equilibrada' : '🔥 Puxada Rápida / Full Lata';
-          lv.innerHTML = `🚀 <b style="color:#fbbf24;font-size:1.1rem;">${pxSec} px/s</b> &nbsp;|&nbsp; <span>${label}</span>`;
-        }
-      }
-    }
-  }
-
-  _rPoints.push({ x, y, t: now, spd });
-  if (_rPoints.length > 150) _rPoints.shift();
-
-  _rLastX = e.clientX;
-  _rLastY = e.clientY;
-  _rLastTime = now;
-}
-
-function handleRemadaEnter() {
-  _rZoneActive = true;
-  _rSamples = [];
-  _rPoints = [];
-  _rLastX = null;
-  _rLastY = null;
-  _rLastTime = null;
-
-  const z = document.getElementById('remada-zone');
-  if (z) {
-    z.style.border = '2px dashed rgba(251,191,36,0.9)';
-    z.style.background = 'rgba(251,191,36,0.08)';
-    z.style.boxShadow = '0 0 25px rgba(251,191,36,0.3)';
-  }
-
-  updateRemadaCanvasSize();
-
-  const idleMsg = document.getElementById('remada-idle-msg');
-  const activeMsg = document.getElementById('remada-active-msg');
-  if (idleMsg) idleMsg.style.display = 'none';
-  if (activeMsg) activeMsg.style.display = 'block';
-}
-
-function handleRemadaLeave() {
-  _rZoneActive = false;
-  const z = document.getElementById('remada-zone');
-  if (z) {
-    z.style.border = '2px dashed rgba(168,85,247,0.6)';
-    z.style.background = 'rgba(10,12,20,0.6)';
-    z.style.boxShadow = 'none';
-  }
-
-  const idleMsg = document.getElementById('remada-idle-msg');
-  const activeMsg = document.getElementById('remada-active-msg');
-  if (idleMsg) idleMsg.style.display = 'block';
-  if (activeMsg) activeMsg.style.display = 'none';
-
-  if (_rSamples.length < 4) return;
-
-  const spds = _rSamples.map(s => s.spd).filter(s => s > 0.1);
-  if (spds.length === 0) return;
-
-  const peak = Math.max(...spds);
-  const avg = spds.reduce((a, b) => a + b, 0) / spds.length;
-
-  let mul;
-  if (peak >= 35)      mul = 0.55;
-  else if (peak >= 24) mul = 0.70;
-  else if (peak >= 15) mul = 0.85;
-  else if (peak >= 9)  mul = 1.00;
-  else if (peak >= 5)  mul = 1.18;
-  else if (peak >= 2.5) mul = 1.35;
-  else                 mul = 1.55;
-
-  if (avg < peak * 0.35) mul = Math.min(mul + 0.08, 1.85);
-  mul = Math.round(mul * 100) / 100;
-  _rFinalMul = mul;
-
-  let profileDesc = '', emoji = '⚡';
-  if (mul <= 0.72) {
-    profileDesc = 'Puxada RÁPIDA / AGRESSIVA — Multiplicador suavizado para estabilizar na cabeça';
-    emoji = '🔥';
-  } else if (mul <= 0.92) {
-    profileDesc = 'Puxada MÉDIA-RÁPIDA — Excelente subida de capa controlada sem tremer';
-    emoji = '⚡';
-  } else if (mul <= 1.10) {
-    profileDesc = 'Puxada EQUILIBRADA — Curva linear 1:1 perfeita para subida padrão';
-    emoji = '⚡';
-  } else if (mul <= 1.35) {
-    profileDesc = 'Puxada MODERADA / CURTA — Multiplicador elevado para acelerar a subida';
-    emoji = '🌊';
-  } else {
-    profileDesc = 'Puxada SUAVE / LENTA — Multiplicador alto para facilitar capa com pouco movimento';
-    emoji = '🌊';
-  }
-
-  const rt = document.getElementById('remada-result-text');
-  if (rt) {
-    rt.innerHTML = [
-      `${emoji} <b>Velocidade Real Medida:</b> Pico <b>${Math.round(peak * 1000)} px/s</b> | Média <b>${Math.round(avg * 1000)} px/s</b>`,
-      `🎯 <b>Diagnóstico da Puxada:</b> ${profileDesc}`,
-      `🎚️ <b>Multiplicador Ideal Recomendado:</b> <span style="color:#fbbf24;font-size:1.1rem;font-weight:900;background:rgba(251,191,36,0.18);padding:3px 10px;border-radius:5px;border:1px solid rgba(251,191,36,0.6);">${mul.toFixed(2)}x</span>`,
-    ].join('<br>');
-  }
-
-  const rr = document.getElementById('remada-result');
-  if (rr) rr.style.display = 'block';
-}
-
-function applyRemadaResult() {
-  if (_rFinalMul === null) return;
-  const se = document.getElementById('adapt-style-mul');
-  const ie = document.getElementById('adapt-style-mul-input');
-  if (se) se.value = _rFinalMul;
-  if (ie) ie.value = _rFinalMul.toFixed(2);
-  _aHighlightFromMul(_rFinalMul);
-  _aMulDesc(_rFinalMul);
-
-  const box = se?.parentElement?.parentElement;
-  if (box) {
-    box.style.border = '1px solid rgba(251,191,36,0.9)';
-    box.style.boxShadow = '0 0 22px rgba(251,191,36,0.5)';
-    setTimeout(() => {
-      box.style.border = '1px solid rgba(251,191,36,0.25)';
-      box.style.boxShadow = 'none';
-    }, 2500);
-  }
-}
-window.applyRemadaResult = applyRemadaResult;
-
-function resetRemada() {
-  _rSamples = [];
-  _rFinalMul = null;
-  _rPoints = [];
-  _rHasDrawn = false;
-  const cv = document.getElementById('remada-canvas');
-  if (cv) {
-    const ctx = cv.getContext('2d');
-    if (ctx) ctx.clearRect(0, 0, cv.width, cv.height);
-  }
-  const rr = document.getElementById('remada-result');
-  if (rr) rr.style.display = 'none';
-}
-window.resetRemada = resetRemada;
-
-// ── Inicialização e Binding dos Elementos ────────────────────────────────────
-function setupAdaptiveRegeditUI() {
-  // 1. Botões de Estilo
-  const btnSuave = document.getElementById('style-btn-suave');
-  const btnEq = document.getElementById('style-btn-equilibrado');
-  const btnPes = document.getElementById('style-btn-pesada');
-  if (btnSuave) btnSuave.onclick = () => setAdaptStyle('suave');
-  if (btnEq) btnEq.onclick = () => setAdaptStyle('equilibrado');
-  if (btnPes) btnPes.onclick = () => setAdaptStyle('pesada');
-
-  // 2. Sliders e Inputs
-  const mulSlider = document.getElementById('adapt-style-mul');
-  const mulInput = document.getElementById('adapt-style-mul-input');
-  if (mulSlider) mulSlider.oninput = syncInputFromSlider;
-  if (mulInput) mulInput.oninput = syncSliderFromInput;
-
-  // 3. Zona do Detector de Remada e Botões
-  const z = document.getElementById('remada-zone');
-  if (z) {
-    z.onmouseenter = handleRemadaEnter;
-    z.onmouseleave = handleRemadaLeave;
-    z.onmousemove = handleRemadaMove;
-  }
-  const btnAppRem = document.getElementById('btn-apply-remada-result');
-  if (btnAppRem) btnAppRem.onclick = applyRemadaResult;
-  const btnResRem = document.getElementById('btn-reset-remada');
-  if (btnResRem) btnResRem.onclick = resetRemada;
-
-  // 4. Botão de Aplicar Regedit Adaptativa
-  const btnApply = document.getElementById('btn-apply-adaptive-reg');
-  const inpDpiMouse = document.getElementById('adapt-dpi-mouse');
-  const inpDpiEmu = document.getElementById('adapt-dpi-emu');
-  const inpSensX = document.getElementById('adapt-sens-x');
-  const inpSensY = document.getElementById('adapt-sens-y');
-  const resultBox = document.getElementById('adaptive-reg-result');
-  const resultSummary = document.getElementById('adaptive-reg-summary');
-  const errorBox = document.getElementById('adaptive-reg-error');
-  const errorMsg = document.getElementById('adaptive-reg-error-msg');
-
-  function parsePtBrFloat(val, fallback = 0) {
-    if (typeof val === 'number') return isNaN(val) ? fallback : val;
-    if (!val) return fallback;
-    const clean = String(val).replace(',', '.').trim();
-    const num = parseFloat(clean);
-    return isNaN(num) ? fallback : num;
-  }
-
-  // 4. Modal VIP de Progresso e Confirmação da Regedit Adaptativa
-  const regModal = document.getElementById('regedit-progress-modal');
-  const regModalIcon = document.getElementById('regedit-modal-icon');
-  const regModalTitle = document.getElementById('regedit-modal-title');
-  const regModalDesc = document.getElementById('regedit-modal-desc');
-  const regModalBar = document.getElementById('regedit-modal-bar');
-  const regModalSummary = document.getElementById('regedit-modal-summary');
-  const btnRegModalClose = document.getElementById('btn-regedit-modal-close');
-
-  if (btnRegModalClose && regModal) {
-    btnRegModalClose.onclick = () => {
-      regModal.style.display = 'none';
-    };
-  }
-
-  window.handleApplyAdaptiveRegedit = async function(btn) {
-    const targetBtn = btn || document.getElementById('btn-apply-adaptive-reg');
-    if (resultBox) resultBox.style.display = 'none';
-    if (errorBox)  errorBox.style.display = 'none';
-
-    const dpiMouse = parsePtBrFloat(inpDpiMouse?.value, 1600);
-    const dpiEmu = parsePtBrFloat(inpDpiEmu?.value, 480);
-    const sensX = parsePtBrFloat(inpSensX?.value, 2.0);
-    const sensY = parsePtBrFloat(inpSensY?.value, 2.0);
-    const styleMul = parsePtBrFloat(document.getElementById('adapt-style-mul-input')?.value, 1.00);
-
-    if (!dpiMouse || dpiMouse < 100) { showAdaptErr('DPI do Mouse inválido. Digite um valor válido (ex: 800, 1600).'); return; }
-    if (!dpiEmu || dpiEmu < 100) { showAdaptErr('DPI do Emulador inválido. Digite um valor válido (ex: 240, 320, 480).'); return; }
-    if (!sensX || sensX < 0.05) { showAdaptErr('Sens X inválida. Digite um valor válido (ex: 1,67 ou 2.0).'); return; }
-    if (!sensY || sensY < 0.05) { showAdaptErr('Sens Y inválida. Digite um valor válido (ex: 0,40 ou 1.0).'); return; }
-    if (isNaN(styleMul) || styleMul < 0.40 || styleMul > 2.00) { showAdaptErr('Multiplicador deve ser entre 0.40 e 2.00.'); return; }
-
-    // 1. Abre o Modal VIP exibindo a preparação
-    if (regModal) {
-      regModal.style.display = 'flex';
-      if (regModalIcon) regModalIcon.textContent = '⚙️';
-      if (regModalTitle) {
-        regModalTitle.textContent = 'PREPARANDO CONFIGURAÇÃO NO SEU PC...';
-        regModalTitle.style.color = '#4ade80';
-      }
-      if (regModalDesc) regModalDesc.textContent = 'Calibrando parâmetros de registro, velocidade de ponteiro e curva sem delay...';
-      if (regModalBar) regModalBar.style.width = '35%';
-      if (regModalSummary) regModalSummary.style.display = 'none';
-      if (btnRegModalClose) btnRegModalClose.style.display = 'none';
-    }
-
-    if (targetBtn) {
-      targetBtn.disabled = true;
-      targetBtn.style.opacity = '0.7';
-      targetBtn.textContent = '⏳ Injetando no Windows...';
-    }
-
-    try {
-      if (regModalBar) regModalBar.style.width = '75%';
-      const res = await window.api.applyAdaptiveRegedit({ dpiMouse, dpiEmu, sensX, sensY, style: 'custom', styleMul });
-      
-      if (res && res.success) {
-        const s = res.summary || {};
-        const em = styleMul <= 0.85 ? '🌊' : styleMul >= 1.15 ? '🔥' : '⚡';
-
-        const summaryHtml = [
-          `🖱️ <b>Mouse:</b> ${dpiMouse} DPI &nbsp;|&nbsp; 🎮 <b>Emulador:</b> ${dpiEmu} DPI`,
-          `↔️ <b>Sens X:</b> ${sensX} &nbsp;|&nbsp; ↕️ <b>Sens Y:</b> ${sensY}`,
-          `🔬 <b>Razão Y/X:</b> ${(sensY / sensX).toFixed(3)} — Subida de Capa Calibrada`,
-          `🎚️ ${em} <b>Multiplicador:</b> <span style="color:#fbbf24;font-weight:900;">${styleMul.toFixed(2)}x</span> &nbsp;|&nbsp; Escala X: ${s.scaleX || '1.0'}x Y: ${s.scaleY || '1.0'}x`,
-          `✅ <b>Sensibilidade Aplicada com Sucesso</b> (Sem necessidade de reiniciar!)`,
-        ].join('<br>');
-
-        if (resultSummary) resultSummary.innerHTML = summaryHtml;
-        if (resultBox) resultBox.style.display = 'block';
-
-        // Atualiza o Modal para tela de sucesso
-        setTimeout(() => {
-          if (regModalBar) regModalBar.style.width = '100%';
-          if (regModalIcon) regModalIcon.textContent = '✅';
-          if (regModalTitle) {
-            regModalTitle.textContent = 'REGEDIT PERSONALIZADA APLICADA COM SUCESSO!';
-            regModalTitle.style.color = '#4ade80';
-          }
-          if (regModalDesc) regModalDesc.textContent = 'As chaves do registro foram injetadas no seu PC. A sensibilidade está calibrada!';
-          if (regModalSummary) {
-            regModalSummary.innerHTML = summaryHtml;
-            regModalSummary.style.display = 'block';
-          }
-          if (btnRegModalClose) btnRegModalClose.style.display = 'block';
-        }, 600);
-
-        if (targetBtn) {
-          targetBtn.style.background = 'linear-gradient(90deg, #22c55e, #16a34a)';
-          targetBtn.textContent = '✅ REGEDIT PERSONALIZADA APLICADA!';
-          setTimeout(() => {
-            targetBtn.style.background = 'linear-gradient(90deg, #f59e0b, #ef4444)';
-            targetBtn.textContent = '⚡ GERAR & APLICAR MINHA REGEDIT PERSONALIZADA';
-            targetBtn.disabled = false;
-            targetBtn.style.opacity = '1';
-          }, 4000);
-        }
-      } else {
-        if (regModal) regModal.style.display = 'none';
-        showAdaptErr(res?.error || 'Erro ao aplicar a Regedit.');
-        resetAdaptBtn();
-      }
-    } catch (e) {
-      if (regModal) regModal.style.display = 'none';
-      showAdaptErr('Erro: ' + e.message);
-      resetAdaptBtn();
-    }
-  };
-
-  if (btnApply) {
-    btnApply.onclick = () => window.handleApplyAdaptiveRegedit(btnApply);
-  }
-
-  function showAdaptErr(msg) {
-    if (errorMsg) errorMsg.textContent = msg;
-    if (errorBox) {
-      errorBox.style.display = 'block';
-      errorBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  }
-
-  function resetAdaptBtn() {
-    const btn = document.getElementById('btn-apply-adaptive-reg');
-    if (btn) {
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      btn.textContent = '⚡ GERAR & APLICAR MINHA REGEDIT PERSONALIZADA';
-    }
-  }
-
-  _aHighlight('equilibrado');
-  _aMulDesc(1.00);
-  updateRemadaCanvasSize();
-  if (!_rAnimFrame) _rAnimFrame = requestAnimationFrame(drawRemadaCanvas);
-}
-
-window.addEventListener('resize', updateRemadaCanvasSize);
-document.addEventListener('DOMContentLoaded', setupAdaptiveRegeditUI);
-setupAdaptiveRegeditUI();

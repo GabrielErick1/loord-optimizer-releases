@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,9 +9,10 @@
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 </head>
+
 <body>
   <div class="app-container">
-    
+
     <!-- Titlebar Custom (Frame-less look) -->
     <header class="titlebar">
       <div class="logo">
@@ -32,16 +34,13 @@
         </div>
 
         <nav class="nav-menu">
-          <button class="nav-item active" data-tab="regedit-adaptativa" style="border: 1px solid rgba(251, 191, 36, 0.5); background: linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(239, 68, 68, 0.08)); color: #fbbf24; font-weight: 800;">
-            <span class="nav-icon">🧬</span> Regedit Adaptativa
-          </button>
           <button class="nav-item" data-tab="calculadora">
             <span class="nav-icon">🎯</span> Calculadora Sense
           </button>
           <button class="nav-item" data-tab="mouse-config">
             <span class="nav-icon">🖱️</span> Config do Mouse
           </button>
-          <button class="nav-item" data-tab="otimizar-pc">
+          <button class="nav-item active" data-tab="otimizar-pc">
             <span class="nav-icon">⚡</span> Otimizar PC
           </button>
           <button class="nav-item" data-tab="rede-latencia">
@@ -50,15 +49,14 @@
           <button class="nav-item" data-tab="emulador">
             <span class="nav-icon">🎮</span> Emulador
           </button>
-          <button class="nav-item" data-tab="minha-config" style="position: relative; border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05);">
-            <span class="nav-icon">💾</span> Minha Config &amp; Atualizações
-            <span id="nav-update-badge" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: linear-gradient(90deg, #ef4444, #f59e0b); color: #fff; font-size: 9px; font-weight: 900; padding: 2px 6px; border-radius: 6px; box-shadow: 0 0 10px rgba(239, 68, 68, 0.8); animation: pulseUpdate 1.5s infinite;">v1.7.4 🔥</span>
+          <button class="nav-item" data-tab="minha-config">
+            <span class="nav-icon">💾</span> Minha Config
           </button>
           <button class="nav-item" data-tab="pc-fraco" style="color: #f59e0b; font-weight: 700;">
             <span class="nav-icon">🥔</span> PC Fraco (Ultra FPS)
           </button>
         </nav>
-        
+
         <div class="sidebar-footer">
           <div class="version-label">💎 VERSÃO VIP</div>
           <div class="version-sub">👤 Cliente VIP</div>
@@ -67,257 +65,12 @@
 
       <!-- Content Area -->
       <main class="content-area">
-        <!-- BANNER GLOBAL DE AVISO DE ATUALIZAÇÃO -->
-        <div id="global-update-alert" style="display: none; background: linear-gradient(90deg, rgba(239, 68, 68, 0.95), rgba(245, 158, 11, 0.95)); color: #fff; padding: 10px 16px; border-radius: 8px; margin: 10px 24px 0 24px; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.45); align-items: center; justify-content: space-between; gap: 12px; z-index: 1000;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 1.5rem;">🚀</span>
-            <div>
-              <strong style="font-size: 13px; letter-spacing: 0.3px; display: block;" id="global-update-text">NOVA ATUALIZAÇÃO DISPONÍVEL!</strong>
-              <div style="font-size: 11.5px; opacity: 0.95;" id="global-update-subtext">Uma nova versão do Loord Optimizer com otimizações foi lançada.</div>
-            </div>
-          </div>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <button id="btn-global-update-action" style="background: #ffffff; color: #b91c1c; border: none; font-weight: 900; font-size: 12px; padding: 7px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 10px rgba(0,0,0,0.25);">⚡ ATUALIZAR AGORA</button>
-            <button id="btn-global-update-close" style="background: transparent; border: none; color: #fff; font-size: 16px; cursor: pointer; opacity: 0.8; padding: 4px 8px; line-height: 1;">✖</button>
-          </div>
-        </div>
-
-        
-        <!-- TAB: REGEDIT ADAPTATIVA & OTIMIZADOR DE PAN -->
-        <section id="tab-regedit-adaptativa" class="tab-content active">
-          <h2>🧬 Regedit Adaptativa & Otimizador de Pan</h2>
-          <p class="subtitle">Calibre sua sensibilidade sob medida, detecte a remada do mouse e sincronize a engine de Pan para full capa sem pinar</p>
-
-          <!-- RECOMENDAÇÃO DE SENSI DESTACADA EM VERMELHO -->
-          <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(153, 27, 27, 0.2)); border: 2px solid #ef4444; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px; box-shadow: 0 0 18px rgba(239, 68, 68, 0.35);">
-            <div style="font-weight: 900; color: #ff6b6b; font-size: 0.98rem; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
-              <span>🎯 RECOMENDAÇÃO OFICIAL PARA DAR FULL LATA (CAPA PERFEITO):</span>
-            </div>
-            <div style="font-size: 0.88rem; color: #fecdd3; line-height: 1.6; font-weight: 600;">
-              • <strong>Mouse Físico:</strong> <span style="color: #ffffff; background: #dc2626; padding: 2px 8px; border-radius: 4px; font-weight: 800;">1600 DPI</span> | <strong>Polling Rate:</strong> <span style="color: #ffffff; background: #dc2626; padding: 2px 8px; border-radius: 4px; font-weight: 800;">1000 Hz</span><br>
-              • <strong>Emulador:</strong> <span style="color: #ffffff; background: #dc2626; padding: 2px 8px; border-radius: 4px; font-weight: 800;">480 DPI</span><br>
-              • <strong>Sensibilidade do Jogo:</strong> <span style="color: #ffffff; background: #dc2626; padding: 2px 8px; border-radius: 4px; font-weight: 800;">X = 2.0 | Y = 2.0</span>
-            </div>
-            <div style="font-size: 0.8rem; color: #fca5a5; margin-top: 8px; font-style: italic; font-weight: 500; border-top: 1px dashed rgba(239, 68, 68, 0.4); padding-top: 6px;">
-              💡 <i>Nota: Recomendamos sempre manter X e Y padronizados em 2 para puxar Full Capa sem passar da cabeça. Porém, caso sinta a sensibilidade muito alta para o seu estilo de jogo, adapte X e Y como achar melhor!</i>
-            </div>
-          </div>
-
-          <!-- ════ REGEDIT ADAPTATIVA PERSONALIZADA ════ -->
-          <div class="card" style="border: 2px solid rgba(251, 191, 36, 0.7); background: linear-gradient(135deg, rgba(251,191,36,0.08), rgba(0,0,0,0.6)); box-shadow: 0 0 22px rgba(251,191,36,0.2); margin-bottom: 22px;">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
-              <span style="font-size: 1.3rem;">🧬</span>
-              <span style="font-size: 1.05rem; font-weight: 900; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.5px;">REGEDIT ADAPTATIVA PERSONALIZADA</span>
-              <span style="background: linear-gradient(90deg,#f59e0b,#ef4444); color:#fff; font-size:0.6rem; padding:2px 8px; border-radius:4px; font-weight:900;">🔥 VIP EXCLUSIVO</span>
-            </div>
-            <p style="font-size: 0.82rem; color: #fde68a; margin: 0 0 16px 0; line-height: 1.5;">Preencha seus valores reais do emulador. O sistema vai <strong>calcular e gerar uma regedit única</strong> calibrada para a sua sensibilidade — sem input lag, sem trava, mira grudando na capa.</p>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
-              <div class="input-field">
-                <label for="adapt-dpi-mouse" style="font-size:0.8rem; color:#fde68a; font-weight:700;">🖱️ DPI do Mouse Físico</label>
-                <input type="number" id="adapt-dpi-mouse" value="800" min="100" max="32000" step="100" placeholder="ex: 800, 1600, 3200..." style="margin-top:4px;">
-                <span style="font-size:0.7rem; color:#9ca3af; margin-top:3px; display:block;">Veja no software do seu mouse (G Hub, Synapse...)</span>
-              </div>
-              <div class="input-field">
-                <label for="adapt-dpi-emu" style="font-size:0.8rem; color:#fde68a; font-weight:700;">🎮 DPI do Emulador</label>
-                <input type="number" id="adapt-dpi-emu" value="480" min="100" max="2000" step="10" placeholder="ex: 480, 750..." style="margin-top:4px;">
-                <span style="font-size:0.7rem; color:#9ca3af; margin-top:3px; display:block;">Configurado dentro do BlueStacks / MSI</span>
-              </div>
-              <div class="input-field">
-                <label for="adapt-sens-x" style="font-size:0.8rem; color:#fde68a; font-weight:700;">↔️ Sensibilidade X (Lateral/Giro)</label>
-                <input type="number" id="adapt-sens-x" value="2.00" min="0.10" max="10.00" step="0.01" placeholder="ex: 2.00, 0.34..." style="margin-top:4px;">
-                <span style="font-size:0.7rem; color:#9ca3af; margin-top:3px; display:block;">Sens X nas configurações do Keymap</span>
-              </div>
-              <div class="input-field">
-                <label for="adapt-sens-y" style="font-size:0.8rem; color:#fde68a; font-weight:700;">↕️ Sensibilidade Y (Capa/Subida)</label>
-                <input type="number" id="adapt-sens-y" value="0.40" min="0.10" max="10.00" step="0.01" placeholder="ex: 0.40, 0.36..." style="margin-top:4px;">
-                <span style="font-size:0.7rem; color:#9ca3af; margin-top:3px; display:block;">Sens Y nas configurações do Keymap</span>
-              </div>
-            </div>
-
-            <!-- Estilo da Mira — Presets + Slider Ajustável -->
-            <div style="margin-bottom: 16px;">
-              <label style="font-size:0.85rem; color:#fde68a; font-weight:800; display:block; margin-bottom:10px;">⚙️ Estilo de Mira — Escolha um preset ou ajuste manualmente:</label>
-
-              <!-- Botões de atalho -->
-              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px;">
-                <button id="style-btn-suave" onclick="setAdaptStyle('suave')" type="button" style="cursor:pointer; border: 2px solid rgba(56,189,248,0.5); border-radius:8px; padding:10px 8px; text-align:center; background: rgba(56,189,248,0.08); transition: all 0.2s;">
-                  <div style="font-size:1.2rem; margin-bottom:3px;">🌊</div>
-                  <div style="font-size:0.8rem; font-weight:800; color:#38bdf8;">SUAVE</div>
-                  <div style="font-size:0.68rem; color:#7dd3fc; margin-top:2px; line-height:1.3;">Mira fluida e controlada</div>
-                  <div style="font-size:0.72rem; color:#38bdf8; margin-top:4px; font-weight:700; background: rgba(56,189,248,0.15); border-radius:4px; padding:2px 6px;">Multiplicador: 0.78</div>
-                </button>
-                <button id="style-btn-equilibrado" onclick="setAdaptStyle('equilibrado')" type="button" style="cursor:pointer; border: 2px solid rgba(251,191,36,0.8); border-radius:8px; padding:10px 8px; text-align:center; background: rgba(251,191,36,0.18); transition: all 0.2s; box-shadow: 0 0 12px rgba(251,191,36,0.3);">
-                  <div style="font-size:1.2rem; margin-bottom:3px;">⚡</div>
-                  <div style="font-size:0.8rem; font-weight:800; color:#fbbf24;">EQUILIBRADO</div>
-                  <div style="font-size:0.68rem; color:#fde68a; margin-top:2px; line-height:1.3;">Balanceia capa e controle</div>
-                  <div style="font-size:0.72rem; color:#fbbf24; margin-top:4px; font-weight:700; background: rgba(251,191,36,0.15); border-radius:4px; padding:2px 6px;">Multiplicador: 1.00</div>
-                </button>
-                <button id="style-btn-pesada" onclick="setAdaptStyle('pesada')" type="button" style="cursor:pointer; border: 2px solid rgba(239,68,68,0.5); border-radius:8px; padding:10px 8px; text-align:center; background: rgba(239,68,68,0.08); transition: all 0.2s;">
-                  <div style="font-size:1.2rem; margin-bottom:3px;">🔥</div>
-                  <div style="font-size:0.8rem; font-weight:800; color:#f87171;">PESADA</div>
-                  <div style="font-size:0.68rem; color:#fca5a5; margin-top:2px; line-height:1.3;">Mira agressiva, puxada forte</div>
-                  <div style="font-size:0.72rem; color:#f87171; margin-top:4px; font-weight:700; background: rgba(239,68,68,0.15); border-radius:4px; padding:2px 6px;">Multiplicador: 1.22</div>
-                </button>
-              </div>
-
-              <!-- Slider de ajuste fino do multiplicador -->
-              <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(251,191,36,0.25); border-radius:10px; padding:14px 16px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                  <label style="font-size:0.82rem; color:#fde68a; font-weight:800;">🎚️ Força da Curva (Multiplicador)</label>
-                  <div style="display:flex; align-items:center; gap:8px;">
-                    <input type="number" id="adapt-style-mul-input" value="1.00" min="0.40" max="2.00" step="0.01"
-                      style="width:72px; text-align:center; font-size:0.95rem; font-weight:900; color:#fbbf24; background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.5); border-radius:6px; padding:4px 6px;"
-                      oninput="syncSliderFromInput()">
-                    <span style="font-size:0.75rem; color:#9ca3af;">0.40 → 2.00</span>
-                  </div>
-                </div>
-                <input type="range" id="adapt-style-mul" min="0.40" max="2.00" step="0.01" value="1.00"
-                  style="width:100%; accent-color:#fbbf24; height:6px; cursor:pointer;"
-                  oninput="syncInputFromSlider()">
-                <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:0.68rem; color:#6b7280;">
-                  <span>🌊 0.40 — Ultrafluida</span>
-                  <span>⚡ 1.00 — 1:1 Padrão</span>
-                  <span>🔥 2.00 — Ultraagressiva</span>
-                </div>
-                <div id="adapt-style-preview" style="margin-top:10px; font-size:0.77rem; color:#a3e635; font-weight:600; text-align:center; min-height:18px;"></div>
-              </div>
-
-              <!-- ── DETECTOR DE REMADA ─────────────────────────────────── -->
-              <div style="margin-top:14px; background: rgba(168,85,247,0.07); border: 1px solid rgba(168,85,247,0.35); border-radius:10px; padding:14px 16px;">
-                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                  <span style="font-size:1rem;">🎯</span>
-                  <span style="font-size:0.85rem; font-weight:900; color:#c084fc;">DETECTOR DE REMADA AUTOMÁTICO</span>
-                  <span style="font-size:0.65rem; background:#7c3aed; color:#fff; padding:2px 6px; border-radius:4px; font-weight:800;">AUTO</span>
-                </div>
-                <p style="font-size:0.77rem; color:#d8b4fe; margin:0 0 10px 0; line-height:1.5;">Puxe o mouse <strong>aqui dentro</strong> como faz no jogo (remada de capa, giro lateral). O painel detecta sua velocidade real e calibra o multiplicador sozinho.</p>
-
-                <!-- Zona de captura -->
-                <div id="remada-zone"
-                  style="width:100%; height:120px; border-radius:10px; border: 2px dashed rgba(168,85,247,0.6); background: rgba(10,12,20,0.6); cursor:crosshair; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; transition: all 0.2s; user-select:none;">
-                  <div id="remada-idle-msg" style="text-align:center; pointer-events:none; z-index:2; position:relative;">
-                    <div style="font-size:1.6rem; animation: pulseUpdate 1.8s infinite;">🖱️</div>
-                    <div style="font-size:0.8rem; color:#fde68a; font-weight:700; margin-top:4px;">Mova o mouse aqui fazendo o movimento de subida de capa</div>
-                  </div>
-                  <div id="remada-active-msg" style="display:none; text-align:center; pointer-events:none; z-index:2; position:absolute; top:10px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.65); padding:4px 14px; border-radius:6px; border:1px solid rgba(251,191,36,0.4);">
-                    <div style="font-size:0.92rem; color:#fbbf24; font-weight:800;" id="remada-speed-live">🚀 Medindo Velocidade...</div>
-                  </div>
-                  <!-- Rastro visual da remada -->
-                  <canvas id="remada-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; opacity:1;"></canvas>
-                </div>
-
-                <!-- Resultado da detecção -->
-                <div id="remada-result" style="display:none; margin-top:10px; padding:10px 12px; background:rgba(168,85,247,0.12); border-radius:8px; border:1px solid rgba(168,85,247,0.4);">
-                  <div style="font-size:0.8rem; color:#e9d5ff; line-height:1.7;" id="remada-result-text"></div>
-                  <button id="btn-apply-remada-result" onclick="applyRemadaResult()" type="button"
-                    style="margin-top:8px; width:100%; padding:8px; background:linear-gradient(90deg,#7c3aed,#a855f7); border:none; border-radius:6px; color:#fff; font-weight:800; font-size:0.82rem; cursor:pointer; transition:all 0.2s;">
-                    ✅ USAR ESTE MULTIPLICADOR NA MINHA REGEDIT
-                  </button>
-                </div>
-
-                <div style="display:flex; gap:8px; margin-top:8px;">
-                  <button id="btn-reset-remada" onclick="resetRemada()" type="button"
-                    style="flex:1; padding:6px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#9ca3af; font-size:0.75rem; cursor:pointer;">
-                    🔄 Resetar
-                  </button>
-                  <div style="flex:3; font-size:0.68rem; color:#6b7280; display:flex; align-items:center; line-height:1.3;">
-                    Quanto mais rápida a remada → multiplicador menor (controle). Lenta → multiplicador maior (impulso).
-                  </div>
-                </div>
-              </div>
-              <!-- ───────────────────────────────────────────────────────── -->
-
-              <!-- Campo oculto que guarda o valor real enviado ao backend -->
-              <input type="hidden" id="adapt-style-value" value="equilibrado">
-            </div>
-
-
-            <button class="btn btn-primary" id="btn-apply-adaptive-reg" onclick="handleApplyAdaptiveRegedit(this)" style="width:100%; background: linear-gradient(90deg, #f59e0b, #ef4444); border:none; font-size:0.95rem; font-weight:900; letter-spacing:0.5px; padding:13px; border-radius:8px; cursor:pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(239,68,68,0.35);">
-              ⚡ GERAR &amp; APLICAR MINHA REGEDIT PERSONALIZADA
-            </button>
-
-            <!-- Resultado -->
-            <div id="adaptive-reg-result" style="display:none; margin-top:16px; border-radius:8px; padding:14px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.4);">
-              <div style="font-weight:800; color:#4ade80; font-size:0.9rem; margin-bottom:8px;">✅ Regedit Personalizada Aplicada com Sucesso!</div>
-              <div id="adaptive-reg-summary" style="font-size:0.78rem; color:#bbf7d0; line-height:1.7;"></div>
-            </div>
-            <div id="adaptive-reg-error" style="display:none; margin-top:16px; border-radius:8px; padding:12px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.4);">
-              <div style="font-weight:800; color:#f87171; font-size:0.85rem;">❌ <span id="adaptive-reg-error-msg"></span></div>
-            </div>
-          </div>
-
-          <!-- Otimizador Competitivo de Pan & BlueStacks/MSI (Anti-Pinar & Stutter Zero) -->
-          <div class="card" style="border: 1px solid rgba(245, 158, 11, 0.4); background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(0,0,0,0.45)); box-shadow: 0 0 15px rgba(245, 158, 11, 0.1);">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-              <div>
-                <h3 style="margin:0 0 4px 0; color:#fbbf24;">🎯 Otimizador Competitivo de Pan & Engine (Anti-Pinar & Ultra FPS)</h3>
-                <p style="color:#94a3b8; font-size:12px; margin:0;">Injeta velocidade de interpolação Pan (15.0 - 20.0), decodificação ASTC por Hardware na GPU, DirectX sem stutter e High FPS no BlueStacks e MSI.</p>
-              </div>
-              <span class="badge" style="background:#f59e0b; color:#000; font-weight:800;">PRO SENSE 🔥</span>
-            </div>
-
-            <div style="margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
-              <!-- Speed do Pan -->
-              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
-                <label style="font-size:11px; color:#fbbf24; font-weight:700; display:block; margin-bottom:4px;">⚡ Speed do Pan (Anti-Pinar / Fluidez):</label>
-                <select id="comp-pan-speed" style="width:100%; padding:6px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
-                  <option value="15.0" selected>15.0 (Recomendado - Fluido & Sem Pinar)</option>
-                  <option value="20.0">20.0 (Ultra Rápido - Telas 144Hz/240Hz)</option>
-                  <option value="10.0">10.0 (Padrão Original BlueStacks)</option>
-                  <option value="25.0">25.0 (Extremo / Resposta Imediata)</option>
-                </select>
-                <span style="font-size:10px; color:#94a3b8; margin-top:3px; display:block;">Elimina o delay de interpolação da câmera entre frames.</span>
-              </div>
-
-              <!-- Sensibilidade X e Y do Keymap -->
-              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05); display:flex; gap:8px;">
-                <div style="flex:1;">
-                  <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">Sens X (Giro):</label>
-                  <input type="text" id="comp-sens-x" value="1,0" style="width:100%; padding:5px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
-                </div>
-                <div style="flex:1;">
-                  <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">Sens Y (Subida):</label>
-                  <input type="text" id="comp-sens-y" value="0,4" style="width:100%; padding:5px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
-                </div>
-              </div>
-
-              <!-- Renderizador Gráfico -->
-              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
-                <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">🎮 Renderizador Gráfico:</label>
-                <select id="comp-graphics-renderer" style="width:100%; padding:6px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
-                  <option value="dx" selected>DirectX (dx - Menos Stutter / GPU NVIDIA/AMD)</option>
-                  <option value="gl">OpenGL (gl - Padrão)</option>
-                  <option value="vulkan">Vulkan (Se suportado)</option>
-                </select>
-              </div>
-
-              <!-- Decodificação ASTC & CPU/RAM -->
-              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
-                <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">🧠 Núcleos de CPU & RAM:</label>
-                <select id="comp-cpu-ram" style="width:100%; padding:6px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
-                  <option value="auto" id="opt-cpu-ram-auto" selected>⚡ Automático Inteligente (50% do seu PC)</option>
-                  <option value="2-2048">2 Núcleos / 2GB RAM (PC Muito Fraco)</option>
-                  <option value="2-4096">2 Núcleos / 4GB RAM (PC Fraco)</option>
-                  <option value="4-4096">4 Núcleos / 4GB RAM (PC Médio)</option>
-                  <option value="4-8192">4 Núcleos / 8GB RAM (PC Gamer 8C/16GB)</option>
-                  <option value="6-8192">6 Núcleos / 8GB RAM (PC Gamer 12C/16GB)</option>
-                  <option value="8-8192">8 Núcleos / 8GB RAM (PC High-End 16C/32GB)</option>
-                </select>
-              </div>
-            </div>
-
-            <div style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-              <button class="btn btn-primary btn-sm" id="btn-apply-comp-tweak" onclick="handleApplyCompTweak(this)" style="background: linear-gradient(135deg, #f59e0b, #d97706); color:#000; font-weight:800; cursor:pointer;">⚡ Aplicar Otimizações Competitivas (Keymap + Engine)</button>
-              <span id="status-comp-tweak" style="display:none; color:#10b981; font-size:12px; font-weight:600;"></span>
-            </div>
-          </div>
-        </section>
 
         <!-- TAB: CALCULADORA SENSE -->
         <section id="tab-calculadora" class="tab-content">
           <h2>Calculadora Sense</h2>
           <p class="subtitle">Descubra a sensibilidade ideal para subir capa no emulador</p>
-          
+
           <div class="card">
             <h3>Entradas de DPI</h3>
             <div class="inputs-grid">
@@ -330,7 +83,8 @@
                 <input type="number" id="calc-emu-dpi" value="480" min="100" max="2000">
               </div>
             </div>
-            <button class="btn btn-primary" id="btn-calculate" style="margin-top: 16px; width: 100%;">📐 Calcular Sensibilidade</button>
+            <button class="btn btn-primary" id="btn-calculate" style="margin-top: 16px; width: 100%;">📐 Calcular
+              Sensibilidade</button>
           </div>
 
           <div class="card result-card" id="calc-result" style="display: none;">
@@ -349,8 +103,11 @@
                 <span class="value" id="res-tweak">16450</span>
               </div>
             </div>
-            <p id="res-note" style="font-size: 0.8rem; color: #38bdf8; margin-top: 12px; text-align: center; line-height: 1.4; display: none; font-weight: 600;"></p>
-            <p style="font-size: 0.8rem; color: var(--text-gray); margin-top: 12px; text-align: center;">*Ajuste esses valores nas configurações de mapeamento de teclas dentro do BlueStacks.</p>
+            <p id="res-note"
+              style="font-size: 0.8rem; color: #38bdf8; margin-top: 12px; text-align: center; line-height: 1.4; display: none; font-weight: 600;">
+            </p>
+            <p style="font-size: 0.8rem; color: var(--text-gray); margin-top: 12px; text-align: center;">*Ajuste esses
+              valores nas configurações de mapeamento de teclas dentro do BlueStacks.</p>
           </div>
         </section>
 
@@ -359,33 +116,76 @@
           <h2>Config do Mouse</h2>
           <p class="subtitle">Ajuste o comportamento do cursor e a curva de aceleração</p>
 
-          <!-- ════════════════════════════════════════════════════════════════ -->
+          <!-- RECOMENDAÇÃO DE SENSI DESTACADA EM VERMELHO -->
+          <div
+            style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(153, 27, 27, 0.2)); border: 2px solid #ef4444; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px; box-shadow: 0 0 18px rgba(239, 68, 68, 0.35);">
+            <div
+              style="font-weight: 900; color: #ff6b6b; font-size: 0.98rem; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
+              <span>🎯 RECOMENDAÇÃO OFICIAL PARA DAR FULL LATA (CAPA PERFEITO):</span>
+            </div>
+            <div style="font-size: 0.88rem; color: #fecdd3; line-height: 1.6; font-weight: 600;">
+              • <strong>Mouse Físico:</strong> <span
+                style="color: #ffffff; background: #dc2626; padding: 2px 8px; border-radius: 4px; font-weight: 800;">1600
+                DPI</span> | <strong>Polling Rate:</strong> <span
+                style="color: #ffffff; background: #dc2626; padding: 2px 8px; border-radius: 4px; font-weight: 800;">1000
+                Hz</span><br>
+              • <strong>Emulador:</strong> <span
+                style="color: #ffffff; background: #dc2626; padding: 2px 8px; border-radius: 4px; font-weight: 800;">480
+                DPI</span><br>
+              • <strong>Sensibilidade do Jogo:</strong> <span
+                style="color: #ffffff; background: #dc2626; padding: 2px 8px; border-radius: 4px; font-weight: 800;">X =
+                2.0 | Y = 2.0</span>
+            </div>
+            <div
+              style="font-size: 0.8rem; color: #fca5a5; margin-top: 8px; font-style: italic; font-weight: 500; border-top: 1px dashed rgba(239, 68, 68, 0.4); padding-top: 6px;">
+              💡 <i>Nota: Recomendamos sempre manter X e Y padronizados em 2 para puxar Full Capa sem passar da cabeça.
+                Porém, caso sinta a sensibilidade muito alta para o seu estilo de jogo, adapte X e Y como achar
+                melhor!</i>
+            </div>
+          </div>
 
           <div class="card">
             <h3>Curva de Sensibilidade (Registry)</h3>
             <div class="radio-group">
-              <label class="radio-card" style="border: 1px solid rgba(239, 68, 68, 0.8); background: linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(0,0,0,0.6)); box-shadow: 0 0 18px rgba(239, 68, 68, 0.25);">
+              <label class="radio-card"
+                style="border: 1px solid rgba(239, 68, 68, 0.8); background: linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(0,0,0,0.6)); box-shadow: 0 0 18px rgba(239, 68, 68, 0.25);">
                 <input type="radio" name="mouse-mode" value="loord-3-sense-full-red" checked>
                 <div class="radio-content">
-
-                  <span class="title" style="color: #ff6b6b; font-weight: 800; display: flex; align-items: center; gap: 6px;">⚡ LOORD 3.0 SENSE FULL RED (Ultra Sense + BCD + USB Boost) <span style="background: linear-gradient(90deg, #ef4444, #f97316); color: #fff; font-size: 0.65rem; padding: 2px 7px; border-radius: 4px; font-weight: 900;">SUPREMA 🔥</span></span>
-                  <span class="desc">Aplica todas as otimizações supremas: Buffer de Mouse/HID 20, USB sem suspensão, Teclado 0ms, Win32Priority 26, BCD timer 0.5ms e curva 1:1 calibrada para full capa.</span>
+                  <span class="title"
+                    style="color: #ff6b6b; font-weight: 800; display: flex; align-items: center; gap: 6px;">⚡ LOORD 3.0
+                    SENSE FULL RED (Ultra Sense + BCD + USB Boost) <span
+                      style="background: linear-gradient(90deg, #ef4444, #f97316); color: #fff; font-size: 0.65rem; padding: 2px 7px; border-radius: 4px; font-weight: 900;">SUPREMA
+                      🔥</span></span>
+                  <span class="desc">Aplica todas as otimizações supremas: Buffer de Mouse/HID 20, USB sem suspensão,
+                    Teclado 0ms, Win32Priority 26, BCD timer 0.5ms e curva 1:1 calibrada para full capa.</span>
                 </div>
               </label>
 
-              <label class="radio-card" style="border: 1px solid rgba(239, 68, 68, 0.6); background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(0,0,0,0.5));">
+              <label class="radio-card"
+                style="border: 1px solid rgba(239, 68, 68, 0.6); background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(0,0,0,0.5));">
                 <input type="radio" name="mouse-mode" value="vip-lock-sense">
                 <div class="radio-content">
-                  <span class="title" style="color: #f87171; font-weight: 700; display: flex; align-items: center; gap: 6px;">👑 VIP LOCK SENSE 1:1 (Anti-Tremer & Head Lock Supremo) <span style="background: #ef4444; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">TOP 1</span></span>
-                  <span class="desc">Curva 1:1 balanceada com estabilização no eixo Y (trava na cabeça), zero tremores ao disparar e latência ultrabaixa de input.</span>
+                  <span class="title"
+                    style="color: #f87171; font-weight: 700; display: flex; align-items: center; gap: 6px;">👑 VIP LOCK
+                    SENSE 1:1 (Anti-Tremer & Head Lock Supremo) <span
+                      style="background: #ef4444; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">TOP
+                      1</span></span>
+                  <span class="desc">Curva 1:1 balanceada com estabilização no eixo Y (trava na cabeça), zero tremores
+                    ao disparar e latência ultrabaixa de input.</span>
                 </div>
               </label>
 
-              <label class="radio-card" style="border: 1px solid rgba(239, 68, 68, 0.4); background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(0,0,0,0.4));">
+              <label class="radio-card"
+                style="border: 1px solid rgba(239, 68, 68, 0.4); background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(0,0,0,0.4));">
                 <input type="radio" name="mouse-mode" value="full-red-ump">
                 <div class="radio-content">
-                  <span class="title" style="color: #f87171; font-weight: 700; display: flex; align-items: center; gap: 6px;">🎯 REGEDIT FULL RED UMP (Precisão & Disparo Rápido) <span style="background: #dc2626; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">NOVO 🔥</span></span>
-                  <span class="desc">Ajuste de sensibilidade 10, DoubleClick 500ms, curva SmoothMouseX/Y calibrada para UMP/SMG e tempo de resposta otimizado.</span>
+                  <span class="title"
+                    style="color: #f87171; font-weight: 700; display: flex; align-items: center; gap: 6px;">🎯 REGEDIT
+                    FULL RED UMP (Precisão & Disparo Rápido) <span
+                      style="background: #dc2626; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">NOVO
+                      🔥</span></span>
+                  <span class="desc">Ajuste de sensibilidade 10, DoubleClick 500ms, curva SmoothMouseX/Y calibrada para
+                    UMP/SMG e tempo de resposta otimizado.</span>
                 </div>
               </label>
 
@@ -393,7 +193,8 @@
                 <input type="radio" name="mouse-mode" value="kant-v1">
                 <div class="radio-content">
                   <span class="title">KANT REGEDIT V1 (Curva Customizada & Precisão)</span>
-                  <span class="desc">Aplica todas as otimizações exatas da regedit Kant V1 da pasta (3) (SmoothMouseX/Y Curve Ted Exe, DoubleClick 480ms).</span>
+                  <span class="desc">Aplica todas as otimizações exatas da regedit Kant V1 da pasta (3) (SmoothMouseX/Y
+                    Curve Ted Exe, DoubleClick 480ms).</span>
                 </div>
               </label>
 
@@ -401,55 +202,86 @@
                 <input type="radio" name="mouse-mode" value="mira-clean-pesadinho">
                 <div class="radio-content">
                   <span class="title">REGEDIT MIRA CLEAN / IMPOSSÍVEL & PESADINHO (1:1 Head)</span>
-                  <span class="desc">Aplica todas as otimizações exatas da pasta (2) (Mira Clean, NaoTremer, Head, Impossivel e Pesadinho).</span>
+                  <span class="desc">Aplica todas as otimizações exatas da pasta (2) (Mira Clean, NaoTremer, Head,
+                    Impossivel e Pesadinho).</span>
                 </div>
               </label>
 
               <label class="radio-card">
                 <input type="radio" name="mouse-mode" value="ultra-emu-boost">
                 <div class="radio-content">
-                  <span class="title" style="color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 6px;">⚡ ULTRA EMULATOR BOOST 1:1 (Sensibilidade Real & Alto Desempenho) <span style="background: #0284c7; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">TOP 🔥</span></span>
-                  <span class="desc">Desativa aceleração do mouse, desativa suspensão USB, ativa Energia Máxima e prioridade Alta para BlueStacks e MSI.</span>
+                  <span class="title"
+                    style="color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 6px;">⚡ ULTRA
+                    EMULATOR BOOST 1:1 (Sensibilidade Real & Alto Desempenho) <span
+                      style="background: #0284c7; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">TOP
+                      🔥</span></span>
+                  <span class="desc">Desativa aceleração do mouse, desativa suspensão USB, ativa Energia Máxima e
+                    prioridade Alta para BlueStacks e MSI.</span>
                 </div>
               </label>
 
               <label class="radio-card">
                 <input type="radio" name="mouse-mode" value="zero-curve-raw">
                 <div class="radio-content">
-                  <span class="title" style="color: #a855f7; font-weight: 700; display: flex; align-items: center; gap: 6px;">🎯 ZERO CURVE RAW INPUT 1:1 (Mira Estável & Ping Ultrabaixo) <span style="background: #9333ea; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">PRECISÃO 💎</span></span>
-                  <span class="desc">Curva 100% Zerada (Raw Input puro) para controle milimétrico do mouse + Otimização de pacotes TCP/IP para menor ping em jogos.</span>
+                  <span class="title"
+                    style="color: #a855f7; font-weight: 700; display: flex; align-items: center; gap: 6px;">🎯 ZERO
+                    CURVE RAW INPUT 1:1 (Mira Estável & Ping Ultrabaixo) <span
+                      style="background: #9333ea; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">PRECISÃO
+                      💎</span></span>
+                  <span class="desc">Curva 100% Zerada (Raw Input puro) para controle milimétrico do mouse + Otimização
+                    de pacotes TCP/IP para menor ping em jogos.</span>
                 </div>
               </label>
 
               <label class="radio-card">
                 <input type="radio" name="mouse-mode" value="ff-mouse-maximo">
                 <div class="radio-content">
-                  <span class="title" style="color: #f59e0b; font-weight: 700; display: flex; align-items: center; gap: 6px;">🔥 FREE FIRE MOUSE NO MÁXIMO (Sensibilidade 10/11 & IRQ8 Timer Boost) <span style="background: #d97706; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">FULL CAPA 🚀</span></span>
-                  <span class="desc">Sensibilidade 10/11 1:1 sem interpolação, prioridade de interrupção IRQ8 em tempo real, Game Mode ativo, MMCSS GPU 8 e buffer ampliado.</span>
+                  <span class="title"
+                    style="color: #f59e0b; font-weight: 700; display: flex; align-items: center; gap: 6px;">🔥 FREE FIRE
+                    MOUSE NO MÁXIMO (Sensibilidade 10/11 & IRQ8 Timer Boost) <span
+                      style="background: #d97706; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">FULL
+                      CAPA 🚀</span></span>
+                  <span class="desc">Sensibilidade 10/11 1:1 sem interpolação, prioridade de interrupção IRQ8 em tempo
+                    real, Game Mode ativo, MMCSS GPU 8 e buffer ampliado.</span>
                 </div>
               </label>
 
               <label class="radio-card">
                 <input type="radio" name="mouse-mode" value="rikwich-pro-sense">
                 <div class="radio-content">
-                  <span class="title" style="color: #ec4899; font-weight: 700; display: flex; align-items: center; gap: 6px;">🎯 REGEDIT R!KW!CH PRO (Curva Linear 1:1 & Touch BlueStacks 750 DPI) <span style="background: #db2777; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">VIP HEADSHOT 👑</span></span>
-                  <span class="desc">Curva progressiva para subida de capa perfeita sem tremer, tempo de hover 4ms e calibragem de DPI e touch interno do BlueStacks (750 Menor Largura).</span>
+                  <span class="title"
+                    style="color: #ec4899; font-weight: 700; display: flex; align-items: center; gap: 6px;">🎯 REGEDIT
+                    R!KW!CH PRO (Curva Linear 1:1 & Touch BlueStacks 750 DPI) <span
+                      style="background: #db2777; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">VIP
+                      HEADSHOT 👑</span></span>
+                  <span class="desc">Curva progressiva para subida de capa perfeita sem tremer, tempo de hover 4ms e
+                    calibragem de DPI e touch interno do BlueStacks (750 Menor Largura).</span>
                 </div>
               </label>
 
               <label class="radio-card">
                 <input type="radio" name="mouse-mode" value="fov-lock-stick-pro">
                 <div class="radio-content">
-                  <span class="title" style="color: #10b981; font-weight: 700; display: flex; align-items: center; gap: 6px;">🔥 REGEDIT LOCK FOV & MOUSE STICK (Trava Mira & FOV 20k) <span style="background: #059669; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">ULTRA LOCK 🎯</span></span>
-                  <span class="desc">Estabilizador de mira com parâmetros MouseGrab (908), MouseStickOn (10), FOV (20000), MouseTK (810) e DockTarget para máxima fixação no alvo.</span>
+                  <span class="title"
+                    style="color: #10b981; font-weight: 700; display: flex; align-items: center; gap: 6px;">🔥 REGEDIT
+                    LOCK FOV & MOUSE STICK (Trava Mira & FOV 20k) <span
+                      style="background: #059669; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">ULTRA
+                      LOCK 🎯</span></span>
+                  <span class="desc">Estabilizador de mira com parâmetros MouseGrab (908), MouseStickOn (10), FOV
+                    (20000), MouseTK (810) e DockTarget para máxima fixação no alvo.</span>
                 </div>
               </label>
 
               <label class="radio-card">
                 <input type="radio" name="mouse-mode" value="ff-precision-pixel-perfect">
                 <div class="radio-content">
-                  <span class="title" style="color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 6px;">🎯 FREE FIRE PRECISION 1:1 (Pixel-Perfect & Zero Jitter / Head Lock) <span style="background: #0284c7; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">MIRA CRAVADA 🎯</span></span>
-                  <span class="desc">1 Count = 1 Pixel sem descarte de movimento. Sensibilidade 10 travada sem jitter, curvas limpas, MMCSS GPU 8 e foco instantâneo no jogo.</span>
+                  <span class="title"
+                    style="color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 6px;">🎯 FREE FIRE
+                    PRECISION 1:1 (Pixel-Perfect & Zero Jitter / Head Lock) <span
+                      style="background: #0284c7; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">MIRA
+                      CRAVADA 🎯</span></span>
+                  <span class="desc">1 Count = 1 Pixel sem descarte de movimento. Sensibilidade 10 travada sem jitter,
+                    curvas limpas, MMCSS GPU 8 e foco instantâneo no jogo.</span>
                 </div>
               </label>
             </div>
@@ -470,12 +302,17 @@
 
           <div class="card">
             <h3>Macro de Capa (Assistente de Puxada Y)</h3>
-            <p>Simula um arrasto suave do mouse para cima no instante do disparo, auxiliando a mira a fixar na cabeça do oponente.</p>
-            
-            <div class="toggle-row" style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; margin-bottom: 12px;">
+            <p>Simula um arrasto suave do mouse para cima no instante do disparo, auxiliando a mira a fixar na cabeça do
+              oponente.</p>
+
+            <div class="toggle-row"
+              style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; margin-bottom: 12px;">
               <div class="toggle-info" style="max-width: 80%;">
                 <h4 style="margin: 0; font-size: 1rem; color: var(--text-color);">Ativar Macro de Capa</h4>
-                <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: var(--text-gray);">Ativa automaticamente ao <strong>segurar o botão esquerdo do mouse</strong>. Atalho: <span style="color:#f97316;font-weight:600;">[ F2 / F3 / F6 / F7 ]</span> Liga/Desliga em tempo real (com sinal sonoro).</p>
+                <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: var(--text-gray);">Ativa automaticamente ao
+                  <strong>segurar o botão esquerdo do mouse</strong>. Atalho: <span
+                    style="color:#f97316;font-weight:600;">[ F2 / F3 / F6 / F7 ]</span> Liga/Desliga em tempo real (com
+                  sinal sonoro).</p>
               </div>
               <label class="switch">
                 <input type="checkbox" id="toggle-macro">
@@ -484,69 +321,96 @@
             </div>
 
             <div class="input-field" id="macro-force-container" style="display: none; margin-top: 12px;">
-              <label for="macro-force" style="display: block; font-size: 0.85rem; margin-bottom: 6px; color: var(--text-color);">Força da Puxada Y (Sensibilidade de Subida): <strong id="macro-force-val" style="color: #38bdf8;">4</strong></label>
+              <label for="macro-force"
+                style="display: block; font-size: 0.85rem; margin-bottom: 6px; color: var(--text-color);">Força da
+                Puxada Y (Sensibilidade de Subida): <strong id="macro-force-val"
+                  style="color: #38bdf8;">4</strong></label>
               <input type="range" id="macro-force" min="1" max="10" value="4" style="width: 100%; cursor: pointer;">
             </div>
           </div>
 
-          <button class="btn btn-primary btn-apply-all" id="btn-apply-mouse" style="margin-top: 10px;">⚡ Aplicar Configurações</button>
+          <button class="btn btn-primary btn-apply-all" id="btn-apply-mouse" style="margin-top: 10px;">⚡ Aplicar
+            Configurações</button>
         </section>
 
         <!-- TAB: OTIMIZAR PC (SCREENSHOT REPLICADO) -->
-        <section id="tab-otimizar-pc" class="tab-content">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+        <section id="tab-otimizar-pc" class="tab-content active">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
             <div>
               <h2 style="margin-bottom: 4px;">Otimizar PC</h2>
-              <p class="subtitle" style="margin-bottom: 0;">Ative os módulos para tirar lag de teclado, mouse, latência de rede e otimizar o Windows para jogos.</p>
+              <p class="subtitle" style="margin-bottom: 0;">Ative os módulos para tirar lag de teclado, mouse, latência
+                de rede e otimizar o Windows para jogos.</p>
             </div>
-            <div style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 8px; padding: 8px 16px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 10px rgba(56, 189, 248, 0.15);">
+            <div
+              style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 8px; padding: 8px 16px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 10px rgba(56, 189, 248, 0.15);">
               <span style="font-size: 1.05rem;">🪟</span>
-              <span style="color: #38bdf8; font-weight: 800; font-size: 0.85rem; letter-spacing: 0.5px; text-transform: uppercase;">Otimizações Voltadas para Windows 10</span>
+              <span
+                style="color: #38bdf8; font-weight: 800; font-size: 0.85rem; letter-spacing: 0.5px; text-transform: uppercase;">Otimizações
+                Voltadas para Windows 10</span>
             </div>
           </div>
-          
+
           <div class="card section-card" style="padding: 24px;">
             <!-- Actions Header -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px; flex-wrap: wrap;">
-              <button class="btn btn-primary" id="btn-master-win-opt" style="flex-grow: 1.2; max-width: 320px; background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 700; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">🚀 Otimizar Windows (Super Boost)</button>
-              <button class="btn btn-primary" id="btn-apply-all-modules" style="flex-grow: 1; max-width: 250px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2); font-weight: 700;">⚡ Aplicar Módulos</button>
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px; flex-wrap: wrap;">
+              <button class="btn btn-primary" id="btn-master-win-opt"
+                style="flex-grow: 1.2; max-width: 320px; background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 700; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">🚀
+                Otimizar Windows (Super Boost)</button>
+              <button class="btn btn-primary" id="btn-apply-all-modules"
+                style="flex-grow: 1; max-width: 250px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2); font-weight: 700;">⚡
+                Aplicar Módulos</button>
               <div class="dual-buttons" style="margin: 0; display: flex; gap: 8px; flex-grow: 1; max-width: 340px;">
-                <button class="btn btn-outline btn-ram" id="btn-clean-ram" style="flex: 1; padding: 10px 12px; font-size: 0.82rem;">🧹 Limpar RAM</button>
-                <button class="btn btn-outline btn-process" id="btn-optimize-proc" style="flex: 1; padding: 10px 12px; font-size: 0.82rem;">⚡ Otimizar Processos</button>
+                <button class="btn btn-outline btn-ram" id="btn-clean-ram"
+                  style="flex: 1; padding: 10px 12px; font-size: 0.82rem;">🧹 Limpar RAM</button>
+                <button class="btn btn-outline btn-process" id="btn-optimize-proc"
+                  style="flex: 1; padding: 10px 12px; font-size: 0.82rem;">⚡ Otimizar Processos</button>
               </div>
             </div>
 
             <!-- Game Booster Turbo Card -->
-            <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(249, 115, 22, 0.08)); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 8px; padding: 14px 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div
+              style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(249, 115, 22, 0.08)); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 8px; padding: 14px 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
               <div>
-                <div style="font-weight: 800; color: #f87171; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                <div
+                  style="font-weight: 800; color: #f87171; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
                   <span>🔥 Modo Turbo Game Booster (Prioridade de CPU + GPU + RAM)</span>
                 </div>
                 <div style="font-size: 0.8rem; color: #cbd5e1; margin-top: 3px;">
-                  Ativa o Plano de Energia Máxima do Windows, eleva o BlueStacks/MSI (HD-Player) para prioridade de Tempo Real e purga toda a RAM em espera.
+                  Ativa o Plano de Energia Máxima do Windows, eleva o BlueStacks/MSI (HD-Player) para prioridade de
+                  Tempo Real e purga toda a RAM em espera.
                 </div>
-                <div style="font-size: 0.78rem; color: #fca5a5; font-weight: 700; margin-top: 6px; display: flex; align-items: center; gap: 5px; background: rgba(239, 68, 68, 0.2); padding: 4px 8px; border-radius: 5px; border: 1px solid rgba(239, 68, 68, 0.4);">
+                <div
+                  style="font-size: 0.78rem; color: #fca5a5; font-weight: 700; margin-top: 6px; display: flex; align-items: center; gap: 5px; background: rgba(239, 68, 68, 0.2); padding: 4px 8px; border-radius: 5px; border: 1px solid rgba(239, 68, 68, 0.4);">
                   <span>⚠️ ATENÇÃO: Ative apenas UMA VEZ! Clicar repetidamente pode causar lentidão no PC.</span>
                 </div>
               </div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <button class="btn btn-primary btn-sm" id="btn-game-booster" style="background: linear-gradient(135deg, #ef4444, #f97316); font-weight: 800;">🚀 Ativar Game Booster</button>
-                <span class="adb-applied-badge" id="badge-game-booster" style="display:none; color:#28c385; font-size:12px;">✔ Booster Ativo!</span>
+                <button class="btn btn-primary btn-sm" id="btn-game-booster"
+                  style="background: linear-gradient(135deg, #ef4444, #f97316); font-weight: 800;">🚀 Ativar Game
+                  Booster</button>
+                <span class="adb-applied-badge" id="badge-game-booster"
+                  style="display:none; color:#28c385; font-size:12px;">✔ Booster Ativo!</span>
               </div>
             </div>
 
             <!-- Auto RAM Cleaner Monitor -->
-            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div
+              style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
               <div>
-                <div style="font-weight: 700; color: #10b981; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                <div
+                  style="font-weight: 700; color: #10b981; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
                   <span>🧠 Auto Limpador de Cache de RAM (Standby List Cleaner)</span>
                 </div>
                 <div style="font-size: 0.8rem; color: var(--text-gray); margin-top: 3px;">
-                  Purga automaticamente a memória em espera (cache) e processos em segundo plano a cada 45 segundos para manter o FPS estável.
+                  Purga automaticamente a memória em espera (cache) e processos em segundo plano a cada 45 segundos para
+                  manter o FPS estável.
                 </div>
               </div>
               <div style="display: flex; align-items: center; gap: 10px;">
-                <span id="auto-ram-status" style="font-size: 0.78rem; color: #94a3b8; font-weight: 600;">Desativado</span>
+                <span id="auto-ram-status"
+                  style="font-size: 0.78rem; color: #94a3b8; font-weight: 600;">Desativado</span>
                 <label class="switch">
                   <input type="checkbox" id="toggle-auto-ram">
                   <span class="slider round"></span>
@@ -845,15 +709,16 @@
         <section id="tab-rede-latencia" class="tab-content">
           <h2>Rede & Latência</h2>
           <p class="subtitle">Otimize a conexão e reduza o input lag ao extremo</p>
-          
+
           <div class="card section-card">
             <h3>OTIMIZAÇÕES AVANÇADAS</h3>
             <div class="toggles-grid">
-              
+
               <div class="toggle-card">
                 <div class="t-info">
                   <span class="t-title">Otimização de Ping (TCP)</span>
-                  <span class="t-desc">Aplica TcpAckFrequency e TCPNoDelay para registrar dano na hora (sem dano fantasma)</span>
+                  <span class="t-desc">Aplica TcpAckFrequency e TCPNoDelay para registrar dano na hora (sem dano
+                    fantasma)</span>
                 </div>
                 <label class="switch">
                   <input type="checkbox" class="system-toggle" data-tweak="network" checked>
@@ -864,7 +729,8 @@
               <div class="toggle-card">
                 <div class="t-info">
                   <span class="t-title">Timer Resolution 0.5ms</span>
-                  <span class="t-desc">Força o kernel do Windows a responder a cada 0.5 milissegundo (mira não pina)</span>
+                  <span class="t-desc">Força o kernel do Windows a responder a cada 0.5 milissegundo (mira não
+                    pina)</span>
                 </div>
                 <label class="switch">
                   <input type="checkbox" class="system-toggle" data-tweak="timer">
@@ -875,7 +741,8 @@
               <div class="toggle-card">
                 <div class="t-info">
                   <span class="t-title">Forçar GPU (HD-Player)</span>
-                  <span class="t-desc">Injeta Alta Performance do DirectX no BlueStacks e desativa timers dinâmicos</span>
+                  <span class="t-desc">Injeta Alta Performance do DirectX no BlueStacks e desativa timers
+                    dinâmicos</span>
                 </div>
                 <label class="switch">
                   <input type="checkbox" class="system-toggle" data-tweak="gpu-hpet">
@@ -887,45 +754,55 @@
           </div>
 
           <!-- DNS Gamer & Testador de Ping -->
-          <div class="card section-card" style="border: 1px solid rgba(59, 130, 246, 0.4); background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(0,0,0,0.45));">
+          <div class="card section-card"
+            style="border: 1px solid rgba(59, 130, 246, 0.4); background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(0,0,0,0.45));">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
               <div>
                 <h3 style="margin:0 0 4px 0; color:#60a5fa;">🌐 DNS Gamer & Teste de Ping em Tempo Real</h3>
-                <p style="color:#94a3b8; font-size:12px; margin:0;">Testa o ping da sua conexão contra servidores de jogos e aplica o melhor DNS com 1 clique.</p>
+                <p style="color:#94a3b8; font-size:12px; margin:0;">Testa o ping da sua conexão contra servidores de
+                  jogos e aplica o melhor DNS com 1 clique.</p>
               </div>
               <span class="badge" style="background:#3b82f6; color:#fff; font-weight:800;">LOW PING</span>
             </div>
 
             <!-- Ping Results Display -->
-            <div id="ping-results-grid" style="margin-top:14px; display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
-              <div style="background:rgba(0,0,0,0.4); padding:10px; border-radius:6px; border:1px solid var(--border-color); text-align:center;">
+            <div id="ping-results-grid"
+              style="margin-top:14px; display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
+              <div
+                style="background:rgba(0,0,0,0.4); padding:10px; border-radius:6px; border:1px solid var(--border-color); text-align:center;">
                 <span style="font-size:11px; color:#94a3b8; display:block;">Cloudflare Gaming (1.1.1.1)</span>
                 <strong id="ping-cf" style="font-size:1.1rem; color:#10b981;">-- ms</strong>
               </div>
-              <div style="background:rgba(0,0,0,0.4); padding:10px; border-radius:6px; border:1px solid var(--border-color); text-align:center;">
+              <div
+                style="background:rgba(0,0,0,0.4); padding:10px; border-radius:6px; border:1px solid var(--border-color); text-align:center;">
                 <span style="font-size:11px; color:#94a3b8; display:block;">Google DNS (8.8.8.8)</span>
                 <strong id="ping-google" style="font-size:1.1rem; color:#38bdf8;">-- ms</strong>
               </div>
-              <div style="background:rgba(0,0,0,0.4); padding:10px; border-radius:6px; border:1px solid var(--border-color); text-align:center;">
+              <div
+                style="background:rgba(0,0,0,0.4); padding:10px; border-radius:6px; border:1px solid var(--border-color); text-align:center;">
                 <span style="font-size:11px; color:#94a3b8; display:block;">Servidor Free Fire SP</span>
                 <strong id="ping-ff" style="font-size:1.1rem; color:#f59e0b;">-- ms</strong>
               </div>
             </div>
 
             <div style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-              <button class="btn btn-outline" id="btn-test-ping" style="padding:6px 14px; font-size:12px;">🔍 Testar Ping Agora</button>
-              
+              <button class="btn btn-outline" id="btn-test-ping" style="padding:6px 14px; font-size:12px;">🔍 Testar
+                Ping Agora</button>
+
               <div style="display:flex; align-items:center; gap:6px;">
                 <label style="font-size:12px; color:#cbd5e1; font-weight:600;">Aplicar DNS:</label>
-                <select id="select-gamer-dns" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-size:12px;">
+                <select id="select-gamer-dns"
+                  style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-size:12px;">
                   <option value="cloudflare">Cloudflare 1.1.1.1 (Recomendado)</option>
                   <option value="google">Google 8.8.8.8</option>
                   <option value="opendns">OpenDNS 208.67.222.222</option>
                 </select>
                 <button class="btn btn-primary btn-sm" id="btn-apply-dns">⚡ Aplicar DNS</button>
               </div>
-              <button class="btn btn-secondary btn-sm" id="btn-reset-dhcp" style="margin-left:auto;">🔄 Restaurar Conexão Padrão (DHCP & Fix Perfis)</button>
-              <span class="adb-applied-badge" id="badge-dns-applied" style="display:none; color:#28c385; font-size:12px;">✔ DNS Aplicado!</span>
+              <button class="btn btn-secondary btn-sm" id="btn-reset-dhcp" style="margin-left:auto;">🔄 Restaurar
+                Conexão Padrão (DHCP & Fix Perfis)</button>
+              <span class="adb-applied-badge" id="badge-dns-applied"
+                style="display:none; color:#28c385; font-size:12px;">✔ DNS Aplicado!</span>
             </div>
           </div>
         </section>
@@ -940,7 +817,8 @@
             <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
               <div>
                 <h3 style="margin:0 0 4px 0;">🔌 Conexão ADB</h3>
-                <p style="margin:0; font-size:12px; color:#94a3b8;">Informe a porta do emulador ou detecte automaticamente</p>
+                <p style="margin:0; font-size:12px; color:#94a3b8;">Informe a porta do emulador ou detecte
+                  automaticamente</p>
               </div>
               <span id="adb-status-badge" class="badge badge-error">Desconectado</span>
             </div>
@@ -953,10 +831,14 @@
                   style="width:80px; padding:5px 8px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-color); font-size:13px; font-weight:600;">
               </div>
               <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                <button class="btn btn-secondary btn-sm adb-port-preset" data-port="5555" title="BlueStacks / LDPlayer">BS/LD :5555</button>
-                <button class="btn btn-secondary btn-sm adb-port-preset" data-port="21503" title="MEmu">MEmu :21503</button>
-                <button class="btn btn-secondary btn-sm adb-port-preset" data-port="62001" title="Nox Player">Nox :62001</button>
-                <button class="btn btn-secondary btn-sm adb-port-preset" data-port="5565" title="BlueStacks instância 2">BS2 :5565</button>
+                <button class="btn btn-secondary btn-sm adb-port-preset" data-port="5555"
+                  title="BlueStacks / LDPlayer">BS/LD :5555</button>
+                <button class="btn btn-secondary btn-sm adb-port-preset" data-port="21503" title="MEmu">MEmu
+                  :21503</button>
+                <button class="btn btn-secondary btn-sm adb-port-preset" data-port="62001" title="Nox Player">Nox
+                  :62001</button>
+                <button class="btn btn-secondary btn-sm adb-port-preset" data-port="5565"
+                  title="BlueStacks instância 2">BS2 :5565</button>
               </div>
             </div>
 
@@ -966,48 +848,66 @@
               <button class="btn btn-secondary btn-sm" id="btn-adb-autodetect">🔍 Auto-Detectar Porta</button>
             </div>
 
-            <div id="adb-log" style="margin-top:12px; background:#0a0f1a; border-radius:8px; padding:10px; font-family:monospace; font-size:11px; color:#63cab7; max-height:100px; overflow-y:auto; display:none;"></div>
+            <div id="adb-log"
+              style="margin-top:12px; background:#0a0f1a; border-radius:8px; padding:10px; font-family:monospace; font-size:11px; color:#63cab7; max-height:100px; overflow-y:auto; display:none;">
+            </div>
           </div>
 
           <!-- Otimizador Competitivo de Pan & BlueStacks/MSI (Anti-Pinar & Stutter Zero) -->
-          <div class="card" style="border: 1px solid rgba(245, 158, 11, 0.4); background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(0,0,0,0.45)); box-shadow: 0 0 15px rgba(245, 158, 11, 0.1);">
+          <div class="card"
+            style="border: 1px solid rgba(245, 158, 11, 0.4); background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(0,0,0,0.45)); box-shadow: 0 0 15px rgba(245, 158, 11, 0.1);">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
               <div>
-                <h3 style="margin:0 0 4px 0; color:#fbbf24;">🎯 Otimizador Competitivo de Pan & Engine (Anti-Pinar & Ultra FPS)</h3>
-                <p style="color:#94a3b8; font-size:12px; margin:0;">Injeta velocidade de interpolação Pan (15.0 - 20.0), decodificação ASTC por Hardware na GPU, DirectX sem stutter e High FPS no BlueStacks e MSI.</p>
+                <h3 style="margin:0 0 4px 0; color:#fbbf24;">🎯 Otimizador Competitivo de Pan & Engine (Anti-Pinar &
+                  Ultra FPS)</h3>
+                <p style="color:#94a3b8; font-size:12px; margin:0;">Injeta velocidade de interpolação Pan (15.0 - 20.0),
+                  decodificação ASTC por Hardware na GPU, DirectX sem stutter e High FPS no BlueStacks e MSI.</p>
               </div>
               <span class="badge" style="background:#f59e0b; color:#000; font-weight:800;">PRO SENSE 🔥</span>
             </div>
 
-            <div style="margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+            <div
+              style="margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
               <!-- Speed do Pan -->
-              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
-                <label style="font-size:11px; color:#fbbf24; font-weight:700; display:block; margin-bottom:4px;">⚡ Speed do Pan (Anti-Pinar / Fluidez):</label>
-                <select id="comp-pan-speed" style="width:100%; padding:6px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
+              <div
+                style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
+                <label style="font-size:11px; color:#fbbf24; font-weight:700; display:block; margin-bottom:4px;">⚡ Speed
+                  do Pan (Anti-Pinar / Fluidez):</label>
+                <select id="comp-pan-speed"
+                  style="width:100%; padding:6px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
                   <option value="15.0" selected>15.0 (Recomendado - Fluido & Sem Pinar)</option>
                   <option value="20.0">20.0 (Ultra Rápido - Telas 144Hz/240Hz)</option>
                   <option value="10.0">10.0 (Padrão Original BlueStacks)</option>
                   <option value="25.0">25.0 (Extremo / Resposta Imediata)</option>
                 </select>
-                <span style="font-size:10px; color:#94a3b8; margin-top:3px; display:block;">Elimina o delay de interpolação da câmera entre frames.</span>
+                <span style="font-size:10px; color:#94a3b8; margin-top:3px; display:block;">Elimina o delay de
+                  interpolação da câmera entre frames.</span>
               </div>
 
               <!-- Sensibilidade X e Y do Keymap -->
-              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05); display:flex; gap:8px;">
+              <div
+                style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05); display:flex; gap:8px;">
                 <div style="flex:1;">
-                  <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">Sens X (Giro):</label>
-                  <input type="number" id="comp-sens-x" value="1.0" step="0.1" min="0.1" max="10.0" style="width:100%; padding:5px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
+                  <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">Sens
+                    X (Giro):</label>
+                  <input type="number" id="comp-sens-x" value="1.0" step="0.1" min="0.1" max="10.0"
+                    style="width:100%; padding:5px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
                 </div>
                 <div style="flex:1;">
-                  <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">Sens Y (Subida):</label>
-                  <input type="number" id="comp-sens-y" value="0.4" step="0.05" min="0.1" max="5.0" style="width:100%; padding:5px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
+                  <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">Sens
+                    Y (Subida):</label>
+                  <input type="number" id="comp-sens-y" value="0.4" step="0.05" min="0.1" max="5.0"
+                    style="width:100%; padding:5px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
                 </div>
               </div>
 
               <!-- Renderizador Gráfico -->
-              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
-                <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">🎮 Renderizador Gráfico:</label>
-                <select id="comp-graphics-renderer" style="width:100%; padding:6px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
+              <div
+                style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
+                <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">🎮
+                  Renderizador Gráfico:</label>
+                <select id="comp-graphics-renderer"
+                  style="width:100%; padding:6px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
                   <option value="dx" selected>DirectX (dx - Menos Stutter / GPU NVIDIA/AMD)</option>
                   <option value="gl">OpenGL (gl - Padrão)</option>
                   <option value="vulkan">Vulkan (Se suportado)</option>
@@ -1015,9 +915,12 @@
               </div>
 
               <!-- Decodificação ASTC & CPU/RAM -->
-              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
-                <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">🧠 Núcleos de CPU & RAM:</label>
-                <select id="comp-cpu-ram" style="width:100%; padding:6px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
+              <div
+                style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
+                <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">🧠
+                  Núcleos de CPU & RAM:</label>
+                <select id="comp-cpu-ram"
+                  style="width:100%; padding:6px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
                   <option value="auto" id="opt-cpu-ram-auto" selected>⚡ Automático Inteligente (50% do seu PC)</option>
                   <option value="2-2048">2 Núcleos / 2GB RAM (PC Muito Fraco)</option>
                   <option value="2-4096">2 Núcleos / 4GB RAM (PC Fraco)</option>
@@ -1030,52 +933,65 @@
             </div>
 
             <div style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-              <button class="btn btn-primary btn-sm" id="btn-apply-comp-tweak" style="background: linear-gradient(135deg, #f59e0b, #d97706); color:#000; font-weight:800;">⚡ Aplicar Otimizações Competitivas (Keymap + Engine)</button>
+              <button class="btn btn-primary btn-sm" id="btn-apply-comp-tweak"
+                style="background: linear-gradient(135deg, #f59e0b, #d97706); color:#000; font-weight:800;">⚡ Aplicar
+                Otimizações Competitivas (Keymap + Engine)</button>
               <span id="status-comp-tweak" style="display:none; color:#10b981; font-size:12px; font-weight:600;"></span>
             </div>
           </div>
 
           <!-- Transformar em Android Verdadeiro -->
-          <div class="card" style="border: 1px solid rgba(236, 72, 153, 0.4); background: linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(0,0,0,0.45)); box-shadow: 0 0 15px rgba(236, 72, 153, 0.1);">
+          <div class="card"
+            style="border: 1px solid rgba(236, 72, 153, 0.4); background: linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(0,0,0,0.45)); box-shadow: 0 0 15px rgba(236, 72, 153, 0.1);">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
               <div>
-                <h3 style="margin:0 0 4px 0; color:#f472b6;">🤖 Transformar em Android Verdadeiro (Pure Android / AOSP)</h3>
-                <p style="color:#94a3b8; font-size:12px; margin:0;">Remove anúncios e telas do BlueStacks, injeta Fingerprint de celular físico real e ativa a interface limpa do Android.</p>
+                <h3 style="margin:0 0 4px 0; color:#f472b6;">🤖 Transformar em Android Verdadeiro (Pure Android / AOSP)
+                </h3>
+                <p style="color:#94a3b8; font-size:12px; margin:0;">Remove anúncios e telas do BlueStacks, injeta
+                  Fingerprint de celular físico real e ativa a interface limpa do Android.</p>
               </div>
               <span class="badge" style="background:#ec4899; color:#fff; font-weight:800;">REAL ANDROID ✨</span>
             </div>
 
-            <div style="margin-top:10px; padding:8px 12px; background:rgba(0,0,0,0.3); border-radius:6px; border:1px solid rgba(255,255,255,0.05); font-size:11px; color:#cbd5e1; line-height:1.5;">
+            <div
+              style="margin-top:10px; padding:8px 12px; background:rgba(0,0,0,0.3); border-radius:6px; border:1px solid rgba(255,255,255,0.05); font-size:11px; color:#cbd5e1; line-height:1.5;">
               ✔ <strong>Sem Anúncios:</strong> Desativa com.bluestacks.home e serviços now.gg<br>
               ✔ <strong>Homologação Real:</strong> Mascara SafetyNet e Play Store como smartphone ASUS ROG original<br>
               ✔ <strong>Aceleração Nativa:</strong> Libera pipeline gráfico direto da GPU (Zero emulação pesada)
             </div>
 
             <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-              <button class="btn btn-primary btn-sm" id="btn-convert-real-android" style="background: linear-gradient(135deg, #ec4899, #8b5cf6);">🚀 Ativar Modo Android Verdadeiro</button>
+              <button class="btn btn-primary btn-sm" id="btn-convert-real-android"
+                style="background: linear-gradient(135deg, #ec4899, #8b5cf6);">🚀 Ativar Modo Android
+                Verdadeiro</button>
               <button class="btn btn-secondary btn-sm" id="btn-restore-default-android">🔄 Restaurar Padrão</button>
-              <span class="adb-applied-badge" id="badge-real-android" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Android Real Ativado!</span>
+              <span class="adb-applied-badge" id="badge-real-android"
+                style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Android Real Ativado!</span>
             </div>
           </div>
 
           <!-- Trocar Modelo do Celular -->
-          <div class="card" style="border: 1px solid rgba(168, 85, 247, 0.4); background: linear-gradient(135deg, rgba(168, 85, 247, 0.06), rgba(0,0,0,0.4));">
+          <div class="card"
+            style="border: 1px solid rgba(168, 85, 247, 0.4); background: linear-gradient(135deg, rgba(168, 85, 247, 0.06), rgba(0,0,0,0.4));">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
               <div>
                 <h3 style="margin:0 0 4px 0;">📱 Trocar Modelo do Celular (Device Profiles & FPS Unlock)</h3>
-                <p style="color:#94a3b8; font-size:12px; margin:0;">Muda a identidade do emulador para celulares topo de linha que liberam 90/120/240 FPS no Free Fire.</p>
+                <p style="color:#94a3b8; font-size:12px; margin:0;">Muda a identidade do emulador para celulares topo de
+                  linha que liberam 90/120/240 FPS no Free Fire.</p>
               </div>
               <span class="badge" style="background:#a855f7; color:#fff; font-weight:800;">DEVICE PROFILE</span>
             </div>
 
-            <div style="margin-top:10px; padding:6px 10px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); border-radius:6px; font-size:11px; color:#fca5a5;">
+            <div
+              style="margin-top:10px; padding:6px 10px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); border-radius:6px; font-size:11px; color:#fca5a5;">
               ⚠️ <strong>Importante:</strong> Feche o emulador antes de aplicar o modelo de celular.
             </div>
 
             <div style="margin-top:12px; display:flex; flex-direction:column; gap:10px;">
               <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                 <label style="font-size:12px; color:#cbd5e1; font-weight:600;">Selecione o Modelo:</label>
-                <select id="device-profile-select" style="flex:1; min-width:240px; padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-size:12px; font-weight:700;">
+                <select id="device-profile-select"
+                  style="flex:1; min-width:240px; padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-size:12px; font-weight:700;">
                   <option value="asus_rog_8">🔥 ASUS ROG Phone 8 Pro (Recomendado 240 FPS)</option>
                   <option value="asus_rog_6">⚡ ASUS ROG Phone 6 (165 FPS Estável)</option>
                   <option value="asus_rog_5">🎮 ASUS ROG Phone 5 (144 FPS Padrão)</option>
@@ -1089,209 +1005,288 @@
               </div>
 
               <!-- Campos manuais opcionais -->
-              <div id="custom-device-fields" style="display:none; gap:8px; flex-wrap:wrap; padding:10px; background:rgba(0,0,0,0.3); border-radius:6px; border:1px solid var(--border-color);">
+              <div id="custom-device-fields"
+                style="display:none; gap:8px; flex-wrap:wrap; padding:10px; background:rgba(0,0,0,0.3); border-radius:6px; border:1px solid var(--border-color);">
                 <div style="flex:1; min-width:110px;">
                   <label style="font-size:11px; color:#94a3b8; display:block;">Marca:</label>
-                  <input type="text" id="cust-brand" value="asus" placeholder="Ex: asus" style="width:100%; padding:4px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff;">
+                  <input type="text" id="cust-brand" value="asus" placeholder="Ex: asus"
+                    style="width:100%; padding:4px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff;">
                 </div>
                 <div style="flex:1; min-width:110px;">
                   <label style="font-size:11px; color:#94a3b8; display:block;">Fabricante:</label>
-                  <input type="text" id="cust-manuf" value="asus" placeholder="Ex: asus" style="width:100%; padding:4px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff;">
+                  <input type="text" id="cust-manuf" value="asus" placeholder="Ex: asus"
+                    style="width:100%; padding:4px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff;">
                 </div>
                 <div style="flex:1.5; min-width:140px;">
                   <label style="font-size:11px; color:#94a3b8; display:block;">Modelo (Model):</label>
-                  <input type="text" id="cust-model" value="ASUS_AI2401_D" placeholder="Ex: ASUS_AI2401_D" style="width:100%; padding:4px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff;">
+                  <input type="text" id="cust-model" value="ASUS_AI2401_D" placeholder="Ex: ASUS_AI2401_D"
+                    style="width:100%; padding:4px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff;">
                 </div>
               </div>
             </div>
 
             <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
               <button class="btn btn-primary btn-sm" id="btn-apply-device">⚡ Aplicar Modelo no Emulador</button>
-              <span class="adb-applied-badge" id="badge-device-profile" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Modelo Aplicado!</span>
+              <span class="adb-applied-badge" id="badge-device-profile"
+                style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Modelo Aplicado!</span>
             </div>
           </div>
 
           <!-- Flasher de Sistema & ROM Tweaks -->
-          <div class="card" style="border: 1px solid rgba(16, 185, 129, 0.4); background: linear-gradient(135deg, rgba(16, 185, 129, 0.06), rgba(0,0,0,0.4));">
+          <div class="card"
+            style="border: 1px solid rgba(16, 185, 129, 0.4); background: linear-gradient(135deg, rgba(16, 185, 129, 0.06), rgba(0,0,0,0.4));">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
               <div>
                 <h3 style="margin:0 0 4px 0;">🚀 Flasher de Tweaks de Sistema & ROM Gamer (via ADB)</h3>
-                <p style="color:#94a3b8; font-size:12px; margin:0;">Injeta aceleração direta de GPU (EGL/HW), Dalvik VM 512MB e desativa boot anim no Android.</p>
+                <p style="color:#94a3b8; font-size:12px; margin:0;">Injeta aceleração direta de GPU (EGL/HW), Dalvik VM
+                  512MB e desativa boot anim no Android.</p>
               </div>
               <span class="badge" style="background:#10b981; color:#000; font-weight:800;">ROM TWEAKS</span>
             </div>
 
             <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
-              <button class="btn btn-primary btn-sm" id="btn-flash-rom-tweaks">⚡ Flashear Tweaks Gamer no Android</button>
-              <span class="adb-applied-badge" id="badge-flash-rom" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Sistema Flasheado!</span>
+              <button class="btn btn-primary btn-sm" id="btn-flash-rom-tweaks">⚡ Flashear Tweaks Gamer no
+                Android</button>
+              <span class="adb-applied-badge" id="badge-flash-rom"
+                style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Sistema Flasheado!</span>
             </div>
           </div>
 
           <!-- Desbloquear FPS -->
-          <div class="card" style="border: 1px solid rgba(245, 158, 11, 0.4); background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(0,0,0,0.4));">
+          <div class="card"
+            style="border: 1px solid rgba(245, 158, 11, 0.4); background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(0,0,0,0.4));">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
               <div>
                 <h3 style="margin:0 0 4px 0;">⚡ Desbloquear FPS (Hz da Tela Personalizado)</h3>
-                <p style="color:#94a3b8; font-size:12px; margin:0;">Destrava o FPS do BlueStacks/MSI (max_fps 999) e sincroniza com a taxa de atualização (Hz) do seu monitor.</p>
+                <p style="color:#94a3b8; font-size:12px; margin:0;">Destrava o FPS do BlueStacks/MSI (max_fps 999) e
+                  sincroniza com a taxa de atualização (Hz) do seu monitor.</p>
               </div>
               <span class="badge" style="background:#f59e0b; color:#000; font-weight:800;">999 FPS</span>
             </div>
 
-            <div style="margin-top:10px; padding:6px 10px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); border-radius:6px; font-size:11px; color:#fca5a5;">
-              ⚠️ <strong>Importante:</strong> Feche o emulador antes de aplicar para que o BlueStacks salve as novas configurações.
+            <div
+              style="margin-top:10px; padding:6px 10px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); border-radius:6px; font-size:11px; color:#fca5a5;">
+              ⚠️ <strong>Importante:</strong> Feche o emulador antes de aplicar para que o BlueStacks salve as novas
+              configurações.
             </div>
 
             <div style="margin-top:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
               <div style="display:flex; align-items:center; gap:6px;">
                 <label style="font-size:12px; color:#cbd5e1; font-weight:600;">Hz da Tela:</label>
-                <input type="number" id="input-screen-hz" value="240" min="60" max="500" style="width:80px; padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-size:13px; font-weight:700;">
+                <input type="number" id="input-screen-hz" value="240" min="60" max="500"
+                  style="width:80px; padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-size:13px; font-weight:700;">
               </div>
 
               <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="60" style="padding:4px 7px; font-size:11px;">60Hz</button>
-                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="75" style="padding:4px 7px; font-size:11px;">75Hz</button>
-                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="120" style="padding:4px 7px; font-size:11px;">120Hz</button>
-                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="144" style="padding:4px 7px; font-size:11px;">144Hz</button>
-                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="165" style="padding:4px 7px; font-size:11px;">165Hz</button>
-                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="240" style="padding:4px 7px; font-size:11px;">240Hz</button>
-                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="260" style="padding:4px 7px; font-size:11px;">260Hz</button>
-                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="360" style="padding:4px 7px; font-size:11px;">360Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="60"
+                  style="padding:4px 7px; font-size:11px;">60Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="75"
+                  style="padding:4px 7px; font-size:11px;">75Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="120"
+                  style="padding:4px 7px; font-size:11px;">120Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="144"
+                  style="padding:4px 7px; font-size:11px;">144Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="165"
+                  style="padding:4px 7px; font-size:11px;">165Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="240"
+                  style="padding:4px 7px; font-size:11px;">240Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="260"
+                  style="padding:4px 7px; font-size:11px;">260Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-btn" data-hz="360"
+                  style="padding:4px 7px; font-size:11px;">360Hz</button>
               </div>
             </div>
 
             <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
               <button class="btn btn-primary btn-sm" id="btn-unlock-fps">⚡ Desbloquear FPS no Emulador</button>
-              <span class="adb-applied-badge" id="badge-unlock-fps" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ FPS Desbloqueado!</span>
+              <span class="adb-applied-badge" id="badge-unlock-fps"
+                style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ FPS Desbloqueado!</span>
             </div>
           </div>
 
           <!-- Remover Delay do Free Fire -->
-          <div class="card" style="border: 1px solid rgba(59, 130, 246, 0.4); background: linear-gradient(135deg, rgba(59, 130, 246, 0.06), rgba(0,0,0,0.4));">
+          <div class="card"
+            style="border: 1px solid rgba(59, 130, 246, 0.4); background: linear-gradient(135deg, rgba(59, 130, 246, 0.06), rgba(0,0,0,0.4));">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
               <div>
                 <h3 style="margin:0 0 4px 0;">🎯 Remover Delay do Free Fire (ExclusiveDelay 1ms)</h3>
-                <p style="color:#94a3b8; font-size:12px; margin:0;">Reduz o ExclusiveDelay de 200ms para 1ms no mapeamento de teclas do Free Fire e Free Fire MAX.</p>
+                <p style="color:#94a3b8; font-size:12px; margin:0;">Reduz o ExclusiveDelay de 200ms para 1ms no
+                  mapeamento de teclas do Free Fire e Free Fire MAX.</p>
               </div>
               <span class="badge" style="background:#3b82f6; color:#fff; font-weight:800;">1ms INPUT</span>
             </div>
 
-            <div style="margin-top:10px; padding:6px 10px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); border-radius:6px; font-size:11px; color:#fca5a5;">
-              ⚠️ <strong>Importante:</strong> Feche o emulador antes de aplicar para não sobrescrever o arquivo de controle.
+            <div
+              style="margin-top:10px; padding:6px 10px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); border-radius:6px; font-size:11px; color:#fca5a5;">
+              ⚠️ <strong>Importante:</strong> Feche o emulador antes de aplicar para não sobrescrever o arquivo de
+              controle.
             </div>
 
             <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
               <button class="btn btn-primary btn-sm" id="btn-remove-ff-delay">🚀 Aplicar Delay 1ms no Free Fire</button>
-              <span class="adb-applied-badge" id="badge-ff-delay" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Delay 1ms Aplicado!</span>
+              <span class="adb-applied-badge" id="badge-ff-delay"
+                style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Delay 1ms Aplicado!</span>
             </div>
           </div>
 
           <!-- Remover Anúncios e Barra de Jogos do Emulador -->
-          <div class="card" style="border: 1px solid rgba(236, 72, 153, 0.4); background: linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(0,0,0,0.4));">
+          <div class="card"
+            style="border: 1px solid rgba(236, 72, 153, 0.4); background: linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(0,0,0,0.4));">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
               <div>
-                <h3 style="margin:0 0 4px 0; color: #f472b6;">🚫 Remover Anúncios & Barra de Jogos Recomendados (Tela 100% Limpa)</h3>
-                <p style="color:#94a3b8; font-size:12px; margin:0;">Remove a barra inferior de "Jogos Populares para Jogar", o App Center e anúncios laterais do BlueStacks / MSI, deixando a tela limpa e liberando RAM.</p>
+                <h3 style="margin:0 0 4px 0; color: #f472b6;">🚫 Remover Anúncios & Barra de Jogos Recomendados (Tela
+                  100% Limpa)</h3>
+                <p style="color:#94a3b8; font-size:12px; margin:0;">Remove a barra inferior de "Jogos Populares para
+                  Jogar", o App Center e anúncios laterais do BlueStacks / MSI, deixando a tela limpa e liberando RAM.
+                </p>
               </div>
               <span class="badge" style="background:#ec4899; color:#fff; font-weight:800;">ADBLOCK EMULADOR</span>
             </div>
 
             <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
-              <button class="btn btn-primary btn-sm" id="btn-remove-emu-ads" style="background: linear-gradient(135deg, #ec4899, #db2777); border: none;">🚫 Remover Todos os Anúncios do Emulador</button>
-              <span class="adb-applied-badge" id="badge-emu-ads" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Anúncios Removidos!</span>
+              <button class="btn btn-primary btn-sm" id="btn-remove-emu-ads"
+                style="background: linear-gradient(135deg, #ec4899, #db2777); border: none;">🚫 Remover Todos os
+                Anúncios do Emulador</button>
+              <span class="adb-applied-badge" id="badge-emu-ads"
+                style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Anúncios Removidos!</span>
             </div>
           </div>
 
           <!-- Otimização Rápida -->
           <div class="card">
             <h3>🚀 Otimização Completa (1 Clique)</h3>
-            <p style="color:#94a3b8; font-size:12px; margin-bottom:12px;">Aplica todas as otimizações abaixo de uma vez — animações, cache, processos e DPI ideal para Free Fire.</p>
+            <p style="color:#94a3b8; font-size:12px; margin-bottom:12px;">Aplica todas as otimizações abaixo de uma vez
+              — animações, cache, processos e DPI ideal para Free Fire.</p>
             <button class="btn btn-primary btn-apply-all" id="btn-adb-full-optimize">⚡ Aplicar Tudo Agora</button>
           </div>
 
           <!-- Seções individuais -->
           <div class="card">
             <h3>🎞️ Desativar Animações do Sistema</h3>
-            <p style="color:#94a3b8; font-size:12px; margin-bottom:12px;">Zera todas as animações do Android — ganho imediato de responsividade e FPS.</p>
-            <button class="btn btn-secondary btn-sm adb-action-btn" id="btn-adb-anims" data-applied="false">Aplicar</button>
-            <span class="adb-applied-badge" id="badge-adb-anims" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Aplicado</span>
+            <p style="color:#94a3b8; font-size:12px; margin-bottom:12px;">Zera todas as animações do Android — ganho
+              imediato de responsividade e FPS.</p>
+            <button class="btn btn-secondary btn-sm adb-action-btn" id="btn-adb-anims"
+              data-applied="false">Aplicar</button>
+            <span class="adb-applied-badge" id="badge-adb-anims"
+              style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Aplicado</span>
           </div>
 
           <div class="card">
             <h3>🔇 Limitar Processos em Background</h3>
-            <p style="color:#94a3b8; font-size:12px; margin-bottom:12px;">Limita apps rodando em segundo plano a 1 processo — libera RAM para o jogo.</p>
-            <button class="btn btn-secondary btn-sm adb-action-btn" id="btn-adb-bg" data-applied="false">Aplicar</button>
-            <span class="adb-applied-badge" id="badge-adb-bg" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Aplicado</span>
+            <p style="color:#94a3b8; font-size:12px; margin-bottom:12px;">Limita apps rodando em segundo plano a 1
+              processo — libera RAM para o jogo.</p>
+            <button class="btn btn-secondary btn-sm adb-action-btn" id="btn-adb-bg"
+              data-applied="false">Aplicar</button>
+            <span class="adb-applied-badge" id="badge-adb-bg"
+              style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Aplicado</span>
           </div>
 
           <div class="card">
             <h3>🧹 Limpar Cache dos Apps</h3>
-            <p style="color:#94a3b8; font-size:12px; margin-bottom:12px;">Remove cache acumulado — libera armazenamento e reduz stuttering.</p>
-            <button class="btn btn-secondary btn-sm adb-action-btn" id="btn-adb-cache" data-applied="false">Limpar</button>
-            <span class="adb-applied-badge" id="badge-adb-cache" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Aplicado</span>
+            <p style="color:#94a3b8; font-size:12px; margin-bottom:12px;">Remove cache acumulado — libera armazenamento
+              e reduz stuttering.</p>
+            <button class="btn btn-secondary btn-sm adb-action-btn" id="btn-adb-cache"
+              data-applied="false">Limpar</button>
+            <span class="adb-applied-badge" id="badge-adb-cache"
+              style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Aplicado</span>
           </div>
 
           <div class="card" style="border: 1px solid rgba(99, 202, 183, 0.3);">
             <h3>🎯 DPI Personalizada do Android (wm density)</h3>
-            <p style="color:#94a3b8; font-size:12px; margin-bottom:12px;">Altere a DPI interna do Android via ADB. Digite qualquer valor numérico ou use os atalhos rápidos.</p>
-            
+            <p style="color:#94a3b8; font-size:12px; margin-bottom:12px;">Altere a DPI interna do Android via ADB.
+              Digite qualquer valor numérico ou use os atalhos rápidos.</p>
+
             <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
               <div style="display:flex; align-items:center; gap:6px;">
                 <label style="font-size:12px; color:#cbd5e1; font-weight:600;">DPI:</label>
-                <input type="number" id="custom-adb-dpi" value="240" min="100" max="1500" style="width:90px; padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-size:13px; font-weight:700;">
+                <input type="number" id="custom-adb-dpi" value="240" min="100" max="1500"
+                  style="width:90px; padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-size:13px; font-weight:700;">
               </div>
 
               <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                <button type="button" class="btn btn-secondary btn-sm preset-dpi-btn" data-dpi="240" style="padding:4px 8px; font-size:11px;">240 (Padrão)</button>
-                <button type="button" class="btn btn-secondary btn-sm preset-dpi-btn" data-dpi="320" style="padding:4px 8px; font-size:11px;">320 (Média)</button>
-                <button type="button" class="btn btn-secondary btn-sm preset-dpi-btn" data-dpi="440" style="padding:4px 8px; font-size:11px;">440 (Alta)</button>
-                <button type="button" class="btn btn-secondary btn-sm preset-dpi-btn" data-dpi="600" style="padding:4px 8px; font-size:11px;">600 (Ultra)</button>
-                <button type="button" class="btn btn-secondary btn-sm preset-dpi-btn" data-dpi="1000" style="padding:4px 8px; font-size:11px;">1000 (Máxima)</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-dpi-btn" data-dpi="240"
+                  style="padding:4px 8px; font-size:11px;">240 (Padrão)</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-dpi-btn" data-dpi="320"
+                  style="padding:4px 8px; font-size:11px;">320 (Média)</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-dpi-btn" data-dpi="440"
+                  style="padding:4px 8px; font-size:11px;">440 (Alta)</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-dpi-btn" data-dpi="600"
+                  style="padding:4px 8px; font-size:11px;">600 (Ultra)</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-dpi-btn" data-dpi="1000"
+                  style="padding:4px 8px; font-size:11px;">1000 (Máxima)</button>
               </div>
             </div>
 
             <div style="display:flex; gap:8px; align-items:center;">
               <button class="btn btn-primary btn-sm" id="btn-apply-custom-dpi">⚡ Aplicar DPI</button>
               <button class="btn btn-secondary btn-sm" id="btn-reset-custom-dpi">🔄 Resetar Padrão</button>
-              <span class="adb-applied-badge" id="badge-adb-dpi" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Aplicado</span>
+              <span class="adb-applied-badge" id="badge-adb-dpi"
+                style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Aplicado</span>
             </div>
           </div>
 
           <!-- Sensibilidade Estilo iPhone & Android Real -->
-          <div class="card" style="border: 1px solid rgba(56, 189, 248, 0.4); background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(0,0,0,0.4));">
+          <div class="card"
+            style="border: 1px solid rgba(56, 189, 248, 0.4); background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(0,0,0,0.4));">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
               <div>
-                <h3 style="margin:0 0 4px 0; color: #38bdf8;">📱 Sensibilidade Estilo iPhone / Android Real (iOS Touch Engine)</h3>
-                <p style="color:#94a3b8; font-size:12px; margin:0;">Injeta amostragem de toque de 300Hz (estilo iPhone 15 Pro), remove o Touch Slop do Android (arrasto instantâneo sem delay) e configura a DPI perfeita para subir capa.</p>
+                <h3 style="margin:0 0 4px 0; color: #38bdf8;">📱 Sensibilidade Estilo iPhone / Android Real (iOS Touch
+                  Engine)</h3>
+                <p style="color:#94a3b8; font-size:12px; margin:0;">Injeta amostragem de toque de 300Hz (estilo iPhone
+                  15 Pro), remove o Touch Slop do Android (arrasto instantâneo sem delay) e configura a DPI perfeita
+                  para subir capa.</p>
               </div>
               <span class="badge" style="background:#0284c7; color:#fff; font-weight:800;">iOS SENSITIVITY</span>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-top: 14px;">
-              <button class="btn btn-sm preset-touch-btn" data-profile="iphone-15-pro" style="background: linear-gradient(135deg, #0ea5e9, #0284c7); color: #fff; font-weight: 700; padding: 10px; border: none;">🍏 iPhone 15 Pro (Suave / Mira Grudada - 300Hz | 440 DPI)</button>
-              <button class="btn btn-sm preset-touch-btn" data-profile="rog-phone-8" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; font-weight: 700; padding: 10px; border: none;">⚡ ASUS ROG 8 (Ultra Rápida / Giro 360° - 360Hz | 600 DPI)</button>
-              <button class="btn btn-sm preset-touch-btn" data-profile="galaxy-s24" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; font-weight: 700; padding: 10px; border: none;">📱 Galaxy S24 Ultra (Precisão Cirúrgica 2x/4x - 240Hz | 480 DPI)</button>
-              <button class="btn btn-sm preset-touch-btn" data-profile="black-shark" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 700; padding: 10px; border: none;">🦈 Xiaomi Black Shark (One-Tap Desert/M1014 - 320Hz | 520 DPI)</button>
+            <div
+              style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-top: 14px;">
+              <button class="btn btn-sm preset-touch-btn" data-profile="iphone-15-pro"
+                style="background: linear-gradient(135deg, #0ea5e9, #0284c7); color: #fff; font-weight: 700; padding: 10px; border: none;">🍏
+                iPhone 15 Pro (Suave / Mira Grudada - 300Hz | 440 DPI)</button>
+              <button class="btn btn-sm preset-touch-btn" data-profile="rog-phone-8"
+                style="background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; font-weight: 700; padding: 10px; border: none;">⚡
+                ASUS ROG 8 (Ultra Rápida / Giro 360° - 360Hz | 600 DPI)</button>
+              <button class="btn btn-sm preset-touch-btn" data-profile="galaxy-s24"
+                style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; font-weight: 700; padding: 10px; border: none;">📱
+                Galaxy S24 Ultra (Precisão Cirúrgica 2x/4x - 240Hz | 480 DPI)</button>
+              <button class="btn btn-sm preset-touch-btn" data-profile="black-shark"
+                style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 700; padding: 10px; border: none;">🦈
+                Xiaomi Black Shark (One-Tap Desert/M1014 - 320Hz | 520 DPI)</button>
             </div>
-            <div id="status-touch-engine" style="margin-top: 10px; font-size: 0.82rem; color: #38bdf8; font-weight: 600; display: none;"></div>
+            <div id="status-touch-engine"
+              style="margin-top: 10px; font-size: 0.82rem; color: #38bdf8; font-weight: 600; display: none;"></div>
           </div>
 
           <div class="card" style="border-color: rgba(239,68,68,0.3);">
             <h3>🗑️ Desinstalar Apps Inúteis</h3>
-            <p style="color:#94a3b8; font-size:12px; margin-bottom:6px;">Remove bloatware do emulador — mantém só o essencial para instalar e jogar Free Fire.</p>
-            <p style="color:#ef4444; font-size:11px; margin-bottom:12px;">⚠️ Marque os aplicativos que deseja remover ou desativar do emulador:</p>
+            <p style="color:#94a3b8; font-size:12px; margin-bottom:6px;">Remove bloatware do emulador — mantém só o
+              essencial para instalar e jogar Free Fire.</p>
+            <p style="color:#ef4444; font-size:11px; margin-bottom:12px;">⚠️ Marque os aplicativos que deseja remover ou
+              desativar do emulador:</p>
             <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
-              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox" id="uninst-ads" checked> 🚫 Ads & Promos do Emulador</label>
-              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox" id="uninst-google-search" checked> 🔍 Barra de Busca / Google App</label>
-              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox" id="uninst-browser" checked> 🌐 Chrome & Navegadores</label>
-              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox" id="uninst-files" checked> 📁 Gerenciador de Arquivos</label>
-              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox" id="uninst-telephony" checked> 📞 Telefonia / Contatos</label>
-              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox" id="uninst-email" checked> ✉️ Email & Calendário</label>
-              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox" id="uninst-media" checked> 🎬 YouTube, Maps & Música</label>
-              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox" id="uninst-docs" checked> 🎮 Drive & Play Games</label>
-              <label style="display:flex; align-items:center; gap:4px; font-size:12px; color: #fca5a5;"><input type="checkbox" id="uninst-playstore"> 🛒 Google Play Store & Services (Desativa Login Google)</label>
+              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox"
+                  id="uninst-ads" checked> 🚫 Ads & Promos do Emulador</label>
+              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox"
+                  id="uninst-google-search" checked> 🔍 Barra de Busca / Google App</label>
+              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox"
+                  id="uninst-browser" checked> 🌐 Chrome & Navegadores</label>
+              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox"
+                  id="uninst-files" checked> 📁 Gerenciador de Arquivos</label>
+              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox"
+                  id="uninst-telephony" checked> 📞 Telefonia / Contatos</label>
+              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox"
+                  id="uninst-email" checked> ✉️ Email & Calendário</label>
+              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox"
+                  id="uninst-media" checked> 🎬 YouTube, Maps & Música</label>
+              <label style="display:flex; align-items:center; gap:4px; font-size:12px;"><input type="checkbox"
+                  id="uninst-docs" checked> 🎮 Drive & Play Games</label>
+              <label style="display:flex; align-items:center; gap:4px; font-size:12px; color: #fca5a5;"><input
+                  type="checkbox" id="uninst-playstore"> 🛒 Google Play Store & Services (Desativa Login Google)</label>
             </div>
             <button class="btn btn-danger btn-sm" id="btn-adb-uninstall">🗑️ Desinstalar Selecionados</button>
-            <span class="adb-applied-badge" id="badge-adb-uninstall" style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Concluído</span>
+            <span class="adb-applied-badge" id="badge-adb-uninstall"
+              style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ Concluído</span>
           </div>
 
         </section>
@@ -1303,23 +1298,31 @@
 
           <!-- Update Card -->
           <div class="card" style="border: 1px solid rgba(99, 202, 183, 0.3);">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
               <div>
                 <h3 style="margin: 0 0 4px 0;">🔄 Atualizações do Sistema</h3>
-                <p style="margin: 0; font-size: 12px; color: #94a3b8;">Verifique e receba novas versões e otimizações automaticamente</p>
+                <p style="margin: 0; font-size: 12px; color: #94a3b8;">Verifique e receba novas versões e otimizações
+                  automaticamente</p>
               </div>
               <span id="app-version-badge" class="badge badge-success">v1.0.2</span>
             </div>
 
-            <div style="margin-top: 14px; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 14px; border: 1px solid var(--border-color);">
-              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div
+              style="margin-top: 14px; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 14px; border: 1px solid var(--border-color);">
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                 <div>
-                  <div id="update-status-title" style="font-weight: 700; font-size: 13px; color: #fff;">Status da Versão</div>
-                  <div id="update-status-desc" style="font-size: 12px; color: #94a3b8; margin-top: 2px;">Você está usando a versão mais recente do Loord Optimizer.</div>
+                  <div id="update-status-title" style="font-weight: 700; font-size: 13px; color: #fff;">Status da Versão
+                  </div>
+                  <div id="update-status-desc" style="font-size: 12px; color: #94a3b8; margin-top: 2px;">Você está
+                    usando a versão mais recente do Loord Optimizer.</div>
                 </div>
                 <div style="display: flex; gap: 8px;">
                   <button class="btn btn-primary btn-sm" id="btn-check-update">🔍 Verificar Agora</button>
-                  <button class="btn btn-sm" id="btn-install-now" style="display: none; background: #10b981; color: #fff; font-weight: 700;">⚡ Instalar Atualização</button>
+                  <button class="btn btn-sm" id="btn-install-now"
+                    style="display: none; background: #10b981; color: #fff; font-weight: 700;">⚡ Instalar
+                    Atualização</button>
                 </div>
               </div>
             </div>
@@ -1327,8 +1330,9 @@
 
           <div class="card">
             <h3>Backup do Registro</h3>
-            <p>Se você encontrar qualquer instabilidade no mouse ou teclado, reverta todo o registro para o estado padrão original.</p>
-            
+            <p>Se você encontrar qualquer instabilidade no mouse ou teclado, reverta todo o registro para o estado
+              padrão original.</p>
+
             <div class="restore-panel" style="margin-top: 16px;">
               <div class="restore-status" style="margin-bottom: 12px;">
                 <span>Status do Backup:</span>
@@ -1342,10 +1346,12 @@
           </div>
 
           <div class="card" style="border: 1px solid rgba(168, 85, 247, 0.3);">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
               <div>
                 <h3 style="margin: 0 0 4px 0; color: #c084fc;">💾 Salvar & Carregar Meu Perfil (Backup Geral)</h3>
-                <p style="margin: 0; font-size: 12px; color: #94a3b8;">Exporte sua sensibilidade e configurações completas para um arquivo .json e restaure quando quiser.</p>
+                <p style="margin: 0; font-size: 12px; color: #94a3b8;">Exporte sua sensibilidade e configurações
+                  completas para um arquivo .json e restaure quando quiser.</p>
               </div>
               <span class="badge" style="background:#a855f7; color:#fff; font-weight:800;">PROFILE</span>
             </div>
@@ -1353,7 +1359,8 @@
             <div style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap;">
               <button class="btn btn-secondary btn-sm" id="btn-export-profile">📤 Salvar Meu Perfil (.json)</button>
               <button class="btn btn-outline btn-sm" id="btn-import-profile">📥 Carregar Perfil Salvo</button>
-              <span class="adb-applied-badge" id="badge-profile-action" style="display:none; color:#28c385; font-size:12px;">✔ Perfil Carregado!</span>
+              <span class="adb-applied-badge" id="badge-profile-action"
+                style="display:none; color:#28c385; font-size:12px;">✔ Perfil Carregado!</span>
             </div>
           </div>
 
@@ -1379,130 +1386,185 @@
         <!-- TAB: PC FRACO / 1ª GERAÇÃO (ULTRA FPS) -->
         <section id="tab-pc-fraco" class="tab-content">
           <h2>PC Fraco / 1ª Geração (Ultra FPS)</h2>
-          <p class="subtitle">Otimizações extremas de recursos, debloat do Windows, remoção de bloatwares e ajuste de emulador para PCs antigos e sem placa de vídeo.</p>
+          <p class="subtitle">Otimizações extremas de recursos, debloat do Windows, remoção de bloatwares e ajuste de
+            emulador para PCs antigos e sem placa de vídeo.</p>
 
           <!-- ALERTA DE USO EXCLUSIVO PARA PC FRACO -->
-          <div class="card" style="background: rgba(220, 38, 38, 0.12); border: 1px solid rgba(239, 68, 68, 0.45); padding: 14px 18px; margin-bottom: 16px; border-radius: 8px;">
+          <div class="card"
+            style="background: rgba(220, 38, 38, 0.12); border: 1px solid rgba(239, 68, 68, 0.45); padding: 14px 18px; margin-bottom: 16px; border-radius: 8px;">
             <div style="display: flex; align-items: center; gap: 12px;">
               <span style="font-size: 1.6rem;">⚠️</span>
               <div>
-                <strong style="color: #f87171; font-size: 0.92rem; display: block; letter-spacing: 0.5px;">AVISO IMPORTANTE: USE APENAS SE SEU PC FOR MUITO FRACO!</strong>
+                <strong style="color: #f87171; font-size: 0.92rem; display: block; letter-spacing: 0.5px;">AVISO
+                  IMPORTANTE: USE APENAS SE SEU PC FOR MUITO FRACO!</strong>
                 <span style="color: #cbd5e1; font-size: 0.82rem; line-height: 1.4;">
-                  As opções desta aba aplicam reduções extremas de gráficos, desativam transparências e serviços de fundo do Windows para extrair o máximo de FPS em computadores antigos (Core i3 antigo, Celeron, Dual Core, 4GB RAM ou sem placa de vídeo). <strong>Se o seu computador já for intermediário ou forte, você NÃO precisa usar esta aba!</strong>
+                  As opções desta aba aplicam reduções extremas de gráficos, desativam transparências e serviços de
+                  fundo do Windows para extrair o máximo de FPS em computadores antigos (Core i3 antigo, Celeron, Dual
+                  Core, 4GB RAM ou sem placa de vídeo). <strong>Se o seu computador já for intermediário ou forte, você
+                    NÃO precisa usar esta aba!</strong>
                 </span>
               </div>
             </div>
           </div>
 
           <!-- Master Potato Mode Banner -->
-          <div class="card" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(239, 68, 68, 0.1)); border: 1px solid rgba(245, 158, 11, 0.4); padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+          <div class="card"
+            style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(239, 68, 68, 0.1)); border: 1px solid rgba(245, 158, 11, 0.4); padding: 20px;">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
               <div>
-                <div style="font-weight: 800; font-size: 1.15rem; color: #fbbf24; display: flex; align-items: center; gap: 8px;">
+                <div
+                  style="font-weight: 800; font-size: 1.15rem; color: #fbbf24; display: flex; align-items: center; gap: 8px;">
                   <span>🥔 MODO BATATA TURBO (1-Click Otimização Extrema)</span>
                 </div>
                 <div style="font-size: 0.85rem; color: #e2e8f0; margin-top: 4px;">
-                  Desativa transparências/efeitos visuais pesados, desliga serviços de 100% de disco/CPU, desativa telemetria, ativa plano de energia máxima para CPUs de 1ª/2ª/3ª geração e zera o input lag.
+                  Desativa transparências/efeitos visuais pesados, desliga serviços de 100% de disco/CPU, desativa
+                  telemetria, ativa plano de energia máxima para CPUs de 1ª/2ª/3ª geração e zera o input lag.
                 </div>
               </div>
-              <button class="btn btn-primary" id="btn-master-pc-fraco" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; font-weight: 800; font-size: 0.95rem; padding: 12px 24px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);">🚀 Ativar Modo Batata Turbo</button>
+              <button class="btn btn-primary" id="btn-master-pc-fraco"
+                style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; font-weight: 800; font-size: 0.95rem; padding: 12px 24px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);">🚀
+                Ativar Modo Batata Turbo</button>
             </div>
-            <div id="status-pc-fraco-master" style="margin-top: 10px; font-size: 0.82rem; color: #10b981; font-weight: 600; display: none;"></div>
+            <div id="status-pc-fraco-master"
+              style="margin-top: 10px; font-size: 0.82rem; color: #10b981; font-weight: 600; display: none;"></div>
           </div>
 
           <!-- Windows Lite / ISO Reformulator Card -->
-          <div class="card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.1)); border: 1px solid rgba(168, 85, 247, 0.4); padding: 20px; margin-top: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+          <div class="card"
+            style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.1)); border: 1px solid rgba(168, 85, 247, 0.4); padding: 20px; margin-top: 16px;">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
               <div>
-                <div style="font-weight: 800; font-size: 1.15rem; color: #c084fc; display: flex; align-items: center; gap: 8px;">
+                <div
+                  style="font-weight: 800; font-size: 1.15rem; color: #c084fc; display: flex; align-items: center; gap: 8px;">
                   <span>⚡ Transformar em Windows Lite Gamer (Sem Formatar)</span>
-                  <span class="badge" style="background: #a855f7; color: #fff; font-size: 11px;">ESTILO REVIOS / GHOST SPECTRE</span>
+                  <span class="badge" style="background: #a855f7; color: #fff; font-size: 11px;">ESTILO REVIOS / GHOST
+                    SPECTRE</span>
                 </div>
                 <div style="font-size: 0.85rem; color: #e2e8f0; margin-top: 4px;">
-                  Reformata as configurações internas do seu Windows atual para o padrão de uma ISO Lite: Mantém o kernel 100% na memória RAM (<code style="color:#a5b4fc;">DisablePagingExecutive</code>), remove 100% dos bloatwares, agrupa svchosts, desativa telemetrias pesadas, zera a latência de DWM e prioriza jogos em tempo real!
+                  Reformata as configurações internas do seu Windows atual para o padrão de uma ISO Lite: Mantém o
+                  kernel 100% na memória RAM (<code style="color:#a5b4fc;">DisablePagingExecutive</code>), remove 100%
+                  dos bloatwares, agrupa svchosts, desativa telemetrias pesadas, zera a latência de DWM e prioriza jogos
+                  em tempo real!
                 </div>
                 <div style="font-size: 0.78rem; color: #38bdf8; margin-top: 6px; font-weight: 600;">
                   ✨ 100% Compatível com BlueStacks / MSI — Conexão e perfis de telefone mantidos intactos.
                 </div>
               </div>
-              <button class="btn btn-primary" id="btn-transform-windows-lite" style="background: linear-gradient(135deg, #8b5cf6, #6366f1); border: none; font-weight: 800; font-size: 0.95rem; padding: 12px 22px; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);">⚡ Aplicar Transformação Windows Lite</button>
+              <button class="btn btn-primary" id="btn-transform-windows-lite"
+                style="background: linear-gradient(135deg, #8b5cf6, #6366f1); border: none; font-weight: 800; font-size: 0.95rem; padding: 12px 22px; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);">⚡
+                Aplicar Transformação Windows Lite</button>
             </div>
-            <div id="status-windows-lite" style="margin-top: 10px; font-size: 0.82rem; color: #10b981; font-weight: 600; display: none;"></div>
+            <div id="status-windows-lite"
+              style="margin-top: 10px; font-size: 0.82rem; color: #10b981; font-weight: 600; display: none;"></div>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 16px;">
+          <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 16px;">
             <!-- Limpeza Profunda de Disco -->
             <div class="card" style="border: 1px solid rgba(59, 130, 246, 0.3);">
-              <div style="font-weight: 700; color: #60a5fa; font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <div
+                style="font-weight: 700; color: #60a5fa; font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
                 <span>🧹 Limpeza Profunda de Disco & Lixo do Windows</span>
               </div>
               <p style="font-size: 0.8rem; color: var(--text-gray); margin-bottom: 12px;">
-                Limpa arquivos temporários (%TEMP%, Prefetch, Windows SoftwareDistribution, Shaders DirectX da Intel/Nvidia/AMD e logs do BlueStacks/MSI) liberando gigabytes de espaço e acelerando o carregamento do jogo.
+                Limpa arquivos temporários (%TEMP%, Prefetch, Windows SoftwareDistribution, Shaders DirectX da
+                Intel/Nvidia/AMD e logs do BlueStacks/MSI) liberando gigabytes de espaço e acelerando o carregamento do
+                jogo.
               </p>
-              <button class="btn btn-primary btn-sm" id="btn-clean-deep-disk" style="width: 100%;">🧹 Executar Limpeza Profunda</button>
-              <div id="status-deep-disk" style="margin-top: 8px; font-size: 0.8rem; color: #10b981; display: none;"></div>
+              <button class="btn btn-primary btn-sm" id="btn-clean-deep-disk" style="width: 100%;">🧹 Executar Limpeza
+                Profunda</button>
+              <div id="status-deep-disk" style="margin-top: 8px; font-size: 0.8rem; color: #10b981; display: none;">
+              </div>
             </div>
 
             <!-- Desinstalar Bloatwares do Windows -->
             <div class="card" style="border: 1px solid rgba(239, 68, 68, 0.3);">
-              <div style="font-weight: 700; color: #f87171; font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <div
+                style="font-weight: 700; color: #f87171; font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
                 <span>🗑️ Desinstalar Bloatware & Apps Inúteis do Windows</span>
               </div>
               <p style="font-size: 0.8rem; color: var(--text-gray); margin-bottom: 12px;">
-                Remove aplicativos nativos do Windows que rodam em segundo plano e consomem RAM/CPU (Xbox Apps, Clima, Notícias, Cortana, Mapas, Gravador de Voz, Solitaire, YourPhone).
+                Remove aplicativos nativos do Windows que rodam em segundo plano e consomem RAM/CPU (Xbox Apps, Clima,
+                Notícias, Cortana, Mapas, Gravador de Voz, Solitaire, YourPhone).
               </p>
-              <button class="btn btn-danger btn-sm" id="btn-remove-bloatware" style="width: 100%;">🗑️ Remover Apps Inúteis (AppX)</button>
-              <div id="status-bloatware" style="margin-top: 8px; font-size: 0.8rem; color: #10b981; display: none;"></div>
+              <button class="btn btn-danger btn-sm" id="btn-remove-bloatware" style="width: 100%;">🗑️ Remover Apps
+                Inúteis (AppX)</button>
+              <div id="status-bloatware" style="margin-top: 8px; font-size: 0.8rem; color: #10b981; display: none;">
+              </div>
             </div>
 
             <!-- Desativar Windows Defender Permanentemente -->
             <div class="card" style="border: 1px solid rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.03);">
-              <div style="font-weight: 700; color: #fbbf24; font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <div
+                style="font-weight: 700; color: #fbbf24; font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
                 <span>🛡️ Desativar Windows Defender (Liberar 100% RAM & CPU)</span>
               </div>
               <p style="font-size: 0.8rem; color: var(--text-gray); margin-bottom: 12px;">
-                Desativa permanentemente o Windows Defender, o SmartScreen e a Proteção em Tempo Real (Antimalware Service Executable) para evitar quedas bruscas de FPS durante o jogo.
+                Desativa permanentemente o Windows Defender, o SmartScreen e a Proteção em Tempo Real (Antimalware
+                Service Executable) para evitar quedas bruscas de FPS durante o jogo.
               </p>
-              <button class="btn btn-sm" id="btn-disable-defender" style="width: 100%; background: #d97706; color: #fff; font-weight: 700;">🛡️ Desativar Defender Permanentemente</button>
-              <div id="status-defender" style="margin-top: 8px; font-size: 0.8rem; color: #10b981; display: none;"></div>
+              <button class="btn btn-sm" id="btn-disable-defender"
+                style="width: 100%; background: #d97706; color: #fff; font-weight: 700;">🛡️ Desativar Defender
+                Permanentemente</button>
+              <div id="status-defender" style="margin-top: 8px; font-size: 0.8rem; color: #10b981; display: none;">
+              </div>
             </div>
 
             <!-- Memória Virtual Fixa (Pagefile) -->
             <div class="card" style="border: 1px solid rgba(16, 185, 129, 0.3);">
-              <div style="font-weight: 700; color: #34d399; font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <div
+                style="font-weight: 700; color: #34d399; font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
                 <span>🧠 Fixar Memória Virtual (Evitar Queda de FPS e Tela Azul)</span>
               </div>
               <p style="font-size: 0.8rem; color: var(--text-gray); margin-bottom: 12px;">
-                Fixa o arquivo de paginação (Pagefile) em 6GB no disco C:. Impede que o Windows redimensione a memória virtual durante a partida, evitando congelamentos do emulador.
+                Fixa o arquivo de paginação (Pagefile) em 6GB no disco C:. Impede que o Windows redimensione a memória
+                virtual durante a partida, evitando congelamentos do emulador.
               </p>
-              <button class="btn btn-outline btn-sm" id="btn-set-pagefile" style="width: 100%; border-color: #10b981; color: #10b981;">⚡ Fixar Memória Virtual em 6GB</button>
-              <div id="status-pagefile" style="margin-top: 8px; font-size: 0.8rem; color: #10b981; display: none;"></div>
+              <button class="btn btn-outline btn-sm" id="btn-set-pagefile"
+                style="width: 100%; border-color: #10b981; color: #10b981;">⚡ Fixar Memória Virtual em 6GB</button>
+              <div id="status-pagefile" style="margin-top: 8px; font-size: 0.8rem; color: #10b981; display: none;">
+              </div>
             </div>
 
             <!-- Predefinições de Emulador para PC Fraco -->
             <div class="card" style="border: 1px solid rgba(168, 85, 247, 0.3);">
-              <div style="font-weight: 700; color: #c084fc; font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <div
+                style="font-weight: 700; color: #c084fc; font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
                 <span>🎮 Configuração Pronta do Emulador (PC Fraco)</span>
               </div>
               <p style="font-size: 0.8rem; color: var(--text-gray); margin-bottom: 10px;">
                 Aplica a melhor combinação de Resolução, DPI, Núcleos de CPU e RAM no seu BlueStacks / MSI:
               </p>
               <div style="display: flex; gap: 8px; flex-direction: column;">
-                <button class="btn btn-sm" id="btn-preset-potato" style="background: #e11d48; color: #fff; font-weight: 700;">🥔 Perfil Ultra Batata (800x600 | 160 DPI | 2 CPU | 1.5GB RAM)</button>
-                <button class="btn btn-sm" id="btn-preset-smooth" style="background: #2563eb; color: #fff; font-weight: 700;">⚡ Perfil 540p Equilibrado (960x540 | 240 DPI | 2 CPU | 2GB RAM)</button>
-                <button class="btn btn-sm" id="btn-preset-720p" style="background: #7c3aed; color: #fff; font-weight: 700;">🎮 Perfil 720p Suave (1280x720 | 240 DPI | 2 CPU | 2GB RAM)</button>
+                <button class="btn btn-sm" id="btn-preset-potato"
+                  style="background: #e11d48; color: #fff; font-weight: 700;">🥔 Perfil Ultra Batata (800x600 | 160 DPI
+                  | 2 CPU | 1.5GB RAM)</button>
+                <button class="btn btn-sm" id="btn-preset-smooth"
+                  style="background: #2563eb; color: #fff; font-weight: 700;">⚡ Perfil 540p Equilibrado (960x540 | 240
+                  DPI | 2 CPU | 2GB RAM)</button>
+                <button class="btn btn-sm" id="btn-preset-720p"
+                  style="background: #7c3aed; color: #fff; font-weight: 700;">🎮 Perfil 720p Suave (1280x720 | 240 DPI |
+                  2 CPU | 2GB RAM)</button>
               </div>
-              <div id="status-emu-preset" style="margin-top: 8px; font-size: 0.8rem; color: #10b981; display: none;"></div>
+              <div id="status-emu-preset" style="margin-top: 8px; font-size: 0.8rem; color: #10b981; display: none;">
+              </div>
             </div>
           </div>
 
           <!-- Dicas e Versões Recomendadas -->
           <div class="card" style="margin-top: 16px; background: rgba(30, 41, 59, 0.5); border: 1px solid #334155;">
-            <h3 style="color: #38bdf8; margin-top: 0; font-size: 0.95rem;">💡 Dicas de Ouro para Jogar Free Fire em PC Antigo / Fraco</h3>
+            <h3 style="color: #38bdf8; margin-top: 0; font-size: 0.95rem;">💡 Dicas de Ouro para Jogar Free Fire em PC
+              Antigo / Fraco</h3>
             <ul style="font-size: 0.82rem; color: #cbd5e1; line-height: 1.6; margin: 0; padding-left: 20px;">
-              <li><strong>Versão de Emulador Recomendada:</strong> Para computadores com 4GB de RAM ou processadores Core 2 Duo / Core i3 de 1ª/2ª geração, use o <strong>MSI App Player 4.240.15.5318 (32-bit)</strong> ou <strong>BlueStacks 4.240 (32-bit)</strong>. Emuladores de 32-bit usam 50% menos memória RAM.</li>
-              <li><strong>Gráficos no Jogo:</strong> Dentro do Free Fire, coloque os gráficos no <strong>Suave</strong> e ative <strong>Alto FPS</strong>.</li>
-              <li><strong>Desative Pacotes de Expansão:</strong> Não baixe todos os pacotes de skin e mapas pesados no jogo; baixe apenas as roupas e armas que você usa.</li>
+              <li><strong>Versão de Emulador Recomendada:</strong> Para computadores com 4GB de RAM ou processadores
+                Core 2 Duo / Core i3 de 1ª/2ª geração, use o <strong>MSI App Player 4.240.15.5318 (32-bit)</strong> ou
+                <strong>BlueStacks 4.240 (32-bit)</strong>. Emuladores de 32-bit usam 50% menos memória RAM.</li>
+              <li><strong>Gráficos no Jogo:</strong> Dentro do Free Fire, coloque os gráficos no <strong>Suave</strong>
+                e ative <strong>Alto FPS</strong>.</li>
+              <li><strong>Desative Pacotes de Expansão:</strong> Não baixe todos os pacotes de skin e mapas pesados no
+                jogo; baixe apenas as roupas e armas que você usa.</li>
             </ul>
           </div>
         </section>
@@ -1522,7 +1584,8 @@
     <!-- Titlebar controls on Lock screen -->
     <div class="activation-topbar">
       <div class="activation-brand">
-        <span class="logo-white" style="font-size: 0.85rem; font-weight: 700; color: #88888b; letter-spacing: 0.5px;">Loord Optimizer</span>
+        <span class="logo-white"
+          style="font-size: 0.85rem; font-weight: 700; color: #88888b; letter-spacing: 0.5px;">Loord Optimizer</span>
       </div>
       <div class="window-controls">
         <div class="circle-btn btn-min" id="btn-lock-min" title="Minimizar"></div>
@@ -1536,8 +1599,9 @@
         <span class="lock-badge">🔒 SISTEMA BLOQUEADO</span>
       </div>
       <h2>Ativação Requerida</h2>
-      <p class="activation-desc">Este computador não possui uma licença ativa para o Loord Optimizer. Envie o UUID abaixo para o administrador para receber sua chave de ativação.</p>
-      
+      <p class="activation-desc">Este computador não possui uma licença ativa para o Loord Optimizer. Envie o UUID
+        abaixo para o administrador para receber sua chave de ativação.</p>
+
       <div class="uuid-container">
         <label>Seu UUID de Hardware:</label>
         <div class="uuid-row">
@@ -1552,63 +1616,44 @@
         <div id="activation-error" class="error-text" style="display: none;">❌ Chave inválida para esta máquina!</div>
       </div>
 
-      <button id="btn-activate" class="btn btn-primary" style="width: 100%; margin-top: 10px;">⚡ Ativar Loord Optimizer</button>
+      <button id="btn-activate" class="btn btn-primary" style="width: 100%; margin-top: 10px;">⚡ Ativar Loord
+        Optimizer</button>
     </div>
   </div>
 
-  
-  <!-- MODAL DE ATUALIZAÇÃO DISPONÍVEL (POP-UP) -->
-  <div id="update-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.82); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 99999; align-items: center; justify-content: center;">
-    <div style="background: linear-gradient(145deg, #131722, #0d1117); border: 2px solid #f59e0b; box-shadow: 0 0 40px rgba(245, 158, 11, 0.45); border-radius: 14px; max-width: 480px; width: 90%; padding: 24px; text-align: center; position: relative; animation: slideDownAlert 0.3s ease-out;">
-      <div style="font-size: 2.5rem; margin-bottom: 8px; animation: pulseUpdate 1.5s infinite;">🚀</div>
-      <h2 style="margin: 0 0 6px 0; color: #fbbf24; font-size: 1.25rem; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase;" id="modal-update-title">NOVA ATUALIZAÇÃO DISPONÍVEL!</h2>
-      <p style="color: #94a3b8; font-size: 0.82rem; margin: 0 0 16px 0;" id="modal-update-desc">Uma nova versão com melhorias de desempenho e sensibilidade está pronta para você.</p>
-
-      <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 8px; padding: 12px 14px; margin-bottom: 18px; text-align: left; font-size: 0.8rem;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #cbd5e1;">
-          <span>📌 Sua Versão: <b id="modal-curr-ver" style="color: #94a3b8;">v1.7.0</b></span>
-          <span>🔥 Nova Versão: <b id="modal-new-ver" style="color: #4ade80;">v1.7.1</b></span>
-        </div>
-        <div style="border-top: 1px dashed rgba(255, 255, 255, 0.1); padding-top: 8px; color: #fde68a; font-size: 0.76rem; line-height: 1.5;">
-          • 🧬 <b>Regedit Adaptativa & Detector de Remada</b><br>
-          • 🎯 <b>Otimizador de Pan & Engine (Anti-Pinar)</b><br>
-          • ⚡ <b>Melhorias de sensibilidade e estabilidade geral</b>
-        </div>
-      </div>
-
-      <div style="display: flex; flex-direction: column; gap: 8px;">
-        <button id="btn-modal-update-download" style="width: 100%; background: linear-gradient(90deg, #f59e0b, #ef4444); color: #fff; font-size: 0.92rem; font-weight: 900; padding: 12px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(239, 68, 68, 0.4);">
-          ⚡ BAIXAR &amp; ATUALIZAR AGORA
-        </button>
-        <button id="btn-modal-update-ok" style="width: 100%; background: rgba(255, 255, 255, 0.06); color: #94a3b8; font-size: 0.82rem; font-weight: 700; padding: 9px; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; cursor: pointer; transition: all 0.2s;">
-          👍 OK, LEMBRAR MAIS TARDE
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL VIP DE PROGRESSO & SUCESSO DA REGEDIT ADAPTATIVA -->
-  <div id="regedit-progress-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 999999; align-items: center; justify-content: center;">
-    <div style="background: linear-gradient(145deg, #131722, #0d1117); border: 2px solid #22c55e; box-shadow: 0 0 45px rgba(34, 197, 94, 0.4); border-radius: 14px; max-width: 500px; width: 92%; padding: 26px; text-align: center; position: relative; animation: slideDownAlert 0.3s ease-out;" id="regedit-modal-card">
-      <div style="font-size: 2.8rem; margin-bottom: 8px;" id="regedit-modal-icon">⚙️</div>
-      <h2 style="margin: 0 0 6px 0; color: #4ade80; font-size: 1.25rem; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase;" id="regedit-modal-title">PREPARANDO CONFIGURAÇÃO NO SEU PC...</h2>
-      <p style="color: #94a3b8; font-size: 0.82rem; margin: 0 0 16px 0; line-height: 1.5;" id="regedit-modal-desc">Calibrando parâmetros de registro, velocidade de ponteiro e curva sem delay...</p>
-
-      <!-- Barra de progresso -->
-      <div id="regedit-modal-bar-container" style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-bottom: 16px;">
-        <div id="regedit-modal-bar" style="width: 20%; height: 100%; background: linear-gradient(90deg, #f59e0b, #22c55e); border-radius: 4px; transition: width 0.4s ease;"></div>
-      </div>
-
-      <!-- Resumo detalhado (aparece ao concluir) -->
-      <div id="regedit-modal-summary" style="display: none; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px; padding: 12px 14px; margin-bottom: 18px; text-align: left; font-size: 0.8rem; color: #cbd5e1; line-height: 1.6;">
-      </div>
-
-      <button id="btn-regedit-modal-close" style="display: none; width: 100%; background: linear-gradient(90deg, #22c55e, #16a34a); color: #fff; font-size: 0.92rem; font-weight: 900; padding: 12px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(34, 197, 94, 0.4);">
-        ⚡ OK, PRONTO PRA JOGAR!
-      </button>
-    </div>
-  </div>
 
   <script src="renderer.js"></script>
 </body>
+
+</html>
+<div style="font-size: 2.8rem; margin-bottom: 8px;" id="regedit-modal-icon">⚙️</div>
+<h2
+  style="margin: 0 0 6px 0; color: #4ade80; font-size: 1.25rem; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase;"
+  id="regedit-modal-title">PREPARANDO CONFIGURAÇÃO NO SEU PC...</h2>
+<p style="color: #94a3b8; font-size: 0.82rem; margin: 0 0 16px 0; line-height: 1.5;" id="regedit-modal-desc">Calibrando
+  parâmetros de registro, velocidade de ponteiro e curva sem delay...</p>
+
+<!-- Barra de progresso -->
+<div id="regedit-modal-bar-container"
+  style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-bottom: 16px;">
+  <div id="regedit-modal-bar"
+    style="width: 20%; height: 100%; background: linear-gradient(90deg, #f59e0b, #22c55e); border-radius: 4px; transition: width 0.4s ease;">
+  </div>
+</div>
+
+<!-- Resumo detalhado (aparece ao concluir) -->
+<div id="regedit-modal-summary"
+  style="display: none; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px; padding: 12px 14px; margin-bottom: 18px; text-align: left; font-size: 0.8rem; color: #cbd5e1; line-height: 1.6;">
+</div>
+
+<button id="btn-regedit-modal-close"
+  style="display: none; width: 100%; background: linear-gradient(90deg, #22c55e, #16a34a); color: #fff; font-size: 0.92rem; font-weight: 900; padding: 12px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(34, 197, 94, 0.4);">
+  ⚡ OK, PRONTO PRA JOGAR!
+</button>
+</div>
+</div>
+
+<script src="renderer.js"></script>
+</body>
+
 </html>

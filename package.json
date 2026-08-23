@@ -1,6 +1,6 @@
 {
   "name": "loord-optimizer",
-  "version": "1.7.6",
+  "version": "1.7.7",
   "author": "Loord Optimizer",
   "description": "Loord Optimizer - Otimizador Gamer de Sensibilidade e Emulador",
   "main": "main.js",
@@ -27,7 +27,10 @@
       "regis/encrypted_reg_data.js"
     ],
     "win": {
-      "target": ["nsis", "zip"],
+      "target": [
+        "nsis",
+        "zip"
+      ],
       "requestedExecutionLevel": "requireAdministrator"
     },
     "nsis": {
