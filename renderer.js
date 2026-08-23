@@ -1148,8 +1148,8 @@ if (window.api.onUpdateAvailable) {
 
       if (hasNewVersion) {
         activeDownloadUrl = res.downloadUrl;
-        if (cardStatusTitle) cardStatusTitle.innerHTML = `<span style="color:#fbbf24; font-weight:800;">🚀 Nova Versão v${latV} Disponível!</span>`;
-        if (cardStatusDesc) cardStatusDesc.innerHTML = `Sua versão atual: <b style="color:#f87171;">v${curV}</b> ➔ Nova versão disponível: <b style="color:#4ade80;">v${latV}</b>.<br>Clique no botão abaixo para baixar e atualizar automaticamente.`;
+        if (cardStatusTitle) cardStatusTitle.innerHTML = `🚀 <b>Nova Versão v${latV} Disponível!</b>`;
+        if (cardStatusDesc) cardStatusDesc.textContent = 'Clique abaixo para baixar e atualizar automaticamente estilo Play Store.';
 
         // Exibe banner dinâmico no topo
         const alertBanner = document.getElementById('global-update-alert');
@@ -1169,7 +1169,6 @@ if (window.api.onUpdateAvailable) {
 
           if (btnGlobalNow) {
             btnGlobalNow.onclick = () => {
-              // Redireciona para a aba de config e inicia download
               const tabConfigBtn = document.querySelector('[data-tab="tab-minha-config"]');
               if (tabConfigBtn) tabConfigBtn.click();
               if (btnInstallNow) btnInstallNow.click();
@@ -1184,27 +1183,28 @@ if (window.api.onUpdateAvailable) {
         }
 
         if (btnInstallNow) {
-          btnInstallNow.style.display = 'inline-block';
-          btnInstallNow.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
-          btnInstallNow.textContent = `⚡ Baixar e Atualizar para v${latV}`;
+          btnInstallNow.style.display = 'inline-flex';
+          btnInstallNow.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+          btnInstallNow.style.boxShadow = '0 0 15px rgba(16, 185, 129, 0.4)';
+          btnInstallNow.textContent = `⚡ Baixar e Atualizar (v${latV})`;
           btnInstallNow.onclick = async () => {
             btnInstallNow.disabled = true;
             btnInstallNow.textContent = '⏳ Conectando e baixando...';
-            if (cardStatusDesc) cardStatusDesc.textContent = `Baixando a versão v${latV} em segundo plano...`;
+            if (cardStatusDesc) cardStatusDesc.textContent = `Baixando a versão v${latV} em segundo plano estilo Play Store...`;
 
             const dlRes = await window.api.downloadUpdateProgress(activeDownloadUrl);
             if (dlRes && dlRes.success) {
               btnInstallNow.disabled = false;
               btnInstallNow.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-              btnInstallNow.style.boxShadow = '0 0 20px rgba(16, 185, 129, 0.5)';
+              btnInstallNow.style.boxShadow = '0 0 25px rgba(16, 185, 129, 0.8)';
               btnInstallNow.textContent = `🚀 Reiniciar e Atualizar Agora (v${latV})`;
               btnInstallNow.onclick = () => {
                 btnInstallNow.disabled = true;
                 btnInstallNow.textContent = 'Iniciando Atualização...';
                 window.api.installUpdateNow();
               };
-              if (cardStatusTitle) cardStatusTitle.innerHTML = `<span style="color:#4ade80; font-weight:800;">✅ Download Concluído (100%)!</span>`;
-              if (cardStatusDesc) cardStatusDesc.textContent = 'Clique no botão verde acima para reiniciar o painel atualizado.';
+              if (cardStatusTitle) cardStatusTitle.innerHTML = `✅ <b>Download Concluído (100%)!</b>`;
+              if (cardStatusDesc) cardStatusDesc.textContent = 'Clique no botão verde para reiniciar e aplicar a nova versão.';
             } else {
               btnInstallNow.disabled = false;
               btnInstallNow.textContent = 'Tentar Novamente';
@@ -1216,8 +1216,8 @@ if (window.api.onUpdateAvailable) {
         if (alertBanner) alertBanner.style.display = 'none';
 
         if (btnInstallNow) btnInstallNow.style.display = 'none';
-        if (cardStatusTitle) cardStatusTitle.innerHTML = `<span style="color:#4ade80; font-weight:800;">✔️ Você está na versão mais recente (v${curV})</span>`;
-        if (cardStatusDesc) cardStatusDesc.innerHTML = `Seu Loord Optimizer está 100% atualizado. Versão atual instalada: <b>v${curV}</b> | Última versão do GitHub: <b>v${latV}</b>.`;
+        if (cardStatusTitle) cardStatusTitle.innerHTML = `✔️ <b>Você está na versão mais recente</b>`;
+        if (cardStatusDesc) cardStatusDesc.textContent = `Seu Loord Optimizer está 100% atualizado (v${curV}).`;
       }
     } catch (e) {
       if (btnCheckUpdate) {

@@ -1549,25 +1549,28 @@
                 <p style="margin: 0; font-size: 12px; color: #94a3b8;">Verifique e receba novas versões e otimizações
                   automaticamente</p>
               </div>
-              <span id="app-version-badge" class="badge badge-success">v1.8.8</span>
+              <span id="app-version-badge" class="badge badge-success">v1.8.9</span>
             </div>
 
-            <div
-              style="margin-top: 14px; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 14px; border: 1px solid var(--border-color);">
-              <div
-                style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                <div>
-                  <div id="update-status-title" style="font-weight: 700; font-size: 13px; color: #fff;">Status da Versão
-                  </div>
-                  <div id="update-status-desc" style="font-size: 12px; color: #94a3b8; margin-top: 2px;">Você está
-                    usando a versão mais recente do Loord Optimizer.</div>
-                </div>
-                <div style="display: flex; gap: 8px;">
-                  <button class="btn btn-primary btn-sm" id="btn-check-update">🔍 Verificar Agora</button>
-                  <button class="btn btn-sm" id="btn-install-now"
-                    style="display: none; background: #10b981; color: #fff; font-weight: 700;">⚡ Instalar
-                    Atualização</button>
-                </div>
+            <!-- Update Card Content -->
+            <div style="margin-top: 14px; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 16px; border: 1px solid var(--border-color);">
+              <div id="update-status-title" style="font-weight: 800; font-size: 0.98rem; color: #fff; display: flex; align-items: center; gap: 6px;">
+                Status da Versão
+              </div>
+              <div id="update-status-desc" style="font-size: 0.82rem; color: #94a3b8; margin-top: 4px; line-height: 1.5;">
+                Conectando ao GitHub para verificar nova versão...
+              </div>
+
+              <!-- Botões de Ação -->
+              <div style="margin-top: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-sm" id="btn-check-update"
+                  style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: #fff; font-weight: 800; border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);">
+                  🔍 Verificar Agora
+                </button>
+                <button class="btn btn-sm" id="btn-install-now"
+                  style="display: none; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; font-weight: 800; border: none; border-radius: 6px; padding: 8px 18px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);">
+                  ⚡ Baixar e Atualizar
+                </button>
               </div>
             </div>
           </div>
