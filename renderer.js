@@ -1205,11 +1205,15 @@ if (window.api.onUpdateAvailable) {
               };
               if (cardStatusTitle) cardStatusTitle.innerHTML = `✅ <b>Download Concluído (100%)!</b>`;
               if (cardStatusDesc) cardStatusDesc.textContent = 'Clique no botão verde para reiniciar e aplicar a nova versão.';
+              alert(`✅ Download da v${latV} concluído com sucesso!\n\nClique em "Reiniciar e Atualizar Agora" para aplicar a atualização.`);
             } else {
               btnInstallNow.disabled = false;
               btnInstallNow.textContent = 'Tentar Novamente';
             }
           };
+          if (manual) {
+            alert(`🚀 Nova Atualização Encontrada!\n\n• Sua Versão Atual: v${curV}\n• Nova Versão Disponível: v${latV}\n\nClique no botão "Baixar e Atualizar" para instalar.`);
+          }
         }
       } else {
         const alertBanner = document.getElementById('global-update-alert');
@@ -1218,6 +1222,9 @@ if (window.api.onUpdateAvailable) {
         if (btnInstallNow) btnInstallNow.style.display = 'none';
         if (cardStatusTitle) cardStatusTitle.innerHTML = `✔️ <b>Você está na versão mais recente</b>`;
         if (cardStatusDesc) cardStatusDesc.textContent = `Seu Loord Optimizer está 100% atualizado (v${curV}).`;
+        if (manual) {
+          alert(`✔️ Seu Loord Optimizer já está na versão mais recente (v${curV})!\n\nVocê já possui todas as otimizações e melhorias instaladas.`);
+        }
       }
     } catch (e) {
       if (btnCheckUpdate) {
