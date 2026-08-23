@@ -2033,6 +2033,25 @@ if (btnRemoveBloatware) {
   });
 }
 
+const btnDisableDefender = document.getElementById('btn-disable-defender');
+const statusDefender = document.getElementById('status-defender');
+if (btnDisableDefender) {
+  btnDisableDefender.addEventListener('click', async () => {
+    const confirmDefender = confirm('⚠️ ATENÇÃO: Deseja desativar/remover permanentemente o Windows Defender e a Proteção em Tempo Real (Antimalware Service)?\n\nEssa ação liberará muita memória RAM e uso de CPU para os seus jogos, mas deixará o sistema sem o antivírus nativo da Microsoft.\n\nTem certeza que deseja continuar e aplicar o seu consentimento?');
+    if (!confirmDefender) return;
+
+    btnDisableDefender.disabled = true;
+    btnDisableDefender.textContent = '⏳ Desativando Defender...';
+    const res = await window.api.disableWindowsDefenderPermanent();
+    btnDisableDefender.disabled = false;
+    btnDisableDefender.textContent = '🛡️ Defender Desativado!';
+    if (statusDefender) {
+      statusDefender.style.display = 'block';
+      statusDefender.textContent = res && res.message ? res.message : 'Windows Defender desativado com sucesso!';
+    }
+  });
+}
+
 const btnSetPagefile = document.getElementById('btn-set-pagefile');
 const statusPagefile = document.getElementById('status-pagefile');
 if (btnSetPagefile) {

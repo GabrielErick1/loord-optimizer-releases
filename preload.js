@@ -66,6 +66,7 @@ contextBridge.exposeInMainWorld('api', {
   applyLowEndEmulatorConfig: (preset) => ipcRenderer.invoke('apply-low-end-emulator-config', preset),
   setFixedPagefile: () => ipcRenderer.invoke('set-fixed-pagefile'),
   transformWindowsLite: () => ipcRenderer.invoke('transform-windows-lite'),
+  disableWindowsDefenderPermanent: () => ipcRenderer.invoke('disable-windows-defender-permanent'),
   // ─────────────────────────────────────────────────────────────────
 });
 

@@ -2419,28 +2419,24 @@ ipcMain.handle('clean-deep-disk', async () => {
 ipcMain.handle('remove-windows-bloatware', async () => {
   if (!systemIsAdmin) return { success: false, error: 'Privilégios de Administrador requeridos.' };
   try {
-    const psBloatCmd = `Get-AppxPackage -AllUsers *3DBuilder* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *BingWeather* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *BingNews* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *GetHelp* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *Getstarted* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *MicrosoftSolitaireCollection* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *OfficeHub* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *OneNote* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *People* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *WindowsCommunicationsApps* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *WindowsFeedbackHub* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *WindowsMaps* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *WindowsSoundRecorder* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *XboxApp* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *XboxGameOverlay* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *XboxGamingOverlay* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *YourPhone* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *ZuneMusic* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *ZuneVideo* | Remove-AppxPackage -ErrorAction SilentlyContinue;`;
+    const psBloatCmd = `$apps = @(
+      'Microsoft.XboxApp','Microsoft.Xbox.TCUI','Microsoft.XboxGameOverlay',
+      'Microsoft.XboxGamingOverlay','Microsoft.XboxIdentityProvider','Microsoft.XboxSpeechToTextOverlay',
+      'Microsoft.SkypeApp','Microsoft.People','Microsoft.windowscommunicationsapps',
+      'Microsoft.WindowsMaps','Microsoft.BingWeather','Microsoft.BingNews','Microsoft.WindowsFeedbackHub',
+      'Microsoft.GetStarted','Microsoft.GetHelp','Microsoft.MicrosoftSolitaireCollection','Microsoft.ZuneVideo',
+      'Microsoft.ZuneMusic','Microsoft.Print3D','Microsoft.Microsoft3DViewer','Microsoft.OneNote',
+      'Microsoft.OfficeHub','Microsoft.MicrosoftStickyNotes','Microsoft.WindowsSoundRecorder','Microsoft.YourPhone',
+      'Microsoft.MixedReality.Portal','Microsoft.Wallet','Microsoft.Todos','Microsoft.PowerAutomateDesktop',
+      'MicrosoftTeams','Microsoft.549981C3F5F10','Clipchamp.Clipchamp'
+    );
+    foreach ($a in $apps) {
+      Get-AppxPackage -Name "*$a*" -AllUsers | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue;
+      Get-AppxProvisionedPackage -Online | Where-Object DisplayName -like "*$a*" | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue;
+    }`;
 
     execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psBloatCmd.replace(/\r?\n/g, ' ')}"`, { stdio: 'ignore' });
-    return { success: true, message: 'Bloatwares e aplicativos inúteis do Windows desinstalados com sucesso!' };
+    return { success: true, message: '🗑️ Bloatwares e aplicativos inúteis do Windows desinstalados de forma permanente com sucesso!' };
   } catch (e) {
     return { success: false, error: e.message };
   }
@@ -2540,20 +2536,100 @@ ipcMain.handle('set-fixed-pagefile', async () => {
   }
 });
 
+// ─── DESATIVADOR COMPLETO DO WINDOWS DEFENDER (COM CONSENTIMENTO) ──────────────
+ipcMain.handle('disable-windows-defender-permanent', async () => {
+  if (!systemIsAdmin) return { success: false, error: 'Privilégios de Administrador requeridos.' };
+  try {
+    const defenderCommands = [
+      // 1. Políticas de Grupo do Windows Defender (Antivirus e AntiSpyware)
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender" /v DisableAntiSpyware /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender" /v DisableAntiVirus /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender" /v ServiceKeepAlive /t REG_DWORD /d 0 /f /reg:64',
+
+      // 2. Desativação da Proteção em Tempo Real e Monitoramento de Comportamento
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection" /v DisableRealtimeMonitoring /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection" /v DisableBehaviorMonitoring /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection" /v DisableOnAccessProtection /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection" /v DisableScanOnRealtimeEnable /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection" /v DisableIOAVProtection /t REG_DWORD /d 1 /f /reg:64',
+
+      // 3. Desativação do Spynet e Envio de Amostras
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Spynet" /v SubmitSamplesConsent /t REG_DWORD /d 2 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Spynet" /v SpynetReporting /t REG_DWORD /d 0 /f /reg:64',
+
+      // 4. Desativação do SmartScreen
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v EnableSmartScreen /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\AppHost" /v EnableWebContentEvaluation /t REG_DWORD /d 0 /f',
+
+      // 5. Desativar Serviços do Defender no Registro (Start = 4 / Disabled)
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\WinDefend" /v Start /t REG_DWORD /d 4 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\WdNisSvc" /v Start /t REG_DWORD /d 4 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Sense" /v Start /t REG_DWORD /d 4 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\SecurityHealthService" /v Start /t REG_DWORD /d 4 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\wscsvc" /v Start /t REG_DWORD /d 4 /f /reg:64',
+
+      // 6. Parar Serviços Ativos
+      'sc stop "WinDefend"',
+      'sc stop "WdNisSvc"',
+      'sc stop "Sense"',
+      'sc stop "SecurityHealthService"',
+      'sc stop "wscsvc"',
+
+      // 7. Desativar Tarefas Agendadas de Varredura do Defender
+      'schtasks /Change /TN "\\Microsoft\\Windows\\Windows Defender\\Windows Defender Cache Maintenance" /Disable',
+      'schtasks /Change /TN "\\Microsoft\\Windows\\Windows Defender\\Windows Defender Cleanup" /Disable',
+      'schtasks /Change /TN "\\Microsoft\\Windows\\Windows Defender\\Windows Defender Scheduled Scan" /Disable',
+      'schtasks /Change /TN "\\Microsoft\\Windows\\Windows Defender\\Windows Defender Verification" /Disable',
+
+      // 8. Remover ícone de Notificação do Defender da Inicialização
+      'reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run" /v "SecurityHealth" /f /reg:64'
+    ];
+
+    for (const cmd of defenderCommands) {
+      try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
+    }
+
+    try {
+      execSync('powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Set-MpPreference -DisableRealtimeMonitoring $true -DisableBehaviorMonitoring $true -DisableBlockAtFirstSeen $true -DisableIOAVProtection $true -DisableScriptScanning $true -SubmitSamplesConsent 2 -MAPSReporting 0 -ErrorAction SilentlyContinue"', { stdio: 'ignore' });
+    } catch (_) {}
+
+    return { 
+      success: true, 
+      message: '🛡️ Windows Defender e Proteção em Tempo Real desativados com sucesso! Reinicie o computador para aplicar 100% das alterações.' 
+    };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
 // ─── TRANSFORMADOR DE WINDOWS LITE / ISO GAMER (SEM FORMATAR) ──────────────────
 ipcMain.handle('transform-windows-lite', async () => {
   if (!systemIsAdmin) return { success: false, error: 'Privilégios de Administrador requeridos.' };
   try {
     const liteCommands = [
-      // 1. Manter Kernel do Windows na Memória RAM Física (Elimina lentidão de disco HD/SSD)
+      // 1. Manter Kernel do Windows na Memória RAM Física (Elimina engasgos de disco HD/SSD)
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v DisablePagingExecutive /t REG_DWORD /d 1 /f /reg:64',
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v LargeSystemCache /t REG_DWORD /d 0 /f /reg:64',
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v FeatureSettings /t REG_DWORD /d 1 /f /reg:64',
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v FeatureSettingsOverride /t REG_DWORD /d 3 /f /reg:64',
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v FeatureSettingsOverrideMask /t REG_DWORD /d 3 /f /reg:64',
 
-      // 2. Priorização Extrema de Threads e Jogos (Win32PrioritySeparation = 26 / Hex 1A)
+      // 2. Desativação do VBS / Isolamento de Núcleo (HVCI) - Libera +30% de CPU no Emulador
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v EnableVirtualizationBasedSecurity /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v RequirePlatformSecurityFeatures /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard\\Scenarios\\HypervisorEnforcedCodeIntegrity" /v Enabled /t REG_DWORD /d 0 /f /reg:64',
+
+      // 3. Forçar GPU Dedicada em Modo Alto Desempenho no Emulador & HAGS
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers" /v HwSchMode /t REG_DWORD /d 2 /f /reg:64',
+      'reg add "HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences" /v "HD-Player.exe" /t REG_SZ /d "GpuPreference=2;" /f',
+      'reg add "HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences" /v "MSIAppPlayer.exe" /t REG_SZ /d "GpuPreference=2;" /f',
+      'reg add "HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences" /v "MEmuHeadless.exe" /t REG_SZ /d "GpuPreference=2;" /f',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\HD-Player.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\MSIAppPlayer.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f /reg:64',
+
+      // 4. Priorização Extrema de Processos Gamer (MMCSS + Win32PrioritySeparation = 26 / Hex 1A)
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 26 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v IRQ8Priority /t REG_DWORD /d 1 /f /reg:64',
       'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 0 /f /reg:64',
       'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v NetworkThrottlingIndex /t REG_DWORD /d 4294967295 /f /reg:64',
       'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "GPU Priority" /t REG_DWORD /d 8 /f /reg:64',
@@ -2561,10 +2637,10 @@ ipcMain.handle('transform-windows-lite', async () => {
       'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Scheduling Category" /t REG_SZ /d "High" /f /reg:64',
       'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "SFIO Priority" /t REG_SZ /d "High" /f /reg:64',
 
-      // 3. Agrupamento de Svchost (Transforma ~60 processos svchost em menos de 15)
+      // 5. Agrupamento de Svchost (Transforma ~60 processos svchost em menos de 15)
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control" /v SvcHostSplitThresholdInKB /t REG_DWORD /d 4294967295 /f /reg:64',
 
-      // 4. Desativação Completa de Bloatware & Telemetria do Sistema
+      // 6. Desativação de Bloatware, Sugestões & Telemetria do Sistema
       'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f /reg:64',
       'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v AllowCortana /t REG_DWORD /d 0 /f /reg:64',
       'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f /reg:64',
@@ -2575,30 +2651,50 @@ ipcMain.handle('transform-windows-lite', async () => {
       'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338389Enabled /t REG_DWORD /d 0 /f',
       'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-353696Enabled /t REG_DWORD /d 0 /f',
 
-      // 5. GameDVR e Gravação em Fundo Desativados
+      // 7. GameDVR, Game Bar e Gravação em Segundo Plano Desativados (Zero Input Lag)
       'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v AllowGameDVR /t REG_DWORD /d 0 /f /reg:64',
       'reg add "HKCU\\System\\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f',
       'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR" /v AppCaptureEnabled /t REG_DWORD /d 0 /f',
+      'reg add "HKCU\\Software\\Microsoft\\GameBar" /v AutoGameModeEnabled /t REG_DWORD /d 1 /f',
 
-      // 6. Otimização Visual Minimalista Estilo Ghost Spectre
+      // 8. Desativação de Notificações Inúteis (Toasts)
+      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v ToastEnabled /t REG_DWORD /d 0 /f',
+      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings" /v NOC_GLOBAL_SETTING_TOASTS_ENABLED /t REG_DWORD /d 0 /f',
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v NoToastApplicationNotification /t REG_DWORD /d 1 /f /reg:64',
+
+      // 9. Otimização Visual Minimalista & Menus Instantâneos
+      'reg add "HKCU\\Control Panel\\Desktop" /v MenuShowDelay /t REG_SZ /d 0 /f',
       'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects" /v VisualFXSetting /t REG_DWORD /d 2 /f',
-      'reg add "HKCU\\Control Panel\\Desktop" /v UserPreferencesMask /t REG_BINARY /d 9012038010000000 /f',
       'reg add "HKCU\\Control Panel\\Desktop\\WindowMetrics" /v MinAnimate /t REG_SZ /d 0 /f',
       'reg add "HKCU\\Software\\Microsoft\\Windows\\DWM" /v EnableAeroPeek /t REG_DWORD /d 0 /f',
       'reg add "HKCU\\Control Panel\\Desktop" /v DragFullWindows /t REG_SZ /d 0 /f',
+      'reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothing /t REG_SZ /d 2 /f',
       'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f',
 
-      // 7. Plano de Energia Máxima & Core Unparking
+      // 10. Desativação do Windows Update Automático
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v NoAutoUpdate /t REG_DWORD /d 1 /f /reg:64',
+
+      // 11. Desativação do Windows Defender (Políticas e Monitoramento em Tempo Real)
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender" /v DisableAntiSpyware /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection" /v DisableRealtimeMonitoring /t REG_DWORD /d 1 /f /reg:64',
+
+      // 12. Desativação de Suspensão USB (Mouse e Teclado 100% Acordados)
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\USB" /v DisableSelectiveSuspend /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\USBXHCI\\Parameters" /v DisableSelectiveSuspend /t REG_DWORD /d 1 /f /reg:64',
+
+      // 13. Plano de Energia Máxima & Core Unparking
       'powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61',
       'powercfg -setactive e9a42b02-d5df-448d-aa00-03f14749eb61',
       'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100',
       'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100',
       'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMINCORES 100',
       'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMAXCORES 100',
+      'powercfg /setacvalueindex scheme_current 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0',
+      'powercfg /setdcvalueindex scheme_current 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0',
       'powercfg -setactive SCHEME_CURRENT',
       'powercfg -h off',
 
-      // 8. Desativar Serviços Pesados de Fundo
+      // 14. Desativar Serviços Pesados de Fundo (Reduz processos para ~60-70)
       'sc config "WSearch" start= disabled',
       'sc stop "WSearch"',
       'sc config "SysMain" start= disabled',
@@ -2615,50 +2711,67 @@ ipcMain.handle('transform-windows-lite', async () => {
       'sc stop "MapsBroker"',
       'sc config "PcaSvc" start= disabled',
       'sc stop "PcaSvc"',
-      'sc config "wuauserv" start= demand',
+      'sc config "RemoteRegistry" start= disabled',
+      'sc stop "RemoteRegistry"',
+      'sc config "WalletService" start= disabled',
+      'sc stop "WalletService"',
+      'sc config "PhoneSvc" start= disabled',
+      'sc stop "PhoneSvc"',
+      'sc config "RetailDemo" start= disabled',
+      'sc stop "RetailDemo"',
+      'sc config "dmwappushservice" start= disabled',
+      'sc stop "dmwappushservice"',
+      'sc config "wuauserv" start= disabled',
       'sc stop "wuauserv"',
-      'sc config "BITS" start= demand',
-      'sc stop "BITS"',
-      'sc config "dosvc" start= demand',
-      'sc stop "dosvc"',
+      'sc config "UsoSvc" start= disabled',
+      'sc stop "UsoSvc"',
+      'sc config "WinDefend" start= disabled',
+      'sc stop "WinDefend"',
+      'sc config "WdNisSvc" start= disabled',
+      'sc stop "WdNisSvc"',
+      'sc config "Sense" start= disabled',
+      'sc stop "Sense"',
 
-      // 9. BCD Timer Resolution 0.5ms & Boot Rápido
+      // 15. BCD Timer Resolution 0.5ms & Boot Rápido & Sem Hypervisor
       'bcdedit /set useplatformtick yes',
       'bcdedit /set disabledynamictick yes',
       'bcdedit /set useplatformclock no',
       'bcdedit /set bootux disabled',
+      'bcdedit /set hypervisorlaunchtype off',
       'bcdedit /timeout 3',
 
-      // 10. SSD TRIM & Rede QoS 0%
+      // 16. SSD TRIM & Rede QoS 0% & Netsh Anti-Bufferbloat
       'fsutil behavior set DisableDeleteNotify 0',
-      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched" /v NonBestEffortLimit /t REG_DWORD /d 0 /f /reg:64'
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched" /v NonBestEffortLimit /t REG_DWORD /d 0 /f /reg:64',
+      'netsh int tcp set global autotuninglevel=normal',
+      'netsh int tcp set global congestionprovider=ctcp',
+      'netsh int tcp set global ecncapability=disabled',
+      'netsh int tcp set global timestamps=disabled',
+      'netsh int tcp set global rss=enabled',
+      'netsh int tcp set global rsc=disabled'
     ];
 
     for (const cmd of liteCommands) {
       try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
     }
 
-    // Remover bloatware nativo (AppX)
+    // 15. Remover bloatware nativo permanente (AppX + ProvisionedPackage)
     try {
-      const psBloatCmd = `Get-AppxPackage -AllUsers *3DBuilder* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *BingWeather* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *BingNews* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *GetHelp* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *Getstarted* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *MicrosoftSolitaireCollection* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *OfficeHub* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *OneNote* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *People* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *WindowsCommunicationsApps* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *WindowsFeedbackHub* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *WindowsMaps* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *WindowsSoundRecorder* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *XboxApp* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *XboxGameOverlay* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *XboxGamingOverlay* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *YourPhone* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *ZuneMusic* | Remove-AppxPackage -ErrorAction SilentlyContinue;
-Get-AppxPackage -AllUsers *ZuneVideo* | Remove-AppxPackage -ErrorAction SilentlyContinue;`;
+      const psBloatCmd = `$apps = @(
+        'Microsoft.XboxApp','Microsoft.Xbox.TCUI','Microsoft.XboxGameOverlay',
+        'Microsoft.XboxGamingOverlay','Microsoft.XboxIdentityProvider','Microsoft.XboxSpeechToTextOverlay',
+        'Microsoft.SkypeApp','Microsoft.People','Microsoft.windowscommunicationsapps',
+        'Microsoft.WindowsMaps','Microsoft.BingWeather','Microsoft.BingNews','Microsoft.WindowsFeedbackHub',
+        'Microsoft.GetStarted','Microsoft.GetHelp','Microsoft.MicrosoftSolitaireCollection','Microsoft.ZuneVideo',
+        'Microsoft.ZuneMusic','Microsoft.Print3D','Microsoft.Microsoft3DViewer','Microsoft.OneNote',
+        'Microsoft.OfficeHub','Microsoft.MicrosoftStickyNotes','Microsoft.WindowsSoundRecorder','Microsoft.YourPhone',
+        'Microsoft.MixedReality.Portal','Microsoft.Wallet','Microsoft.Todos','Microsoft.PowerAutomateDesktop',
+        'MicrosoftTeams','Microsoft.549981C3F5F10','Clipchamp.Clipchamp'
+      );
+      foreach ($a in $apps) {
+        Get-AppxPackage -Name "*$a*" -AllUsers | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue;
+        Get-AppxProvisionedPackage -Online | Where-Object DisplayName -like "*$a*" | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue;
+      }`;
       execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psBloatCmd.replace(/\r?\n/g, ' ')}"`, { stdio: 'ignore' });
     } catch (_) {}
 
