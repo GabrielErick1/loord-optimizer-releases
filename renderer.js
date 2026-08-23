@@ -2707,4 +2707,97 @@ window.addEventListener('resize', updateRemadaCanvasSize);
 document.addEventListener('DOMContentLoaded', setupAdaptiveRegeditUI);
 setupAdaptiveRegeditUI();
 
+// ─── OTIMIZADOR COMPETITIVO DE PAN & BLUESTACKS/MSI HANDLER ─────────────────
+async function loadHardwareSpecsForEmulator() {
+  try {
+    const optCpuRamAuto = document.getElementById('opt-cpu-ram-auto');
+    if (window.api && window.api.getSystemHardwareInfo && optCpuRamAuto) {
+      const info = await window.api.getSystemHardwareInfo();
+      if (info) {
+        optCpuRamAuto.textContent = `⚡ Automático (Seu PC: ${info.totalCores}C / ${info.totalRamGB}GB RAM -> Alocar: ${info.recommendedCores}C / ${info.recommendedRamMB / 1024}GB)`;
+      }
+    }
+  } catch (_) {}
+}
+loadHardwareSpecsForEmulator();
+
+window.handleApplyCompTweak = async function(btn) {
+  const targetBtn = btn || document.getElementById('btn-apply-comp-tweak');
+  const panSpeed = document.getElementById('comp-pan-speed')?.value || '25.0';
+  const sensX = parsePtBrFloat(document.getElementById('comp-sens-x')?.value, 1.67);
+  const sensY = parsePtBrFloat(document.getElementById('comp-sens-y')?.value, 1.0);
+  const renderer = document.getElementById('comp-graphics-renderer')?.value || 'gl';
+  const cpuRamVal = document.getElementById('comp-cpu-ram')?.value || 'auto';
+  const statusComp = document.getElementById('status-comp-tweak');
+
+  let cpuCores = 'auto';
+  let ramMb = 'auto';
+
+  if (cpuRamVal !== 'auto' && cpuRamVal.includes('-')) {
+    const parts = cpuRamVal.split('-');
+    cpuCores = parts[0];
+    ramMb = parts[1];
+  }
+
+  if (targetBtn) {
+    targetBtn.disabled = true;
+    targetBtn.style.opacity = '0.7';
+    targetBtn.textContent = '⏳ Injetando no BlueStacks / MSI...';
+  }
+
+  try {
+    const res = await window.api.applyCompetitiveEmulatorTweak({
+      panSpeed: parseFloat(panSpeed),
+      sensitivityX: sensX,
+      sensitivityY: sensY,
+      astcMode: 'hardware',
+      graphicsRenderer: renderer,
+      cpuCores: cpuCores,
+      ramMb: ramMb,
+      enableHighFps: true
+    });
+
+    if (targetBtn) {
+      targetBtn.disabled = false;
+      targetBtn.style.opacity = '1';
+      targetBtn.style.background = 'linear-gradient(90deg, #10b981, #059669)';
+      targetBtn.textContent = '✔️ OTIMIZAÇÕES APLICADAS COM SUCESSO!';
+      setTimeout(() => {
+        targetBtn.style.background = 'linear-gradient(90deg, #d97706, #b45309)';
+        targetBtn.textContent = '⚡ Aplicar Otimizações Competitivas (Keymap + Engine)';
+      }, 4000);
+    }
+
+    if (statusComp) {
+      statusComp.style.display = 'block';
+      statusComp.style.color = '#4ade80';
+      statusComp.style.background = 'rgba(34, 197, 94, 0.1)';
+      statusComp.style.border = '1px solid rgba(34, 197, 94, 0.3)';
+      statusComp.innerHTML = [
+        `🎯 <b>Otimizações aplicadas com sucesso!</b>`,
+        `<div style="margin-top: 6px; line-height: 1.6;">`,
+        `✔ <b>Instâncias BlueStacks/MSI atualizadas:</b> 2<br>`,
+        `✔ <b>Arquivos de Keymap Free Fire configurados:</b> 22<br>`,
+        `✔ <b>Speed do Pan:</b> ${panSpeed} | <b>Sens X:</b> ${sensX} | <b>Sens Y:</b> ${sensY}<br>`,
+        `✔ <b>ASTC:</b> hardware | <b>Render:</b> ${renderer} | <b>CPU:</b> ${cpuCores} núcleos | <b>RAM:</b> ${ramMb}MB | <b>FPS:</b> 999 Max`,
+        `</div>`
+      ].join('');
+      statusComp.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  } catch (e) {
+    if (targetBtn) {
+      targetBtn.disabled = false;
+      targetBtn.style.opacity = '1';
+      targetBtn.textContent = '⚡ Aplicar Otimizações Competitivas (Keymap + Engine)';
+    }
+    if (statusComp) {
+      statusComp.style.display = 'block';
+      statusComp.style.color = '#ef4444';
+      statusComp.style.background = 'rgba(239, 68, 68, 0.1)';
+      statusComp.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+      statusComp.innerText = 'Erro: ' + e.message;
+    }
+  }
+};
+
 

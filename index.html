@@ -240,6 +240,74 @@
               <div style="font-weight:800; color:#f87171; font-size:0.85rem;">❌ <span id="adaptive-reg-error-msg"></span></div>
             </div>
           </div>
+
+          <!-- OTIMIZADOR COMPETITIVO DE PAN & ENGINE (ANTI-PINAR & ULTRA FPS) -->
+          <div class="card" style="border: 2px solid #f59e0b; background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(0,0,0,0.6)); margin-top: 16px; box-shadow: 0 0 25px rgba(245,158,11,0.15);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 6px;">
+              <h3 style="margin: 0; color: #fbbf24; font-size: 1.05rem; display: flex; align-items: center; gap: 8px;">
+                🎯 OTIMIZADOR COMPETITIVO DE PAN &amp; ENGINE (ANTI-PINAR &amp; ULTRA FPS)
+              </h3>
+              <span class="badge" style="background: #f59e0b; color: #000; font-weight: 900;">PRO SENSE 🔥</span>
+            </div>
+            <p style="color: #94a3b8; font-size: 0.78rem; margin: 0 0 14px 0;">
+              Injeta velocidade de interpolação Pan (15.0 - 20.0), decodificação ASTC por Hardware na GPU, DirectX sem stutter e High FPS no BlueStacks e MSI.
+            </p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 14px;">
+              <!-- Speed do Pan -->
+              <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+                <label style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; display: block; margin-bottom: 4px;">⚡ Speed do Pan (Anti-Pinar / Fluidez):</label>
+                <select id="comp-pan-speed" style="width: 100%; background: #18181b; color: #fff; border: 1px solid #3f3f46; border-radius: 4px; padding: 6px; font-size: 0.82rem; font-weight: 700;">
+                  <option value="15.0">15.0 (Competitivo / Mira Lisa)</option>
+                  <option value="18.0">18.0 (Equilibrado / Capa Rápido)</option>
+                  <option value="20.0">20.0 (Ultra Rápido / Zero Delay)</option>
+                  <option value="25.0" selected>25.0 (Extremo / Resposta Imediata)</option>
+                </select>
+                <span style="font-size: 0.68rem; color: #71717a; display: block; margin-top: 4px;">Elimina o delay de interpolação da câmera entre frames.</span>
+              </div>
+
+              <!-- Sens X e Y do Keymap -->
+              <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); display: flex; gap: 8px;">
+                <div style="flex: 1;">
+                  <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Sens X (Giro):</label>
+                  <input type="text" id="comp-sens-x" value="1,67" style="width: 100%; background: #18181b; color: #fff; border: 1px solid #3f3f46; border-radius: 4px; padding: 6px; font-size: 0.82rem; font-weight: 700;">
+                </div>
+                <div style="flex: 1;">
+                  <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Sens Y (Subida):</label>
+                  <input type="text" id="comp-sens-y" value="1" style="width: 100%; background: #18181b; color: #fff; border: 1px solid #3f3f46; border-radius: 4px; padding: 6px; font-size: 0.82rem; font-weight: 700;">
+                </div>
+              </div>
+
+              <!-- Renderizador Gráfico -->
+              <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+                <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">🎮 Renderizador Gráfico:</label>
+                <select id="comp-graphics-renderer" style="width: 100%; background: #18181b; color: #fff; border: 1px solid #3f3f46; border-radius: 4px; padding: 6px; font-size: 0.82rem;">
+                  <option value="gl" selected>OpenGL (gl - Padrão)</option>
+                  <option value="dx">DirectX (dx - Baixa Latência)</option>
+                  <option value="vulkan">Vulkan (Ultra Fluidez)</option>
+                </select>
+              </div>
+
+              <!-- CPU e RAM -->
+              <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+                <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">🧠 Núcleos de CPU &amp; RAM:</label>
+                <select id="comp-cpu-ram" style="width: 100%; background: #18181b; color: #fff; border: 1px solid #3f3f46; border-radius: 4px; padding: 6px; font-size: 0.82rem;">
+                  <option value="auto" id="opt-cpu-ram-auto">⚡ Automático (Recomendado)</option>
+                  <option value="2-2048">2 Núcleos / 2GB RAM (PC Fraco)</option>
+                  <option value="4-4096">4 Núcleos / 4GB RAM (PC Médio)</option>
+                  <option value="4-8192" selected>4 Núcleos / 8GB RAM (PC Gamer 8C/16GB)</option>
+                  <option value="6-8192">6 Núcleos / 8GB RAM (PC Alto Desempenho)</option>
+                </select>
+              </div>
+            </div>
+
+            <button class="btn btn-primary" id="btn-apply-comp-tweak" onclick="handleApplyCompTweak(this)" style="width: 100%; background: linear-gradient(90deg, #d97706, #b45309); border: none; font-weight: 800; padding: 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+              ⚡ Aplicar Otimizações Competitivas (Keymap + Engine)
+            </button>
+
+            <div id="status-comp-tweak" style="margin-top: 10px; font-size: 0.82rem; color: #4ade80; line-height: 1.6; display: none; background: rgba(34, 197, 94, 0.1); padding: 10px; border-radius: 6px; border: 1px solid rgba(34, 197, 94, 0.3);">
+            </div>
+          </div>
         </section>
 
         <!-- TAB: CALCULADORA SENSE -->
