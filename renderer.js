@@ -1268,6 +1268,7 @@ function setupAutoUpdater() {
         }
       }
     } catch (e) {
+      console.error('[AutoUpdater Renderer] ERRO ao verificar atualizações:', e);
       if (btnCheckUpdate) {
         btnCheckUpdate.disabled = false;
         btnCheckUpdate.textContent = '🔍 Verificar Agora';
@@ -1275,10 +1276,10 @@ function setupAutoUpdater() {
       if (btnInstallNow) {
         btnInstallNow.style.display = 'none';
       }
-      if (cardStatusTitle) cardStatusTitle.innerHTML = `✔️ <b>Versão Verificada</b>`;
-      if (cardStatusDesc) cardStatusDesc.textContent = 'Não há atualizações pendentes no momento.';
+      if (cardStatusTitle) cardStatusTitle.innerHTML = `⚠️ <b>Erro ao verificar atualizações</b>`;
+      if (cardStatusDesc) cardStatusDesc.textContent = `Falha na conexão com GitHub. Verifique sua internet e tente novamente.`;
       if (manual) {
-        alert(`✔️ Seu Loord Optimizer já está na versão mais recente!\n\nVocê já possui todas as otimizações e melhorias instaladas.`);
+        alert(`⚠️ Falha ao verificar atualizações.\n\nErro: ${e.message || String(e)}\n\nVerifique sua conexão com a internet e tente novamente.`);
       }
     }
   }
