@@ -3181,8 +3181,10 @@ ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
                       if (scheme && Array.isArray(scheme.GameControls)) {
                         for (const ctrl of scheme.GameControls) {
                           if (ctrl && (ctrl.$type === 'Pan, Bluestacks' || ctrl.$type === 'Pan' || ctrl.Type === 'Pan')) {
-                            ctrl.Sensitivity = parseFloat(sensX);
-                            ctrl.SensitivityRatioY = parseFloat(sensY);
+                            const parsedSensX = parseFloat(sensX) || 1.0;
+                            const parsedSensY = parseFloat(sensY) || 1.0;
+                            ctrl.Sensitivity = parsedSensX;
+                            ctrl.SensitivityRatioY = parsedSensX > 0 ? (parsedSensY / parsedSensX) : parsedSensY;
                             ctrl.MouseAcceleration = false;
                           }
                         }
@@ -3322,9 +3324,11 @@ ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
                       if (scheme && Array.isArray(scheme.GameControls)) {
                         for (const ctrl of scheme.GameControls) {
                           if (ctrl && (ctrl.$type === 'Pan, Bluestacks' || ctrl.$type === 'Pan' || ctrl.Type === 'Pan')) {
+                            const parsedSensX = parseFloat(sensitivityX) || 1.0;
+                            const parsedSensY = parseFloat(sensitivityY) || 1.0;
                             ctrl.Speed = parseFloat(panSpeed);
-                            ctrl.Sensitivity = parseFloat(sensitivityX);
-                            ctrl.SensitivityRatioY = parseFloat(sensitivityY);
+                            ctrl.Sensitivity = parsedSensX;
+                            ctrl.SensitivityRatioY = parsedSensX > 0 ? (parsedSensY / parsedSensX) : parsedSensY;
                             ctrl.MouseAcceleration = false;
                           }
                         }
