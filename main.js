@@ -2842,20 +2842,73 @@ ipcMain.handle('remove-emulator-ads', async (event, port) => {
   }
 });
 
+// ─── HARDWARE INFO INTELIGENTE (CPU & RAM 50%) ──────────────────────────────
+ipcMain.handle('get-system-hardware-info', async () => {
+  try {
+    const totalCores = os.cpus().length || 4;
+    const totalRamBytes = os.totalmem();
+    const totalRamGB = Math.round(totalRamBytes / (1024 * 1024 * 1024));
+
+    // Regra dos 50%: Metade para o Emulador, Metade para o Windows
+    const recommendedCores = Math.max(2, Math.min(8, Math.floor(totalCores / 2)));
+    let recommendedRamMB = 4096;
+    if (totalRamGB <= 4) {
+      recommendedRamMB = 2048;
+    } else if (totalRamGB <= 8) {
+      recommendedRamMB = 4096;
+    } else if (totalRamGB <= 16) {
+      recommendedRamMB = 8192;
+    } else {
+      recommendedRamMB = 8192; // 8GB é o teto ideal do BlueStacks para evitar overhead
+    }
+
+    return {
+      totalCores,
+      recommendedCores,
+      totalRamGB,
+      recommendedRamMB
+    };
+  } catch (e) {
+    return {
+      totalCores: 4,
+      recommendedCores: 2,
+      totalRamGB: 8,
+      recommendedRamMB: 4096
+    };
+  }
+});
+
 // ─── OTIMIZADOR COMPETITIVO DE PAN & BLUESTACKS/MSI ────────────────────────
 ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
   if (!systemIsAdmin) return { success: false, error: 'Privilégios de Administrador requeridos.' };
   try {
-    const {
+    let {
       panSpeed = 15.0,
       sensitivityX = 1.0,
       sensitivityY = 0.4,
       astcMode = 'hardware',
       graphicsRenderer = 'dx',
-      cpuCores = '6',
-      ramMb = '6144',
+      cpuCores = 'auto',
+      ramMb = 'auto',
       enableHighFps = true
     } = config || {};
+
+    // Auto-cálculo inteligente de 50% dos recursos do PC do usuário
+    if (cpuCores === 'auto' || ramMb === 'auto') {
+      const totalCores = os.cpus().length || 4;
+      const totalRamBytes = os.totalmem();
+      const totalRamGB = Math.round(totalRamBytes / (1024 * 1024 * 1024));
+
+      if (cpuCores === 'auto') {
+        cpuCores = String(Math.max(2, Math.min(8, Math.floor(totalCores / 2))));
+      }
+      if (ramMb === 'auto') {
+        if (totalRamGB <= 4) ramMb = '2048';
+        else if (totalRamGB <= 8) ramMb = '4096';
+        else if (totalRamGB <= 16) ramMb = '8192';
+        else ramMb = '8192';
+      }
+    }
 
     // 1. Matar processos do emulador antes para garantir gravação limpa
     try {

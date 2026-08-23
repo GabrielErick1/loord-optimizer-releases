@@ -67,6 +67,7 @@ contextBridge.exposeInMainWorld('api', {
   setFixedPagefile: () => ipcRenderer.invoke('set-fixed-pagefile'),
   transformWindowsLite: () => ipcRenderer.invoke('transform-windows-lite'),
   disableWindowsDefenderPermanent: () => ipcRenderer.invoke('disable-windows-defender-permanent'),
+  getSystemHardwareInfo: () => ipcRenderer.invoke('get-system-hardware-info'),
   applyCompetitiveEmulatorTweak: (config) => ipcRenderer.invoke('apply-competitive-emulator-tweak', config),
   // ─────────────────────────────────────────────────────────────────
 });
