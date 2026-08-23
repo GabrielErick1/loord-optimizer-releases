@@ -2318,3 +2318,393 @@ if (btnApplyCompTweak) {
   setTimeout(() => checkUpdates(false), 2000);
 })();
 
+// ══════════════════════════════════════════════════════════════════════════════
+// REGEDIT ADAPTATIVA & DETECTOR DE REMADA (100% FUNCIONAL)
+// ══════════════════════════════════════════════════════════════════════════════
+const ADAPT_STYLE_PRESETS = { suave: 0.78, equilibrado: 1.00, pesada: 1.22 };
+
+function parsePtBrFloat(val, fallback = 0) {
+  if (typeof val === 'number') return isNaN(val) ? fallback : val;
+  if (!val) return fallback;
+  const clean = String(val).replace(',', '.').trim();
+  const num = parseFloat(clean);
+  return isNaN(num) ? fallback : num;
+}
+
+function _aHighlight(name) {
+  const btnSuave = document.getElementById('style-btn-suave');
+  const btnEq = document.getElementById('style-btn-equilibrado');
+  const btnPes = document.getElementById('style-btn-pesada');
+  const activeStyle = 'border: 2px solid #f59e0b; box-shadow: 0 0 14px rgba(245,158,11,0.4); background: rgba(245,158,11,0.22);';
+  const inactiveStyle = 'border: 2px solid rgba(255,255,255,0.08); box-shadow: none; background: rgba(0,0,0,0.25);';
+
+  if (btnSuave) btnSuave.style.cssText = name === 'suave' ? activeStyle : inactiveStyle;
+  if (btnEq) btnEq.style.cssText = name === 'equilibrado' ? activeStyle : inactiveStyle;
+  if (btnPes) btnPes.style.cssText = name === 'pesada' ? activeStyle : inactiveStyle;
+}
+
+function _aMulDesc(val) {
+  const inp = document.getElementById('adapt-style-mul-input');
+  if (inp) inp.value = Number(val).toFixed(2).replace('.', ',');
+}
+
+function setAdaptStyle(name) {
+  const mul = ADAPT_STYLE_PRESETS[name] ?? 1.00;
+  const slider = document.getElementById('adapt-style-mul');
+  if (slider) slider.value = mul;
+  const hidden = document.getElementById('adapt-style-value');
+  if (hidden) hidden.value = name;
+  _aHighlight(name);
+  _aMulDesc(mul);
+}
+window.setAdaptStyle = setAdaptStyle;
+
+function syncInputFromSlider() {
+  const slider = document.getElementById('adapt-style-mul');
+  if (!slider) return;
+  const val = parseFloat(slider.value);
+  _aMulDesc(val);
+  const hidden = document.getElementById('adapt-style-value');
+  if (hidden) hidden.value = 'custom';
+  _aHighlight('custom');
+}
+
+function syncSliderFromInput() {
+  const inp = document.getElementById('adapt-style-mul-input');
+  const slider = document.getElementById('adapt-style-mul');
+  if (!inp || !slider) return;
+  let val = parsePtBrFloat(inp.value, 1.00);
+  if (val < 0.40) val = 0.40;
+  if (val > 2.00) val = 2.00;
+  slider.value = val;
+  const hidden = document.getElementById('adapt-style-value');
+  if (hidden) hidden.value = 'custom';
+  _aHighlight('custom');
+}
+
+let _rPoints = [];
+let _rTracking = false;
+let _rLastT = 0;
+let _rLastX = 0;
+let _rLastY = 0;
+let _rSpeeds = [];
+let _rHasDrawn = false;
+let _rAnimFrame = null;
+
+function updateRemadaCanvasSize() {
+  const cv = document.getElementById('remada-canvas');
+  if (!cv) return null;
+  const z = document.getElementById('remada-zone');
+  const w = z ? (z.clientWidth || 700) : 700;
+  const h = 120;
+  if (cv.width !== w || cv.height !== h) {
+    cv.width = w;
+    cv.height = h;
+  }
+  return cv;
+}
+
+function drawRemadaCanvas() {
+  const cv = document.getElementById('remada-canvas');
+  if (!cv) {
+    _rAnimFrame = requestAnimationFrame(drawRemadaCanvas);
+    return;
+  }
+  const ctx = cv.getContext('2d');
+  if (!ctx) return;
+
+  ctx.clearRect(0, 0, cv.width, cv.height);
+
+  // Grade milimétrica neon
+  ctx.strokeStyle = 'rgba(168,85,247,0.06)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < cv.width; x += 30) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, cv.height);
+    ctx.stroke();
+  }
+  for (let y = 0; y < cv.height; y += 30) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(cv.width, y);
+    ctx.stroke();
+  }
+
+  // Rastro laser em tempo real
+  if (_rPoints.length > 1) {
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    for (let i = 1; i < _rPoints.length; i++) {
+      const p0 = _rPoints[i - 1];
+      const p1 = _rPoints[i];
+      const alpha = (i / _rPoints.length).toFixed(2);
+      const sp = p1.speed || 0.5;
+
+      let strokeCol = `rgba(56, 189, 248, ${alpha})`;
+      if (sp > 0.8 && sp <= 1.8) strokeCol = `rgba(251, 191, 36, ${alpha})`;
+      else if (sp > 1.8) strokeCol = `rgba(239, 68, 68, ${alpha})`;
+
+      ctx.beginPath();
+      ctx.strokeStyle = strokeCol;
+      ctx.lineWidth = Math.min(8, 2 + sp * 2.5);
+      ctx.shadowColor = strokeCol;
+      ctx.shadowBlur = 10;
+      ctx.moveTo(p0.x, p0.y);
+      ctx.lineTo(p1.x, p1.y);
+      ctx.stroke();
+    }
+  }
+
+  _rAnimFrame = requestAnimationFrame(drawRemadaCanvas);
+}
+
+function handleRemadaEnter(e) {
+  _rTracking = true;
+  _rSpeeds = [];
+  _rPoints = [];
+  _rHasDrawn = true;
+  const rect = e.currentTarget.getBoundingClientRect();
+  _rLastX = e.clientX - rect.left;
+  _rLastY = e.clientY - rect.top;
+  _rLastT = performance.now();
+  _rPoints.push({ x: _rLastX, y: _rLastY, speed: 0 });
+
+  const im = document.getElementById('remada-idle-msg');
+  const am = document.getElementById('remada-active-msg');
+  if (im) im.style.display = 'none';
+  if (am) am.style.display = 'block';
+}
+
+function handleRemadaLeave() {
+  if (!_rTracking) return;
+  _rTracking = false;
+
+  const am = document.getElementById('remada-active-msg');
+  if (am) am.style.display = 'none';
+
+  if (_rSpeeds.length < 3) {
+    const im = document.getElementById('remada-idle-msg');
+    if (im) im.style.display = 'block';
+    return;
+  }
+
+  const validSpeeds = _rSpeeds.filter(s => s > 0.05);
+  if (!validSpeeds.length) return;
+  const avg = validSpeeds.reduce((a, b) => a + b, 0) / validSpeeds.length;
+  const max = Math.max(...validSpeeds);
+
+  let recMul = 1.00;
+  let diag = '';
+  let em = '⚡';
+
+  if (avg > 2.0) {
+    recMul = 0.70;
+    em = '🌊';
+    diag = `Remada <b>MUITO RÁPIDA</b> (Média: ${avg.toFixed(1)} px/ms | Pico: ${max.toFixed(1)} px/ms).<br>Multiplicador sugerido: <b>0.70 (Suave)</b> para manter a mira firme no boneco sem passar da cabeça.`;
+  } else if (avg > 1.2) {
+    recMul = 0.85;
+    em = '🌊';
+    diag = `Remada <b>RÁPIDA</b> (Média: ${avg.toFixed(1)} px/ms | Pico: ${max.toFixed(1)} px/ms).<br>Multiplicador sugerido: <b>0.85 (Controlada)</b> para evitar que a mira pine.`;
+  } else if (avg > 0.6) {
+    recMul = 1.00;
+    em = '⚡';
+    diag = `Remada <b>EQUILIBRADA</b> (Média: ${avg.toFixed(1)} px/ms | Pico: ${max.toFixed(1)} px/ms).<br>Multiplicador sugerido: <b>1.00 (Equilibrado)</b> para balancear subida de capa e controle.`;
+  } else {
+    recMul = 1.22;
+    em = '🔥';
+    diag = `Remada <b>LENTA / SUAVE</b> (Média: ${avg.toFixed(1)} px/ms | Pico: ${max.toFixed(1)} px/ms).<br>Multiplicador sugerido: <b>1.22 (Pesada / Impulso)</b> para ajudar a mira a subir com facilidade.`;
+  }
+
+  const resText = document.getElementById('remada-result-text');
+  const resDiv = document.getElementById('remada-result');
+  const btnApp = document.getElementById('btn-apply-remada-result');
+  if (resText) resText.innerHTML = `${em} ${diag}`;
+  if (btnApp) btnApp.dataset.recMul = recMul.toFixed(2);
+  if (resDiv) resDiv.style.display = 'block';
+}
+
+function handleRemadaMove(e) {
+  if (!_rTracking) return;
+  const now = performance.now();
+  const dt = now - _rLastT;
+  if (dt < 8) return;
+
+  const rect = e.currentTarget.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  const dx = x - _rLastX;
+  const dy = y - _rLastY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  const speed = dist / dt;
+
+  _rSpeeds.push(speed);
+  if (_rSpeeds.length > 50) _rSpeeds.shift();
+
+  _rPoints.push({ x, y, speed });
+  if (_rPoints.length > 120) _rPoints.shift();
+
+  _rLastX = x;
+  _rLastY = y;
+  _rLastT = now;
+
+  const liveEl = document.getElementById('remada-speed-live');
+  if (liveEl) {
+    let tag = speed > 2.0 ? '🔥 ULTRA RÁPIDA' : speed > 1.2 ? '⚡ RÁPIDA' : speed > 0.6 ? '🎯 EQUILIBRADA' : '🌊 SUAVE';
+    liveEl.innerHTML = `${tag} &nbsp;|&nbsp; <b>${(speed * 100).toFixed(0)}</b> px/s`;
+  }
+}
+
+function applyRemadaResult() {
+  const btn = document.getElementById('btn-apply-remada-result');
+  if (!btn) return;
+  const val = parseFloat(btn.dataset.recMul || '1.00');
+  const slider = document.getElementById('adapt-style-mul');
+  if (slider) slider.value = val;
+  _aMulDesc(val);
+
+  if (val <= 0.80) _aHighlight('suave');
+  else if (val >= 1.15) _aHighlight('pesada');
+  else _aHighlight('equilibrado');
+
+  btn.textContent = '✔ MULTIPLICADOR APLICADO NA REGEDIT!';
+  btn.style.background = 'linear-gradient(90deg, #22c55e, #16a34a)';
+  setTimeout(() => {
+    btn.textContent = '✅ USAR ESTE MULTIPLICADOR NA MINHA REGEDIT';
+    btn.style.background = 'linear-gradient(90deg, #7c3aed, #a855f7)';
+  }, 2500);
+}
+window.applyRemadaResult = applyRemadaResult;
+
+function resetRemada() {
+  _rPoints = [];
+  _rHasDrawn = false;
+  const cv = document.getElementById('remada-canvas');
+  if (cv) {
+    const ctx = cv.getContext('2d');
+    if (ctx) ctx.clearRect(0, 0, cv.width, cv.height);
+  }
+  const rr = document.getElementById('remada-result');
+  if (rr) rr.style.display = 'none';
+  const im = document.getElementById('remada-idle-msg');
+  if (im) im.style.display = 'block';
+}
+window.resetRemada = resetRemada;
+
+// ── Handler de Injeção da Regedit Adaptativa ──────────────────────────────────
+window.handleApplyAdaptiveRegedit = async function(btn) {
+  const targetBtn = btn || document.getElementById('btn-apply-adaptive-reg');
+  const inpDpiMouse = document.getElementById('adapt-dpi-mouse');
+  const inpDpiEmu = document.getElementById('adapt-dpi-emu');
+  const inpSensX = document.getElementById('adapt-sens-x');
+  const inpSensY = document.getElementById('adapt-sens-y');
+  const resultBox = document.getElementById('adaptive-reg-result');
+  const resultSummary = document.getElementById('adaptive-reg-summary');
+  const errorBox = document.getElementById('adaptive-reg-error');
+  const errorMsg = document.getElementById('adaptive-reg-error-msg');
+
+  if (resultBox) resultBox.style.display = 'none';
+  if (errorBox)  errorBox.style.display = 'none';
+
+  const dpiMouse = parsePtBrFloat(inpDpiMouse?.value, 1600);
+  const dpiEmu = parsePtBrFloat(inpDpiEmu?.value, 480);
+  const sensX = parsePtBrFloat(inpSensX?.value, 1.67);
+  const sensY = parsePtBrFloat(inpSensY?.value, 1.67);
+  const styleMul = parsePtBrFloat(document.getElementById('adapt-style-mul-input')?.value, 1.00);
+
+  if (!dpiMouse || dpiMouse < 100) { showAdaptErr('DPI do Mouse inválido. Digite um valor válido (ex: 800, 1600).'); return; }
+  if (!dpiEmu || dpiEmu < 100) { showAdaptErr('DPI do Emulador inválido. Digite um valor válido (ex: 240, 320, 480).'); return; }
+  if (!sensX || sensX < 0.05) { showAdaptErr('Sens X inválida. Digite um valor válido (ex: 1,67 ou 2.0).'); return; }
+  if (!sensY || sensY < 0.05) { showAdaptErr('Sens Y inválida. Digite um valor válido (ex: 0,40 ou 1.0).'); return; }
+  if (isNaN(styleMul) || styleMul < 0.40 || styleMul > 2.00) { showAdaptErr('Multiplicador deve ser entre 0.40 e 2.00.'); return; }
+
+  if (targetBtn) {
+    targetBtn.disabled = true;
+    targetBtn.style.opacity = '0.7';
+    targetBtn.textContent = '⏳ Injetando Regedit no Windows...';
+  }
+
+  try {
+    const res = await window.api.applyAdaptiveRegedit({ dpiMouse, dpiEmu, sensX, sensY, style: 'custom', styleMul });
+    
+    if (res && res.success) {
+      const s = res.summary || {};
+      const em = styleMul <= 0.85 ? '🌊' : styleMul >= 1.15 ? '🔥' : '⚡';
+
+      if (resultSummary) {
+        resultSummary.innerHTML = [
+          `🖱️ <b>Mouse:</b> ${dpiMouse} DPI &nbsp;|&nbsp; 🎮 <b>Emulador:</b> ${dpiEmu} DPI`,
+          `↔️ <b>Sens X:</b> ${sensX} &nbsp;|&nbsp; ↕️ <b>Sens Y:</b> ${sensY}`,
+          `🔬 <b>Razão Y/X:</b> ${(sensY / sensX).toFixed(3)} — Subida de Capa Calibrada sem Pinar`,
+          `🎚️ ${em} <b>Multiplicador:</b> <span style="color:#fbbf24;font-weight:900;">${styleMul.toFixed(2)}x</span> &nbsp;|&nbsp; Escala X: ${s.scaleX || '1.0'}x Y: ${s.scaleY || '1.0'}x`,
+          `✅ <b>Sensibilidade Aplicada com Sucesso no Registro do Windows</b> (Sem reiniciar!)`,
+        ].join('<br>');
+      }
+
+      if (resultBox) {
+        resultBox.style.display = 'block';
+        resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      if (targetBtn) {
+        targetBtn.style.background = 'linear-gradient(90deg, #22c55e, #16a34a)';
+        targetBtn.textContent = '✅ REGEDIT PERSONALIZADA APLICADA COM SUCESSO!';
+        setTimeout(() => {
+          targetBtn.style.background = 'linear-gradient(90deg, #f59e0b, #ef4444)';
+          targetBtn.textContent = '⚡ GERAR & APLICAR MINHA REGEDIT PERSONALIZADA';
+          targetBtn.disabled = false;
+          targetBtn.style.opacity = '1';
+        }, 4000);
+      }
+    } else {
+      showAdaptErr(res?.error || 'Erro ao aplicar a Regedit.');
+      resetAdaptBtn();
+    }
+  } catch (e) {
+    showAdaptErr('Erro: ' + e.message);
+    resetAdaptBtn();
+  }
+
+  function showAdaptErr(msg) {
+    if (errorMsg) errorMsg.textContent = msg;
+    if (errorBox) {
+      errorBox.style.display = 'block';
+      errorBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function resetAdaptBtn() {
+    if (targetBtn) {
+      targetBtn.disabled = false;
+      targetBtn.style.opacity = '1';
+      targetBtn.textContent = '⚡ GERAR & APLICAR MINHA REGEDIT PERSONALIZADA';
+    }
+  }
+};
+
+function setupAdaptiveRegeditUI() {
+  const mulSlider = document.getElementById('adapt-style-mul');
+  const mulInput = document.getElementById('adapt-style-mul-input');
+  if (mulSlider) mulSlider.oninput = syncInputFromSlider;
+  if (mulInput) mulInput.oninput = syncSliderFromInput;
+
+  const z = document.getElementById('remada-zone');
+  if (z) {
+    z.onmouseenter = handleRemadaEnter;
+    z.onmouseleave = handleRemadaLeave;
+    z.onmousemove = handleRemadaMove;
+  }
+
+  _aHighlight('equilibrado');
+  _aMulDesc(1.00);
+  updateRemadaCanvasSize();
+  if (!_rAnimFrame) _rAnimFrame = requestAnimationFrame(drawRemadaCanvas);
+}
+
+window.addEventListener('resize', updateRemadaCanvasSize);
+document.addEventListener('DOMContentLoaded', setupAdaptiveRegeditUI);
+setupAdaptiveRegeditUI();
+
+
