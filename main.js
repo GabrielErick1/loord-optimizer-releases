@@ -3409,9 +3409,14 @@ function compareSemver(v1, v2) {
 
 ipcMain.handle('check-for-updates', async () => {
   const currentVersion = app.getVersion() || '1.0.0';
+  console.log(`[AutoUpdater] Versão atual do app (package.json): ${currentVersion}`);
+
+  // 1. Tenta via electron-updater
   try {
     const result = await autoUpdater.checkForUpdates();
     const latestVersion = (result?.updateInfo?.version || '').replace(/^v/i, '').trim();
+    console.log(`[AutoUpdater] electron-updater retornou versão: ${latestVersion || '(vazio)'}`);
+
     if (latestVersion && compareSemver(latestVersion, currentVersion) > 0) {
       return {
         updateAvailable: true,
@@ -3423,26 +3428,55 @@ ipcMain.handle('check-for-updates', async () => {
       };
     }
   } catch (err) {
-    console.warn('[AutoUpdater] Fallback para verificação via GitHub API:', err.message);
+    console.warn('[AutoUpdater] electron-updater falhou (esperado sem publish config):', err.message);
   }
 
-  // Fallback via GitHub API
+  // 2. Fallback via GitHub API com Cache-Busting (?_=${Date.now()})
   try {
-    const res = await fetch('https://api.github.com/repos/GabrielErick1/loord-optimizer-releases/releases/latest', {
-      headers: { 'User-Agent': 'LoordOptimizer-AutoUpdater' }
+    const apiUrl = `https://api.github.com/repos/GabrielErick1/loord-optimizer-releases/releases/latest?_=${Date.now()}`;
+    const res = await fetch(apiUrl, {
+      headers: {
+        'User-Agent': 'LoordOptimizer-AutoUpdater',
+        'Accept': 'application/vnd.github+json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
     });
+
+    console.log(`[AutoUpdater] GitHub API respondeu status: ${res.status}`);
+
     if (!res.ok) {
-      return { updateAvailable: false, currentVersion, latestVersion: currentVersion };
+      return {
+        updateAvailable: false,
+        currentVersion,
+        latestVersion: currentVersion,
+        error: `GitHub API retornou HTTP ${res.status}`
+      };
     }
+
     const release = await res.json();
     const tag = (release.tag_name || '').replace(/^v/i, '').trim();
+    console.log(`[AutoUpdater] Última release no GitHub: v${tag} | draft=${release.draft}`);
+
     if (!tag) {
-      return { updateAvailable: false, currentVersion, latestVersion: currentVersion };
+      return {
+        updateAvailable: false,
+        currentVersion,
+        latestVersion: currentVersion,
+        error: 'Release encontrada mas sem tag_name válida.'
+      };
     }
 
     const isNewer = compareSemver(tag, currentVersion) > 0;
-    let exeAsset = (release.assets || []).find(a => a.name && a.name.toLowerCase().endsWith('.exe') && !a.name.includes('blockmap'));
-    let downloadUrl = exeAsset ? exeAsset.browser_download_url : `https://github.com/GabrielErick1/loord-optimizer-releases/releases/download/v${tag}/Loord-Optimizer-Setup-${tag}.exe`;
+    console.log(`[AutoUpdater] Comparação: GitHub v${tag} vs App v${currentVersion} → ${isNewer ? 'ATUALIZAÇÃO DISPONÍVEL' : 'já atualizado'}`);
+
+    let exeAsset = (release.assets || []).find(
+      a => a.name && a.name.toLowerCase().endsWith('.exe') && !a.name.includes('blockmap')
+    );
+
+    let downloadUrl = exeAsset
+      ? exeAsset.browser_download_url
+      : `https://github.com/GabrielErick1/loord-optimizer-releases/releases/download/v${tag}/Loord-Optimizer-Setup-${tag}.exe`;
 
     return {
       updateAvailable: isNewer,
@@ -3453,7 +3487,13 @@ ipcMain.handle('check-for-updates', async () => {
       releaseNotes: release.body || ''
     };
   } catch (e) {
-    return { updateAvailable: false, currentVersion, latestVersion: currentVersion, error: e.message };
+    console.error('[AutoUpdater] ERRO FATAL na checagem via GitHub API:', e);
+    return {
+      updateAvailable: false,
+      currentVersion,
+      latestVersion: currentVersion,
+      error: `Falha ao conectar ao GitHub: ${e.message}`
+    };
   }
 });
 
