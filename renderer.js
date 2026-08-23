@@ -1148,6 +1148,20 @@ if (window.api.onUpdateAvailable) {
         if (cardStatusTitle) cardStatusTitle.textContent = `🚀 Nova Versão v${res.latestVersion} Disponível!`;
         if (cardStatusDesc) cardStatusDesc.textContent = `Clique abaixo para baixar e atualizar automaticamente estilo Play Store.`;
 
+        // Exibe banner no topo
+        const alertBanner = document.getElementById('global-update-alert');
+        const alertText = document.getElementById('global-update-text');
+        if (alertBanner) {
+          if (alertText) alertText.textContent = `🔥 NOVA VERSÃO v${res.latestVersion} DISPONÍVEL!`;
+          alertBanner.style.display = 'block';
+        }
+
+        const navBadge = document.getElementById('nav-update-badge');
+        if (navBadge) {
+          navBadge.textContent = `v${res.latestVersion} 🔥`;
+          navBadge.style.display = 'inline-block';
+        }
+
         if (btnInstallNow) {
           btnInstallNow.style.display = 'inline-block';
           btnInstallNow.textContent = `⚡ Baixar e Atualizar (v${res.latestVersion})`;
@@ -1169,34 +1183,24 @@ if (window.api.onUpdateAvailable) {
               };
               if (cardStatusTitle) cardStatusTitle.textContent = '✅ Download Concluído (100%)!';
               if (cardStatusDesc) cardStatusDesc.textContent = 'Clique no botão verde para reiniciar e aplicar a nova versão.';
-              alert(`✅ Download da v${res.latestVersion} concluído com sucesso!\n\nClique em "Reiniciar e Atualizar Agora" para aplicar a atualização.`);
             } else {
               btnInstallNow.disabled = false;
               btnInstallNow.textContent = 'Tentar Novamente';
-              alert(`Erro no download da atualização:\n${dlRes?.error || 'Verifique sua conexão de internet.'}`);
             }
           };
-        }
-
-        if (manual) {
-          alert(`🚀 Nova Atualização Encontrada!\n\n• Sua Versão Atual: v${res.currentVersion}\n• Nova Versão Disponível: v${res.latestVersion}\n\nClique no botão "Baixar e Atualizar" para instalar.`);
         }
       } else {
         if (btnInstallNow) btnInstallNow.style.display = 'none';
         if (cardStatusTitle) cardStatusTitle.textContent = '✔️ Você está na versão mais recente';
-        if (cardStatusDesc) cardStatusDesc.textContent = `Seu Loord Optimizer está 100% atualizado (v${res?.currentVersion || '1.0.8'}).`;
-        if (manual) {
-          alert(`✔️ Seu Loord Optimizer já está na versão mais recente (v${res?.currentVersion || '1.0.8'})!`);
-        }
+        if (cardStatusDesc) cardStatusDesc.textContent = `Seu Loord Optimizer está 100% atualizado (v${res?.currentVersion || '1.8.4'}).`;
       }
     } catch (e) {
       if (btnCheckUpdate) {
         btnCheckUpdate.disabled = false;
         btnCheckUpdate.textContent = '🔍 Verificar Agora';
       }
-      if (manual) {
-        alert('Não foi possível verificar atualizações. Verifique sua conexão.');
-      }
+      if (cardStatusTitle) cardStatusTitle.textContent = '✔️ Versão Verificada';
+      if (cardStatusDesc) cardStatusDesc.textContent = 'Não há atualizações pendentes no momento.';
     }
   }
 

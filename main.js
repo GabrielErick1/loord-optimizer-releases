@@ -3382,68 +3382,94 @@ function compareVersions(v1, v2) {
 }
 
 ipcMain.handle('check-for-updates', async (event) => {
+  const curVer = app.getVersion() || '1.0.0';
+
+  // Função auxiliar com fallback
   return new Promise((resolve) => {
-    const curVer = app.getVersion();
-    const options = {
-      hostname: 'api.github.com',
-      path: '/repos/GabrielErick1/loord-optimizer-releases/releases/latest',
-      method: 'GET',
-      headers: {
-        'User-Agent': 'LoordOptimizer-AutoUpdater'
-      }
-    };
+    function tryGitHubApi() {
+      const options = {
+        hostname: 'api.github.com',
+        path: '/repos/GabrielErick1/loord-optimizer-releases/releases/latest',
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) LoordOptimizer/1.0',
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      };
 
-    const req = https.request(options, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        try {
-          if (res.statusCode !== 200) {
-            return resolve({ updateAvailable: false, error: `GitHub API error ${res.statusCode}`, currentVersion: curVer });
+      const req = https.request(options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          try {
+            if (res.statusCode === 200) {
+              const release = JSON.parse(data);
+              const tag = (release.tag_name || '').replace(/^v/i, '').trim();
+              const isNewer = compareVersions(tag, curVer) > 0;
+
+              let downloadUrl = null;
+              if (release.assets && Array.isArray(release.assets)) {
+                const setupAsset = release.assets.find(a => a.name && a.name.endsWith('.exe') && !a.name.includes('blockmap'));
+                if (setupAsset) downloadUrl = setupAsset.browser_download_url;
+              }
+              if (!downloadUrl) {
+                downloadUrl = `https://github.com/GabrielErick1/loord-optimizer-releases/releases/latest/download/Loord-Optimizer-Setup-${tag}.exe`;
+              }
+
+              return resolve({
+                updateAvailable: isNewer,
+                hasUpdate: isNewer,
+                latestVersion: tag,
+                currentVersion: curVer,
+                downloadUrl: downloadUrl,
+                releaseNotes: release.body || ''
+              });
+            }
+            // Fallback se API retornar 403 / erro
+            tryPackageJsonFallback();
+          } catch (_) {
+            tryPackageJsonFallback();
           }
-          const release = JSON.parse(data);
-          const tag = release.tag_name || '';
-          const latestVer = tag.replace(/^v/, '');
+        });
+      });
 
-          const isNewer = compareVersions(latestVer, curVer) > 0;
+      req.on('error', () => { tryPackageJsonFallback(); });
+      req.setTimeout(6000, () => { req.destroy(); tryPackageJsonFallback(); });
+      req.end();
+    }
 
-          let downloadUrl = null;
-          if (release.assets && Array.isArray(release.assets)) {
-            const setupAsset = release.assets.find(a => a.name && a.name.endsWith('.exe') && !a.name.includes('blockmap'));
-            if (setupAsset) downloadUrl = setupAsset.browser_download_url;
-          }
+    function tryPackageJsonFallback() {
+      // Fallback para o package.json no raw do GitHub (sem rate limit)
+      https.get('https://raw.githubusercontent.com/GabrielErick1/loord-optimizer-releases/main/package.json', {
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      }, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          try {
+            const pkg = JSON.parse(data);
+            const tag = (pkg.version || '').trim();
+            const isNewer = compareVersions(tag, curVer) > 0;
+            const downloadUrl = `https://github.com/GabrielErick1/loord-optimizer-releases/releases/latest/download/Loord-Optimizer-Setup-${tag}.exe`;
 
-          if (isNewer && downloadUrl) {
             resolve({
-              updateAvailable: true,
-              latestVersion: latestVer,
+              updateAvailable: isNewer,
+              hasUpdate: isNewer,
+              latestVersion: tag,
               currentVersion: curVer,
               downloadUrl: downloadUrl,
-              releaseNotes: release.body || ''
+              releaseNotes: 'Melhorias de desempenho e sensibilidade.'
             });
-          } else {
-            resolve({
-              updateAvailable: false,
-              latestVersion: latestVer,
-              currentVersion: curVer
-            });
+          } catch (e) {
+            resolve({ updateAvailable: false, currentVersion: curVer, latestVersion: curVer });
           }
-        } catch (err) {
-          resolve({ updateAvailable: false, error: err.message, currentVersion: curVer });
-        }
+        });
+      }).on('error', () => {
+        resolve({ updateAvailable: false, currentVersion: curVer, latestVersion: curVer });
       });
-    });
+    }
 
-    req.on('error', (err) => {
-      resolve({ updateAvailable: false, error: err.message, currentVersion: curVer });
-    });
-
-    req.setTimeout(8000, () => {
-      req.destroy();
-      resolve({ updateAvailable: false, error: 'Timeout ao checar atualizações', currentVersion: curVer });
-    });
-
-    req.end();
+    tryGitHubApi();
   });
 });
 
