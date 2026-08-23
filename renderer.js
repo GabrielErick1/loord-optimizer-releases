@@ -1120,6 +1120,44 @@ if (window.api.onUpdateAvailable) {
 
   let activeDownloadUrl = null;
 
+  // Elementos do Modal de Atualização
+  const updateModal = document.getElementById('update-modal');
+  const btnModalDownload = document.getElementById('btn-modal-update-download');
+  const btnModalOk = document.getElementById('btn-modal-update-ok');
+  const modalCurrVer = document.getElementById('modal-curr-ver');
+  const modalNewVer = document.getElementById('modal-new-ver');
+  const modalTitle = document.getElementById('modal-update-title');
+  const navUpdateBadge = document.getElementById('nav-update-badge');
+  const globalAlert = document.getElementById('global-update-alert');
+  const btnGlobalUpdateAction = document.getElementById('btn-global-update-action');
+  const btnGlobalUpdateClose = document.getElementById('btn-global-update-close');
+
+  if (btnModalOk && updateModal) {
+    btnModalOk.addEventListener('click', () => {
+      updateModal.style.display = 'none';
+    });
+  }
+
+  if (btnGlobalUpdateClose && globalAlert) {
+    btnGlobalUpdateClose.addEventListener('click', () => {
+      globalAlert.style.display = 'none';
+    });
+  }
+
+  function startUpdateDownloadFlow(latestVer) {
+    if (updateModal) updateModal.style.display = 'none';
+    const tabBtn = document.querySelector('[data-tab="minha-config"]');
+    if (tabBtn) tabBtn.click();
+    if (btnInstallNow) btnInstallNow.click();
+  }
+
+  if (btnModalDownload) {
+    btnModalDownload.addEventListener('click', () => startUpdateDownloadFlow());
+  }
+  if (btnGlobalUpdateAction) {
+    btnGlobalUpdateAction.addEventListener('click', () => startUpdateDownloadFlow());
+  }
+
   async function handleCheckUpdates(manual = false) {
     if (btnCheckUpdate) {
       btnCheckUpdate.disabled = true;
@@ -1145,6 +1183,33 @@ if (window.api.onUpdateAvailable) {
 
       if (hasNewVersion) {
         activeDownloadUrl = res.downloadUrl;
+
+        // 1. Ativa o badge na sidebar "Minha Config"
+        if (navUpdateBadge) {
+          navUpdateBadge.style.display = 'inline-block';
+          navUpdateBadge.textContent = `v${res.latestVersion} 🔥`;
+        }
+
+        // 2. Ativa o Banner Global no Topo
+        if (globalAlert) {
+          globalAlert.style.display = 'flex';
+          const txt = document.getElementById('global-update-text');
+          const sub = document.getElementById('global-update-subtext');
+          if (txt) txt.textContent = `🔥 NOVA VERSÃO v${res.latestVersion} DISPONÍVEL!`;
+          if (sub) sub.textContent = `Uma nova versão com melhorias de sensibilidade e estabilidade foi lançada.`;
+          if (btnGlobalUpdateAction) btnGlobalUpdateAction.textContent = `⚡ ATUALIZAR (v${res.latestVersion})`;
+        }
+
+        // 3. Abre o Modal Pop-up na tela
+        if (updateModal) {
+          if (modalCurrVer) modalCurrVer.textContent = `v${res.currentVersion}`;
+          if (modalNewVer) modalNewVer.textContent = `v${res.latestVersion}`;
+          if (modalTitle) modalTitle.textContent = `🚀 NOVA VERSÃO v${res.latestVersion} DISPONÍVEL!`;
+          if (btnModalDownload) btnModalDownload.textContent = `⚡ BAIXAR & ATUALIZAR AGORA (v${res.latestVersion})`;
+          updateModal.style.display = 'flex';
+        }
+
+        // 4. Atualiza o Card em Minha Config
         if (cardStatusTitle) cardStatusTitle.textContent = `🚀 Nova Versão v${res.latestVersion} Disponível!`;
         if (cardStatusDesc) cardStatusDesc.textContent = `Clique abaixo para baixar e atualizar automaticamente estilo Play Store.`;
         
@@ -1169,7 +1234,6 @@ if (window.api.onUpdateAvailable) {
               };
               if (cardStatusTitle) cardStatusTitle.textContent = '✅ Download Concluído (100%)!';
               if (cardStatusDesc) cardStatusDesc.textContent = 'Clique no botão verde para reiniciar e aplicar a nova versão.';
-              alert(`✅ Download da v${res.latestVersion} concluído com sucesso!\n\nClique em "Reiniciar e Atualizar Agora" para aplicar a atualização.`);
             } else {
               btnInstallNow.disabled = false;
               btnInstallNow.textContent = 'Tentar Novamente';
@@ -1177,16 +1241,15 @@ if (window.api.onUpdateAvailable) {
             }
           };
         }
-
-        if (manual) {
-          alert(`🚀 Nova Atualização Encontrada!\n\n• Sua Versão Atual: v${res.currentVersion}\n• Nova Versão Disponível: v${res.latestVersion}\n\nClique no botão "Baixar e Atualizar" para instalar.`);
-        }
       } else {
+        if (navUpdateBadge) navUpdateBadge.style.display = 'none';
+        if (globalAlert) globalAlert.style.display = 'none';
+        if (updateModal) updateModal.style.display = 'none';
         if (btnInstallNow) btnInstallNow.style.display = 'none';
         if (cardStatusTitle) cardStatusTitle.textContent = '✔️ Você está na versão mais recente';
-        if (cardStatusDesc) cardStatusDesc.textContent = `Seu Loord Optimizer está 100% atualizado (v${res?.currentVersion || '1.0.8'}).`;
+        if (cardStatusDesc) cardStatusDesc.textContent = `Seu Loord Optimizer está 100% atualizado (v${res?.currentVersion || '1.7.1'}).`;
         if (manual) {
-          alert(`✔️ Seu Loord Optimizer já está na versão mais recente (v${res?.currentVersion || '1.0.8'})!`);
+          alert(`✔️ Seu Loord Optimizer já está na versão mais recente (v${res?.currentVersion || '1.7.1'})!`);
         }
       }
     } catch (e) {

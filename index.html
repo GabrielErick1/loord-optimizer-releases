@@ -1559,6 +1559,36 @@
   </div>
 
   
+  <!-- MODAL DE ATUALIZAÇÃO DISPONÍVEL (POP-UP) -->
+  <div id="update-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.82); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 99999; align-items: center; justify-content: center;">
+    <div style="background: linear-gradient(145deg, #131722, #0d1117); border: 2px solid #f59e0b; box-shadow: 0 0 40px rgba(245, 158, 11, 0.45); border-radius: 14px; max-width: 480px; width: 90%; padding: 24px; text-align: center; position: relative; animation: slideDownAlert 0.3s ease-out;">
+      <div style="font-size: 2.5rem; margin-bottom: 8px; animation: pulseUpdate 1.5s infinite;">🚀</div>
+      <h2 style="margin: 0 0 6px 0; color: #fbbf24; font-size: 1.25rem; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase;" id="modal-update-title">NOVA ATUALIZAÇÃO DISPONÍVEL!</h2>
+      <p style="color: #94a3b8; font-size: 0.82rem; margin: 0 0 16px 0;" id="modal-update-desc">Uma nova versão com melhorias de desempenho e sensibilidade está pronta para você.</p>
+
+      <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 8px; padding: 12px 14px; margin-bottom: 18px; text-align: left; font-size: 0.8rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #cbd5e1;">
+          <span>📌 Sua Versão: <b id="modal-curr-ver" style="color: #94a3b8;">v1.7.0</b></span>
+          <span>🔥 Nova Versão: <b id="modal-new-ver" style="color: #4ade80;">v1.7.1</b></span>
+        </div>
+        <div style="border-top: 1px dashed rgba(255, 255, 255, 0.1); padding-top: 8px; color: #fde68a; font-size: 0.76rem; line-height: 1.5;">
+          • 🧬 <b>Regedit Adaptativa & Detector de Remada</b><br>
+          • 🎯 <b>Otimizador de Pan & Engine (Anti-Pinar)</b><br>
+          • ⚡ <b>Melhorias de sensibilidade e estabilidade geral</b>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button id="btn-modal-update-download" style="width: 100%; background: linear-gradient(90deg, #f59e0b, #ef4444); color: #fff; font-size: 0.92rem; font-weight: 900; padding: 12px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(239, 68, 68, 0.4);">
+          ⚡ BAIXAR &amp; ATUALIZAR AGORA
+        </button>
+        <button id="btn-modal-update-ok" style="width: 100%; background: rgba(255, 255, 255, 0.06); color: #94a3b8; font-size: 0.82rem; font-weight: 700; padding: 9px; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+          👍 OK, LEMBRAR MAIS TARDE
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script src="renderer.js"></script>
 </body>
 </html>
