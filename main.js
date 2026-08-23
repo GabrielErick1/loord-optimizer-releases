@@ -3369,238 +3369,162 @@ ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// AUTO-UPDATE ENGINE — GITHUB RELEASES & BACKGROUND DOWNLOADER
+// AUTO-UPDATE ENGINE (Play Store Style) — ORIGINAL FUNCIONAL
 // ══════════════════════════════════════════════════════════════════════════════
 let downloadedInstallerPath = null;
-const https = require('https');
-const http = require('http');
 
-function compareVersions(v1, v2) {
-  const p1 = (v1 || '0.0.0').replace(/^v/, '').split('.').map(n => parseInt(n) || 0);
-  const p2 = (v2 || '0.0.0').replace(/^v/, '').split('.').map(n => parseInt(n) || 0);
+function compareSemver(v1, v2) {
+  const p1 = (v1 || '0.0.0').replace(/^v/i, '').split('.').map(Number);
+  const p2 = (v2 || '0.0.0').replace(/^v/i, '').split('.').map(Number);
   for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
-    const num1 = p1[i] || 0;
-    const num2 = p2[i] || 0;
-    if (num1 > num2) return 1;
-    if (num1 < num2) return -1;
+    const n1 = p1[i] || 0;
+    const n2 = p2[i] || 0;
+    if (n1 > n2) return 1;
+    if (n1 < n2) return -1;
   }
   return 0;
 }
 
-ipcMain.handle('check-for-updates', async (event) => {
-  const curVer = app.getVersion() || '1.0.0';
+ipcMain.handle('check-for-updates', async () => {
+  const currentVersion = app.getVersion() || '1.0.0';
+  try {
+    const res = await fetch('https://api.github.com/repos/GabrielErick1/loord-optimizer-releases/releases/latest', {
+      headers: { 'User-Agent': 'LoordOptimizer-AutoUpdater' }
+    });
+    if (!res.ok) {
+      return { updateAvailable: false, currentVersion, latestVersion: currentVersion };
+    }
+    const release = await res.json();
+    const tag = (release.tag_name || '').replace(/^v/i, '').trim();
 
-  // Função auxiliar com fallback
-  return new Promise((resolve) => {
-    function tryGitHubApi() {
-      const options = {
-        hostname: 'api.github.com',
-        path: '/repos/GabrielErick1/loord-optimizer-releases/releases/latest',
-        method: 'GET',
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) LoordOptimizer/1.0',
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      };
-
-      const req = https.request(options, (res) => {
-        let data = '';
-        res.on('data', (chunk) => { data += chunk; });
-        res.on('end', () => {
-          try {
-            if (res.statusCode === 200) {
-              const release = JSON.parse(data);
-              const tag = (release.tag_name || '').replace(/^v/i, '').trim();
-              const isNewer = compareVersions(tag, curVer) > 0;
-
-              let downloadUrl = null;
-              if (release.assets && Array.isArray(release.assets)) {
-                const setupAsset = release.assets.find(a => a.name && a.name.endsWith('.exe') && !a.name.includes('blockmap'));
-                if (setupAsset) downloadUrl = setupAsset.browser_download_url;
-              }
-              if (!downloadUrl) {
-                downloadUrl = `https://github.com/GabrielErick1/loord-optimizer-releases/releases/latest/download/Loord-Optimizer-Setup-${tag}.exe`;
-              }
-
-              return resolve({
-                updateAvailable: isNewer,
-                hasUpdate: isNewer,
-                latestVersion: tag,
-                currentVersion: curVer,
-                downloadUrl: downloadUrl,
-                releaseNotes: release.body || ''
-              });
-            }
-            // Fallback se API retornar 403 / erro
-            tryPackageJsonFallback();
-          } catch (_) {
-            tryPackageJsonFallback();
-          }
-        });
-      });
-
-      req.on('error', () => { tryPackageJsonFallback(); });
-      req.setTimeout(6000, () => { req.destroy(); tryPackageJsonFallback(); });
-      req.end();
+    if (!tag) {
+      return { updateAvailable: false, currentVersion, latestVersion: currentVersion };
     }
 
-    function tryPackageJsonFallback() {
-      // Fallback para o package.json no raw do GitHub (sem rate limit)
-      https.get('https://raw.githubusercontent.com/GabrielErick1/loord-optimizer-releases/main/package.json', {
-        headers: { 'User-Agent': 'Mozilla/5.0' }
-      }, (res) => {
-        let data = '';
-        res.on('data', (chunk) => { data += chunk; });
-        res.on('end', () => {
-          try {
-            const pkg = JSON.parse(data);
-            const tag = (pkg.version || '').trim();
-            const isNewer = compareVersions(tag, curVer) > 0;
-            const downloadUrl = `https://github.com/GabrielErick1/loord-optimizer-releases/releases/latest/download/Loord-Optimizer-Setup-${tag}.exe`;
+    const isNewer = compareSemver(tag, currentVersion) > 0;
+    let exeAsset = (release.assets || []).find(a => a.name && a.name.toLowerCase().endsWith('.exe') && !a.name.includes('blockmap'));
+    let downloadUrl = exeAsset ? exeAsset.browser_download_url : `https://github.com/GabrielErick1/loord-optimizer-releases/releases/latest/download/Loord-Optimizer-Setup-${tag}.exe`;
 
-            resolve({
-              updateAvailable: isNewer,
-              hasUpdate: isNewer,
-              latestVersion: tag,
-              currentVersion: curVer,
-              downloadUrl: downloadUrl,
-              releaseNotes: 'Melhorias de desempenho e sensibilidade.'
-            });
-          } catch (e) {
-            resolve({ updateAvailable: false, currentVersion: curVer, latestVersion: curVer });
-          }
-        });
-      }).on('error', () => {
-        resolve({ updateAvailable: false, currentVersion: curVer, latestVersion: curVer });
-      });
-    }
-
-    tryGitHubApi();
-  });
+    return {
+      updateAvailable: isNewer,
+      hasUpdate: isNewer,
+      currentVersion,
+      latestVersion: tag,
+      downloadUrl,
+      releaseNotes: release.body || ''
+    };
+  } catch (e) {
+    console.warn('[AutoUpdater] Erro ao verificar atualizações:', e.message);
+    return { updateAvailable: false, currentVersion, latestVersion: currentVersion, error: e.message };
+  }
 });
 
-function followRedirectsDownload(url, targetPath, onProgress, onComplete, onError) {
-  const client = url.startsWith('https') ? https : http;
-  client.get(url, { headers: { 'User-Agent': 'LoordOptimizer-AutoUpdater' } }, (res) => {
-    if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-      return followRedirectsDownload(res.headers.location, targetPath, onProgress, onComplete, onError);
-    }
-    if (res.statusCode !== 200) {
-      return onError(new Error(`Download falhou com status ${res.statusCode}`));
+ipcMain.handle('download-update-progress', async (event, downloadUrl) => {
+  try {
+    if (!downloadUrl || !downloadUrl.startsWith('http') || downloadUrl.includes('/tag/')) {
+      const res = await fetch('https://api.github.com/repos/GabrielErick1/loord-optimizer-releases/releases/latest', {
+        headers: { 'User-Agent': 'LoordOptimizer-AutoUpdater' }
+      });
+      const release = await res.json();
+      const exeAsset = (release.assets || []).find(a => a.name && a.name.toLowerCase().endsWith('.exe') && !a.name.includes('blockmap'));
+      if (exeAsset) downloadUrl = exeAsset.browser_download_url;
     }
 
-    const totalBytes = parseInt(res.headers['content-length'] || '0', 10);
+    if (!downloadUrl) return { success: false, error: 'URL de download do instalador não encontrada.' };
+
+    const targetPath = path.join(os.tmpdir(), 'LoordOptimizer_Update_Setup.exe');
+    downloadedInstallerPath = targetPath;
+
+    const response = await fetch(downloadUrl, {
+      redirect: 'follow',
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status} ao baixar arquivo.`);
+
+    const totalBytes = Number(response.headers.get('content-length')) || 76000000;
     let receivedBytes = 0;
-    const fileStream = fs.createWriteStream(targetPath);
 
-    res.on('data', (chunk) => {
-      receivedBytes += chunk.length;
-      if (totalBytes > 0) {
-        const percent = Math.floor((receivedBytes / totalBytes) * 100);
+    const fileStream = fs.createWriteStream(targetPath);
+    const reader = response.body.getReader();
+    const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
+
+    let lastSent = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      receivedBytes += value.length;
+      fileStream.write(Buffer.from(value));
+
+      const now = Date.now();
+      if (now - lastSent > 100) {
+        lastSent = now;
+        const percent = Math.min(99, Math.round((receivedBytes / totalBytes) * 100));
         const receivedMB = (receivedBytes / (1024 * 1024)).toFixed(1);
         const totalMB = (totalBytes / (1024 * 1024)).toFixed(1);
-        onProgress({ percent, receivedMB, totalMB });
-      }
-    });
-
-    res.pipe(fileStream);
-
-    fileStream.on('finish', () => {
-      fileStream.close(() => {
-        onComplete();
-      });
-    });
-
-    fileStream.on('error', (err) => {
-      fs.unlink(targetPath, () => {});
-      onError(err);
-    });
-  }).on('error', onError);
-}
-
-ipcMain.handle('download-update-progress', async (event, downloadUrl) => {
-  return new Promise((resolve, reject) => {
-    try {
-      const tempDir = app.getPath('temp');
-      const targetExe = path.join(tempDir, `Loord-Optimizer-Update-${Date.now()}.exe`);
-      const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
-
-      followRedirectsDownload(
-        downloadUrl,
-        targetExe,
-        (progress) => {
-          if (win && !win.isDestroyed()) {
-            win.webContents.send('update-download-progress', progress);
-          }
-        },
-        () => {
-          downloadedInstallerPath = targetExe;
-          if (win && !win.isDestroyed()) {
-            win.webContents.send('update-downloaded', { path: targetExe });
-          }
-          resolve({ success: true, path: targetExe });
-        },
-        (err) => {
-          console.error('[AutoUpdater] Erro ao baixar:', err);
-          if (win && !win.isDestroyed()) {
-            win.webContents.send('update-error', err.message);
-          }
-          reject(err);
+        if (win && !win.isDestroyed()) {
+          win.webContents.send('update-download-progress', { percent, receivedMB, totalMB });
         }
-      );
-    } catch (e) {
-      reject(e);
+      }
     }
-  });
+
+    fileStream.end();
+    await new Promise((resolve) => fileStream.on('finish', resolve));
+
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('update-download-progress', {
+        percent: 100,
+        receivedMB: (receivedBytes / (1024 * 1024)).toFixed(1),
+        totalMB: (receivedBytes / (1024 * 1024)).toFixed(1)
+      });
+      win.webContents.send('update-downloaded', { path: targetPath });
+    }
+
+    return { success: true, path: targetPath };
+  } catch (e) {
+    console.error('[AutoUpdater] Erro no download da atualização:', e);
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.on('install-update', () => {
+  performAppUpdate();
 });
 
 ipcMain.handle('install-update-now', async () => {
-  try {
-    if (downloadedInstallerPath && fs.existsSync(downloadedInstallerPath)) {
-      const batPath = path.join(app.getPath('temp'), 'install_loord_update.bat');
-      const cmdContent = `@echo off
-timeout /t 1 /nobreak >nul
-start "" "${downloadedInstallerPath}"
-del "%~f0"
-`;
-      fs.writeFileSync(batPath, cmdContent, 'utf8');
+  return performAppUpdate();
+});
 
+function performAppUpdate() {
+  const targetPath = downloadedInstallerPath || path.join(os.tmpdir(), 'LoordOptimizer_Update_Setup.exe');
+
+  if (fs.existsSync(targetPath)) {
+    try {
       const { spawn } = require('child_process');
-      const child = spawn('cmd.exe', ['/c', batPath], {
+      const child = spawn(targetPath, [], {
         detached: true,
-        stdio: 'ignore',
-        windowsHide: true
+        stdio: 'ignore'
       });
       child.unref();
 
       setTimeout(() => {
         app.isQuitting = true;
         app.exit(0);
-      }, 400);
+      }, 500);
 
       return { success: true };
-    } else {
-      const { shell } = require('electron');
-      shell.openExternal('https://github.com/GabrielErick1/loord-optimizer-releases/releases/latest');
-      return { success: false, error: 'Instalador não encontrado, abrindo no navegador.' };
+    } catch (e) {
+      console.error('[AutoUpdater] Erro ao executar instalador:', e);
+      try {
+        const { shell } = require('electron');
+        shell.openPath(targetPath);
+        app.exit(0);
+      } catch (_) {}
+      return { success: false, error: e.message };
     }
-  } catch (err) {
-    return { success: false, error: err.message };
+  } else {
+    const { shell } = require('electron');
+    shell.openExternal('https://github.com/GabrielErick1/loord-optimizer-releases/releases/latest');
+    return { success: false, error: 'Arquivo do instalador não encontrado.' };
   }
-});
-
-ipcMain.on('install-update', () => {
-  if (downloadedInstallerPath && fs.existsSync(downloadedInstallerPath)) {
-    const { spawn } = require('child_process');
-    const child = spawn(downloadedInstallerPath, [], {
-      detached: true,
-      stdio: 'ignore'
-    });
-    child.unref();
-    setTimeout(() => {
-      app.isQuitting = true;
-      app.exit(0);
-    }, 400);
-  }
-});
+}
 
