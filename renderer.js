@@ -2304,13 +2304,15 @@ function _aHighlightFromMul(mul) {
   });
 }
 
-// ── DETECTOR DE REMADA (100% FUNCIONAL E INTERATIVO) ────────────────────────
+// ── DETECTOR DE REMADA (100% ILUSTRATIVO, INTERATIVO E GAMER) ───────────────
 let _rSamples = [];
 let _rLastX = null, _rLastY = null, _rLastTime = null;
 let _rAnimFrame = null;
 let _rFinalMul = null;
 let _rPoints = [];
 let _rZoneActive = false;
+let _rHasDrawn = false;
+let _rIdlePhase = 0;
 
 function getRemadaCanvas() {
   const cv = document.getElementById('remada-canvas');
@@ -2318,8 +2320,8 @@ function getRemadaCanvas() {
   const z = document.getElementById('remada-zone');
   if (z) {
     const rect = z.getBoundingClientRect();
-    const w = Math.round(rect.width) || 600;
-    const h = Math.round(rect.height) || 90;
+    const w = Math.round(rect.width) || 700;
+    const h = Math.max(120, Math.round(rect.height) || 120);
     if (cv.width !== w || cv.height !== h) {
       cv.width = w;
       cv.height = h;
@@ -2328,50 +2330,136 @@ function getRemadaCanvas() {
   return cv;
 }
 
-function drawRemadaTrail() {
+function drawRemadaCanvas() {
   const cv = document.getElementById('remada-canvas');
   if (!cv) return;
   const ctx = cv.getContext('2d');
   if (!ctx) return;
 
-  ctx.clearRect(0, 0, cv.width, cv.height);
+  const w = cv.width;
+  const h = cv.height;
+  ctx.clearRect(0, 0, w, h);
+
+  // 1. Grade cibernética sutil de fundo
+  ctx.save();
+  ctx.strokeStyle = 'rgba(168, 85, 247, 0.08)';
+  ctx.lineWidth = 1;
+  const gridSize = 24;
+  for (let x = 0; x < w; x += gridSize) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+  }
+  for (let y = 0; y < h; y += gridSize) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+  }
+
+  // Linha central de mira / baseline
+  ctx.strokeStyle = 'rgba(251, 191, 36, 0.2)';
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(0, h * 0.5); ctx.lineTo(w, h * 0.5); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
   const now = performance.now();
-  const maxAge = 600; // ms
 
-  // Desenha os segmentos do rastro
-  for (let i = 1; i < _rPoints.length; i++) {
-    const p0 = _rPoints[i - 1];
-    const p1 = _rPoints[i];
-    const age = now - p1.t;
-    if (age > maxAge) continue;
+  // 2. Se o usuário estiver desenhando ou já desenhou:
+  if (_rPoints.length > 1) {
+    // Desenha a linha da remada com efeito laser neon
+    for (let i = 1; i < _rPoints.length; i++) {
+      const p0 = _rPoints[i - 1];
+      const p1 = _rPoints[i];
+      const age = now - p1.t;
+      const alpha = _rZoneActive ? Math.max(0.2, 1 - age / 1200) : 0.85;
+      const spd = p1.spd || 0;
 
-    const alpha = Math.max(0, 1 - age / maxAge);
-    const spd = p1.spd || 0;
+      let r = 56, g = 189, b = 248; // Azul suave
+      if (spd > 8)  { r = 251; g = 191; b = 36; }  // Amarelo
+      if (spd > 20) { r = 239; g = 68;  b = 68; }  // Vermelho
 
-    let r = 56, g = 189, b = 248; // Azul suave
-    if (spd > 8)  { r = 251; g = 191; b = 36; }  // Amarelo moderado
-    if (spd > 20) { r = 239; g = 68;  b = 68; }  // Vermelho rápido
+      // Brilho externo neon
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.lineTo(p1.x, p1.y);
+      ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.4})`;
+      ctx.lineWidth = Math.min(10, Math.max(4, 5 + spd * 0.25));
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // Núcleo brilhante
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.lineTo(p1.x, p1.y);
+      ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.95})`;
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 1)`;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Ponto na ponta atual do mouse
+    if (_rZoneActive && _rPoints.length > 0) {
+      const last = _rPoints[_rPoints.length - 1];
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(last.x, last.y, 6, 0, Math.PI * 2);
+      ctx.fillStyle = '#fbbf24';
+      ctx.shadowBlur = 16;
+      ctx.shadowColor = '#f59e0b';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(last.x, last.y, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.restore();
+    }
+  } else if (!_rZoneActive && !_rHasDrawn) {
+    // 3. ANIMAÇÃO ILUSTRATIVA DEMONSTRATIVA (Modo Idle)
+    _rIdlePhase += 0.035;
+    ctx.save();
+
+    // Desenha curva demonstrativa de puxada de capa
+    ctx.beginPath();
+    const startX = w * 0.15;
+    const endX = w * 0.85;
+    for (let x = startX; x <= endX; x += 4) {
+      const prog = (x - startX) / (endX - startX);
+      const wave = Math.sin(prog * Math.PI * 3 + _rIdlePhase) * (h * 0.22);
+      const y = h * 0.65 - prog * (h * 0.35) + wave;
+      if (x === startX) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = 'rgba(251, 191, 36, 0.45)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([8, 6]);
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = 'rgba(251, 191, 36, 0.6)';
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Partícula viajando na curva
+    const ballProg = (Math.sin(_rIdlePhase * 0.8) + 1) / 2;
+    const ballX = startX + ballProg * (endX - startX);
+    const ballWave = Math.sin(ballProg * Math.PI * 3 + _rIdlePhase) * (h * 0.22);
+    const ballY = h * 0.65 - ballProg * (h * 0.35) + ballWave;
 
     ctx.beginPath();
-    ctx.moveTo(p0.x, p0.y);
-    ctx.lineTo(p1.x, p1.y);
-    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.9})`;
-    ctx.lineWidth = Math.min(6, Math.max(2, 3 + spd * 0.15));
-    ctx.lineCap = 'round';
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 0.8)`;
-    ctx.stroke();
+    ctx.arc(ballX, ballY, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#ef4444';
+    ctx.shadowBlur = 14;
+    ctx.shadowColor = '#ef4444';
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(253, 230, 138, 0.85)';
+    ctx.font = 'bold 11px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('⚡ Exemplo de Puxada de Capa — Mova o mouse aqui para capturar seu estilo real', w * 0.5, h * 0.88);
+    ctx.restore();
   }
 
-  // Remove pontos antigos
-  const cutOff = now - maxAge - 50;
-  while (_rPoints.length > 0 && _rPoints[0].t < cutOff) {
-    _rPoints.shift();
-  }
-
-  if (_rZoneActive || _rPoints.length > 0) {
-    _rAnimFrame = requestAnimationFrame(drawRemadaTrail);
-  }
+  _rAnimFrame = requestAnimationFrame(drawRemadaCanvas);
 }
 
 function onRemadaMouseMove(e) {
@@ -2381,6 +2469,8 @@ function onRemadaMouseMove(e) {
   const x = e.clientX - rc.left;
   const y = e.clientY - rc.top;
   const now = performance.now();
+
+  _rHasDrawn = true;
 
   let spd = 0;
   if (_rLastX !== null && _rLastTime !== null) {
@@ -2392,31 +2482,29 @@ function onRemadaMouseMove(e) {
       if (spd > 0.05) {
         _rSamples.push({ spd, t: now });
         
-        // Atualiza display ao vivo
+        // Atualiza display ao vivo com estilo HUD gamer
         const lv = document.getElementById('remada-speed-live');
         if (lv) {
           const pxSec = Math.round(spd * 1000);
-          const label = spd <= 8 ? '🌊 Lenta / Controle' : spd <= 22 ? '⚡ Equilibrada' : '🔥 Rápida / Agressiva';
-          lv.innerHTML = `<span style="font-size:1.1rem;font-weight:900;color:#fbbf24;">${pxSec} px/s</span> &nbsp;—&nbsp; <span style="font-weight:700;">${label}</span>`;
+          const label = spd <= 8 ? '🌊 Puxada Suave / Precisa' : spd <= 22 ? '⚡ Puxada Equilibrada' : '🔥 Puxada Rápida / Full Lata';
+          lv.innerHTML = `🚀 <b style="color:#fbbf24;font-size:1.1rem;">${pxSec} px/s</b> &nbsp;|&nbsp; <span>${label}</span>`;
         }
       }
     }
   }
 
   _rPoints.push({ x, y, t: now, spd });
+  if (_rPoints.length > 120) _rPoints.shift();
+
   _rLastX = e.clientX;
   _rLastY = e.clientY;
   _rLastTime = now;
-
-  // Garante animação rodando
-  if (!_rAnimFrame) {
-    _rAnimFrame = requestAnimationFrame(drawRemadaTrail);
-  }
 }
 
 function startRemadaCapture() {
   _rZoneActive = true;
   _rSamples = [];
+  _rPoints = [];
   _rLastX = null;
   _rLastY = null;
   _rLastTime = null;
@@ -2425,22 +2513,15 @@ function startRemadaCapture() {
   if (z) {
     z.style.border = '2px dashed rgba(251,191,36,0.9)';
     z.style.background = 'rgba(251,191,36,0.08)';
-    z.style.boxShadow = '0 0 20px rgba(251,191,36,0.25)';
+    z.style.boxShadow = '0 0 25px rgba(251,191,36,0.3)';
   }
 
-  const cv = getRemadaCanvas();
-  if (cv) {
-    const ctx = cv.getContext('2d');
-    if (ctx) ctx.clearRect(0, 0, cv.width, cv.height);
-  }
+  getRemadaCanvas();
 
   const idleMsg = document.getElementById('remada-idle-msg');
   const activeMsg = document.getElementById('remada-active-msg');
   if (idleMsg) idleMsg.style.display = 'none';
   if (activeMsg) activeMsg.style.display = 'block';
-
-  if (_rAnimFrame) cancelAnimationFrame(_rAnimFrame);
-  _rAnimFrame = requestAnimationFrame(drawRemadaTrail);
 }
 
 function stopRemadaCapture() {
@@ -2457,9 +2538,8 @@ function stopRemadaCapture() {
   if (idleMsg) idleMsg.style.display = 'block';
   if (activeMsg) activeMsg.style.display = 'none';
 
-  if (_rSamples.length < 5) return;
+  if (_rSamples.length < 4) return;
 
-  // Processa as velocidades da remada
   const spds = _rSamples.map(s => s.spd).filter(s => s > 0.1);
   if (spds.length === 0) return;
 
@@ -2481,28 +2561,28 @@ function stopRemadaCapture() {
 
   let profileDesc = '', emoji = '⚡';
   if (mul <= 0.72) {
-    profileDesc = 'Puxada RÁPIDA / AGRESSIVA — Multiplicador suavizado para não passar da cabeça';
+    profileDesc = 'Puxada RÁPIDA / AGRESSIVA — Multiplicador suavizado para estabilizar na cabeça';
     emoji = '🔥';
   } else if (mul <= 0.92) {
-    profileDesc = 'Puxada MÉDIA-RÁPIDA — Excelente subida de capa controlada';
+    profileDesc = 'Puxada MÉDIA-RÁPIDA — Excelente subida de capa controlada sem tremer';
     emoji = '⚡';
   } else if (mul <= 1.10) {
-    profileDesc = 'Puxada EQUILIBRADA — Resposta linear 1:1 perfeita';
+    profileDesc = 'Puxada EQUILIBRADA — Curva linear 1:1 perfeita para subida padrão';
     emoji = '⚡';
   } else if (mul <= 1.35) {
     profileDesc = 'Puxada MODERADA / CURTA — Multiplicador elevado para acelerar a subida';
     emoji = '🌊';
   } else {
-    profileDesc = 'Puxada SUAVE / LENTA — Multiplicador alto para máxima facilidade de capa';
+    profileDesc = 'Puxada SUAVE / LENTA — Multiplicador alto para facilitar capa com pouco movimento';
     emoji = '🌊';
   }
 
   const rt = document.getElementById('remada-result-text');
   if (rt) {
     rt.innerHTML = [
-      `${emoji} <b>Velocidade Detectada:</b> Pico <b>${Math.round(peak * 1000)} px/s</b> | Média <b>${Math.round(avg * 1000)} px/s</b>`,
-      `🎯 <b>Diagnóstico:</b> ${profileDesc}`,
-      `🎚️ <b>Multiplicador Ideal Recomendado:</b> <span style="color:#fbbf24;font-size:1.05rem;font-weight:900;background:rgba(251,191,36,0.18);padding:2px 8px;border-radius:4px;border:1px solid rgba(251,191,36,0.5);">${mul.toFixed(2)}x</span>`,
+      `${emoji} <b>Velocidade Real Medida:</b> Pico <b>${Math.round(peak * 1000)} px/s</b> | Média <b>${Math.round(avg * 1000)} px/s</b>`,
+      `🎯 <b>Diagnóstico da Puxada:</b> ${profileDesc}`,
+      `🎚️ <b>Multiplicador Ideal Recomendado:</b> <span style="color:#fbbf24;font-size:1.1rem;font-weight:900;background:rgba(251,191,36,0.18);padding:3px 10px;border-radius:5px;border:1px solid rgba(251,191,36,0.6);">${mul.toFixed(2)}x</span>`,
     ].join('<br>');
   }
 
@@ -2525,11 +2605,11 @@ window.applyRemadaResult = function() {
   const box = se?.parentElement?.parentElement;
   if (box) {
     box.style.border = '1px solid rgba(251,191,36,0.9)';
-    box.style.boxShadow = '0 0 20px rgba(251,191,36,0.4)';
+    box.style.boxShadow = '0 0 22px rgba(251,191,36,0.5)';
     setTimeout(() => {
       box.style.border = '1px solid rgba(251,191,36,0.25)';
       box.style.boxShadow = 'none';
-    }, 2000);
+    }, 2500);
   }
 };
 
@@ -2537,6 +2617,7 @@ window.resetRemada = function() {
   _rSamples = [];
   _rFinalMul = null;
   _rPoints = [];
+  _rHasDrawn = false;
   const cv = document.getElementById('remada-canvas');
   if (cv) {
     const ctx = cv.getContext('2d');
@@ -2546,7 +2627,7 @@ window.resetRemada = function() {
   if (rr) rr.style.display = 'none';
 };
 
-// Vincula listeners no elemento do detector de remada de forma direta
+// Vincula listeners e inicia o loop de renderização do canvas
 document.addEventListener('DOMContentLoaded', () => {
   const z = document.getElementById('remada-zone');
   if (z) {
@@ -2555,9 +2636,9 @@ document.addEventListener('DOMContentLoaded', () => {
     z.addEventListener('mousemove', onRemadaMouseMove);
   }
   getRemadaCanvas();
+  if (!_rAnimFrame) _rAnimFrame = requestAnimationFrame(drawRemadaCanvas);
 });
 
-// Inicialização imediata caso o DOM já esteja pronto
 (() => {
   const z = document.getElementById('remada-zone');
   if (z) {
@@ -2565,6 +2646,7 @@ document.addEventListener('DOMContentLoaded', () => {
     z.addEventListener('mouseleave', stopRemadaCapture);
     z.addEventListener('mousemove', onRemadaMouseMove);
     getRemadaCanvas();
+    if (!_rAnimFrame) _rAnimFrame = requestAnimationFrame(drawRemadaCanvas);
   }
 })();
 

@@ -194,18 +194,16 @@
 
                 <!-- Zona de captura -->
                 <div id="remada-zone"
-                  style="width:100%; height:90px; border-radius:8px; border: 2px dashed rgba(168,85,247,0.5); background: rgba(168,85,247,0.04); cursor:crosshair; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; transition: all 0.2s; user-select:none;"
-                  onmouseenter="startRemadaCapture()" onmouseleave="stopRemadaCapture()">
-                  <div id="remada-idle-msg" style="text-align:center; pointer-events:none;">
-                    <div style="font-size:1.4rem;">🖱️</div>
-                    <div style="font-size:0.75rem; color:#a78bfa; font-weight:600; margin-top:4px;">Mova o mouse aqui como no jogo</div>
+                  style="width:100%; height:120px; border-radius:10px; border: 2px dashed rgba(168,85,247,0.6); background: rgba(10,12,20,0.6); cursor:crosshair; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; transition: all 0.2s; user-select:none;">
+                  <div id="remada-idle-msg" style="text-align:center; pointer-events:none; z-index:2; position:relative;">
+                    <div style="font-size:1.6rem; animation: pulseUpdate 1.8s infinite;">🖱️</div>
+                    <div style="font-size:0.8rem; color:#fde68a; font-weight:700; margin-top:4px;">Mova o mouse aqui fazendo o movimento de subida de capa</div>
                   </div>
-                  <div id="remada-active-msg" style="display:none; text-align:center; pointer-events:none;">
-                    <div style="font-size:1rem; color:#c084fc; font-weight:800;" id="remada-speed-live">Medindo...</div>
-                    <div style="font-size:0.7rem; color:#a78bfa; margin-top:3px;">Velocidade detectada em tempo real</div>
+                  <div id="remada-active-msg" style="display:none; text-align:center; pointer-events:none; z-index:2; position:absolute; top:10px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.65); padding:4px 14px; border-radius:6px; border:1px solid rgba(251,191,36,0.4);">
+                    <div style="font-size:0.92rem; color:#fbbf24; font-weight:800;" id="remada-speed-live">🚀 Medindo Velocidade...</div>
                   </div>
                   <!-- Rastro visual da remada -->
-                  <canvas id="remada-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; opacity:0.6;"></canvas>
+                  <canvas id="remada-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; opacity:1;"></canvas>
                 </div>
 
                 <!-- Resultado da detecção -->
