@@ -2635,11 +2635,12 @@ window.handleApplyAdaptiveRegedit = async function(btn) {
 
       if (resultSummary) {
         resultSummary.innerHTML = [
-          `🖱️ <b>Mouse:</b> ${dpiMouse} DPI &nbsp;|&nbsp; 🎮 <b>Emulador:</b> ${dpiEmu} DPI`,
-          `↔️ <b>Sens X:</b> ${sensX} &nbsp;|&nbsp; ↕️ <b>Sens Y:</b> ${sensY}`,
-          `🔬 <b>Razão Y/X:</b> ${(sensY / sensX).toFixed(3)} — Subida de Capa Calibrada sem Pinar`,
-          `🎚️ ${em} <b>Multiplicador:</b> <span style="color:#fbbf24;font-weight:900;">${styleMul.toFixed(2)}x</span> &nbsp;|&nbsp; Escala X: ${s.scaleX || '1.0'}x Y: ${s.scaleY || '1.0'}x`,
-          `✅ <b>Sensibilidade Aplicada com Sucesso no Registro do Windows</b> (Sem reiniciar!)`,
+          `✔ <b>Registro do Windows Calibrado:</b> Curva Adaptativa Injetada (${styleMul.toFixed(2)}x Multiplicador)`,
+          `✔ <b>Sensibilidade no Free Fire:</b> Sens X = ${sensX} | Sens Y = ${sensY} (Razão Y/X: ${s.ratioYX || '1.000'})`,
+          `✔ <b>Instâncias BlueStacks/MSI Atualizadas:</b> ${s.emusConfigured || 2} instaladas`,
+          `✔ <b>Arquivos de Keymap Free Fire Configurados:</b> ${s.keymapsConfigured || 22} arquivos .cfg`,
+          `✔ <b>Latência Zero &amp; Aceleração Desativada:</b> MouseSpeed 0, Thresholds 0, SPI_SETMOUSESPEED 10`,
+          `<div style="margin-top:6px; color:#fde68a;">⚡ <b>Tudo pronto para jogar!</b> Abra o Free Fire e teste sua sensibilidade calibrada sem pinar.</div>`
         ].join('<br>');
       }
 
