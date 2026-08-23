@@ -3404,45 +3404,49 @@ ipcMain.on('install-update', () => {
 });
 
 ipcMain.handle('install-update-now', async () => {
-  try {
-    autoUpdater.quitAndInstall(false, true);
-    return { success: true };
-  } catch (_) {
-    return performAppUpdate();
-  }
+  return performAppUpdate();
 });
 
 function performAppUpdate() {
+  const { shell } = require('electron');
   const targetPath = downloadedInstallerPath || path.join(os.tmpdir(), 'LoordOptimizer_Update_Setup.exe');
+
+  console.log('[AutoUpdater] Tentando instalar de:', targetPath);
+  console.log('[AutoUpdater] Arquivo existe:', fs.existsSync(targetPath));
 
   if (fs.existsSync(targetPath)) {
     try {
-      const { spawn } = require('child_process');
-      const child = spawn(targetPath, [], {
-        detached: true,
-        stdio: 'ignore'
+      // cmd /c start é a forma correta de lançar instaladores NSIS com UAC no Windows
+      exec(`cmd /c start "" "${targetPath}"`, { windowsHide: false }, (err) => {
+        if (err) {
+          console.error('[AutoUpdater] Erro ao executar instalador via cmd:', err);
+          // Fallback: abre com shell
+          shell.openPath(targetPath);
+        }
       });
-      child.unref();
 
+      // Fecha o app após 1.2s para dar tempo do instalador iniciar
       setTimeout(() => {
         app.isQuitting = true;
         app.exit(0);
-      }, 500);
+      }, 1200);
 
       return { success: true };
     } catch (e) {
-      console.error('[AutoUpdater] Erro ao executar instalador:', e);
+      console.error('[AutoUpdater] Erro crítico ao executar instalador:', e);
       try {
-        const { shell } = require('electron');
         shell.openPath(targetPath);
-        app.exit(0);
+        setTimeout(() => {
+          app.isQuitting = true;
+          app.exit(0);
+        }, 1500);
       } catch (_) {}
       return { success: false, error: e.message };
     }
   } else {
-    const { shell } = require('electron');
+    console.error('[AutoUpdater] Arquivo do instalador não encontrado em:', targetPath);
     shell.openExternal('https://github.com/GabrielErick1/loord-optimizer-releases/releases/latest');
-    return { success: false, error: 'Arquivo do instalador não encontrado.' };
+    return { success: false, error: 'Arquivo do instalador não encontrado. Redirecionando para GitHub Releases.' };
   }
 }
 
