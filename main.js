@@ -3416,12 +3416,14 @@ function performAppUpdate() {
 
   if (fs.existsSync(targetPath)) {
     try {
-      // cmd /c start é a forma correta de lançar instaladores NSIS com UAC no Windows
-      exec(`cmd /c start "" "${targetPath}"`, { windowsHide: false }, (err) => {
+      // /S = instalação silenciosa NSIS (sem UI, sem cliques, automático)
+      exec(`cmd /c start "" "${targetPath}" /S`, { windowsHide: false }, (err) => {
         if (err) {
           console.error('[AutoUpdater] Erro ao executar instalador via cmd:', err);
-          // Fallback: abre com shell
-          shell.openPath(targetPath);
+          // Fallback com /S via spawn
+          const { spawn } = require('child_process');
+          const child = spawn(targetPath, ['/S'], { detached: true, stdio: 'ignore' });
+          child.unref();
         }
       });
 
