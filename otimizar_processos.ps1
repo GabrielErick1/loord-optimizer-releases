@@ -133,7 +133,7 @@ try {
 # =============================================================
 Write-Host ""
 Write-Host "[5/5] Elevando prioridade do emulador para ALTA..." -ForegroundColor Cyan
-$gameApps = @('HD-Player','dnplayer','LdBoxHeadless','Nox','NoxVMHandle','MEmu','BlueStacks','HD-Frontend','HD-Agent')
+$gameApps = @('HD-Player','dnplayer','LdBoxHeadless','Nox','NoxVMHandle','MEmu','BlueStacks','BlueStacksServices','BstkSVC','BlueStacksHelper','MSIAppPlayer','HD-Frontend','HD-Agent')
 $boosted = 0
 Get-Process | Where-Object { $gameApps -contains $_.ProcessName } | ForEach-Object {
     try { $_.PriorityClass = 'High'; $boosted++ } catch {}

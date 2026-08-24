@@ -1052,7 +1052,10 @@ function buildAdaptiveAffinityMap(hw) {
   return {
     'HD-Player': mask(emuCores),
     'BlueStacks': mask(emuCores),
+    'BlueStacksServices': mask(emuCores),
+    'BstkSVC': mask(emuCores),
     'BlueStacksHelper': mask(emuCores),
+    'MSIAppPlayer': mask(emuCores),
     'Discord': mask(bgCores),
     'DiscordSystemHelper': mask(bgCores),
     'chrome': mask(midCores),
@@ -1079,6 +1082,8 @@ function configureProcessLasso(hw, emuCores) {
   const emuProcesses = [
     'hd-player.exe', 'HD-Player.exe',
     'bluestacks.exe', 'BlueStacks.exe',
+    'bluestacksservices.exe', 'BlueStacksServices.exe',
+    'bstksvc.exe', 'BstkSVC.exe',
     'bluestackshelper.exe', 'BlueStacksHelper.exe',
     'hd-glcheck.exe', 'HD-GlCheck.exe',
     'msiappplayer.exe', 'MSIAppPlayer.exe'
@@ -1291,7 +1296,7 @@ ipcMain.handle('boost-game-turbo', async () => {
 
     // ── 4. IFEO Registry Priority (Excluir de Throttling) ─────────────────
     const IFEO = 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options';
-    for (const exe of ['HD-Player.exe', 'BlueStacks.exe', 'BlueStacksHelper.exe']) {
+    for (const exe of ['HD-Player.exe', 'BlueStacks.exe', 'BlueStacksServices.exe', 'BstkSVC.exe', 'BlueStacksHelper.exe', 'MSIAppPlayer.exe']) {
       try { execSync(`reg add "${IFEO}\\${exe}\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f /reg:64`, { stdio: 'ignore' }); } catch (_) { }
       try { execSync(`reg add "${IFEO}\\${exe}\\PerfOptions" /v IoPriority /t REG_DWORD /d 3 /f /reg:64`, { stdio: 'ignore' }); } catch (_) { }
     }
@@ -1322,13 +1327,15 @@ ipcMain.handle('boost-game-turbo', async () => {
       execSync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${tcpPS.replace(/"/g, '\\"')}"`, { stdio: 'ignore', timeout: 8000 });
     } catch (_) { }
 
-    // ── 9. Configurações de afinidade viva ignoradas conforme solicitação ───
-    // O usuário solicitou não alterar a afinidade "Atual" dos processos em execução,
-    // deixando a afinidade viva como está e definindo somente a regra "Sempre" no Process Lasso.
+    // ── 9. Aplicar Afinidade e Prioridade em tempo real aos processos do Emulador ───
+    try {
+      const liveAffinityPS = `Get-Process | Where-Object { @('HD-Player','BlueStacks','BlueStacksServices','BstkSVC','BlueStacksHelper','MSIAppPlayer') -contains $_.ProcessName } | ForEach-Object { try { $_.ProcessorAffinity = [IntPtr]${hdMask}; $_.PriorityClass = 'High' } catch {} }`;
+      execSync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${liveAffinityPS.replace(/"/g, '\\"')}"`, { stdio: 'ignore', timeout: 6000 });
+    } catch (_) { }
 
     // ── 10. SmartTrim: clear standby list + working sets ──────────────────
     try {
-      execSync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "Clear-DnsClientCache; [System.GC]::Collect(); Get-Process | Where-Object { $_.WorkingSet64 -gt 150MB -and $_.Name -notmatch 'HD-Player|BlueStacks' } | ForEach-Object { try { $_.MinWorkingSet = 4096 } catch {} }"`, { stdio: 'ignore', timeout: 8000 });
+      execSync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "Clear-DnsClientCache; [System.GC]::Collect(); Get-Process | Where-Object { $_.WorkingSet64 -gt 150MB -and $_.Name -notmatch 'HD-Player|BlueStacks|BlueStacksServices|BstkSVC' } | ForEach-Object { try { $_.MinWorkingSet = 4096 } catch {} }"`, { stdio: 'ignore', timeout: 8000 });
     } catch (_) { }
 
     // ── 11. Windows Game Mode + No Xbox DVR ─────────────────────────────
