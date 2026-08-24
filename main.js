@@ -2965,6 +2965,7 @@ ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.pan_speed_normalized\\s*=\\s*)"[^"]*"`, 'g'), `$1"${panSpeed}"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.graphics_renderer\\s*=\\s*)"[^"]*"`, 'g'), `$1"${gVal}"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.graphics_engine\\s*=\\s*)"[^"]*"`, 'g'), `$1"aga"`);
+            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.vulkan_supported\\s*=\\s*)"[^"]*"`, 'g'), `$1"1"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.astc_decoding_mode\\s*=\\s*)"[^"]*"`, 'g'), `$1"${astcVal}"`);
             
             if (enableHighFps) {
@@ -3238,6 +3239,7 @@ ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.pan_speed_normalized\\s*=\\s*)"[^"]*"`, 'g'), `$1"${rawPan}"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.graphics_renderer\\s*=\\s*)"[^"]*"`, 'g'), `$1"${gVal}"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.graphics_engine\\s*=\\s*)"[^"]*"`, 'g'), `$1"aga"`);
+            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.vulkan_supported\\s*=\\s*)"[^"]*"`, 'g'), `$1"1"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.astc_decoding_mode\\s*=\\s*)"[^"]*"`, 'g'), `$1"software"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.enable_high_fps\\s*=\\s*)"[^"]*"`, 'g'), `$1"1"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.max_fps\\s*=\\s*)"[^"]*"`, 'g'), `$1"240"`);
