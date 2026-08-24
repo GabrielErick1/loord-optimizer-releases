@@ -2862,6 +2862,14 @@ function syncSensInputs() {
     cr1.addEventListener('change', () => { cr2.value = cr1.value; });
     cr2.addEventListener('change', () => { cr1.value = cr2.value; });
   }
+
+  // Sync Tweaks
+  const tw1 = document.getElementById('comp-tweaks');
+  const tw2 = document.getElementById('emu-comp-tweaks');
+  if (tw1 && tw2) {
+    tw1.addEventListener('change', () => { tw2.value = tw1.value; });
+    tw2.addEventListener('change', () => { tw1.value = tw2.value; });
+  }
 }
 document.addEventListener('DOMContentLoaded', syncSensInputs);
 syncSensInputs();
@@ -2872,6 +2880,9 @@ window.handleApplyCompTweak = async function(btn) {
   
   const panSpeed = document.getElementById(isEmuTab ? 'emu-comp-pan-speed' : 'comp-pan-speed')?.value 
     || document.getElementById('comp-pan-speed')?.value || '25.0';
+    
+  const tweaks = document.getElementById(isEmuTab ? 'emu-comp-tweaks' : 'comp-tweaks')?.value 
+    || document.getElementById('comp-tweaks')?.value || '16450';
     
   const sensX = parseSensValue(
     document.getElementById(isEmuTab ? 'emu-comp-sens-x' : 'comp-sens-x')?.value
@@ -2914,6 +2925,7 @@ window.handleApplyCompTweak = async function(btn) {
       panSpeed: parseFloat(String(panSpeed).replace(',', '.')),
       sensitivityX: sensX,
       sensitivityY: sensY,
+      tweaks: parseInt(tweaks) || 16450,
       astcMode: 'hardware',
       graphicsRenderer: renderer,
       cpuCores: cpuCores,

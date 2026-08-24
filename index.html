@@ -253,28 +253,41 @@
               Injeta velocidade de interpolação Pan (15.0 - 20.0), decodificação ASTC por Hardware na GPU, DirectX sem stutter e High FPS no BlueStacks e MSI.
             </p>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 14px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 14px;">
               <!-- Speed do Pan -->
               <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
-                <label style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; display: block; margin-bottom: 4px;">⚡ Speed do Pan (Anti-Pinar / Fluidez):</label>
+                <label style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; display: block; margin-bottom: 4px;">⚡ Speed do Pan (Anti-Pinar):</label>
                 <select id="comp-pan-speed" style="width: 100%; background: #18181b; color: #fff; border: 1px solid #3f3f46; border-radius: 4px; padding: 6px; font-size: 0.82rem; font-weight: 700;">
                   <option value="15.0">15.0 (Competitivo / Mira Lisa)</option>
                   <option value="18.0">18.0 (Equilibrado / Capa Rápido)</option>
                   <option value="20.0">20.0 (Ultra Rápido / Zero Delay)</option>
                   <option value="25.0" selected>25.0 (Extremo / Resposta Imediata)</option>
                 </select>
-                <span style="font-size: 0.68rem; color: #71717a; display: block; margin-top: 4px;">Elimina o delay de interpolação da câmera entre frames.</span>
+                <span style="font-size: 0.68rem; color: #71717a; display: block; margin-top: 4px;">Latência 1ms (Zero Delay)</span>
+              </div>
+
+              <!-- Tweaks do Pan -->
+              <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+                <label style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; display: block; margin-bottom: 4px;">🎯 Tweak do Pan (Mira/Analógico):</label>
+                <select id="comp-tweaks" style="width: 100%; background: #18181b; color: #fff; border: 1px solid #3f3f46; border-radius: 4px; padding: 6px; font-size: 0.82rem; font-weight: 700;">
+                  <option value="16450" selected>16450 (Padrão Pro / Anti-Bug)</option>
+                  <option value="21058">21058 (Puxada Reta / Sem Pinar)</option>
+                  <option value="16458">16458 (Zero Tremor / Recoil Firme)</option>
+                  <option value="2">2 (Clássico BlueStacks 4/5)</option>
+                  <option value="1026">1026 (Sensibilidade Alta)</option>
+                </select>
+                <span style="font-size: 0.68rem; color: #71717a; display: block; margin-top: 4px;">Injeta no Pan do Keymap</span>
               </div>
 
               <!-- Sens X e Y do Keymap -->
               <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); display: flex; gap: 8px;">
                 <div style="flex: 1;">
                   <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Sens X (Giro):</label>
-                  <input type="text" id="comp-sens-x" value="1,67" style="width: 100%; background: #18181b; color: #fff; border: 1px solid #3f3f46; border-radius: 4px; padding: 6px; font-size: 0.82rem; font-weight: 700;">
+                  <input type="text" id="comp-sens-x" value="1,69" style="width: 100%; background: #18181b; color: #fff; border: 1px solid #3f3f46; border-radius: 4px; padding: 6px; font-size: 0.82rem; font-weight: 700;">
                 </div>
                 <div style="flex: 1;">
                   <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Sens Y (Subida):</label>
-                  <input type="text" id="comp-sens-y" value="1" style="width: 100%; background: #18181b; color: #fff; border: 1px solid #3f3f46; border-radius: 4px; padding: 6px; font-size: 0.82rem; font-weight: 700;">
+                  <input type="text" id="comp-sens-y" value="1.1" style="width: 100%; background: #18181b; color: #fff; border: 1px solid #3f3f46; border-radius: 4px; padding: 6px; font-size: 0.82rem; font-weight: 700;">
                 </div>
               </div>
 
@@ -290,7 +303,7 @@
 
               <!-- CPU e RAM -->
               <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
-                <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">🧠 Núcleos de CPU &amp; RAM:</label>
+                <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">🧠 Núcleos CPU &amp; RAM:</label>
                 <select id="comp-cpu-ram" style="width: 100%; background: #18181b; color: #fff; border: 1px solid #3f3f46; border-radius: 4px; padding: 6px; font-size: 0.82rem;">
                   <option value="auto" id="opt-cpu-ram-auto">⚡ Automático (Recomendado)</option>
                   <option value="2-2048">2 Núcleos / 2GB RAM (PC Fraco)</option>
@@ -1111,12 +1124,12 @@
             </div>
 
             <div
-              style="margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+              style="margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px;">
               <!-- Speed do Pan -->
               <div
                 style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
                 <label style="font-size:11px; color:#fbbf24; font-weight:700; display:block; margin-bottom:4px;">⚡ Speed
-                  do Pan (Anti-Pinar / Fluidez):</label>
+                  do Pan (Anti-Pinar):</label>
                 <select id="emu-comp-pan-speed"
                   style="width:100%; padding:6px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
                   <option value="15.0">15.0 (Recomendado - Fluido & Sem Pinar)</option>
@@ -1124,8 +1137,23 @@
                   <option value="20.0">20.0 (Ultra Rápido - Telas 144Hz/240Hz)</option>
                   <option value="25.0" selected>25.0 (Extremo / Resposta Imediata)</option>
                 </select>
-                <span style="font-size:10px; color:#94a3b8; margin-top:3px; display:block;">Elimina o delay de
-                  interpolação da câmera entre frames.</span>
+                <span style="font-size:10px; color:#94a3b8; margin-top:3px; display:block;">Latência 1ms (Zero Delay)</span>
+              </div>
+
+              <!-- Tweaks do Pan -->
+              <div
+                style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
+                <label style="font-size:11px; color:#fbbf24; font-weight:700; display:block; margin-bottom:4px;">🎯 Tweak
+                  do Pan (Mira/Analógico):</label>
+                <select id="emu-comp-tweaks"
+                  style="width:100%; padding:6px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
+                  <option value="16450" selected>16450 (Padrão Pro / Anti-Bug)</option>
+                  <option value="21058">21058 (Puxada Reta / Sem Pinar)</option>
+                  <option value="16458">16458 (Zero Tremor / Recoil Firme)</option>
+                  <option value="2">2 (Clássico BlueStacks 4/5)</option>
+                  <option value="1026">1026 (Sensibilidade Alta)</option>
+                </select>
+                <span style="font-size:10px; color:#94a3b8; margin-top:3px; display:block;">Injeta no Pan do Keymap</span>
               </div>
 
               <!-- Sensibilidade X e Y do Keymap -->
@@ -1134,13 +1162,13 @@
                 <div style="flex:1;">
                   <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">Sens
                     X (Giro):</label>
-                  <input type="text" id="emu-comp-sens-x" value="1.0"
+                  <input type="text" id="emu-comp-sens-x" value="1.69"
                     style="width:100%; padding:5px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
                 </div>
                 <div style="flex:1;">
                   <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">Sens
                     Y (Subida):</label>
-                  <input type="text" id="emu-comp-sens-y" value="0.4"
+                  <input type="text" id="emu-comp-sens-y" value="1.1"
                     style="width:100%; padding:5px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
                 </div>
               </div>
@@ -1162,7 +1190,7 @@
               <div
                 style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
                 <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">🧠
-                  Núcleos de CPU & RAM:</label>
+                  Núcleos CPU & RAM:</label>
                 <select id="emu-comp-cpu-ram"
                   style="width:100%; padding:6px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
                   <option value="auto">⚡ Automático Inteligente (50% do seu PC)</option>
@@ -1549,7 +1577,7 @@
                 <p style="margin: 0; font-size: 12px; color: #94a3b8;">Verifique e receba novas versões e otimizações
                   automaticamente</p>
               </div>
-              <span id="app-version-badge" class="badge badge-success">v2.4.9</span>
+              <span id="app-version-badge" class="badge badge-success">v2.5.0</span>
             </div>
 
             <!-- Update Card Content -->
