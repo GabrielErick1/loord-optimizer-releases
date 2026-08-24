@@ -2214,43 +2214,8 @@ async function loadHardwareSpecsForEmulator() {
 loadHardwareSpecsForEmulator();
 
 if (btnApplyCompTweak) {
-  btnApplyCompTweak.addEventListener('click', async () => {
-    const panSpeed = document.getElementById('comp-pan-speed') ? document.getElementById('comp-pan-speed').value : '15.0';
-    const sensX = document.getElementById('comp-sens-x') ? document.getElementById('comp-sens-x').value : '1.0';
-    const sensY = document.getElementById('comp-sens-y') ? document.getElementById('comp-sens-y').value : '0.4';
-    const renderer = document.getElementById('comp-graphics-renderer') ? document.getElementById('comp-graphics-renderer').value : 'dx';
-    const cpuRamVal = document.getElementById('comp-cpu-ram') ? document.getElementById('comp-cpu-ram').value : 'auto';
-
-    let cpuCores = 'auto';
-    let ramMb = 'auto';
-
-    if (cpuRamVal !== 'auto' && cpuRamVal.includes('-')) {
-      const parts = cpuRamVal.split('-');
-      cpuCores = parts[0];
-      ramMb = parts[1];
-    }
-
-    btnApplyCompTweak.disabled = true;
-    btnApplyCompTweak.textContent = '⏳ Aplicando Otimizações...';
-
-    const res = await window.api.applyCompetitiveEmulatorTweak({
-      panSpeed: panSpeed,
-      sensitivityX: sensX,
-      sensitivityY: sensY,
-      astcMode: 'hardware',
-      graphicsRenderer: renderer,
-      cpuCores: cpuCores,
-      ramMb: ramMb,
-      enableHighFps: true
-    });
-
-    btnApplyCompTweak.disabled = false;
-    btnApplyCompTweak.textContent = '✔️ Otimizações Aplicadas!';
-
-    if (statusCompTweak) {
-      statusCompTweak.style.display = 'block';
-      statusCompTweak.innerText = res && res.message ? res.message : 'Otimizações aplicadas com sucesso!';
-    }
+  btnApplyCompTweak.addEventListener('click', (e) => {
+    window.handleApplyCompTweak(e.currentTarget);
   });
 }
 
@@ -2850,33 +2815,84 @@ function parseSensValue(val, fallback = 1.0) {
   return isNaN(num) ? fallback : num;
 }
 
-// Sincronização entre inputs da Regedit e do Pan Optimizer
+// Sincronização entre inputs da Regedit e da aba Emulador
 function syncSensInputs() {
   const adaptX = document.getElementById('adapt-sens-x');
   const adaptY = document.getElementById('adapt-sens-y');
   const compX = document.getElementById('comp-sens-x');
   const compY = document.getElementById('comp-sens-y');
+  const emuX = document.getElementById('emu-comp-sens-x');
+  const emuY = document.getElementById('emu-comp-sens-y');
 
-  if (adaptX && compX) {
-    adaptX.addEventListener('input', () => { compX.value = adaptX.value; });
-    compX.addEventListener('input', () => { adaptX.value = compX.value; });
+  const allX = [adaptX, compX, emuX].filter(Boolean);
+  const allY = [adaptY, compY, emuY].filter(Boolean);
+
+  allX.forEach(inp => {
+    inp.addEventListener('input', () => {
+      allX.forEach(other => { if (other !== inp) other.value = inp.value; });
+    });
+  });
+
+  allY.forEach(inp => {
+    inp.addEventListener('input', () => {
+      allY.forEach(other => { if (other !== inp) other.value = inp.value; });
+    });
+  });
+
+  // Sync pan speed
+  const pan1 = document.getElementById('comp-pan-speed');
+  const pan2 = document.getElementById('emu-comp-pan-speed');
+  if (pan1 && pan2) {
+    pan1.addEventListener('change', () => { pan2.value = pan1.value; });
+    pan2.addEventListener('change', () => { pan1.value = pan2.value; });
   }
-  if (adaptY && compY) {
-    adaptY.addEventListener('input', () => { compY.value = adaptY.value; });
-    compY.addEventListener('input', () => { adaptY.value = compY.value; });
+
+  // Sync renderer
+  const ren1 = document.getElementById('comp-graphics-renderer');
+  const ren2 = document.getElementById('emu-comp-graphics-renderer');
+  if (ren1 && ren2) {
+    ren1.addEventListener('change', () => { ren2.value = ren1.value; });
+    ren2.addEventListener('change', () => { ren1.value = ren2.value; });
+  }
+
+  // Sync CPU & RAM
+  const cr1 = document.getElementById('comp-cpu-ram');
+  const cr2 = document.getElementById('emu-comp-cpu-ram');
+  if (cr1 && cr2) {
+    cr1.addEventListener('change', () => { cr2.value = cr1.value; });
+    cr2.addEventListener('change', () => { cr1.value = cr2.value; });
   }
 }
 document.addEventListener('DOMContentLoaded', syncSensInputs);
 syncSensInputs();
 
 window.handleApplyCompTweak = async function(btn) {
-  const targetBtn = btn || document.getElementById('btn-apply-comp-tweak');
-  const panSpeed = document.getElementById('comp-pan-speed')?.value || '25.0';
-  const sensX = parseSensValue(document.getElementById('comp-sens-x')?.value, 1.67);
-  const sensY = parseSensValue(document.getElementById('comp-sens-y')?.value, 1.67);
-  const renderer = document.getElementById('comp-graphics-renderer')?.value || 'gl';
-  const cpuRamVal = document.getElementById('comp-cpu-ram')?.value || 'auto';
-  const statusComp = document.getElementById('status-comp-tweak');
+  const isEmuTab = btn && btn.id === 'btn-apply-emu-comp-tweak';
+  const targetBtn = btn || document.getElementById(isEmuTab ? 'btn-apply-emu-comp-tweak' : 'btn-apply-comp-tweak');
+  
+  const panSpeed = document.getElementById(isEmuTab ? 'emu-comp-pan-speed' : 'comp-pan-speed')?.value 
+    || document.getElementById('comp-pan-speed')?.value || '25.0';
+    
+  const sensX = parseSensValue(
+    document.getElementById(isEmuTab ? 'emu-comp-sens-x' : 'comp-sens-x')?.value
+    || document.getElementById('comp-sens-x')?.value, 
+    1.69
+  );
+  
+  const sensY = parseSensValue(
+    document.getElementById(isEmuTab ? 'emu-comp-sens-y' : 'comp-sens-y')?.value
+    || document.getElementById('comp-sens-y')?.value, 
+    1.1
+  );
+  
+  const renderer = document.getElementById(isEmuTab ? 'emu-comp-graphics-renderer' : 'comp-graphics-renderer')?.value 
+    || document.getElementById('comp-graphics-renderer')?.value || 'gl';
+    
+  const cpuRamVal = document.getElementById(isEmuTab ? 'emu-comp-cpu-ram' : 'comp-cpu-ram')?.value 
+    || document.getElementById('comp-cpu-ram')?.value || 'auto';
+    
+  const statusComp = document.getElementById(isEmuTab ? 'status-emu-comp-tweak' : 'status-comp-tweak')
+    || document.getElementById('status-comp-tweak');
 
   let cpuCores = 'auto';
   let ramMb = 'auto';
@@ -2921,13 +2937,16 @@ window.handleApplyCompTweak = async function(btn) {
       statusComp.style.color = '#4ade80';
       statusComp.style.background = 'rgba(34, 197, 94, 0.1)';
       statusComp.style.border = '1px solid rgba(34, 197, 94, 0.3)';
+      statusComp.style.padding = '8px 12px';
+      statusComp.style.borderRadius = '6px';
+      statusComp.style.marginTop = '8px';
       statusComp.innerHTML = [
         `🎯 <b>Otimizações aplicadas com sucesso!</b>`,
         `<div style="margin-top: 6px; line-height: 1.6;">`,
         `✔ <b>Instâncias BlueStacks/MSI atualizadas:</b> 2<br>`,
         `✔ <b>Arquivos de Keymap Free Fire configurados:</b> 22<br>`,
         `✔ <b>Speed do Pan:</b> ${panSpeed} | <b>Sens X:</b> ${sensX} | <b>Sens Y:</b> ${sensY}<br>`,
-        `✔ <b>ASTC:</b> hardware | <b>Render:</b> ${renderer} | <b>CPU:</b> ${cpuCores} núcleos | <b>RAM:</b> ${ramMb}MB | <b>FPS:</b> 999 Max`,
+        `✔ <b>ASTC:</b> hardware | <b>Render:</b> ${renderer} | <b>CPU:</b> ${cpuCores} núcleos | <b>RAM:</b> ${ramMb}MB | <b>FPS:</b> 240 Max`,
         `</div>`
       ].join('');
       statusComp.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -2943,6 +2962,9 @@ window.handleApplyCompTweak = async function(btn) {
       statusComp.style.color = '#ef4444';
       statusComp.style.background = 'rgba(239, 68, 68, 0.1)';
       statusComp.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+      statusComp.style.padding = '8px 12px';
+      statusComp.style.borderRadius = '6px';
+      statusComp.style.marginTop = '8px';
       statusComp.innerText = 'Erro: ' + e.message;
     }
   }

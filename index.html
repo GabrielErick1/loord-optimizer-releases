@@ -1117,12 +1117,12 @@
                 style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
                 <label style="font-size:11px; color:#fbbf24; font-weight:700; display:block; margin-bottom:4px;">⚡ Speed
                   do Pan (Anti-Pinar / Fluidez):</label>
-                <select id="comp-pan-speed"
+                <select id="emu-comp-pan-speed"
                   style="width:100%; padding:6px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
-                  <option value="15.0" selected>15.0 (Recomendado - Fluido & Sem Pinar)</option>
+                  <option value="15.0">15.0 (Recomendado - Fluido & Sem Pinar)</option>
+                  <option value="18.0">18.0 (Equilibrado / Capa Rápido)</option>
                   <option value="20.0">20.0 (Ultra Rápido - Telas 144Hz/240Hz)</option>
-                  <option value="10.0">10.0 (Padrão Original BlueStacks)</option>
-                  <option value="25.0">25.0 (Extremo / Resposta Imediata)</option>
+                  <option value="25.0" selected>25.0 (Extremo / Resposta Imediata)</option>
                 </select>
                 <span style="font-size:10px; color:#94a3b8; margin-top:3px; display:block;">Elimina o delay de
                   interpolação da câmera entre frames.</span>
@@ -1134,13 +1134,13 @@
                 <div style="flex:1;">
                   <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">Sens
                     X (Giro):</label>
-                  <input type="number" id="comp-sens-x" value="1.0" step="0.1" min="0.1" max="10.0"
+                  <input type="text" id="emu-comp-sens-x" value="1.0"
                     style="width:100%; padding:5px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
                 </div>
                 <div style="flex:1;">
                   <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">Sens
                     Y (Subida):</label>
-                  <input type="number" id="comp-sens-y" value="0.4" step="0.05" min="0.1" max="5.0"
+                  <input type="text" id="emu-comp-sens-y" value="0.4"
                     style="width:100%; padding:5px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
                 </div>
               </div>
@@ -1150,10 +1150,10 @@
                 style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
                 <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">🎮
                   Renderizador Gráfico:</label>
-                <select id="comp-graphics-renderer"
+                <select id="emu-comp-graphics-renderer"
                   style="width:100%; padding:6px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
-                  <option value="dx" selected>DirectX (dx - Menos Stutter / GPU NVIDIA/AMD)</option>
-                  <option value="gl">OpenGL (gl - Padrão)</option>
+                  <option value="gl" selected>OpenGL (gl - Padrão)</option>
+                  <option value="dx">DirectX (dx - Menos Stutter / GPU NVIDIA/AMD)</option>
                   <option value="vulkan">Vulkan (Se suportado)</option>
                 </select>
               </div>
@@ -1163,13 +1163,13 @@
                 style="background:rgba(0,0,0,0.3); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
                 <label style="font-size:11px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">🧠
                   Núcleos de CPU & RAM:</label>
-                <select id="comp-cpu-ram"
+                <select id="emu-comp-cpu-ram"
                   style="width:100%; padding:6px 8px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-weight:600;">
-                  <option value="auto" id="opt-cpu-ram-auto" selected>⚡ Automático Inteligente (50% do seu PC)</option>
+                  <option value="auto">⚡ Automático Inteligente (50% do seu PC)</option>
                   <option value="2-2048">2 Núcleos / 2GB RAM (PC Muito Fraco)</option>
                   <option value="2-4096">2 Núcleos / 4GB RAM (PC Fraco)</option>
                   <option value="4-4096">4 Núcleos / 4GB RAM (PC Médio)</option>
-                  <option value="4-8192">4 Núcleos / 8GB RAM (PC Gamer 8C/16GB)</option>
+                  <option value="4-8192" selected>4 Núcleos / 8GB RAM (PC Gamer 8C/16GB)</option>
                   <option value="6-8192">6 Núcleos / 8GB RAM (PC Gamer 12C/16GB)</option>
                   <option value="8-8192">8 Núcleos / 8GB RAM (PC High-End 16C/32GB)</option>
                 </select>
@@ -1177,10 +1177,10 @@
             </div>
 
             <div style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-              <button class="btn btn-primary btn-sm" id="btn-apply-comp-tweak"
+              <button class="btn btn-primary btn-sm" id="btn-apply-emu-comp-tweak" onclick="handleApplyCompTweak(this)"
                 style="background: linear-gradient(135deg, #f59e0b, #d97706); color:#000; font-weight:800;">⚡ Aplicar
                 Otimizações Competitivas (Keymap + Engine)</button>
-              <span id="status-comp-tweak" style="display:none; color:#10b981; font-size:12px; font-weight:600;"></span>
+              <span id="status-emu-comp-tweak" style="display:none; color:#10b981; font-size:12px; font-weight:600;"></span>
             </div>
           </div>
 
@@ -1549,7 +1549,7 @@
                 <p style="margin: 0; font-size: 12px; color: #94a3b8;">Verifique e receba novas versões e otimizações
                   automaticamente</p>
               </div>
-              <span id="app-version-badge" class="badge badge-success">v2.4.8</span>
+              <span id="app-version-badge" class="badge badge-success">v2.4.9</span>
             </div>
 
             <!-- Update Card Content -->
