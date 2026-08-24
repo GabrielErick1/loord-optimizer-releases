@@ -2947,19 +2947,25 @@ ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
       if (fs.existsSync(confPath)) {
         try {
           let content = fs.readFileSync(confPath, 'utf8');
-          const instances = ['Nougat32', 'Nougat64', 'Pie64', 'Rvc64', 'Android'];
+
+          // Descobre dinamicamente todas as instâncias existentes no arquivo conf
+          const instances = new Set(['Nougat32', 'Nougat64', 'Pie64', 'Rvc64', 'Android', 'Nougat32_1', 'Nougat64_1', 'Pie64_1', 'Rvc64_1']);
+          const dynamicMatches = content.match(/bst\.instance\.([a-zA-Z0-9_-]+)\./g) || [];
+          for (const m of dynamicMatches) {
+            const parts = m.split('.');
+            if (parts[2]) instances.add(parts[2]);
+          }
+
+          // BlueStacks 5 / MSI: "gl" = OpenGL, "dx" = DirectX, "vlcn" = Vulkan
+          const gVal = graphicsRenderer === 'gl' ? 'gl' : graphicsRenderer === 'vulkan' ? 'vlcn' : 'dx';
+          const astcVal = astcMode === 'hardware' ? 'hardware' : 'software';
 
           for (const inst of instances) {
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.pan_speed\\s*=\\s*)"[^"]*"`, 'g'), `$1"${panSpeed}"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.pan_speed_normalized\\s*=\\s*)"[^"]*"`, 'g'), `$1"${panSpeed}"`);
-            
-            const astcVal = astcMode === 'hardware' ? '1' : '0';
-            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.astc_decoding_mode\\s*=\\s*)"[^"]*"`, 'g'), `$1"${astcVal}"`);
-            
-            // BlueStacks 5: 0 = OpenGL, 1 = DirectX, 2 = Vulkan
-            const gVal = graphicsRenderer === 'gl' ? '0' : graphicsRenderer === 'vulkan' ? '2' : '1';
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.graphics_renderer\\s*=\\s*)"[^"]*"`, 'g'), `$1"${gVal}"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.graphics_engine\\s*=\\s*)"[^"]*"`, 'g'), `$1"aga"`);
+            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.astc_decoding_mode\\s*=\\s*)"[^"]*"`, 'g'), `$1"${astcVal}"`);
             
             if (enableHighFps) {
               content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.enable_high_fps\\s*=\\s*)"[^"]*"`, 'g'), `$1"1"`);
@@ -2973,11 +2979,11 @@ ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
               content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.ram\\s*=\\s*)"[^"]*"`, 'g'), `$1"${ramMb}"`);
             }
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.enable_vsync\\s*=\\s*)"[^"]*"`, 'g'), `$1"0"`);
-            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.disable_frame_rate_throttle\\s*=\\s*)"[^"]*"`, 'g'), `$1"1"`);
-            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.use_shared_gl_context\\s*=\\s*)"[^"]*"`, 'g'), `$1"1"`);
-            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.bdr_mode\\s*=\\s*)"[^"]*"`, 'g'), `$1"0"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.prefer_dedicated_gpu\\s*=\\s*)"[^"]*"`, 'g'), `$1"1"`);
           }
+
+          // Preferência global de GPU dedicada
+          content = content.replace(/(bst\.prefer_dedicated_gpu\s*=\s*)"[^"]*"/g, '$1"1"');
 
           fs.writeFileSync(confPath, content, 'utf8');
           confUpdatedCount++;
@@ -3217,22 +3223,25 @@ ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
       if (fs.existsSync(confPath)) {
         try {
           let content = fs.readFileSync(confPath, 'utf8');
-          const instances = ['Nougat32', 'Nougat64', 'Pie64', 'Rvc64', 'Android'];
+          const instances = new Set(['Nougat32', 'Nougat64', 'Pie64', 'Rvc64', 'Android', 'Nougat32_1', 'Nougat64_1', 'Pie64_1', 'Rvc64_1']);
+          const dynamicMatches = content.match(/bst\.instance\.([a-zA-Z0-9_-]+)\./g) || [];
+          for (const m of dynamicMatches) {
+            const parts = m.split('.');
+            if (parts[2]) instances.add(parts[2]);
+          }
+
+          // BlueStacks 5 / MSI: "gl" = OpenGL, "dx" = DirectX, "vlcn" = Vulkan
+          const gVal = renderer === 'gl' ? 'gl' : renderer === 'vulkan' ? 'vlcn' : 'dx';
 
           for (const inst of instances) {
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.pan_speed\\s*=\\s*)"[^"]*"`, 'g'), `$1"${rawPan}"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.pan_speed_normalized\\s*=\\s*)"[^"]*"`, 'g'), `$1"${rawPan}"`);
-            // BlueStacks 5: 0 = OpenGL, 1 = DirectX, 2 = Vulkan
-            const gVal = renderer === 'gl' ? '0' : renderer === 'vulkan' ? '2' : '1';
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.graphics_renderer\\s*=\\s*)"[^"]*"`, 'g'), `$1"${gVal}"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.graphics_engine\\s*=\\s*)"[^"]*"`, 'g'), `$1"aga"`);
-            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.astc_decoding_mode\\s*=\\s*)"[^"]*"`, 'g'), `$1"1"`);
+            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.astc_decoding_mode\\s*=\\s*)"[^"]*"`, 'g'), `$1"software"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.enable_high_fps\\s*=\\s*)"[^"]*"`, 'g'), `$1"1"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.max_fps\\s*=\\s*)"[^"]*"`, 'g'), `$1"240"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.enable_vsync\\s*=\\s*)"[^"]*"`, 'g'), `$1"0"`);
-            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.disable_frame_rate_throttle\\s*=\\s*)"[^"]*"`, 'g'), `$1"1"`);
-            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.use_shared_gl_context\\s*=\\s*)"[^"]*"`, 'g'), `$1"1"`);
-            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.bdr_mode\\s*=\\s*)"[^"]*"`, 'g'), `$1"0"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.prefer_dedicated_gpu\\s*=\\s*)"[^"]*"`, 'g'), `$1"1"`);
 
             if (cpuCores && cpuCores !== 'auto' && parseInt(cpuCores) > 0) {
@@ -3243,6 +3252,8 @@ ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
               content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.ram\\s*=\\s*)"[^"]*"`, 'g'), `$1"${ramMb}"`);
             }
           }
+
+          content = content.replace(/(bst\.prefer_dedicated_gpu\s*=\\s*)"[^"]*"/g, '$1"1"');
 
           fs.writeFileSync(confPath, content, 'utf8');
           emusConfigured++;
