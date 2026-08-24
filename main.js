@@ -2956,8 +2956,10 @@ ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
             const astcVal = astcMode === 'hardware' ? '1' : '0';
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.astc_decoding_mode\\s*=\\s*)"[^"]*"`, 'g'), `$1"${astcVal}"`);
             
-            const gVal = graphicsRenderer === 'gl' ? '1' : graphicsRenderer === 'vulkan' ? '3' : '2';
+            // BlueStacks 5: 0 = OpenGL, 1 = DirectX, 2 = Vulkan
+            const gVal = graphicsRenderer === 'gl' ? '0' : graphicsRenderer === 'vulkan' ? '2' : '1';
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.graphics_renderer\\s*=\\s*)"[^"]*"`, 'g'), `$1"${gVal}"`);
+            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.graphics_engine\\s*=\\s*)"[^"]*"`, 'g'), `$1"aga"`);
             
             if (enableHighFps) {
               content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.enable_high_fps\\s*=\\s*)"[^"]*"`, 'g'), `$1"1"`);
@@ -3220,6 +3222,11 @@ ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
           for (const inst of instances) {
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.pan_speed\\s*=\\s*)"[^"]*"`, 'g'), `$1"${rawPan}"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.pan_speed_normalized\\s*=\\s*)"[^"]*"`, 'g'), `$1"${rawPan}"`);
+            // BlueStacks 5: 0 = OpenGL, 1 = DirectX, 2 = Vulkan
+            const gVal = renderer === 'gl' ? '0' : renderer === 'vulkan' ? '2' : '1';
+            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.graphics_renderer\\s*=\\s*)"[^"]*"`, 'g'), `$1"${gVal}"`);
+            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.graphics_engine\\s*=\\s*)"[^"]*"`, 'g'), `$1"aga"`);
+            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.astc_decoding_mode\\s*=\\s*)"[^"]*"`, 'g'), `$1"1"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.enable_high_fps\\s*=\\s*)"[^"]*"`, 'g'), `$1"1"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.max_fps\\s*=\\s*)"[^"]*"`, 'g'), `$1"240"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.enable_vsync\\s*=\\s*)"[^"]*"`, 'g'), `$1"0"`);
