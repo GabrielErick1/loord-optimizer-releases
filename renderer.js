@@ -2234,9 +2234,9 @@ if (btnApplyCompTweak) {
     btnApplyCompTweak.textContent = '⏳ Aplicando Otimizações...';
 
     const res = await window.api.applyCompetitiveEmulatorTweak({
-      panSpeed: parseFloat(panSpeed),
-      sensitivityX: parseFloat(sensX),
-      sensitivityY: parseFloat(sensY),
+      panSpeed: panSpeed,
+      sensitivityX: sensX,
+      sensitivityY: sensY,
       astcMode: 'hardware',
       graphicsRenderer: renderer,
       cpuCores: cpuCores,

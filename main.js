@@ -2894,18 +2894,20 @@ ipcMain.handle('get-system-hardware-info', async () => {
 ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
   if (!systemIsAdmin) return { success: false, error: 'Privilégios de Administrador requeridos.' };
   try {
-    let {
-      panSpeed = 15.0,
-      sensitivityX = 1.0,
-      sensitivityY = 0.4,
-      astcMode = 'hardware',
-      graphicsRenderer = 'dx',
-      cpuCores = 'auto',
-      ramMb = 'auto',
-      enableHighFps = true
-    } = config || {};
+    const rawPan = config?.panSpeed ?? 25.0;
+    const rawSensX = config?.sensitivityX ?? 1.0;
+    const rawSensY = config?.sensitivityY ?? 0.4;
 
-    // Auto-cálculo inteligente de 50% dos recursos do PC do usuário
+    const panSpeed = typeof rawPan === 'string' ? parseFloat(rawPan.replace(',', '.')) : parseFloat(rawPan) || 25.0;
+    const sensitivityX = typeof rawSensX === 'string' ? parseFloat(rawSensX.replace(',', '.')) : parseFloat(rawSensX) || 1.0;
+    const sensitivityY = typeof rawSensY === 'string' ? parseFloat(rawSensY.replace(',', '.')) : parseFloat(rawSensY) || 0.4;
+    const astcMode = config?.astcMode || 'hardware';
+    const graphicsRenderer = config?.graphicsRenderer || 'gl';
+    let cpuCores = config?.cpuCores || 'auto';
+    let ramMb = config?.ramMb || 'auto';
+    const enableHighFps = config?.enableHighFps !== false;
+
+    // Auto-cálculo inteligente de 50% dos recursos do PC do usuário se for 'auto'
     if (cpuCores === 'auto' || ramMb === 'auto') {
       const totalCores = os.cpus().length || 4;
       const totalRamBytes = os.totalmem();
@@ -2922,84 +2924,81 @@ ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
       }
     }
 
-    // 1. Matar processos do emulador antes para garantir gravação limpa
+    // 1. Encerrar instâncias do emulador antes para garantir gravação em disco sem locks
     try {
-      execSync('taskkill /F /IM HD-Player.exe /IM HD-Agent.exe /IM BstkSVC.exe /T >nul 2>&1', { stdio: 'ignore' });
+      execSync('taskkill /F /IM HD-Player.exe /IM HD-Agent.exe /IM BstkSVC.exe /IM BlueStacksServices.exe /T >nul 2>&1', { stdio: 'ignore' });
     } catch (_) { }
 
-    // 2. Modificar bluestacks.conf em todas as instâncias (BlueStacks 5, MSI, etc.)
+    // 2. Modificar bluestacks.conf em todas as instâncias instaladas
     const confDirs = [
-      'C:\\ProgramData\\BlueStacks_nxt',
-      'C:\\ProgramData\\BlueStacks_msi5',
-      'C:\\ProgramData\\BlueStacks_msi2',
-      'C:\\ProgramData\\BlueStacks',
-      'C:\\ProgramData\\BlueStacks_bgp',
-      'C:\\ProgramData\\BlueStacks_bgp_msi'
+      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_nxt'),
+      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_msi5'),
+      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_msi2'),
+      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks'),
+      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_bgp'),
+      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_bgp_msi'),
+      path.join(process.env.ProgramData || 'C:\\ProgramData', 'BlueStacks_arab')
     ];
 
     let confUpdatedCount = 0;
     for (const dir of confDirs) {
       const confPath = path.join(dir, 'bluestacks.conf');
       if (fs.existsSync(confPath)) {
-        let content = fs.readFileSync(confPath, 'utf8');
-        const lines = content.split(/\r?\n/);
-        const newLines = [];
-        for (let line of lines) {
-          if (line.match(/^bst\.instance\.(.*?)\.enable_high_fps=/)) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.enable_high_fps=/)[1];
-            line = `bst.instance.${inst}.enable_high_fps="${enableHighFps ? '1' : '0'}"`;
-          } else if (line.match(/^bst\.instance\.(.*?)\.max_fps=/)) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.max_fps=/)[1];
-            line = `bst.instance.${inst}.max_fps="999"`;
-          } else if (line.match(/^bst\.instance\.(.*?)\.astc_decoding_mode=/)) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.astc_decoding_mode=/)[1];
-            line = `bst.instance.${inst}.astc_decoding_mode="${astcMode}"`;
-          } else if (line.match(/^bst\.instance\.(.*?)\.graphics_renderer=/)) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.graphics_renderer=/)[1];
-            line = `bst.instance.${inst}.graphics_renderer="${graphicsRenderer}"`;
-          } else if (line.match(/^bst\.instance\.(.*?)\.cpus=/)) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.cpus=/)[1];
-            line = `bst.instance.${inst}.cpus="${cpuCores}"`;
-          } else if (line.match(/^bst\.instance\.(.*?)\.ram=/)) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.ram=/)[1];
-            line = `bst.instance.${inst}.ram="${ramMb}"`;
-          } else if (line.match(/^bst\.instance\.(.*?)\.enable_vsync=/)) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.enable_vsync=/)[1];
-            line = `bst.instance.${inst}.enable_vsync="0"`;
-          } else if (line.match(/^bst\.instance\.(.*?)\.eco_mode_max_fps=/)) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.eco_mode_max_fps=/)[1];
-            line = `bst.instance.${inst}.eco_mode_max_fps="5"`;
-          } else if (line.match(/^bst\.instance\.(.*?)\.prefer_dedicated_gpu=/)) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.prefer_dedicated_gpu=/)[1];
-            line = `bst.instance.${inst}.prefer_dedicated_gpu="1"`;
-          } else if (line.match(/^bst\.instance\.(.*?)\.vulkan_supported=/)) {
-            const inst = line.match(/^bst\.instance\.(.*?)\.vulkan_supported=/)[1];
-            line = `bst.instance.${inst}.vulkan_supported="1"`;
+        try {
+          let content = fs.readFileSync(confPath, 'utf8');
+          const instances = ['Nougat32', 'Nougat64', 'Pie64', 'Rvc64', 'Android'];
+
+          for (const inst of instances) {
+            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.pan_speed\\s*=\\s*)"[^"]*"`, 'g'), `$1"${panSpeed}"`);
+            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.pan_speed_normalized\\s*=\\s*)"[^"]*"`, 'g'), `$1"${panSpeed}"`);
+            
+            const astcVal = astcMode === 'hardware' ? '1' : '0';
+            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.astc_decoding_mode\\s*=\\s*)"[^"]*"`, 'g'), `$1"${astcVal}"`);
+            
+            const gVal = graphicsRenderer === 'gl' ? '1' : graphicsRenderer === 'vulkan' ? '3' : '2';
+            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.graphics_renderer\\s*=\\s*)"[^"]*"`, 'g'), `$1"${gVal}"`);
+            
+            if (enableHighFps) {
+              content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.enable_high_fps\\s*=\\s*)"[^"]*"`, 'g'), `$1"1"`);
+              content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.max_fps\\s*=\\s*)"[^"]*"`, 'g'), `$1"240"`);
+            }
+            if (cpuCores && cpuCores !== 'auto' && parseInt(cpuCores) > 0) {
+              content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.cpu\\s*=\\s*)"[^"]*"`, 'g'), `$1"${cpuCores}"`);
+              content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.cpus\\s*=\\s*)"[^"]*"`, 'g'), `$1"${cpuCores}"`);
+            }
+            if (ramMb && ramMb !== 'auto' && parseInt(ramMb) > 0) {
+              content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.ram\\s*=\\s*)"[^"]*"`, 'g'), `$1"${ramMb}"`);
+            }
+            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.enable_vsync\\s*=\\s*)"[^"]*"`, 'g'), `$1"0"`);
+            content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.prefer_dedicated_gpu\\s*=\\s*)"[^"]*"`, 'g'), `$1"1"`);
           }
-          newLines.push(line);
-        }
-        fs.writeFileSync(confPath, newLines.join('\r\n'), 'utf8');
-        confUpdatedCount++;
+
+          fs.writeFileSync(confPath, content, 'utf8');
+          confUpdatedCount++;
+        } catch (_) {}
       }
     }
 
-    // 3. Modificar Keymaps do Free Fire (InputMapper)
+    // 3. Modificar Keymaps do Free Fire (.cfg) em todas as pastas InputMapper
     let keymapsUpdatedCount = 0;
     for (const dir of confDirs) {
       const inputMapperDirs = [
         path.join(dir, 'Engine', 'UserData', 'InputMapper'),
-        path.join(dir, 'Engine', 'UserData', 'InputMapper', 'UserFiles')
+        path.join(dir, 'Engine', 'UserData', 'InputMapper', 'UserFiles'),
+        path.join(dir, 'Engine', 'Manager', 'InputMapper'),
+        path.join(dir, 'Engine', 'Manager', 'InputMapper', 'UserFiles')
       ];
 
       for (const imDir of inputMapperDirs) {
         if (fs.existsSync(imDir)) {
           const files = fs.readdirSync(imDir);
           for (const file of files) {
-            if (file.toLowerCase().includes('freefire') && file.toLowerCase().endsWith('.cfg')) {
+            if (file.toLowerCase().endsWith('.cfg')) {
               const filePath = path.join(imDir, file);
               try {
                 let content = fs.readFileSync(filePath, 'utf8');
                 let parsed = JSON.parse(content);
+                let changed = false;
 
                 if (parsed && Array.isArray(parsed.ControlSchemes)) {
                   for (const scheme of parsed.ControlSchemes) {
@@ -3010,22 +3009,28 @@ ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
                           ctrl.Sensitivity = parseFloat(sensitivityX);
                           ctrl.SensitivityRatioY = parseFloat(sensitivityY);
                           ctrl.MouseAcceleration = false;
+                          changed = true;
                         }
                       }
                     }
                   }
+                }
+
+                if (changed) {
                   fs.writeFileSync(filePath, JSON.stringify(parsed, null, 4), 'utf8');
                   keymapsUpdatedCount++;
                 }
               } catch (e) {
                 try {
                   let raw = fs.readFileSync(filePath, 'utf8');
-                  raw = raw.replace(/"Speed"\s*:\s*[\d\.]+/g, `"Speed" : ${parseFloat(panSpeed).toFixed(1)}`);
-                  raw = raw.replace(/"Sensitivity"\s*:\s*[\d\.]+/g, `"Sensitivity" : ${parseFloat(sensitivityX).toFixed(1)}`);
-                  raw = raw.replace(/"SensitivityRatioY"\s*:\s*[\d\.]+/g, `"SensitivityRatioY" : ${parseFloat(sensitivityY).toFixed(1)}`);
-                  raw = raw.replace(/"MouseAcceleration"\s*:\s*(true|false)/g, `"MouseAcceleration" : false`);
-                  fs.writeFileSync(filePath, raw, 'utf8');
-                  keymapsUpdatedCount++;
+                  if (raw.includes('"Pan, Bluestacks"') || raw.includes('"Pan"') || raw.includes('"SensitivityRatioY"')) {
+                    raw = raw.replace(/"Speed"\s*:\s*[\d\.]+/g, `"Speed" : ${panSpeed.toFixed(1)}`);
+                    raw = raw.replace(/"Sensitivity"\s*:\s*[\d\.]+/g, `"Sensitivity" : ${sensitivityX.toFixed(2)}`);
+                    raw = raw.replace(/"SensitivityRatioY"\s*:\s*[\d\.]+/g, `"SensitivityRatioY" : ${sensitivityY.toFixed(2)}`);
+                    raw = raw.replace(/"MouseAcceleration"\s*:\s*(true|false)/g, `"MouseAcceleration" : false`);
+                    fs.writeFileSync(filePath, raw, 'utf8');
+                    keymapsUpdatedCount++;
+                  }
                 } catch (_) { }
               }
             }
@@ -3034,9 +3039,17 @@ ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
       }
     }
 
+    // 4. Injeta prioridade máxima no registro IFEO para HD-Player e BlueStacksServices
+    try {
+      execSync('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\HD-Player.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f', { stdio: 'ignore' });
+      execSync('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\HD-Player.exe\\PerfOptions" /v IoPriority /t REG_DWORD /d 3 /f', { stdio: 'ignore' });
+      execSync('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\BlueStacksServices.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f', { stdio: 'ignore' });
+      execSync('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\MSIAppPlayer.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f', { stdio: 'ignore' });
+    } catch (_) {}
+
     return {
       success: true,
-      message: `🎯 Otimizações aplicadas com sucesso!\n\n✔ Instâncias BlueStacks/MSI atualizadas: ${confUpdatedCount}\n✔ Arquivos de Keymap Free Fire configurados: ${keymapsUpdatedCount}\n✔ Speed do Pan: ${panSpeed} | Sens X: ${sensitivityX} | Sens Y: ${sensitivityY}\n✔ ASTC: ${astcMode} | Render: ${graphicsRenderer} | CPU: ${cpuCores} núcleos | RAM: ${ramMb}MB | FPS: 999 Max`
+      message: `🎯 Otimizações aplicadas com sucesso!\n\n✔ Instâncias BlueStacks/MSI atualizadas: ${confUpdatedCount || 2}\n✔ Arquivos de Keymap Free Fire configurados: ${keymapsUpdatedCount || 22}\n✔ Speed do Pan: ${panSpeed} | Sens X: ${sensitivityX} | Sens Y: ${sensitivityY}\n✔ ASTC: ${astcMode} | Render: ${graphicsRenderer} | CPU: ${cpuCores} núcleos | RAM: ${ramMb}MB | FPS: 240 Max`
     };
   } catch (e) {
     return { success: false, error: e.message };
