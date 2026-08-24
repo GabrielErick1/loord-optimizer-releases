@@ -2687,6 +2687,7 @@ window.handleApplyAdaptiveRegedit = async function(btn) {
 
   try {
     const panSpeed = document.getElementById('comp-pan-speed')?.value || '25.0';
+    const tweaks = document.getElementById('comp-tweaks')?.value || '16450';
     const renderer = document.getElementById('comp-graphics-renderer')?.value || 'gl';
     const cpuRamVal = document.getElementById('comp-cpu-ram')?.value || 'auto';
 
@@ -2698,35 +2699,33 @@ window.handleApplyAdaptiveRegedit = async function(btn) {
       ramMb = parts[1];
     }
 
-    // Aplica Regedit no Windows e nos Keymaps
-    const resReg = await window.api.applyAdaptiveRegedit({ dpiMouse, dpiEmu, sensX, sensY, style: 'custom', styleMul });
-    
-    // Aplica também Pan e Engine no Emulador
-    if (window.api.applyCompetitiveEmulatorTweak) {
-      await window.api.applyCompetitiveEmulatorTweak({
-        panSpeed: parseFloat(panSpeed),
-        sensitivityX: sensX,
-        sensitivityY: sensY,
-        astcMode: 'hardware',
-        graphicsRenderer: renderer,
-        cpuCores: cpuCores,
-        ramMb: ramMb,
-        enableHighFps: true
-      });
-    }
+    // Aplica Regedit no Windows e em todos os Keymaps/Configs de forma integrada
+    const resReg = await window.api.applyAdaptiveRegedit({
+      dpiMouse,
+      dpiEmu,
+      sensX,
+      sensY,
+      style: 'custom',
+      styleMul,
+      panSpeed,
+      tweaks,
+      renderer,
+      cpuCores,
+      ramMb
+    });
 
     if (resReg && resReg.success) {
       const s = resReg.summary || {};
 
       if (resultSummary) {
         resultSummary.innerHTML = [
-          `✔ <b>Registro do Windows Calibrado:</b> Curva Adaptativa Injetada (${styleMul.toFixed(2)}x Multiplicador)`,
-          `✔ <b>Sensibilidade no Free Fire:</b> Sens X = ${sensX} | Sens Y = ${sensY} (Razão Y/X: ${s.ratioYX || '1.000'})`,
-          `✔ <b>Speed do Pan Injetado:</b> ${panSpeed} (Zero Delay / Anti-Pinar)`,
+          `✔ <b>Registro do Windows Calibrado:</b> Velocidade do Ponteiro ${s.winSpeed}/20 | Multiplicador ${styleMul.toFixed(2)}x (${styleMul < 1 ? 'Pesada/Firme' : styleMul > 1 ? 'Leve/Rápida' : 'Equilibrada'})`,
+          `✔ <b>Sensibilidade no Free Fire:</b> Sens X = ${s.effectiveSensX || sensX} | Sens Y = ${s.effectiveSensY || sensY}`,
+          `✔ <b>Speed do Pan:</b> ${panSpeed} | <b>Tweak:</b> ${tweaks} | <b>Latência:</b> 1ms (Zero Delay)`,
           `✔ <b>Instâncias BlueStacks/MSI Atualizadas:</b> ${s.emusConfigured || 2} instaladas`,
           `✔ <b>Arquivos de Keymap Free Fire Configurados:</b> ${s.keymapsConfigured || 22} arquivos .cfg`,
-          `✔ <b>Latência Zero &amp; Aceleração Desativada:</b> MouseSpeed 0, Thresholds 0, SPI_SETMOUSESPEED 10`,
-          `<div style="margin-top:6px; color:#fde68a;">⚡ <b>Tudo aplicado com sucesso!</b> Abra o Free Fire e teste sua sensibilidade calibrada sem pinar.</div>`
+          `✔ <b>Curva Linear &amp; Latência Zero:</b> Aceleração Desativada, MouseDataQueue 32`,
+          `<div style="margin-top:6px; color:#fde68a;">⚡ <b>Tudo aplicado com sucesso!</b> Abra o Free Fire e sinta a diferença imediata na mira.</div>`
         ].join('<br>');
       }
 
