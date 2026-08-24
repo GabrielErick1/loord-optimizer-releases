@@ -1210,7 +1210,9 @@ function setupAutoUpdater() {
               btnInstallNow.textContent = `🚀 Reiniciar e Atualizar Agora (v${latV})`;
               btnInstallNow.onclick = () => {
                 btnInstallNow.disabled = true;
-                btnInstallNow.textContent = 'Iniciando Atualização...';
+                btnInstallNow.textContent = '🔄 Atualizando e Reabrindo...';
+                if (cardStatusTitle) cardStatusTitle.innerHTML = `🔄 <b>Atualizando...</b>`;
+                if (cardStatusDesc) cardStatusDesc.textContent = 'O aplicativo está sendo instalado e será reaberto automaticamente.';
                 window.api.installUpdateNow();
               };
             }
@@ -1219,12 +1221,14 @@ function setupAutoUpdater() {
               btnGlobalNow.disabled = false;
               btnGlobalNow.textContent = `🚀 REINICIAR AGORA (v${latV})`;
               btnGlobalNow.onclick = () => {
+                btnGlobalNow.disabled = true;
+                btnGlobalNow.textContent = '🔄 Atualizando...';
                 window.api.installUpdateNow();
               };
             }
 
             if (cardStatusTitle) cardStatusTitle.innerHTML = `✅ <b>Download Concluído (100%)!</b>`;
-            if (cardStatusDesc) cardStatusDesc.textContent = 'Clique no botão verde para reiniciar e aplicar a nova versão.';
+            if (cardStatusDesc) cardStatusDesc.textContent = 'Clique no botão para reiniciar, instalar e reabrir o app automaticamente.';
           } else {
             if (progressContainer) progressContainer.style.display = 'none';
             if (btnInstallNow) {

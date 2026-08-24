@@ -3410,38 +3410,69 @@ ipcMain.handle('install-update-now', async () => {
 function performAppUpdate() {
   const { shell } = require('electron');
   const targetPath = downloadedInstallerPath || path.join(os.tmpdir(), 'LoordOptimizer_Update_Setup.exe');
+  const currentExe = process.execPath;
 
-  console.log('[AutoUpdater] Tentando instalar de:', targetPath);
-  console.log('[AutoUpdater] Arquivo existe:', fs.existsSync(targetPath));
+  console.log('[AutoUpdater] Executável atual:', currentExe);
+  console.log('[AutoUpdater] Caminho do instalador:', targetPath);
 
   if (fs.existsSync(targetPath)) {
     try {
-      // /S = instalação silenciosa NSIS (sem UI, sem cliques, automático)
-      exec(`cmd /c start "" "${targetPath}" /S`, { windowsHide: false }, (err) => {
-        if (err) {
-          console.error('[AutoUpdater] Erro ao executar instalador via cmd:', err);
-          // Fallback com /S via spawn
-          const { spawn } = require('child_process');
-          const child = spawn(targetPath, ['/S'], { detached: true, stdio: 'ignore' });
-          child.unref();
-        }
-      });
+      const batPath = path.join(os.tmpdir(), 'loord_update_and_restart.bat');
+      const targetPathWin = targetPath.replace(/\//g, '\\');
+      const currentExeWin = currentExe.replace(/\//g, '\\');
 
-      // Fecha o app após 1.2s para dar tempo do instalador iniciar
+      const batContent = `@echo off
+chcp 65001 >nul
+title Loord Optimizer - Atualizando...
+echo ========================================================
+echo   LOORD OPTIMIZER - ATUALIZACAO AUTOMATICA EM ANDAMENTO
+echo ========================================================
+echo.
+echo [1/3] Fechando versao anterior...
+timeout /t 1 /nobreak >nul
+taskkill /F /IM "Loord Optimizer.exe" >nul 2>&1
+timeout /t 1 /nobreak >nul
+
+echo [2/3] Instalando nova versao silenciosamente...
+start /wait "" "${targetPathWin}" /S
+
+echo [3/3] Iniciando Loord Optimizer atualizado...
+timeout /t 2 /nobreak >nul
+
+if exist "${currentExeWin}" (
+    start "" "${currentExeWin}"
+) else if exist "%ProgramFiles%\\Loord Optimizer\\Loord Optimizer.exe" (
+    start "" "%ProgramFiles%\\Loord Optimizer\\Loord Optimizer.exe"
+) else if exist "%LocalAppData%\\Programs\\loord-optimizer\\Loord Optimizer.exe" (
+    start "" "%LocalAppData%\\Programs\\loord-optimizer\\Loord Optimizer.exe"
+)
+
+timeout /t 3 /nobreak >nul
+del "${targetPathWin}" >nul 2>&1
+(goto) 2>nul & del "%~f0"
+`;
+
+      fs.writeFileSync(batPath, batContent, 'utf8');
+      console.log('[AutoUpdater] Script BAT criado em:', batPath);
+
+      // Executa o script BAT em processo independente
+      exec(`cmd /c start "" "${batPath}"`, { windowsHide: true });
+
+      // Fecha o aplicativo imediatamente para liberar arquivos e permitir a sobrescrita
       setTimeout(() => {
         app.isQuitting = true;
         app.exit(0);
-      }, 1200);
+      }, 500);
 
       return { success: true };
     } catch (e) {
-      console.error('[AutoUpdater] Erro crítico ao executar instalador:', e);
+      console.error('[AutoUpdater] Erro ao criar/executar script de atualização:', e);
       try {
-        shell.openPath(targetPath);
+        exec(`cmd /c start "" "${targetPath}" /S`, { windowsHide: false });
         setTimeout(() => {
           app.isQuitting = true;
           app.exit(0);
-        }, 1500);
+        }, 800);
       } catch (_) {}
       return { success: false, error: e.message };
     }
