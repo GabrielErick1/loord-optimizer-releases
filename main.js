@@ -1067,6 +1067,7 @@ function buildAdaptiveAffinityMap(hw) {
 
 // ── Configurar Process Lasso automaticamente (Sempre / Always) ────────────
 function configureProcessLasso(hw, emuCores) {
+  let configured = false;
   const possiblePaths = [
     'C:\\ProgramData\\ProcessLasso\\config\\prolasso.ini',
     'C:\\Program Files\\Process Lasso\\config\\prolasso.ini',
