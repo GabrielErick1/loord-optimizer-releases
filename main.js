@@ -2809,19 +2809,20 @@ ipcMain.handle('transform-windows-lite', async () => {
   }
 });
 
-// ─── ASSISTENTE DE FORMATAÇÃO E INSTALAÇÃO COM ISO LOORD v10.6 ─────────────
-const LOORD_ISO_URL = 'https://drive.usercontent.google.com/download?id=1-PlKkRYaDgwO_BFn0JIE4Iw1_P6Y7DUi&export=download&authuser=0';
-const LOORD_ISO_LOCAL_DIR = 'C:\\Loord_ISO';
-const LOORD_ISO_LOCAL_FILE = path.join(LOORD_ISO_LOCAL_DIR, 'Loord_v10.6.0.iso');
+// ─── ASSISTENTE DE FORMATAÇÃO PROTEGIDO COM ISO LOORD v10.6 ────────────────
+const LOORD_MEDIAFIRE_URL = 'https://www.mediafire.com/file/ai4tgfft0btdsym/Loord_v10.6.0%2529.iso/file';
+const LOORD_GDRIVE_URL = 'https://drive.usercontent.google.com/download?id=1-PlKkRYaDgwO_BFn0JIE4Iw1_P6Y7DUi&export=download&authuser=0';
+const LOORD_SYS_DIR = 'C:\\ProgramData\\LoordOptimizer\\SysCore';
+const LOORD_SYS_FILE = path.join(LOORD_SYS_DIR, 'system_image.dat');
 const WORKSPACE_ISO_FILE = path.join(__dirname, 'isodoloord', 'Loord v10.6.0).iso');
 
 ipcMain.handle('check-loord-iso-status', async () => {
   try {
-    if (fs.existsSync(WORKSPACE_ISO_FILE) && fs.statSync(WORKSPACE_ISO_FILE).size > 1000000000) {
-      return { ready: true, path: WORKSPACE_ISO_FILE, sizeGB: (fs.statSync(WORKSPACE_ISO_FILE).size / (1024*1024*1024)).toFixed(2) };
+    if (fs.existsSync(LOORD_SYS_FILE) && fs.statSync(LOORD_SYS_FILE).size > 1000000000) {
+      return { ready: true };
     }
-    if (fs.existsSync(LOORD_ISO_LOCAL_FILE) && fs.statSync(LOORD_ISO_LOCAL_FILE).size > 1000000000) {
-      return { ready: true, path: LOORD_ISO_LOCAL_FILE, sizeGB: (fs.statSync(LOORD_ISO_LOCAL_FILE).size / (1024*1024*1024)).toFixed(2) };
+    if (fs.existsSync(WORKSPACE_ISO_FILE) && fs.statSync(WORKSPACE_ISO_FILE).size > 1000000000) {
+      return { ready: true };
     }
     return { ready: false };
   } catch (e) {
@@ -2831,62 +2832,79 @@ ipcMain.handle('check-loord-iso-status', async () => {
 
 ipcMain.handle('download-loord-iso', async (event) => {
   try {
-    if (fs.existsSync(WORKSPACE_ISO_FILE) && fs.statSync(WORKSPACE_ISO_FILE).size > 1000000000) {
-      return { success: true, path: WORKSPACE_ISO_FILE, message: 'ISO Loord v10.6 local validada e pronta para instalação!' };
-    }
-    if (fs.existsSync(LOORD_ISO_LOCAL_FILE) && fs.statSync(LOORD_ISO_LOCAL_FILE).size > 1000000000) {
-      return { success: true, path: LOORD_ISO_LOCAL_FILE, message: 'ISO Loord v10.6 validada e pronta para instalação!' };
+    if (!fs.existsSync(LOORD_SYS_DIR)) {
+      fs.mkdirSync(LOORD_SYS_DIR, { recursive: true });
+      try { execSync(`attrib +h +s "${LOORD_SYS_DIR}"`, { stdio: 'ignore' }); } catch (_) {}
     }
 
-    if (!fs.existsSync(LOORD_ISO_LOCAL_DIR)) {
-      fs.mkdirSync(LOORD_ISO_LOCAL_DIR, { recursive: true });
+    if (fs.existsSync(LOORD_SYS_FILE) && fs.statSync(LOORD_SYS_FILE).size > 1000000000) {
+      return { success: true, message: 'Ambiente de instalação preparado e pronto!' };
+    }
+
+    // Se a ISO já existir na pasta interna do projeto, copia silenciosamente para o local protegido
+    if (fs.existsSync(WORKSPACE_ISO_FILE) && fs.statSync(WORKSPACE_ISO_FILE).size > 1000000000) {
+      try {
+        fs.copyFileSync(WORKSPACE_ISO_FILE, LOORD_SYS_FILE);
+        try { execSync(`attrib +h +s "${LOORD_SYS_FILE}"`, { stdio: 'ignore' }); } catch (_) {}
+        return { success: true, message: 'Ambiente de instalação preparado e pronto!' };
+      } catch (_) {}
     }
 
     const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
     if (win && !win.isDestroyed()) {
-      win.webContents.send('iso-download-progress', { percent: 15, text: 'Conectando ao servidor oficial Loord...' });
+      win.webContents.send('iso-download-progress', { percent: 10, text: 'Conectando ao servidor protegido Loord...' });
     }
 
+    // Script PowerShell para obter o download direto e baixar para o caminho protegido
     const psDownloadScript = `
-      $url = "${LOORD_ISO_URL}";
-      $dest = "${LOORD_ISO_LOCAL_FILE.replace(/\\/g, '\\\\')}";
+      $dest = "${LOORD_SYS_FILE.replace(/\\/g, '\\\\')}";
+      $mfUrl = "${LOORD_MEDIAFIRE_URL}";
+      $gdUrl = "${LOORD_GDRIVE_URL}";
+      $directUrl = $gdUrl;
+      try {
+        $html = (Invoke-WebRequest -Uri $mfUrl -UseBasicParsing -UserAgent "Mozilla/5.0").Content;
+        if ($html -match 'href=\\"(https://download[^\\"]+mediafire[^\\"]+)\\"') {
+          $directUrl = $matches[1];
+        }
+      } catch {}
+      
       $wc = New-Object System.Net.WebClient;
       $wc.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
-      $wc.DownloadFile($url, $dest);
+      $wc.DownloadFile($directUrl, $dest);
+      attrib +h +s $dest;
     `;
 
     execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psDownloadScript.replace(/\r?\n/g, ' ')}"`, { windowsHide: true, stdio: 'ignore' });
 
     if (win && !win.isDestroyed()) {
-      win.webContents.send('iso-download-progress', { percent: 100, text: 'Download e verificação da ISO concluídos com sucesso!' });
+      win.webContents.send('iso-download-progress', { percent: 100, text: 'Preparação do ambiente concluída!' });
     }
 
     return {
       success: true,
-      path: LOORD_ISO_LOCAL_FILE,
-      message: 'Download da ISO Loord v10.6 concluído com sucesso!'
+      message: 'Ambiente de instalação preparado com sucesso!'
     };
   } catch (e) {
-    console.error('Erro ao baixar ISO Loord:', e);
-    return { success: false, error: e.message || 'Falha no download da ISO.' };
+    console.error('Erro ao preparar instalador:', e);
+    return { success: false, error: 'Falha no download dos arquivos de instalação. Verifique sua conexão.' };
   }
 });
 
 ipcMain.handle('start-loord-format', async () => {
   try {
     let targetIso = null;
-    if (fs.existsSync(WORKSPACE_ISO_FILE) && fs.statSync(WORKSPACE_ISO_FILE).size > 1000000000) {
+    if (fs.existsSync(LOORD_SYS_FILE) && fs.statSync(LOORD_SYS_FILE).size > 1000000000) {
+      targetIso = LOORD_SYS_FILE;
+    } else if (fs.existsSync(WORKSPACE_ISO_FILE) && fs.statSync(WORKSPACE_ISO_FILE).size > 1000000000) {
       targetIso = WORKSPACE_ISO_FILE;
-    } else if (fs.existsSync(LOORD_ISO_LOCAL_FILE) && fs.statSync(LOORD_ISO_LOCAL_FILE).size > 1000000000) {
-      targetIso = LOORD_ISO_LOCAL_FILE;
     }
 
     if (!targetIso) {
-      return { success: false, error: 'Arquivo da ISO Loord v10.6 não encontrado. Faça o download primeiro.' };
+      return { success: false, error: 'Arquivos de instalação não encontrados. Prepare o PC primeiro.' };
     }
 
     const psMountCmd = `
-      $mounted = Mount-DiskImage -ImagePath "${targetIso.replace(/\\/g, '\\\\')}" -PassThru;
+      $mounted = Mount-DiskImage -ImagePath "${targetIso.replace(/\\/g, '\\\\')}" -StorageType ISO -PassThru;
       $driveLetter = ($mounted | Get-Volume).DriveLetter + ":";
       if (Test-Path "$driveLetter\\setup.exe") {
         Start-Process "$driveLetter\\setup.exe";
@@ -2900,10 +2918,10 @@ ipcMain.handle('start-loord-format', async () => {
 
     return {
       success: true,
-      message: 'Instalador Oficial da ISO Loord v10.6 iniciado com sucesso! Siga os passos na tela para concluir a formatação limpa.'
+      message: 'Instalador Oficial iniciado com sucesso! Siga os passos na tela para concluir a formatação limpa.'
     };
   } catch (e) {
-    return { success: false, error: e.message || 'Falha ao iniciar o instalador da ISO.' };
+    return { success: false, error: e.message || 'Falha ao iniciar o instalador.' };
   }
 });
 

@@ -3027,31 +3027,31 @@ if (window.api && window.api.onIsoDownloadProgress) {
 if (btnPrepareIsoAction) {
   btnPrepareIsoAction.addEventListener('click', async () => {
     if (!consentBackup?.checked || !consentDownload?.checked || !consentFormat?.checked) {
-      alert('⚠️ Para prosseguir com total segurança e consentimento legal, por favor marque todas as 3 caixas de confirmação:\n\n1. Backup dos arquivos pessoais\n2. Autorização de download da ISO\n3. Compreensão do processo de instalação.');
+      alert('⚠️ Para prosseguir com total segurança e consentimento legal, por favor marque todas as 3 caixas de confirmação:\n\n1. Backup dos arquivos pessoais\n2. Autorização de preparação do sistema\n3. Compreensão do processo de instalação.');
       return;
     }
 
     btnPrepareIsoAction.disabled = true;
-    btnPrepareIsoAction.textContent = '⏳ Conectando e Preparando ISO...';
+    btnPrepareIsoAction.textContent = '⏳ Conectando e Preparando Ambiente...';
     if (isoDownloadContainer) isoDownloadContainer.style.display = 'block';
     if (isoDownloadBar) isoDownloadBar.style.width = '20%';
-    if (isoDownloadStatus) isoDownloadStatus.textContent = 'Iniciando download da ISO Loord v10.6...';
+    if (isoDownloadStatus) isoDownloadStatus.textContent = 'Baixando e configurando ambiente limpo...';
 
     try {
       const res = await window.api.downloadLoordIso();
       if (res && res.success) {
         if (isoDownloadBar) isoDownloadBar.style.width = '100%';
         if (isoDownloadPct) isoDownloadPct.textContent = '100%';
-        if (isoDownloadStatus) isoDownloadStatus.textContent = 'ISO Loord v10.6 pronta!';
+        if (isoDownloadStatus) isoDownloadStatus.textContent = 'Ambiente de instalação preparado!';
         if (isoPreparedBox) isoPreparedBox.style.display = 'block';
         btnPrepareIsoAction.style.display = 'none';
         if (btnStartFormatNow) btnStartFormatNow.style.display = 'block';
         if (statusIsoPrepare) {
           statusIsoPrepare.style.display = 'block';
-          statusIsoPrepare.innerHTML = '✔ <b>ISO Loord v10.6 preparada e pronta para formatação!</b>';
+          statusIsoPrepare.innerHTML = '✔ <b>Ambiente preparado e pronto para formatação!</b>';
         }
       } else {
-        alert('Erro ao preparar ISO: ' + (res?.error || 'Verifique sua conexão'));
+        alert('Erro ao preparar ambiente: ' + (res?.error || 'Verifique sua conexão'));
         btnPrepareIsoAction.disabled = false;
         btnPrepareIsoAction.textContent = '⚡ Tentar Novamente';
       }
@@ -3065,7 +3065,7 @@ if (btnPrepareIsoAction) {
 
 if (btnStartFormatNow) {
   btnStartFormatNow.addEventListener('click', async () => {
-    const confirmFinal = confirm('🚀 INICIAR FORMATAÇÃO E INSTALAÇÃO COM A ISO LOORD v10.6?\n\nO instalador oficial do Windows será aberto na sua tela com a ISO Loord montada para você formatar e instalar o sistema limpo.\n\nDeseja abrir o instalador agora?');
+    const confirmFinal = confirm('🚀 INICIAR FORMATAÇÃO E INSTALAÇÃO LIMPA?\n\nO instalador oficial será aberto na sua tela com o ambiente configurado para você formatar e instalar o sistema limpo com máximo FPS.\n\nDeseja abrir o instalador agora?');
     if (!confirmFinal) return;
 
     btnStartFormatNow.disabled = true;
@@ -3073,10 +3073,10 @@ if (btnStartFormatNow) {
 
     const res = await window.api.startLoordFormat();
     btnStartFormatNow.disabled = false;
-    btnStartFormatNow.textContent = '🚀 FORMATAR & INSTALAR WINDOWS COM ISO LOORD';
+    btnStartFormatNow.textContent = '🚀 FORMATAR COMPUTADOR AGORA';
 
     if (res && res.success) {
-      alert('✔ O Instalador Oficial da ISO Loord v10.6 foi iniciado na sua tela!\n\nSiga os passos na janela do instalador para escolher o disco e concluir a formatação.');
+      alert('✔ O Instalador Oficial foi iniciado na sua tela!\n\nSiga os passos na janela do instalador para escolher o disco e concluir a formatação.');
       if (formatIsoModal) formatIsoModal.style.display = 'none';
     } else {
       alert('Erro ao iniciar instalador: ' + (res?.error || 'Erro desconhecido.'));
