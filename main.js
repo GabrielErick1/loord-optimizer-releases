@@ -110,10 +110,30 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      devTools: false // Bloqueia DevTools nativamente
     },
   });
 
+  mainWindow.removeMenu();
   mainWindow.loadFile('index.html');
+
+  // ─── BLINDAGEM ANTI-DEVTOOLS & ANTI-INSPECT ───────────────────────────────
+  mainWindow.webContents.on('devtools-opened', () => {
+    mainWindow.webContents.closeDevTools();
+    try { app.quit(); } catch (_) {}
+  });
+
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.key === 'F12') {
+      event.preventDefault();
+    }
+    if (input.control && (input.key === 'r' || input.key === 'R' || input.key === 'u' || input.key === 'U')) {
+      event.preventDefault();
+    }
+    if (input.control && input.shift && (input.key === 'i' || input.key === 'I' || input.key === 'j' || input.key === 'J' || input.key === 'c' || input.key === 'C')) {
+      event.preventDefault();
+    }
+  });
 }
 
 app.on('second-instance', () => {

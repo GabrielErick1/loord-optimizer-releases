@@ -1,6 +1,6 @@
 {
   "name": "loord-optimizer",
-  "version": "2.6.5",
+  "version": "2.6.6",
   "author": "Loord Optimizer",
   "description": "Loord Optimizer - Otimizador Gamer de Sensibilidade e Emulador",
   "main": "main.js",
@@ -52,7 +52,8 @@
   "devDependencies": {
     "electron": "^30.0.0",
     "electron-builder": "^26.15.3",
-    "electron-packager": "^17.1.2"
+    "electron-packager": "^17.1.2",
+    "javascript-obfuscator": "^5.6.0"
   },
   "dependencies": {
     "electron-updater": "6.3.9"

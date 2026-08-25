@@ -1,3 +1,17 @@
+// ─── BLINDAGEM ANTI-FURTO & ANTI-ENGENHARIA REVERSA ────────────────────────
+document.addEventListener('contextmenu', (e) => e.preventDefault());
+document.addEventListener('keydown', (e) => {
+  if (
+    e.key === 'F12' ||
+    (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S' || e.key === 'p' || e.key === 'P')) ||
+    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c'))
+  ) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }
+});
+
 // DOM Elements
 const btnMinimize = document.getElementById('btn-minimize');
 const btnMaximize = document.getElementById('btn-maximize');
