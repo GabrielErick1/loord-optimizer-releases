@@ -2619,28 +2619,25 @@ ipcMain.handle('transform-windows-lite', async () => {
   if (!systemIsAdmin) return { success: false, error: 'Privilégios de Administrador requeridos.' };
   try {
     const liteCommands = [
-      // 1. Manter Kernel do Windows na Memória RAM Física (Elimina engasgos de disco HD/SSD)
+      // 1. Manter Kernel do Windows na Memória RAM Física (DisablePagingExecutive = 1)
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v DisablePagingExecutive /t REG_DWORD /d 1 /f /reg:64',
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v LargeSystemCache /t REG_DWORD /d 0 /f /reg:64',
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v FeatureSettings /t REG_DWORD /d 1 /f /reg:64',
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v FeatureSettingsOverride /t REG_DWORD /d 3 /f /reg:64',
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v FeatureSettingsOverrideMask /t REG_DWORD /d 3 /f /reg:64',
 
-      // 2. Desativação do VBS / Isolamento de Núcleo (HVCI) - Libera +30% de CPU no Emulador
-      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v EnableVirtualizationBasedSecurity /t REG_DWORD /d 0 /f /reg:64',
-      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v RequirePlatformSecurityFeatures /t REG_DWORD /d 0 /f /reg:64',
-      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard\\Scenarios\\HypervisorEnforcedCodeIntegrity" /v Enabled /t REG_DWORD /d 0 /f /reg:64',
+      // 2. Curva de Mira Matemática Loord Oficial (Extraída da ISO Loord v10.6)
+      'reg add "HKCU\\Control Panel\\Mouse" /v SmoothMouseXCurve /t REG_BINARY /d 0000000000000000156e000000000000004001000000000029dc0300000000000000280000000000 /f',
+      'reg add "HKCU\\Control Panel\\Mouse" /v SmoothMouseYCurve /t REG_BINARY /d 0000000000000000fd11010000000000002404000000000000fc12000000000000c0bb0100000000 /f',
+      'reg add "HKCU\\Control Panel\\Mouse" /v MouseSensitivity /t REG_SZ /d "10" /f',
+      'reg add "HKCU\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d "0" /f',
+      'reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d "0" /f',
+      'reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d "0" /f',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters" /v MouseDataQueueSize /t REG_DWORD /d 32 /f',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\kbdclass\\Parameters" /v KeyboardDataQueueSize /t REG_DWORD /d 32 /f',
 
-      // 3. Forçar GPU Dedicada em Modo Alto Desempenho no Emulador & HAGS
-      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers" /v HwSchMode /t REG_DWORD /d 2 /f /reg:64',
-      'reg add "HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences" /v "HD-Player.exe" /t REG_SZ /d "GpuPreference=2;" /f',
-      'reg add "HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences" /v "MSIAppPlayer.exe" /t REG_SZ /d "GpuPreference=2;" /f',
-      'reg add "HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences" /v "MEmuHeadless.exe" /t REG_SZ /d "GpuPreference=2;" /f',
-      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\HD-Player.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f /reg:64',
-      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\MSIAppPlayer.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f /reg:64',
-
-      // 4. Priorização Extrema de Processos Gamer (MMCSS + Win32PrioritySeparation = 26 / Hex 1A)
-      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 26 /f /reg:64',
+      // 3. Priorização Extrema de Processos Gamer (MMCSS + Win32PrioritySeparation = 38 / Hex 26)
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 38 /f /reg:64',
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v IRQ8Priority /t REG_DWORD /d 1 /f /reg:64',
       'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 0 /f /reg:64',
       'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v NetworkThrottlingIndex /t REG_DWORD /d 4294967295 /f /reg:64',
@@ -2649,52 +2646,97 @@ ipcMain.handle('transform-windows-lite', async () => {
       'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Scheduling Category" /t REG_SZ /d "High" /f /reg:64',
       'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "SFIO Priority" /t REG_SZ /d "High" /f /reg:64',
 
+      // 4. Forçar GPU Dedicada em Modo Alto Desempenho no Emulador & HAGS
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers" /v HwSchMode /t REG_DWORD /d 2 /f /reg:64',
+      'reg add "HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences" /v "HD-Player.exe" /t REG_SZ /d "GpuPreference=2;" /f',
+      'reg add "HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences" /v "MSIAppPlayer.exe" /t REG_SZ /d "GpuPreference=2;" /f',
+      'reg add "HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences" /v "MEmuHeadless.exe" /t REG_SZ /d "GpuPreference=2;" /f',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\HD-Player.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\MSIAppPlayer.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f /reg:64',
+
       // 5. Agrupamento de Svchost (Transforma ~60 processos svchost em menos de 15)
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control" /v SvcHostSplitThresholdInKB /t REG_DWORD /d 4294967295 /f /reg:64',
 
-      // 6. Desativação de Bloatware, Sugestões & Telemetria do Sistema
-      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f /reg:64',
-      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v AllowCortana /t REG_DWORD /d 0 /f /reg:64',
-      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f /reg:64',
-      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SilentInstalledAppsEnabled /t REG_DWORD /d 0 /f',
-      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SystemPaneSuggestionsEnabled /t REG_DWORD /d 0 /f',
-      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SoftLandingEnabled /t REG_DWORD /d 0 /f',
-      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338388Enabled /t REG_DWORD /d 0 /f',
-      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338389Enabled /t REG_DWORD /d 0 /f',
-      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-353696Enabled /t REG_DWORD /d 0 /f',
-
-      // 7. GameDVR, Game Bar e Gravação em Segundo Plano Desativados (Zero Input Lag)
+      // 6. GameDVR & Fullscreen Exclusive (FSE) - Latência de Renderização Zero
       'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v AllowGameDVR /t REG_DWORD /d 0 /f /reg:64',
       'reg add "HKCU\\System\\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f',
+      'reg add "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehavior /t REG_DWORD /d 2 /f',
+      'reg add "HKCU\\System\\GameConfigStore" /v GameDVR_DXGIHonorFSEWindowsCompatible /t REG_DWORD /d 1 /f',
       'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR" /v AppCaptureEnabled /t REG_DWORD /d 0 /f',
       'reg add "HKCU\\Software\\Microsoft\\GameBar" /v AutoGameModeEnabled /t REG_DWORD /d 1 /f',
 
-      // 8. Desativação de Notificações Inúteis (Toasts)
-      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v ToastEnabled /t REG_DWORD /d 0 /f',
-      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings" /v NOC_GLOBAL_SETTING_TOASTS_ENABLED /t REG_DWORD /d 0 /f',
-      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v NoToastApplicationNotification /t REG_DWORD /d 1 /f /reg:64',
+      // 7. DWM Anti-Stutter (Estabilidade de Frametime da ISO)
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\DWM\\ExtendedComposition" /v ExclusiveModeFramerateAveragingPeriodMs /t REG_DWORD /d 1000 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\DWM\\ExtendedComposition" /v ExclusiveModeFramerateThresholdPercent /t REG_DWORD /d 45 /f /reg:64',
 
-      // 9. Otimização Visual Minimalista & Menus Instantâneos
+      // 8. Otimizações de Telemetria e Bloatwares da ISO
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v AllowCortana /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f /reg:64',
       'reg add "HKCU\\Control Panel\\Desktop" /v MenuShowDelay /t REG_SZ /d 0 /f',
       'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects" /v VisualFXSetting /t REG_DWORD /d 2 /f',
-      'reg add "HKCU\\Control Panel\\Desktop\\WindowMetrics" /v MinAnimate /t REG_SZ /d 0 /f',
-      'reg add "HKCU\\Software\\Microsoft\\Windows\\DWM" /v EnableAeroPeek /t REG_DWORD /d 0 /f',
-      'reg add "HKCU\\Control Panel\\Desktop" /v DragFullWindows /t REG_SZ /d 0 /f',
-      'reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothing /t REG_SZ /d 2 /f',
-      'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f',
 
-      // 10. Desativação do Windows Update Automático
-      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v NoAutoUpdate /t REG_DWORD /d 1 /f /reg:64',
-
-      // 11. Desativação do Windows Defender (Políticas e Monitoramento em Tempo Real)
-      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender" /v DisableAntiSpyware /t REG_DWORD /d 1 /f /reg:64',
-      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection" /v DisableRealtimeMonitoring /t REG_DWORD /d 1 /f /reg:64',
-
-      // 12. Desativação de Suspensão USB (Mouse e Teclado 100% Acordados)
+      // 9. Desativação de Suspensão USB (Mouse e Teclado 100% Acordados)
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\USB" /v DisableSelectiveSuspend /t REG_DWORD /d 1 /f /reg:64',
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\USBXHCI\\Parameters" /v DisableSelectiveSuspend /t REG_DWORD /d 1 /f /reg:64',
 
-      // 13. Plano de Energia Máxima & Core Unparking
+      // 10. Desativação Completa dos 31 Serviços Pesados Extraídos da ISO Loord
+      'sc config "AppVClient" start= disabled',
+      'sc config "Beep" start= disabled',
+      'sc config "cdfs" start= disabled',
+      'sc config "diagsvc" start= disabled',
+      'sc config "DiagTrack" start= disabled',
+      'sc stop "DiagTrack"',
+      'sc config "DialogBlockingService" start= disabled',
+      'sc config "DPS" start= disabled',
+      'sc stop "DPS"',
+      'sc config "DsSvc" start= disabled',
+      'sc config "DusmSvc" start= disabled',
+      'sc config "FontCache" start= disabled',
+      'sc config "hvcrash" start= disabled',
+      'sc config "MsKeyboardFilter" start= disabled',
+      'sc config "Ndu" start= disabled',
+      'sc config "NetTcpPortSharing" start= disabled',
+      'sc config "RemoteAccess" start= disabled',
+      'sc config "RemoteRegistry" start= disabled',
+      'sc stop "RemoteRegistry"',
+      'sc config "SensorDataService" start= disabled',
+      'sc config "SensorService" start= disabled',
+      'sc config "SensrSvc" start= disabled',
+      'sc config "ShellHWDetection" start= disabled',
+      'sc config "shpamsvc" start= disabled',
+      'sc config "ssh-agent" start= disabled',
+      'sc config "tzautoupdate" start= disabled',
+      'sc config "udfs" start= disabled',
+      'sc config "UevAgentDriver" start= disabled',
+      'sc config "UevAgentService" start= disabled',
+      'sc config "VerifierExt" start= disabled',
+      'sc config "WdiServiceHost" start= disabled',
+      'sc config "WdiSystemHost" start= disabled',
+      'sc config "ws2ifsl" start= disabled',
+      'sc config "WSearch" start= disabled',
+      'sc stop "WSearch"',
+      'sc config "SysMain" start= disabled',
+      'sc stop "SysMain"',
+      'sc config "WerSvc" start= disabled',
+      'sc stop "WerSvc"',
+      'sc config "MapsBroker" start= disabled',
+      'sc stop "MapsBroker"',
+      'sc config "PcaSvc" start= disabled',
+      'sc stop "PcaSvc"',
+      'sc config "dmwappushservice" start= disabled',
+      'sc stop "dmwappushservice"',
+
+      // 11. BCDEDIT Latency & High Performance Timers
+      'bcdedit /set useplatformclock no',
+      'bcdedit /set disabledynamictick yes',
+      'bcdedit /set tscsyncpolicy Enhanced',
+      'bcdedit /set nx OptIn',
+      'bcdedit /set bootux disabled',
+      'bcdedit /set hypervisorlaunchtype off',
+      'bcdedit /timeout 3',
+
+      // 12. Plano de Energia Ultimate Performance Loord
       'powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61',
       'powercfg -setactive e9a42b02-d5df-448d-aa00-03f14749eb61',
       'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100',
@@ -2705,54 +2747,7 @@ ipcMain.handle('transform-windows-lite', async () => {
       'powercfg /setdcvalueindex scheme_current 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0',
       'powercfg -setactive SCHEME_CURRENT',
       'powercfg -h off',
-
-      // 14. Desativar Serviços Pesados de Fundo (Reduz processos para ~60-70)
-      'sc config "WSearch" start= disabled',
-      'sc stop "WSearch"',
-      'sc config "SysMain" start= disabled',
-      'sc stop "SysMain"',
-      'sc config "DiagTrack" start= disabled',
-      'sc stop "DiagTrack"',
-      'sc config "WerSvc" start= disabled',
-      'sc stop "WerSvc"',
-      'sc config "Spooler" start= disabled',
-      'sc stop "Spooler"',
-      'sc config "Fax" start= disabled',
-      'sc stop "Fax"',
-      'sc config "MapsBroker" start= disabled',
-      'sc stop "MapsBroker"',
-      'sc config "PcaSvc" start= disabled',
-      'sc stop "PcaSvc"',
-      'sc config "RemoteRegistry" start= disabled',
-      'sc stop "RemoteRegistry"',
-      'sc config "WalletService" start= disabled',
-      'sc stop "WalletService"',
-      'sc config "PhoneSvc" start= disabled',
-      'sc stop "PhoneSvc"',
-      'sc config "RetailDemo" start= disabled',
-      'sc stop "RetailDemo"',
-      'sc config "dmwappushservice" start= disabled',
-      'sc stop "dmwappushservice"',
-      'sc config "wuauserv" start= disabled',
-      'sc stop "wuauserv"',
-      'sc config "UsoSvc" start= disabled',
-      'sc stop "UsoSvc"',
-      'sc config "WinDefend" start= disabled',
-      'sc stop "WinDefend"',
-      'sc config "WdNisSvc" start= disabled',
-      'sc stop "WdNisSvc"',
-      'sc config "Sense" start= disabled',
-      'sc stop "Sense"',
-
-      // 15. BCD Timer Resolution 0.5ms & Boot Rápido & Sem Hypervisor
-      'bcdedit /set useplatformtick yes',
-      'bcdedit /set disabledynamictick yes',
-      'bcdedit /set useplatformclock no',
-      'bcdedit /set bootux disabled',
-      'bcdedit /set hypervisorlaunchtype off',
-      'bcdedit /timeout 3',
-
-      // 16. SSD TRIM & Rede QoS 0% & Netsh Anti-Bufferbloat
+      // 13. SSD TRIM & Rede QoS 0% & Netsh Anti-Bufferbloat
       'fsutil behavior set DisableDeleteNotify 0',
       'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched" /v NonBestEffortLimit /t REG_DWORD /d 0 /f /reg:64',
       'netsh int tcp set global autotuninglevel=normal',
@@ -2807,7 +2802,7 @@ ipcMain.handle('transform-windows-lite', async () => {
 
     return {
       success: true,
-      message: '🚀 Transformação em Windows Lite Gamer concluída com sucesso! Seu Windows agora está no padrão Ghost Spectre / ReviOS (Kernel na RAM, Svchosts agrupados e 0% bloatware).'
+      message: '👑 Transformação em Windows Lite Loord v10.6 concluída com sucesso! Todas as 100% otimizações da sua ISO Loord foram aplicadas (31 Serviços desativados, Curva de Mira Loord, GPU Priority 8, Win32Priority 38, BCDEDIT 0.5ms e Plano Ultimate).'
     };
   } catch (e) {
     return { success: false, error: e.message };

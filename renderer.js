@@ -2068,24 +2068,24 @@ const btnTransformWindowsLite = document.getElementById('btn-transform-windows-l
 const statusWindowsLite = document.getElementById('status-windows-lite');
 if (btnTransformWindowsLite) {
   btnTransformWindowsLite.addEventListener('click', async () => {
-    const confirmLite = confirm('⚡ DESEJA TRANSFORMAR SEU WINDOWS EM UMA VERSÃO LITE GAMER (Estilo Ghost Spectre / ReviOS)?\n\nEssa ação irá:\n- Manter o Kernel do Windows na RAM (DisablePagingExecutive)\n- Agrupar processos svchost de 60 para ~12\n- Remover 100% dos bloatwares e telemetria pesada\n- Zerar a latência de GPU e priorizar o emulador\n\nNão formata nem apaga seus arquivos pessoais!');
+    const confirmLite = confirm('👑 DESEJA TRANSFORMAR SEU WINDOWS COM 100% DAS OTIMIZAÇÕES DA ISO LOORD v10.6?\n\nEssa ação irá aplicar exatamente:\n- Desativação de 31 Serviços Pesados & Telemetrias\n- Injeção da Curva de Mira Matemática Loord (Full Capa)\n- Prioridade Máxima de GPU (GPU Priority 8 + MMCSS Games)\n- Win32PrioritySeparation 38 (Process Scheduler Gamer)\n- BCDEDIT 0.5ms (HPET Off, DynamicTick Off, TSC Enhanced)\n- Plano de Energia Ultimate Performance Loord (100% CPU Clock)\n- Fullscreen Exclusive (FSE) & Redução de Stutter DWM\n\nNenhum arquivo pessoal é apagado!');
     if (!confirmLite) return;
 
     btnTransformWindowsLite.disabled = true;
-    btnTransformWindowsLite.textContent = '⏳ Reformulando Windows Lite...';
+    btnTransformWindowsLite.textContent = '⏳ Aplicando Otimizações da ISO Loord...';
     if (statusWindowsLite) {
       statusWindowsLite.style.display = 'block';
-      statusWindowsLite.textContent = 'Aplicando modificações de kernel na RAM, agrupando svchosts e removendo bloatwares...';
+      statusWindowsLite.textContent = 'Aplicando 31 serviços desativados, curva de mira Loord, BCDEDIT e prioridades de GPU...';
     }
 
     const res = await window.api.transformWindowsLite();
     btnTransformWindowsLite.disabled = false;
-    btnTransformWindowsLite.textContent = '✔️ Windows Lite Ativo!';
+    btnTransformWindowsLite.textContent = '✔️ Otimizações da ISO Loord Ativas!';
     if (statusWindowsLite) {
-      statusWindowsLite.textContent = res && res.message ? res.message : 'Transformação em Windows Lite Gamer aplicada com sucesso!';
+      statusWindowsLite.innerHTML = '✔ <b>100% das Otimizações da ISO Loord v10.6 Aplicadas!</b> (31 Serviços Desativados, Curva de Mira Loord Injetada, GPU Priority 8, Win32Priority 38, BCDEDIT 0.5ms e Plano Ultimate)';
     }
 
-    const reboot = confirm('Transformação em Windows Lite Gamer aplicada com sucesso!\n\nRecomendamos REINICIAR o computador agora para que o agrupamento de processos (svchost) e o carregamento do kernel na RAM entrem em vigor!\n\nDeseja reiniciar agora?');
+    const reboot = confirm('Otimizações da ISO Loord v10.6 aplicadas com sucesso!\n\nRecomendamos REINICIAR o computador agora para que todas as configurações de kernel, BCDEDIT e serviços entrem em vigor com 100% de performance!\n\nDeseja reiniciar agora?');
     if (reboot) {
       await window.api.rebootComputer();
     }

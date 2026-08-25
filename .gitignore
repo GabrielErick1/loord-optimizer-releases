@@ -17,3 +17,6 @@ BlueStacks_msi5/
 *.dmg
 *.AppImage
 win-unpacked/
+scratch_iso/
+scratch_iso_full/
+isodoloord/
