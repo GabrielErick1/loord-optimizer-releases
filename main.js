@@ -2810,18 +2810,111 @@ ipcMain.handle('transform-windows-lite', async () => {
 });
 
 // ─── ASSISTENTE DE FORMATAÇÃO PROTEGIDO COM ISO LOORD v10.6 ────────────────
-const LOORD_MEDIAFIRE_URL = 'https://www.mediafire.com/file/ai4tgfft0btdsym/Loord_v10.6.0%2529.iso/file';
-const LOORD_GDRIVE_URL = 'https://drive.usercontent.google.com/download?id=1-PlKkRYaDgwO_BFn0JIE4Iw1_P6Y7DUi&export=download&authuser=0';
+const LOORD_MEDIAFIRE_PAGE = 'https://www.mediafire.com/file/ai4tgfft0btdsym/Loord_v10.6.0%2529.iso/file';
+const LOORD_GDRIVE_FALLBACK = 'https://drive.usercontent.google.com/download?id=1-PlKkRYaDgwO_BFn0JIE4Iw1_P6Y7DUi&export=download&authuser=0';
 const LOORD_SYS_DIR = 'C:\\ProgramData\\LoordOptimizer\\SysCore';
 const LOORD_SYS_FILE = path.join(LOORD_SYS_DIR, 'system_image.dat');
-const WORKSPACE_ISO_FILE = path.join(__dirname, 'isodoloord', 'Loord v10.6.0).iso');
+
+function getKnownLocalIsoPath() {
+  const candidates = [
+    LOORD_SYS_FILE,
+    'C:\\Loord_ISO\\Loord_v10.6.0.iso',
+    path.join(__dirname, 'isodoloord', 'Loord v10.6.0).iso'),
+    path.join(process.cwd(), 'isodoloord', 'Loord v10.6.0).iso'),
+    'C:\\Users\\Gabriel\\Downloads\\Configuração emulador\\Nova pasta (4)\\isodoloord\\Loord v10.6.0).iso'
+  ];
+  for (const c of candidates) {
+    try {
+      if (fs.existsSync(c) && fs.statSync(c).size > 1000000000) {
+        return c;
+      }
+    } catch (_) {}
+  }
+  return null;
+}
+
+function resolveMediafireDirectUrl(mediafirePageUrl) {
+  return new Promise((resolve) => {
+    https.get(mediafirePageUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    }, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        const m = body.match(/aria-label="Download file"[^>]*href="([^"]+)"/i) ||
+                  body.match(/id="downloadButton"[^>]*href="([^"]+)"/i) ||
+                  body.match(/href="(https:\/\/download[^"]+mediafire[^"]+)"/i);
+        if (m && m[1]) {
+          resolve(m[1]);
+        } else {
+          resolve(null);
+        }
+      });
+    }).on('error', () => resolve(null));
+  });
+}
+
+function streamDownloadFile(url, destPath, onProgress) {
+  return new Promise((resolve, reject) => {
+    const protocol = url.startsWith('https') ? https : http;
+    const req = protocol.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        return streamDownloadFile(res.headers.location, destPath, onProgress).then(resolve).catch(reject);
+      }
+
+      if (res.statusCode !== 200) {
+        return reject(new Error('Servidor retornou status ' + res.statusCode));
+      }
+
+      const totalBytes = parseInt(res.headers['content-length'] || '0', 10);
+      let downloadedBytes = 0;
+      let lastReport = 0;
+      const fileStream = fs.createWriteStream(destPath);
+
+      res.on('data', (chunk) => {
+        downloadedBytes += chunk.length;
+        const now = Date.now();
+        if (now - lastReport > 400 || downloadedBytes === totalBytes) {
+          lastReport = now;
+          let pct = 50;
+          if (totalBytes > 0) {
+            pct = Math.min(99, Math.round((downloadedBytes / totalBytes) * 100));
+          } else {
+            // Se content-length não vier, calcula estimando 3.2 GB
+            pct = Math.min(99, Math.round((downloadedBytes / (3.2 * 1024 * 1024 * 1024)) * 100));
+          }
+          const mbDownloaded = (downloadedBytes / (1024 * 1024)).toFixed(1);
+          if (onProgress) onProgress(pct, `${mbDownloaded} MB baixados (${pct}%)`);
+        }
+      });
+
+      res.pipe(fileStream);
+
+      fileStream.on('finish', () => {
+        fileStream.close();
+        resolve(destPath);
+      });
+
+      fileStream.on('error', (err) => {
+        try { fs.unlinkSync(destPath); } catch (_) {}
+        reject(err);
+      });
+    });
+
+    req.on('error', reject);
+  });
+}
 
 ipcMain.handle('check-loord-iso-status', async () => {
   try {
-    if (fs.existsSync(LOORD_SYS_FILE) && fs.statSync(LOORD_SYS_FILE).size > 1000000000) {
-      return { ready: true };
-    }
-    if (fs.existsSync(WORKSPACE_ISO_FILE) && fs.statSync(WORKSPACE_ISO_FILE).size > 1000000000) {
+    const localIso = getKnownLocalIsoPath();
+    if (localIso) {
       return { ready: true };
     }
     return { ready: false };
@@ -2837,48 +2930,40 @@ ipcMain.handle('download-loord-iso', async (event) => {
       try { execSync(`attrib +h +s "${LOORD_SYS_DIR}"`, { stdio: 'ignore' }); } catch (_) {}
     }
 
-    if (fs.existsSync(LOORD_SYS_FILE) && fs.statSync(LOORD_SYS_FILE).size > 1000000000) {
+    const localIso = getKnownLocalIsoPath();
+    if (localIso) {
+      if (localIso !== LOORD_SYS_FILE && !fs.existsSync(LOORD_SYS_FILE)) {
+        try {
+          fs.copyFileSync(localIso, LOORD_SYS_FILE);
+          try { execSync(`attrib +h +s "${LOORD_SYS_FILE}"`, { stdio: 'ignore' }); } catch (_) {}
+        } catch (_) {}
+      }
       return { success: true, message: 'Ambiente de instalação preparado e pronto!' };
     }
 
-    // Se a ISO já existir na pasta interna do projeto, copia silenciosamente para o local protegido
-    if (fs.existsSync(WORKSPACE_ISO_FILE) && fs.statSync(WORKSPACE_ISO_FILE).size > 1000000000) {
-      try {
-        fs.copyFileSync(WORKSPACE_ISO_FILE, LOORD_SYS_FILE);
-        try { execSync(`attrib +h +s "${LOORD_SYS_FILE}"`, { stdio: 'ignore' }); } catch (_) {}
-        return { success: true, message: 'Ambiente de instalação preparado e pronto!' };
-      } catch (_) {}
-    }
-
     const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
-    if (win && !win.isDestroyed()) {
-      win.webContents.send('iso-download-progress', { percent: 10, text: 'Conectando ao servidor protegido Loord...' });
+    const sendProgress = (percent, text) => {
+      if (win && !win.isDestroyed()) {
+        win.webContents.send('iso-download-progress', { percent, text });
+      }
+    };
+
+    sendProgress(5, 'Obtendo conexão de alta velocidade com o servidor...');
+
+    let directUrl = await resolveMediafireDirectUrl(LOORD_MEDIAFIRE_PAGE);
+    if (!directUrl) {
+      directUrl = LOORD_GDRIVE_FALLBACK;
     }
 
-    // Script PowerShell para obter o download direto e baixar para o caminho protegido
-    const psDownloadScript = `
-      $dest = "${LOORD_SYS_FILE.replace(/\\/g, '\\\\')}";
-      $mfUrl = "${LOORD_MEDIAFIRE_URL}";
-      $gdUrl = "${LOORD_GDRIVE_URL}";
-      $directUrl = $gdUrl;
-      try {
-        $html = (Invoke-WebRequest -Uri $mfUrl -UseBasicParsing -UserAgent "Mozilla/5.0").Content;
-        if ($html -match 'href=\\"(https://download[^\\"]+mediafire[^\\"]+)\\"') {
-          $directUrl = $matches[1];
-        }
-      } catch {}
-      
-      $wc = New-Object System.Net.WebClient;
-      $wc.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
-      $wc.DownloadFile($directUrl, $dest);
-      attrib +h +s $dest;
-    `;
+    sendProgress(10, 'Iniciando download protegido dos arquivos...');
 
-    execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psDownloadScript.replace(/\r?\n/g, ' ')}"`, { windowsHide: true, stdio: 'ignore' });
+    await streamDownloadFile(directUrl, LOORD_SYS_FILE, (pct, text) => {
+      sendProgress(pct, text);
+    });
 
-    if (win && !win.isDestroyed()) {
-      win.webContents.send('iso-download-progress', { percent: 100, text: 'Preparação do ambiente concluída!' });
-    }
+    try { execSync(`attrib +h +s "${LOORD_SYS_FILE}"`, { stdio: 'ignore' }); } catch (_) {}
+
+    sendProgress(100, 'Ambiente de instalação configurado com sucesso!');
 
     return {
       success: true,
@@ -2886,18 +2971,13 @@ ipcMain.handle('download-loord-iso', async (event) => {
     };
   } catch (e) {
     console.error('Erro ao preparar instalador:', e);
-    return { success: false, error: 'Falha no download dos arquivos de instalação. Verifique sua conexão.' };
+    return { success: false, error: 'Falha no download dos arquivos: ' + (e.message || 'Verifique sua conexão') };
   }
 });
 
 ipcMain.handle('start-loord-format', async () => {
   try {
-    let targetIso = null;
-    if (fs.existsSync(LOORD_SYS_FILE) && fs.statSync(LOORD_SYS_FILE).size > 1000000000) {
-      targetIso = LOORD_SYS_FILE;
-    } else if (fs.existsSync(WORKSPACE_ISO_FILE) && fs.statSync(WORKSPACE_ISO_FILE).size > 1000000000) {
-      targetIso = WORKSPACE_ISO_FILE;
-    }
+    const targetIso = getKnownLocalIsoPath();
 
     if (!targetIso) {
       return { success: false, error: 'Arquivos de instalação não encontrados. Prepare o PC primeiro.' };
