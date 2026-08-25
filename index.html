@@ -13,6 +13,55 @@
 <body>
   <div class="app-container">
 
+    <!-- ─── TELA DE BLOQUEIO / AUTENTICAÇÃO VIP POR KEY ────────────────────────── -->
+    <div id="key-lock-screen" style="position: fixed; inset: 0; z-index: 999999; background: radial-gradient(circle at center, #111827 0%, #030712 100%); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(20px);">
+      <div style="width: 480px; max-width: 92vw; background: rgba(17, 24, 39, 0.85); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 20px; box-shadow: 0 0 50px rgba(245, 158, 11, 0.2), inset 0 0 20px rgba(245, 158, 11, 0.05); padding: 32px; text-align: center; backdrop-filter: blur(15px); position: relative; animation: fadeIn 0.4s ease-out;">
+        
+        <!-- Header Lock -->
+        <div style="width: 70px; height: 70px; margin: 0 auto 16px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(239, 68, 68, 0.2)); border: 2px solid #f59e0b; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; box-shadow: 0 0 25px rgba(245, 158, 11, 0.4);">
+          🔒
+        </div>
+
+        <h2 style="margin: 0 0 6px; font-size: 22px; font-weight: 800; color: #f8fafc; letter-spacing: 0.5px;">
+          LOORD OPTIMIZER <span style="color: #f59e0b;">VIP</span>
+        </h2>
+        <p style="margin: 0 0 24px; font-size: 13px; color: #94a3b8;">
+          Painel protegido. Insira sua chave de ativação para liberar o acesso.
+        </p>
+
+        <!-- Hardware UUID Box -->
+        <div style="background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 12px 14px; margin-bottom: 18px; text-align: left;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">🔑 Seu Hardware ID (UUID):</span>
+            <button id="btn-copy-uuid" type="button" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #f59e0b; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s;">📋 Copiar ID</button>
+          </div>
+          <div id="display-hwid" style="font-family: monospace; font-size: 12px; color: #38bdf8; word-break: break-all; user-select: all;">
+            Carregando Hardware ID...
+          </div>
+        </div>
+
+        <!-- Key Input Field -->
+        <div style="margin-bottom: 20px; text-align: left;">
+          <label style="display: block; font-size: 12px; font-weight: 700; color: #e2e8f0; margin-bottom: 8px;">
+            🎫 Chave de Ativação VIP:
+          </label>
+          <input id="input-vip-key" type="text" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="32" style="width: 100%; box-sizing: border-box; background: rgba(0, 0, 0, 0.6); border: 1.5px solid rgba(245, 158, 11, 0.5); border-radius: 10px; padding: 14px 16px; font-family: monospace; font-size: 15px; font-weight: 700; color: #00e676; text-align: center; text-transform: uppercase; letter-spacing: 2px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='rgba(245, 158, 11, 0.5)'">
+        </div>
+
+        <!-- Status / Error Banner -->
+        <div id="key-auth-error" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; font-size: 12px; padding: 10px; border-radius: 8px; margin-bottom: 16px; font-weight: 600;"></div>
+
+        <!-- Action Buttons -->
+        <button id="btn-activate-vip" type="button" style="width: 100%; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: none; padding: 14px; border-radius: 12px; font-size: 14px; font-weight: 900; cursor: pointer; letter-spacing: 0.5px; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4); transition: transform 0.15s, box-shadow 0.15s; margin-bottom: 12px;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+          🔓 ATIVAR ACESSO VIP
+        </button>
+
+        <div style="font-size: 12px; color: #64748b; margin-top: 14px;">
+          Não possui uma chave? Solicite ao administrador oficial do Loord Optimizer.
+        </div>
+      </div>
+    </div>
+
     <!-- Titlebar Custom (Frame-less look) -->
     <header class="titlebar">
       <div class="logo">
@@ -1568,6 +1617,28 @@
           <h2>Minha Config & Atualizações</h2>
           <p class="subtitle">Gerencie suas configurações, restaure backups e mantenha seu app atualizado</p>
 
+          <!-- VIP License Card -->
+          <div class="card" style="border: 1px solid rgba(245, 158, 11, 0.35); background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(17, 24, 39, 0.8) 100%);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h3 style="margin: 0 0 4px 0; color: #f59e0b;">👑 Licença & Acesso VIP</h3>
+                <p style="margin: 0; font-size: 12px; color: #94a3b8;">Status de ativação da sua chave no computador</p>
+              </div>
+              <span id="vip-status-badge" class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); font-weight: 800;">🟢 Ativo</span>
+            </div>
+            <div style="margin-top: 14px; background: rgba(0,0,0,0.4); border-radius: 8px; padding: 14px; border: 1px solid rgba(255,255,255,0.08);">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Chave Conectada:</div>
+                  <div id="display-saved-key" style="font-family: monospace; font-size: 14px; font-weight: 800; color: #00e676; margin-top: 4px;">Carregando...</div>
+                </div>
+                <button id="btn-logout-key" type="button" class="btn btn-sm" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; font-weight: 700; border-radius: 6px; padding: 8px 14px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.3)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.15)'">
+                  🔌 Trocar Chave / Sair
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- Update Card -->
           <div class="card" style="border: 1px solid rgba(99, 202, 183, 0.3);">
             <div
@@ -1577,7 +1648,7 @@
                 <p style="margin: 0; font-size: 12px; color: #94a3b8;">Verifique e receba novas versões e otimizações
                   automaticamente</p>
               </div>
-              <span id="app-version-badge" class="badge badge-success">v2.7.6</span>
+              <span id="app-version-badge" class="badge badge-success">v2.7.7</span>
             </div>
 
             <!-- Update Card Content -->
