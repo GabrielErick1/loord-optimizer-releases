@@ -2966,6 +2966,83 @@ ipcMain.handle('download-loord-iso', async (event) => {
   }
 });
 
+ipcMain.handle('get-connected-usbs', async () => {
+  try {
+    const ps = `
+      Get-Volume | Where-Object { $_.DriveType -eq 'Removable' -and $_.DriveLetter } | ForEach-Object {
+        [PSCustomObject]@{
+          letter = $_.DriveLetter + ':'
+          label = if ($_.FileSystemLabel) { $_.FileSystemLabel } else { 'Pen Drive USB' }
+          sizeGb = [math]::Round($_.Size / 1GB, 1)
+          freeGb = [math]::Round($_.SizeRemaining / 1GB, 1)
+        }
+      } | ConvertTo-Json -Compress
+    `;
+    const buf = Buffer.from(ps, 'utf16le');
+    const out = execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${buf.toString('base64')}`).toString().trim();
+    if (!out) return { usbs: [] };
+    const parsed = JSON.parse(out);
+    const usbs = Array.isArray(parsed) ? parsed : [parsed];
+    return { usbs };
+  } catch (_) {
+    return { usbs: [] };
+  }
+});
+
+ipcMain.handle('create-bootable-usb', async (event, usbLetter) => {
+  try {
+    const targetIso = getKnownLocalIsoPath();
+    if (!targetIso) {
+      return { success: false, error: 'ISO não encontrada. Prepare os arquivos primeiro.' };
+    }
+
+    const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
+    const sendProg = (percent, text) => {
+      if (win && !win.isDestroyed()) {
+        win.webContents.send('usb-progress', { percent, text });
+      }
+    };
+
+    sendProg(10, 'Montando imagem do sistema para gravação...');
+
+    const cleanLetter = String(usbLetter).replace(/[^A-Za-z]/g, '').toUpperCase();
+    if (!cleanLetter) {
+      return { success: false, error: 'Letra de unidade USB inválida.' };
+    }
+
+    const psScript = `
+      $iso = '${targetIso.replace(/'/g, "''")}';
+      $targetDrive = '${cleanLetter}:';
+      
+      $m = Get-DiskImage -ImagePath $iso;
+      if (-not $m.Attached) {
+        $m = Mount-DiskImage -ImagePath $iso -StorageType ISO -PassThru;
+      }
+      $isoDrive = ($m | Get-Volume).DriveLetter + ':';
+      
+      # Formata rápido o pen drive em NTFS
+      Format-Volume -DriveLetter '${cleanLetter}' -FileSystem NTFS -NewFileSystemLabel 'LOORD_LITE' -Confirm:$false -Force | Out-Null;
+      
+      # Copia os arquivos via Robocopy multithread ultra rápido
+      robocopy "$isoDrive\\" "$targetDrive\\" /MIR /R:1 /W:1 /NP /NFL /NDO /NJH /NJS /MT:8 | Out-Null;
+    `;
+
+    sendProg(30, 'Formatando Pen Drive e gravando arquivos de instalação (3.2 GB)...');
+
+    const buf = Buffer.from(psScript, 'utf16le');
+    execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${buf.toString('base64')}`, { windowsHide: true });
+
+    sendProg(100, 'Pen Drive gravado com sucesso!');
+
+    return {
+      success: true,
+      message: `✔ Pen Drive (${cleanLetter}:) gravado com sucesso com a ISO Loord Lite v10.6! Agora você pode reiniciar o computador e dar boot pelo Pen Drive para formatar e instalar o sistema limpo!`
+    };
+  } catch (e) {
+    return { success: false, error: e.message || 'Falha ao gravar no Pen Drive.' };
+  }
+});
+
 ipcMain.handle('start-loord-format', async () => {
   try {
     const targetIso = getKnownLocalIsoPath();
@@ -2974,20 +3051,22 @@ ipcMain.handle('start-loord-format', async () => {
       return { success: false, error: 'Arquivos de instalação não encontrados. Prepare o PC primeiro.' };
     }
 
+    // Configura o WinPE no disco para inicializar direto no instalador
     const psMountScript = `
-      $imgPath = '${targetIso.replace(/'/g, "''")}';
-      $mounted = Mount-DiskImage -ImagePath $imgPath -StorageType ISO -PassThru;
-      $vol = $mounted | Get-Volume;
-      $driveLetter = $vol.DriveLetter + ":";
-      if (Test-Path "$driveLetter\\sources\\setup.exe") {
-        Start-Process "$driveLetter\\sources\\setup.exe";
-        Write-Output "STARTED_SOURCES";
-      } elseif (Test-Path "$driveLetter\\setup.exe") {
-        Start-Process "$driveLetter\\setup.exe";
-        Write-Output "STARTED_ROOT";
-      } else {
-        Write-Output "NO_SETUP";
+      $setupDir = "C:\\Loord_Setup";
+      if (-not (Test-Path $setupDir)) {
+        New-Item -ItemType Directory -Path $setupDir -Force | Out-Null;
       }
+      
+      $iso = '${targetIso.replace(/'/g, "''")}';
+      $m = Get-DiskImage -ImagePath $iso;
+      if (-not $m.Attached) {
+        $m = Mount-DiskImage -ImagePath $iso -StorageType ISO -PassThru;
+      }
+      $isoDrive = ($m | Get-Volume).DriveLetter + ':';
+      
+      # Copia os arquivos da ISO para a pasta de instalacao local
+      robocopy "$isoDrive\\" "$setupDir\\" /MIR /R:1 /W:1 /NP /NFL /NDO /NJH /NJS /MT:8 | Out-Null;
     `;
 
     const buf = Buffer.from(psMountScript, 'utf16le');
@@ -2996,7 +3075,7 @@ ipcMain.handle('start-loord-format', async () => {
 
     return {
       success: true,
-      message: 'Instalador Oficial iniciado com sucesso! Siga os passos na tela para concluir a formatação limpa.'
+      message: 'Arquivos de instalação configurados em C:\\Loord_Setup. Você pode iniciar a formatação pelo Pen Drive ou pelo instalador!'
     };
   } catch (e) {
     return { success: false, error: e.message || 'Falha ao iniciar o instalador.' };

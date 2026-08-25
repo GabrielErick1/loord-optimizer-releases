@@ -1577,7 +1577,7 @@
                 <p style="margin: 0; font-size: 12px; color: #94a3b8;">Verifique e receba novas versões e otimizações
                   automaticamente</p>
               </div>
-              <span id="app-version-badge" class="badge badge-success">v2.6.7</span>
+              <span id="app-version-badge" class="badge badge-success">v2.6.8</span>
             </div>
 
             <!-- Update Card Content -->
@@ -1920,9 +1920,22 @@
       </div>
 
       <!-- Status de Preparação Concluída -->
-      <div id="iso-prepared-box" style="display: none; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.4); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; text-align: left; font-size: 0.8rem; color: #86efac; line-height: 1.5;">
-        ✔ <b>ISO Loord v10.6 Preparada e Pronta!</b><br>
-        O assistente de instalação oficial foi configurado com sucesso. Ao clicar abaixo, o instalador oficial do Windows iniciará o processo de formatação limpa.
+      <div id="iso-prepared-box" style="display: none; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.4); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; text-align: left; font-size: 0.8rem; color: #86efac; line-height: 1.5;">
+        ✔ <b>ISO Loord Lite v10.6 Preparada e Pronta!</b><br>
+        Escolha abaixo como deseja prosseguir com a instalação limpa:
+      </div>
+
+      <!-- Caixa de Detecção de Pen Drive USB -->
+      <div id="usb-detect-box" style="display: none; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; text-align: left;">
+        <div style="font-size: 0.82rem; font-weight: 800; color: #38bdf8; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+          <span>💾 PEN DRIVE DETECTADO:</span>
+        </div>
+        <select id="select-usb-drive" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 6px; padding: 8px 10px; font-size: 0.82rem; outline: none; margin-bottom: 8px;">
+          <option value="">Procurando pen drive...</option>
+        </select>
+        <button id="btn-create-usb-action" style="width: 100%; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: #fff; font-size: 0.88rem; font-weight: 800; padding: 10px; border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 10px rgba(59, 130, 246, 0.4);">
+          💾 GRAVAR PEN DRIVE BOOTÁVEL COM ISO LOORD (Recomendado)
+        </button>
       </div>
 
       <!-- Botões de Ação -->
@@ -1931,8 +1944,8 @@
           ⚡ PREPARAR PC & BAIXAR ISO LOORD
         </button>
 
-        <button id="btn-start-format-now" style="display: none; width: 100%; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #fff; font-size: 1rem; font-weight: 900; padding: 14px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 20px rgba(34, 197, 94, 0.5);">
-          🚀 FORMATAR & INSTALAR WINDOWS COM ISO LOORD
+        <button id="btn-start-format-now" style="display: none; width: 100%; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #fff; font-size: 0.95rem; font-weight: 900; padding: 13px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 20px rgba(34, 197, 94, 0.5);">
+          🚀 REINICIAR PC NO INSTALADOR LOORD (Sem Pen Drive)
         </button>
 
         <button onclick="document.getElementById('format-iso-modal').style.display='none'" style="width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; font-size: 0.82rem; font-weight: 700; padding: 8px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">

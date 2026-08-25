@@ -74,9 +74,15 @@ contextBridge.exposeInMainWorld('api', {
   checkLoordIsoStatus: () => ipcRenderer.invoke('check-loord-iso-status'),
   downloadLoordIso: () => ipcRenderer.invoke('download-loord-iso'),
   startLoordFormat: () => ipcRenderer.invoke('start-loord-format'),
+  getConnectedUsbs: () => ipcRenderer.invoke('get-connected-usbs'),
+  createBootableUsb: (letter) => ipcRenderer.invoke('create-bootable-usb', letter),
   onIsoDownloadProgress: (callback) => {
     ipcRenderer.removeAllListeners('iso-download-progress');
     ipcRenderer.on('iso-download-progress', (event, data) => callback(data));
+  },
+  onUsbProgress: (callback) => {
+    ipcRenderer.removeAllListeners('usb-progress');
+    ipcRenderer.on('usb-progress', (event, data) => callback(data));
   },
   // ─────────────────────────────────────────────────────────────────
 });

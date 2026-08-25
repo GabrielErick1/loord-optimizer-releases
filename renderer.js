@@ -3008,7 +3008,7 @@ window.handleApplyCompTweak = async function(btn) {
   }
 };
 
-// ─── ASSISTENTE DE FORMATAÇÃO E INSTALAÇÃO COM ISO LOORD v10.6 ─────────────
+// ─── ASSISTENTE DE FORMATAÇÃO PROTEGIDO COM ISO LOORD v10.6 ────────────────
 const btnOpenFormatModal = document.getElementById('btn-open-format-modal');
 const formatIsoModal = document.getElementById('format-iso-modal');
 const btnPrepareIsoAction = document.getElementById('btn-prepare-iso-action');
@@ -3022,12 +3022,31 @@ const consentBackup = document.getElementById('consent-backup');
 const consentDownload = document.getElementById('consent-download');
 const consentFormat = document.getElementById('consent-format');
 const statusIsoPrepare = document.getElementById('status-iso-prepare');
+const usbDetectBox = document.getElementById('usb-detect-box');
+const selectUsbDrive = document.getElementById('select-usb-drive');
+const btnCreateUsbAction = document.getElementById('btn-create-usb-action');
+
+async function refreshUsbList() {
+  if (!selectUsbDrive) return;
+  try {
+    const res = await window.api.getConnectedUsbs();
+    if (res && res.usbs && res.usbs.length > 0) {
+      selectUsbDrive.innerHTML = res.usbs.map(u => 
+        `<option value="${u.letter}">${u.letter} - ${u.label} (${u.sizeGb} GB)</option>`
+      ).join('');
+      if (usbDetectBox) usbDetectBox.style.display = 'block';
+    } else {
+      selectUsbDrive.innerHTML = '<option value="">Nenhum pen drive detectado (conecte um USB)</option>';
+      if (usbDetectBox) usbDetectBox.style.display = 'none';
+    }
+  } catch (_) {}
+}
 
 if (btnOpenFormatModal && formatIsoModal) {
   btnOpenFormatModal.addEventListener('click', async () => {
     formatIsoModal.style.display = 'flex';
-    
-    // Verifica se a ISO já está pronta
+    await refreshUsbList();
+
     try {
       const isoInfo = await window.api.checkLoordIsoStatus();
       if (isoInfo && isoInfo.ready) {
@@ -3073,6 +3092,7 @@ if (btnPrepareIsoAction) {
         if (isoPreparedBox) isoPreparedBox.style.display = 'block';
         btnPrepareIsoAction.style.display = 'none';
         if (btnStartFormatNow) btnStartFormatNow.style.display = 'block';
+        await refreshUsbList();
         if (statusIsoPrepare) {
           statusIsoPrepare.style.display = 'block';
           statusIsoPrepare.innerHTML = '✔ <b>Ambiente preparado e pronto para formatação!</b>';
@@ -3090,23 +3110,56 @@ if (btnPrepareIsoAction) {
   });
 }
 
+if (btnCreateUsbAction) {
+  btnCreateUsbAction.addEventListener('click', async () => {
+    const selectedLetter = selectUsbDrive?.value;
+    if (!selectedLetter) {
+      alert('⚠️ Por favor conecte e selecione um Pen Drive USB.');
+      return;
+    }
+
+    const confirmUsb = confirm(`💾 GRAVAR PEN DRIVE BOOTÁVEL COM ISO LOORD?\n\nUnidade selecionada: ${selectedLetter}\n\n⚠️ ATENÇÃO: O Pen Drive será formatado e a ISO Loord Lite v10.6 será gravada nele para você dar boot e formatar qualquer computador com máxima velocidade e FPS!\n\nDeseja iniciar a gravação agora?`);
+    if (!confirmUsb) return;
+
+    btnCreateUsbAction.disabled = true;
+    btnCreateUsbAction.textContent = '⏳ Gravando Pen Drive (Aguarde ~40s)...';
+    if (isoDownloadContainer) isoDownloadContainer.style.display = 'block';
+
+    try {
+      const res = await window.api.createBootableUsb(selectedLetter);
+      btnCreateUsbAction.disabled = false;
+      btnCreateUsbAction.textContent = '💾 GRAVAR PEN DRIVE BOOTÁVEL COM ISO LOORD';
+
+      if (res && res.success) {
+        alert(`🎉 PEN DRIVE BOOTÁVEL CRIADO COM SUCESSO!\n\nSeu Pen Drive (${selectedLetter}) agora é um instalador oficial da ISO Loord Lite v10.6!\n\n📋 COMO FORMATAR SEU PC:\n1. Reinicie o computador.\n2. Fique apertando F12, F11, F8 ou ESC para abrir o Menu de Boot.\n3. Selecione o Pen Drive USB.\n4. O instalador oficial abrirá para você formatar o disco C: e instalar o sistema limpo!`);
+        if (formatIsoModal) formatIsoModal.style.display = 'none';
+      } else {
+        alert('Erro ao gravar pen drive: ' + (res?.error || 'Verifique o dispositivo.'));
+      }
+    } catch (e) {
+      btnCreateUsbAction.disabled = false;
+      btnCreateUsbAction.textContent = '💾 GRAVAR PEN DRIVE BOOTÁVEL COM ISO LOORD';
+      alert('Erro inesperado: ' + e.message);
+    }
+  });
+}
+
 if (btnStartFormatNow) {
   btnStartFormatNow.addEventListener('click', async () => {
-    const confirmFinal = confirm('🚀 INICIAR FORMATAÇÃO E INSTALAÇÃO LIMPA?\n\nO instalador oficial será aberto na sua tela com o ambiente configurado para você formatar e instalar o sistema limpo com máximo FPS.\n\nDeseja abrir o instalador agora?');
+    const confirmFinal = confirm('🚀 REINICIAR PC NO INSTALADOR DA ISO LOORD v10.6?\n\nOs arquivos de instalação serão configurados para inicializar o instalador oficial.\n\nDeseja prosseguir?');
     if (!confirmFinal) return;
 
     btnStartFormatNow.disabled = true;
-    btnStartFormatNow.textContent = '⏳ Abrindo Instalador Oficial...';
+    btnStartFormatNow.textContent = '⏳ Preparando Inicialização...';
 
     const res = await window.api.startLoordFormat();
     btnStartFormatNow.disabled = false;
-    btnStartFormatNow.textContent = '🚀 FORMATAR COMPUTADOR AGORA';
+    btnStartFormatNow.textContent = '🚀 REINICIAR PC NO INSTALADOR LOORD';
 
     if (res && res.success) {
-      alert('✔ O Instalador Oficial foi iniciado na sua tela!\n\nSiga os passos na janela do instalador para escolher o disco e concluir a formatação.');
-      if (formatIsoModal) formatIsoModal.style.display = 'none';
+      alert('✔ Arquivos de instalação configurados com sucesso!\n\nPara a formatação completa do disco C:, utilize a opção "GRAVAR PEN DRIVE BOOTÁVEL" acima ou reinicie pelo instalador.');
     } else {
-      alert('Erro ao iniciar instalador: ' + (res?.error || 'Erro desconhecido.'));
+      alert('Erro: ' + (res?.error || 'Erro desconhecido.'));
     }
   });
 }
