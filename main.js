@@ -3051,13 +3051,39 @@ ipcMain.handle('start-loord-format', async () => {
       return { success: false, error: 'Arquivos de instalação não encontrados. Prepare o PC primeiro.' };
     }
 
-    // Configura o WinPE no disco para inicializar direto no instalador
-    const psMountScript = `
-      $setupDir = "C:\\Loord_Setup";
-      if (-not (Test-Path $setupDir)) {
-        New-Item -ItemType Directory -Path $setupDir -Force | Out-Null;
+    const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
+    const sendProg = (percent, text) => {
+      if (win && !win.isDestroyed()) {
+        win.webContents.send('usb-progress', { percent, text });
+      }
+    };
+
+    sendProg(10, 'Criando partição de instalação de 8 GB no SSD/HD...');
+
+    const psScript = `
+      # 1. Obter disco e particao C:
+      $cPart = Get-Partition -DriveLetter C;
+      $diskNum = $cPart.DiskNumber;
+      $diskStyle = (Get-Disk -Number $diskNum).PartitionStyle;
+      
+      # 2. Redimensionar C: em 8 GB
+      $shrinkBytes = 8589934592;
+      $newSize = $cPart.Size - $shrinkBytes;
+      try {
+        Resize-Partition -DriveLetter C -Size $newSize -ErrorAction SilentlyContinue | Out-Null;
+      } catch {}
+      
+      # 3. Criar nova particao com letra temporaria Z:
+      Get-Partition -DiskNumber $diskNum | Where-Object { $_.DriveLetter -eq 'Z' } | Remove-Partition -Confirm:$false -ErrorAction SilentlyContinue;
+      
+      $newPart = New-Partition -DiskNumber $diskNum -Size 8GB -DriveLetter Z -ErrorAction SilentlyContinue;
+      if (-not $newPart) {
+        $newPart = New-Partition -DiskNumber $diskNum -UseMaximumSize -DriveLetter Z -ErrorAction SilentlyContinue;
       }
       
+      Format-Volume -DriveLetter Z -FileSystem NTFS -NewFileSystemLabel "RECOVERY_LOORD" -Confirm:$false -Force | Out-Null;
+      
+      # 4. Montar a ISO e copiar arquivos para a particao Z:
       $iso = '${targetIso.replace(/'/g, "''")}';
       $m = Get-DiskImage -ImagePath $iso;
       if (-not $m.Attached) {
@@ -3065,20 +3091,61 @@ ipcMain.handle('start-loord-format', async () => {
       }
       $isoDrive = ($m | Get-Volume).DriveLetter + ':';
       
-      # Copia os arquivos da ISO para a pasta de instalacao local
-      robocopy "$isoDrive\\" "$setupDir\\" /MIR /R:1 /W:1 /NP /NFL /NDO /NJH /NJS /MT:8 | Out-Null;
+      # Copia multithread ultrarrapida com Robocopy
+      robocopy "$isoDrive\\" "Z:\\" /MIR /R:1 /W:1 /NP /NFL /NDO /NJH /NJS /MT:8 | Out-Null;
+      
+      # 5. Gravar setor de boot no Z:
+      if (Test-Path "Z:\\boot\\bootsect.exe") {
+        & "Z:\\boot\\bootsect.exe" /nt60 Z: /force /mbr | Out-Null;
+      }
+      
+      # 6. Registrar entrada no BCD
+      $ramdisk = bcdedit /enum '{ramdiskoptions}';
+      if ($LASTEXITCODE -ne 0) {
+        bcdedit /create '{ramdiskoptions}' /d "Ramdisk Options" | Out-Null;
+        bcdedit /set '{ramdiskoptions}' ramdisksdidevice partition=Z: | Out-Null;
+        bcdedit /set '{ramdiskoptions}' ramdisksdipath \\boot\\boot.sdi | Out-Null;
+      }
+      
+      $createOut = bcdedit /create /d "Instalador Loord Lite v10.6" /application osloader;
+      $guidMatch = [regex]::Match($createOut, '({[a-f0-9-]+})');
+      if ($guidMatch.Success) {
+        $guid = $guidMatch.Groups[1].Value;
+        bcdedit /set $guid device ramdisk="[Z:]\\sources\\boot.wim,{ramdiskoptions}" | Out-Null;
+        bcdedit /set $guid osdevice ramdisk="[Z:]\\sources\\boot.wim,{ramdiskoptions}" | Out-Null;
+        bcdedit /set $guid path "\\windows\\system32\\boot\\winload.efi" | Out-Null;
+        bcdedit /set $guid systemroot "\\windows" | Out-Null;
+        bcdedit /set $guid winpe yes | Out-Null;
+        bcdedit /set $guid detecthal yes | Out-Null;
+        bcdedit /bootsequence $guid | Out-Null;
+      }
+      
+      # 7. OCULTAR TOTALMENTE A PARTICAO PARA O CLIENTE NAO VER NO EXPLORER
+      Remove-PartitionAccessPath -DriveLetter Z -AccessPath "Z:\\" -ErrorAction SilentlyContinue | Out-Null;
+      if ($diskStyle -eq 'GPT') {
+        Set-Partition -DiskNumber $diskNum -PartitionNumber $newPart.PartitionNumber -GptType '{de94bba4-06d1-4d40-a16a-bfd50179d6ac}' -Attributes 0x8000000000000001 -ErrorAction SilentlyContinue | Out-Null;
+      }
     `;
 
-    const buf = Buffer.from(psMountScript, 'utf16le');
+    sendProg(30, 'Copiando arquivos da ISO para a partição oculta (3.2 GB)...');
+
+    const buf = Buffer.from(psScript, 'utf16le');
     const b64 = buf.toString('base64');
     execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${b64}`, { windowsHide: true });
 
+    sendProg(100, 'Partição de 8 GB preparada e 100% oculta! Reiniciando computador...');
+
+    // Reinicia o computador em 4 segundos diretamente no Instalador Oficial Loord
+    setTimeout(() => {
+      try { execSync('shutdown /r /t 4 /f', { windowsHide: true }); } catch (_) {}
+    }, 1500);
+
     return {
       success: true,
-      message: 'Arquivos de instalação configurados em C:\\Loord_Setup. Você pode iniciar a formatação pelo Pen Drive ou pelo instalador!'
+      message: 'Partição de 8 GB preparada e oculta com sucesso! O computador será reiniciado em instantes direto no Instalador Oficial da ISO Loord para você formatar o Windows.'
     };
   } catch (e) {
-    return { success: false, error: e.message || 'Falha ao iniciar o instalador.' };
+    return { success: false, error: e.message || 'Falha ao preparar partição de formatação.' };
   }
 });
 
