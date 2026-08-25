@@ -2764,47 +2764,16 @@ ipcMain.handle('transform-windows-lite', async () => {
       try { execSync(cmd, { stdio: 'ignore' }); } catch (_) { }
     }
 
-    // 15. Remover bloatware nativo permanente (AppX + ProvisionedPackage)
-    try {
-      const psBloatCmd = `$apps = @(
-        'Microsoft.XboxApp','Microsoft.Xbox.TCUI','Microsoft.XboxGameOverlay',
-        'Microsoft.XboxGamingOverlay','Microsoft.XboxIdentityProvider','Microsoft.XboxSpeechToTextOverlay',
-        'Microsoft.SkypeApp','Microsoft.People','Microsoft.windowscommunicationsapps',
-        'Microsoft.WindowsMaps','Microsoft.BingWeather','Microsoft.BingNews','Microsoft.WindowsFeedbackHub',
-        'Microsoft.GetStarted','Microsoft.GetHelp','Microsoft.MicrosoftSolitaireCollection','Microsoft.ZuneVideo',
-        'Microsoft.ZuneMusic','Microsoft.Print3D','Microsoft.Microsoft3DViewer','Microsoft.OneNote',
-        'Microsoft.OfficeHub','Microsoft.MicrosoftStickyNotes','Microsoft.WindowsSoundRecorder','Microsoft.YourPhone',
-        'Microsoft.MixedReality.Portal','Microsoft.Wallet','Microsoft.Todos','Microsoft.PowerAutomateDesktop',
-        'MicrosoftTeams','Microsoft.549981C3F5F10','Clipchamp.Clipchamp'
-      );
-      foreach ($a in $apps) {
-        Get-AppxPackage -Name "*$a*" -AllUsers | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue;
-        Get-AppxProvisionedPackage -Online | Where-Object DisplayName -like "*$a*" | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue;
-      }`;
-      execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psBloatCmd.replace(/\r?\n/g, ' ')}"`, { stdio: 'ignore' });
-    } catch (_) { }
-
-    // Otimizar Nagle TCP em adaptadores de rede físicos sem afetar adaptadores virtuais do emulador
+    // Otimizar Nagle TCP em adaptadores de rede físicos de forma rápida
     try {
       cleanHostsFileOfBluestacks();
-      execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Get-NetAdapter | Where-Object Status -eq 'Up' | Foreach-Object { $key = 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\' + $_.InterfaceGuid; if (Test-Path $key) { Set-ItemProperty -Path $key -Name TcpAckFrequency -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue; Set-ItemProperty -Path $key -Name TCPNoDelay -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue; Set-ItemProperty -Path $key -Name TcpDelAckTicks -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue } }; Get-NetAdapterBinding -ComponentID ms_tcpip6 | Enable-NetAdapterBinding -ErrorAction SilentlyContinue"`, { stdio: 'ignore' });
+      execSync('netsh int tcp set global autotuninglevel=normal', { stdio: 'ignore' });
       execSync('ipconfig /flushdns', { stdio: 'ignore' });
-    } catch (_) { }
-
-    // Purgar processos desnecessários e limpar RAM
-    try {
-      const procScript = getPhysicalScriptPath('otimizar_processos.ps1');
-      execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${procScript}"`, { stdio: 'ignore' });
-    } catch (_) { }
-
-    try {
-      const ramScript = getPhysicalScriptPath('clean_ram.ps1');
-      execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${ramScript}"`, { stdio: 'ignore' });
     } catch (_) { }
 
     return {
       success: true,
-      message: '👑 Transformação em Windows Lite Loord v10.6 concluída com sucesso! Todas as 100% otimizações da sua ISO Loord foram aplicadas (31 Serviços desativados, Curva de Mira Loord, GPU Priority 8, Win32Priority 38, BCDEDIT 0.5ms e Plano Ultimate).'
+      message: '👑 100% das Otimizações da ISO Loord v10.6 aplicadas com sucesso!'
     };
   } catch (e) {
     return { success: false, error: e.message };

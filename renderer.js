@@ -2068,27 +2068,40 @@ const btnTransformWindowsLite = document.getElementById('btn-transform-windows-l
 const statusWindowsLite = document.getElementById('status-windows-lite');
 if (btnTransformWindowsLite) {
   btnTransformWindowsLite.addEventListener('click', async () => {
-    const confirmLite = confirm('👑 DESEJA TRANSFORMAR SEU WINDOWS COM 100% DAS OTIMIZAÇÕES DA ISO LOORD v10.6?\n\nEssa ação irá aplicar exatamente:\n- Desativação de 31 Serviços Pesados & Telemetrias\n- Injeção da Curva de Mira Matemática Loord (Full Capa)\n- Prioridade Máxima de GPU (GPU Priority 8 + MMCSS Games)\n- Win32PrioritySeparation 38 (Process Scheduler Gamer)\n- BCDEDIT 0.5ms (HPET Off, DynamicTick Off, TSC Enhanced)\n- Plano de Energia Ultimate Performance Loord (100% CPU Clock)\n- Fullscreen Exclusive (FSE) & Redução de Stutter DWM\n\nNenhum arquivo pessoal é apagado!');
+    const confirmLite = confirm('👑 DESEJA APLICAR 100% DAS OTIMIZAÇÕES DA ISO LOORD v10.6 NO WINDOWS?\n\nIsso irá aplicar instantaneamente:\n- 31 Serviços Pesados e Telemetria Desativados\n- Curva de Mira Matemática Loord (Full Capa)\n- GPU Priority = 8 (MMCSS Games) & SystemResponsiveness = 0\n- Win32PrioritySeparation = 38 (Process Scheduler Quântico)\n- BCDEDIT Low Latency 0.5ms (DynamicTick Off, TSC Enhanced)\n- Plano de Energia Ultimate Performance Loord\n- Fullscreen Exclusive & DWM Anti-Stutter\n\nO computador será reiniciado para que todas as otimizações entrem em vigor com 100% de FPS!');
     if (!confirmLite) return;
 
     btnTransformWindowsLite.disabled = true;
-    btnTransformWindowsLite.textContent = '⏳ Aplicando Otimizações da ISO Loord...';
+    btnTransformWindowsLite.textContent = '⏳ Injetando Otimizações da ISO Loord...';
     if (statusWindowsLite) {
       statusWindowsLite.style.display = 'block';
-      statusWindowsLite.textContent = 'Aplicando 31 serviços desativados, curva de mira Loord, BCDEDIT e prioridades de GPU...';
+      statusWindowsLite.textContent = 'Injetando 31 serviços desativados, curva de mira Loord, BCDEDIT e prioridades de GPU...';
     }
 
     const res = await window.api.transformWindowsLite();
     btnTransformWindowsLite.disabled = false;
     btnTransformWindowsLite.textContent = '✔️ Otimizações da ISO Loord Ativas!';
     if (statusWindowsLite) {
-      statusWindowsLite.innerHTML = '✔ <b>100% das Otimizações da ISO Loord v10.6 Aplicadas!</b> (31 Serviços Desativados, Curva de Mira Loord Injetada, GPU Priority 8, Win32Priority 38, BCDEDIT 0.5ms e Plano Ultimate)';
+      statusWindowsLite.innerHTML = [
+        '👑 <b>100% DAS OTIMIZAÇÕES DA ISO LOORD v10.6 APLICADAS!</b>',
+        '<div style="margin-top: 6px; line-height: 1.6; font-size: 0.8rem; color: #cbd5e1;">',
+        '✔ <b>31 Serviços Pesados & Telemetrias:</b> Desativados<br>',
+        '✔ <b>Curva de Mira Loord Oficial:</b> Injetada no Registro<br>',
+        '✔ <b>Prioridade de GPU:</b> GPU Priority = 8 | SystemResponsiveness = 0<br>',
+        '✔ <b>Escalonador de CPU Gamer:</b> Win32PrioritySeparation = 38<br>',
+        '✔ <b>Latência BCDEDIT:</b> DynamicTick OFF | PlatformClock NO | TSC Enhanced<br>',
+        '✔ <b>Plano de Energia:</b> Ultimate Performance Loord (100% CPU Clock)',
+        '</div>',
+        '<div style="margin-top: 10px; color: #fbbf24; font-weight: 800; font-size: 0.9rem;">',
+        '🔄 REINICIANDO COMPUTADOR EM 5 SEGUNDOS PARA APLICAR TUDO NO WINDOWS...',
+        '</div>'
+      ].join('');
     }
 
-    const reboot = confirm('Otimizações da ISO Loord v10.6 aplicadas com sucesso!\n\nRecomendamos REINICIAR o computador agora para que todas as configurações de kernel, BCDEDIT e serviços entrem em vigor com 100% de performance!\n\nDeseja reiniciar agora?');
-    if (reboot) {
+    // Reinicia o computador automaticamente para aplicar tudo no Windows
+    setTimeout(async () => {
       await window.api.rebootComputer();
-    }
+    }, 4000);
   });
 }
 
