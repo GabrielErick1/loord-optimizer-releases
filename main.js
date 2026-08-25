@@ -3,6 +3,8 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const crypto = require('crypto');
+const https = require('https');
+const http = require('http');
 const { exec, execSync } = require('child_process');
 const { autoUpdater } = require('electron-updater');
 
