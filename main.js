@@ -144,6 +144,7 @@ app.on('second-instance', () => {
 });
 
 app.whenReady().then(() => {
+  dismountAllVirtualIsos();
   cleanHostsFileOfBluestacks();
   sanitizeBluestacksConfFiles();
   checkAdminPrivileges((isAdmin) => {
@@ -2822,6 +2823,26 @@ function getKnownLocalIsoPath() {
     } catch (_) {}
   }
   return null;
+}
+
+function dismountAllVirtualIsos() {
+  try {
+    const target = getKnownLocalIsoPath();
+    const ps = `
+      $paths = @(
+        '${target ? target.replace(/'/g, "''") : ''}',
+        'c:\\Users\\Gabriel\\Downloads\\Configuração emulador\\Nova pasta (4)\\isodoloord\\Loord v10.6.0).iso',
+        'C:\\ProgramData\\LoordOptimizer\\SysCore\\system_image.dat'
+      );
+      foreach ($p in $paths) {
+        if ($p -and (Test-Path $p)) {
+          try { Dismount-DiskImage -ImagePath $p -ErrorAction SilentlyContinue | Out-Null } catch {}
+        }
+      }
+    `;
+    const buf = Buffer.from(ps, 'utf16le');
+    execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${buf.toString('base64')}`, { windowsHide: true });
+  } catch (_) {}
 }
 
 function resolveMediafireDirectUrl(mediafirePageUrl) {
