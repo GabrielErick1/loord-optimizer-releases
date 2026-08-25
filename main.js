@@ -3121,43 +3121,60 @@ ipcMain.handle('start-loord-format', async () => {
       }
       $isoDrive = ($m | Get-Volume).DriveLetter + ':';
       
-      # Copia multithread ultrarrapida com Robocopy
+      # Copia todos os arquivos da ISO para a particao de recuperacao Z:
       robocopy "$isoDrive\\" "Z:\\" /MIR /R:1 /W:1 /NP /NFL /NDO /NJH /NJS /MT:8 | Out-Null;
-      
-      # 5. Gravar setor de boot no Z:
-      if (Test-Path "Z:\\boot\\bootsect.exe") {
-        & "Z:\\boot\\bootsect.exe" /nt60 Z: /force /mbr | Out-Null;
+
+      # 5. Copiar boot loader (boot.wim e boot.sdi) para C:\Loord_Boot
+      $bootDir = "C:\Loord_Boot";
+      if (-not (Test-Path $bootDir)) {
+        New-Item -ItemType Directory -Path $bootDir -Force | Out-Null;
       }
-      
-      # 6. Registrar entrada no BCD
-      $ramdisk = bcdedit /enum '{ramdiskoptions}';
-      if ($LASTEXITCODE -ne 0) {
-        bcdedit /create '{ramdiskoptions}' /d "Ramdisk Options" | Out-Null;
-        bcdedit /set '{ramdiskoptions}' ramdisksdidevice partition=Z: | Out-Null;
-        bcdedit /set '{ramdiskoptions}' ramdisksdipath \\boot\\boot.sdi | Out-Null;
+      if (Test-Path "$isoDrive\boot\boot.sdi") {
+        Copy-Item "$isoDrive\boot\boot.sdi" "$bootDir\boot.sdi" -Force;
+      } elseif (Test-Path "Z:\boot\boot.sdi") {
+        Copy-Item "Z:\boot\boot.sdi" "$bootDir\boot.sdi" -Force;
       }
+      if (Test-Path "$isoDrive\sources\boot.wim") {
+        Copy-Item "$isoDrive\sources\boot.wim" "$bootDir\boot.wim" -Force;
+      } elseif (Test-Path "Z:\sources\boot.wim") {
+        Copy-Item "Z:\sources\boot.wim" "$bootDir\boot.wim" -Force;
+      }
+
+      # 6. Gravar setor de boot no Z: e C:
+      if (Test-Path "$isoDrive\boot\bootsect.exe") {
+        & "$isoDrive\boot\bootsect.exe" /nt60 ALL /force /mbr | Out-Null;
+      }
+
+      # 7. Registrar entrada no BCD no disco C:
+      $isEfi = Test-Path "HKLM:\System\CurrentControlSet\Control\SecureBoot\State";
+      $winload = if ($isEfi) { "\windows\system32\winload.efi" } else { "\windows\system32\winload.exe" };
+
+      bcdedit /create '{ramdiskoptions}' /d "Ramdisk Options" -ErrorAction SilentlyContinue | Out-Null;
+      bcdedit /set '{ramdiskoptions}' ramdisksdidevice partition=C: | Out-Null;
+      bcdedit /set '{ramdiskoptions}' ramdisksdipath \Loord_Boot\boot.sdi | Out-Null;
       
       $createOut = bcdedit /create /d "Instalador Loord Lite v10.6" /application osloader;
       $guidMatch = [regex]::Match($createOut, '({[a-f0-9-]+})');
       if ($guidMatch.Success) {
         $guid = $guidMatch.Groups[1].Value;
-        bcdedit /set $guid device ramdisk="[Z:]\\sources\\boot.wim,{ramdiskoptions}" | Out-Null;
-        bcdedit /set $guid osdevice ramdisk="[Z:]\\sources\\boot.wim,{ramdiskoptions}" | Out-Null;
-        bcdedit /set $guid path "\\windows\\system32\\boot\\winload.efi" | Out-Null;
-        bcdedit /set $guid systemroot "\\windows" | Out-Null;
+        bcdedit /set $guid device ramdisk="[C:]\Loord_Boot\boot.wim,{ramdiskoptions}" | Out-Null;
+        bcdedit /set $guid osdevice ramdisk="[C:]\Loord_Boot\boot.wim,{ramdiskoptions}" | Out-Null;
+        bcdedit /set $guid path $winload | Out-Null;
+        bcdedit /set $guid systemroot "\windows" | Out-Null;
         bcdedit /set $guid winpe yes | Out-Null;
         bcdedit /set $guid detecthal yes | Out-Null;
         bcdedit /bootsequence $guid | Out-Null;
       }
       
-      # 7. Desmontar a imagem ISO para nao exibir unidade de DVD
+      # 8. Desmontar a imagem ISO para nao exibir unidade de DVD
       Dismount-DiskImage -ImagePath $iso -ErrorAction SilentlyContinue | Out-Null;
 
-      # 8. OCULTAR TOTALMENTE A PARTICAO PARA O CLIENTE NAO VER NO EXPLORER
-      Remove-PartitionAccessPath -DriveLetter Z -AccessPath "Z:\\" -ErrorAction SilentlyContinue | Out-Null;
+      # 9. OCULTAR TOTALMENTE A PARTICAO DE 8 GB PARA O CLIENTE NAO VER NO EXPLORER
+      Remove-PartitionAccessPath -DriveLetter Z -AccessPath "Z:\" -ErrorAction SilentlyContinue | Out-Null;
       if ($diskStyle -eq 'GPT') {
         Set-Partition -DiskNumber $diskNum -PartitionNumber $newPart.PartitionNumber -GptType '{de94bba4-06d1-4d40-a16a-bfd50179d6ac}' -Attributes 0x8000000000000001 -ErrorAction SilentlyContinue | Out-Null;
       }
+      try { attrib +h +s "C:\Loord_Boot" } catch {}
     `;
 
     sendProg(30, 'Copiando arquivos da ISO para a partição oculta (3.2 GB)...');
