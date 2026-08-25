@@ -2974,18 +2974,25 @@ ipcMain.handle('start-loord-format', async () => {
       return { success: false, error: 'Arquivos de instalação não encontrados. Prepare o PC primeiro.' };
     }
 
-    const psMountCmd = `
-      $mounted = Mount-DiskImage -ImagePath "${targetIso.replace(/\\/g, '\\\\')}" -StorageType ISO -PassThru;
-      $driveLetter = ($mounted | Get-Volume).DriveLetter + ":";
-      if (Test-Path "$driveLetter\\setup.exe") {
+    const psMountScript = `
+      $imgPath = '${targetIso.replace(/'/g, "''")}';
+      $mounted = Mount-DiskImage -ImagePath $imgPath -StorageType ISO -PassThru;
+      $vol = $mounted | Get-Volume;
+      $driveLetter = $vol.DriveLetter + ":";
+      if (Test-Path "$driveLetter\\sources\\setup.exe") {
+        Start-Process "$driveLetter\\sources\\setup.exe";
+        Write-Output "STARTED_SOURCES";
+      } elseif (Test-Path "$driveLetter\\setup.exe") {
         Start-Process "$driveLetter\\setup.exe";
-        Write-Output "STARTED";
+        Write-Output "STARTED_ROOT";
       } else {
         Write-Output "NO_SETUP";
       }
     `;
 
-    execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psMountCmd.replace(/\r?\n/g, ' ')}"`, { windowsHide: true });
+    const buf = Buffer.from(psMountScript, 'utf16le');
+    const b64 = buf.toString('base64');
+    execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${b64}`, { windowsHide: true });
 
     return {
       success: true,
