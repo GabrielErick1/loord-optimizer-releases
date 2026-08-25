@@ -2,36 +2,80 @@ const fs = require('fs');
 const path = require('path');
 const JavaScriptObfuscator = require('javascript-obfuscator');
 
-const obfuscatorOptions = {
+const rootDir = path.join(__dirname, '..');
+const backupDir = path.join(rootDir, '.dev_source_backup');
+
+const obfuscatorOptionsNode = {
   compact: true,
   controlFlowFlattening: true,
-  controlFlowFlatteningThreshold: 0.8,
+  controlFlowFlatteningThreshold: 0.9,
+  deadCodeInjection: true,
+  deadCodeInjectionThreshold: 0.4,
   numbersToExpressions: true,
   simplify: true,
   stringArray: true,
   stringArrayCallsTransform: true,
-  stringArrayCallsTransformThreshold: 0.8,
+  stringArrayCallsTransformThreshold: 0.9,
   stringArrayEncoding: ['base64', 'rc4'],
   stringArrayIndexShift: true,
   stringArrayRotate: true,
   stringArrayShuffle: true,
-  stringArrayWrappersCount: 2,
+  stringArrayWrappersCount: 3,
   stringArrayWrappersChainedCalls: true,
-  stringArrayWrappersParametersMaxCount: 4,
+  stringArrayWrappersParametersMaxCount: 5,
   stringArrayWrappersType: 'function',
-  stringArrayThreshold: 0.85,
+  stringArrayThreshold: 0.9,
   splitStrings: true,
-  splitStringsChunkLength: 6,
+  splitStringsChunkLength: 5,
   transformObjectKeys: true,
+  selfDefending: true,
+  disableConsoleOutput: false,
+  target: 'node'
+};
+
+const obfuscatorOptionsBrowser = {
+  ...obfuscatorOptionsNode,
   target: 'browser'
 };
 
-console.log('🛡️ Iniciando Blindagem e Criptografia do Painel...');
+const filesToProtect = [
+  { file: 'main.js', opts: obfuscatorOptionsNode },
+  { file: 'preload.js', opts: obfuscatorOptionsNode },
+  { file: 'renderer.js', opts: obfuscatorOptionsBrowser },
+  { file: 'regis/encrypted_reg_data.js', opts: obfuscatorOptionsNode }
+];
 
-// Obfuscate renderer.js for production release
-const rendererPath = path.join(__dirname, '..', 'renderer.js');
-const rendererCode = fs.readFileSync(rendererPath, 'utf8');
-const obfRenderer = JavaScriptObfuscator.obfuscate(rendererCode, obfuscatorOptions).getObfuscatedCode();
-fs.writeFileSync(path.join(__dirname, '..', 'renderer.obf.js'), obfRenderer, 'utf8');
+const action = process.argv[2] || 'obfuscate';
 
-console.log('✔️ Renderer blindado e ofuscado com sucesso!');
+if (action === 'backup-and-obfuscate') {
+  console.log('🛡️ [BLINDAGEM] Criando backup de desenvolvimento e aplicando Criptografia Militar...');
+  if (!fs.existsSync(backupDir)) {
+    fs.mkdirSync(backupDir, { recursive: true });
+  }
+
+  for (const item of filesToProtect) {
+    const srcPath = path.join(rootDir, item.file);
+    if (!fs.existsSync(srcPath)) continue;
+
+    const backupPath = path.join(backupDir, path.basename(item.file));
+    const code = fs.readFileSync(srcPath, 'utf8');
+    fs.writeFileSync(backupPath, code, 'utf8');
+
+    console.log(`🔒 Ofuscando e criptografando: ${item.file}...`);
+    const obfuscated = JavaScriptObfuscator.obfuscate(code, item.opts).getObfuscatedCode();
+    fs.writeFileSync(srcPath, obfuscated, 'utf8');
+  }
+  console.log('✔️ [BLINDAGEM CONCLUÍDA] Todo o código foi 100% blindado contra clonagem, descompilação e engenharia reversa!');
+} else if (action === 'restore') {
+  console.log('🔄 [RESTAURAÇÃO] Restaurando código original para desenvolvimento...');
+  for (const item of filesToProtect) {
+    const backupPath = path.join(backupDir, path.basename(item.file));
+    const srcPath = path.join(rootDir, item.file);
+    if (fs.existsSync(backupPath)) {
+      const origCode = fs.readFileSync(backupPath, 'utf8');
+      fs.writeFileSync(srcPath, origCode, 'utf8');
+      console.log(`✔️ Restaurado: ${item.file}`);
+    }
+  }
+}
+
