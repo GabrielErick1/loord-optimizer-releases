@@ -2825,6 +2825,17 @@ function getKnownLocalIsoPath() {
   return null;
 }
 
+function runPowerShellScript(scriptContent) {
+  const tmpScriptPath = path.join(os.tmpdir(), `loord_${Date.now()}_${Math.random().toString(36).substring(7)}.ps1`);
+  try {
+    fs.writeFileSync(tmpScriptPath, scriptContent, 'utf8');
+    const res = execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${tmpScriptPath}"`, { windowsHide: true });
+    return res ? res.toString() : '';
+  } finally {
+    try { if (fs.existsSync(tmpScriptPath)) fs.unlinkSync(tmpScriptPath); } catch (_) {}
+  }
+}
+
 function dismountAllVirtualIsos() {
   try {
     const target = getKnownLocalIsoPath();
@@ -2840,8 +2851,7 @@ function dismountAllVirtualIsos() {
         }
       }
     `;
-    const buf = Buffer.from(ps, 'utf16le');
-    execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${buf.toString('base64')}`, { windowsHide: true });
+    runPowerShellScript(ps);
   } catch (_) {}
 }
 
@@ -3050,8 +3060,7 @@ ipcMain.handle('create-bootable-usb', async (event, usbLetter) => {
 
     sendProg(30, 'Formatando Pen Drive e gravando arquivos de instalação (3.2 GB)...');
 
-    const buf = Buffer.from(psScript, 'utf16le');
-    execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${buf.toString('base64')}`, { windowsHide: true });
+    runPowerShellScript(psScript);
 
     sendProg(100, 'Pen Drive gravado com sucesso!');
 
@@ -3141,7 +3150,10 @@ ipcMain.handle('start-loord-format', async () => {
         bcdedit /bootsequence $guid | Out-Null;
       }
       
-      # 7. OCULTAR TOTALMENTE A PARTICAO PARA O CLIENTE NAO VER NO EXPLORER
+      # 7. Desmontar a imagem ISO para nao exibir unidade de DVD
+      Dismount-DiskImage -ImagePath $iso -ErrorAction SilentlyContinue | Out-Null;
+
+      # 8. OCULTAR TOTALMENTE A PARTICAO PARA O CLIENTE NAO VER NO EXPLORER
       Remove-PartitionAccessPath -DriveLetter Z -AccessPath "Z:\\" -ErrorAction SilentlyContinue | Out-Null;
       if ($diskStyle -eq 'GPT') {
         Set-Partition -DiskNumber $diskNum -PartitionNumber $newPart.PartitionNumber -GptType '{de94bba4-06d1-4d40-a16a-bfd50179d6ac}' -Attributes 0x8000000000000001 -ErrorAction SilentlyContinue | Out-Null;
@@ -3150,9 +3162,7 @@ ipcMain.handle('start-loord-format', async () => {
 
     sendProg(30, 'Copiando arquivos da ISO para a partição oculta (3.2 GB)...');
 
-    const buf = Buffer.from(psScript, 'utf16le');
-    const b64 = buf.toString('base64');
-    execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${b64}`, { windowsHide: true });
+    runPowerShellScript(psScript);
 
     sendProg(100, 'Partição de 8 GB preparada e 100% oculta! Reiniciando computador...');
 
