@@ -3045,7 +3045,6 @@ async function refreshUsbList() {
 if (btnOpenFormatModal && formatIsoModal) {
   btnOpenFormatModal.addEventListener('click', async () => {
     formatIsoModal.style.display = 'flex';
-    await refreshUsbList();
 
     try {
       const isoInfo = await window.api.checkLoordIsoStatus();
@@ -3063,6 +3062,15 @@ if (btnOpenFormatModal && formatIsoModal) {
 
 if (window.api && window.api.onIsoDownloadProgress) {
   window.api.onIsoDownloadProgress((data) => {
+    if (isoDownloadContainer) isoDownloadContainer.style.display = 'block';
+    if (isoDownloadStatus && data.text) isoDownloadStatus.textContent = data.text;
+    if (isoDownloadPct && data.percent !== undefined) isoDownloadPct.textContent = `${data.percent}%`;
+    if (isoDownloadBar && data.percent !== undefined) isoDownloadBar.style.width = `${data.percent}%`;
+  });
+}
+
+if (window.api && window.api.onUsbProgress) {
+  window.api.onUsbProgress((data) => {
     if (isoDownloadContainer) isoDownloadContainer.style.display = 'block';
     if (isoDownloadStatus && data.text) isoDownloadStatus.textContent = data.text;
     if (isoDownloadPct && data.percent !== undefined) isoDownloadPct.textContent = `${data.percent}%`;
@@ -3092,7 +3100,6 @@ if (btnPrepareIsoAction) {
         if (isoPreparedBox) isoPreparedBox.style.display = 'block';
         btnPrepareIsoAction.style.display = 'none';
         if (btnStartFormatNow) btnStartFormatNow.style.display = 'block';
-        await refreshUsbList();
         if (statusIsoPrepare) {
           statusIsoPrepare.style.display = 'block';
           statusIsoPrepare.innerHTML = '✔ <b>Ambiente preparado e pronto para formatação!</b>';
@@ -3110,55 +3117,26 @@ if (btnPrepareIsoAction) {
   });
 }
 
-if (btnCreateUsbAction) {
-  btnCreateUsbAction.addEventListener('click', async () => {
-    const selectedLetter = selectUsbDrive?.value;
-    if (!selectedLetter) {
-      alert('⚠️ Por favor conecte e selecione um Pen Drive USB.');
-      return;
-    }
-
-    const confirmUsb = confirm(`💾 GRAVAR PEN DRIVE BOOTÁVEL COM ISO LOORD?\n\nUnidade selecionada: ${selectedLetter}\n\n⚠️ ATENÇÃO: O Pen Drive será formatado e a ISO Loord Lite v10.6 será gravada nele para você dar boot e formatar qualquer computador com máxima velocidade e FPS!\n\nDeseja iniciar a gravação agora?`);
-    if (!confirmUsb) return;
-
-    btnCreateUsbAction.disabled = true;
-    btnCreateUsbAction.textContent = '⏳ Gravando Pen Drive (Aguarde ~40s)...';
-    if (isoDownloadContainer) isoDownloadContainer.style.display = 'block';
-
-    try {
-      const res = await window.api.createBootableUsb(selectedLetter);
-      btnCreateUsbAction.disabled = false;
-      btnCreateUsbAction.textContent = '💾 GRAVAR PEN DRIVE BOOTÁVEL COM ISO LOORD';
-
-      if (res && res.success) {
-        alert(`🎉 PEN DRIVE BOOTÁVEL CRIADO COM SUCESSO!\n\nSeu Pen Drive (${selectedLetter}) agora é um instalador oficial da ISO Loord Lite v10.6!\n\n📋 COMO FORMATAR SEU PC:\n1. Reinicie o computador.\n2. Fique apertando F12, F11, F8 ou ESC para abrir o Menu de Boot.\n3. Selecione o Pen Drive USB.\n4. O instalador oficial abrirá para você formatar o disco C: e instalar o sistema limpo!`);
-        if (formatIsoModal) formatIsoModal.style.display = 'none';
-      } else {
-        alert('Erro ao gravar pen drive: ' + (res?.error || 'Verifique o dispositivo.'));
-      }
-    } catch (e) {
-      btnCreateUsbAction.disabled = false;
-      btnCreateUsbAction.textContent = '💾 GRAVAR PEN DRIVE BOOTÁVEL COM ISO LOORD';
-      alert('Erro inesperado: ' + e.message);
-    }
-  });
-}
-
 if (btnStartFormatNow) {
   btnStartFormatNow.addEventListener('click', async () => {
-    const confirmFinal = confirm('🚀 REINICIAR PC NO INSTALADOR DA ISO LOORD v10.6?\n\nOs arquivos de instalação serão configurados para inicializar o instalador oficial.\n\nDeseja prosseguir?');
+    const confirmFinal = confirm('🚀 INICIAR FORMATAÇÃO LIMPA COM A ISO LOORD v10.6?\n\nO assistente criará automaticamente uma partição oculta de 8 GB no seu SSD/HD e reiniciará o computador direto na tela do Instalador Oficial para você formatar e instalar o sistema limpo com máximo FPS!\n\nDeseja reiniciar e formatar agora?');
     if (!confirmFinal) return;
 
     btnStartFormatNow.disabled = true;
-    btnStartFormatNow.textContent = '⏳ Preparando Inicialização...';
+    btnStartFormatNow.textContent = '⏳ Preparando Partição Oculta de 8 GB...';
+    if (isoDownloadContainer) isoDownloadContainer.style.display = 'block';
 
     const res = await window.api.startLoordFormat();
-    btnStartFormatNow.disabled = false;
-    btnStartFormatNow.textContent = '🚀 REINICIAR PC NO INSTALADOR LOORD';
 
     if (res && res.success) {
-      alert('✔ Arquivos de instalação configurados com sucesso!\n\nPara a formatação completa do disco C:, utilize a opção "GRAVAR PEN DRIVE BOOTÁVEL" acima ou reinicie pelo instalador.');
+      if (isoPreparedBox) {
+        isoPreparedBox.style.display = 'block';
+        isoPreparedBox.innerHTML = '🎉 <b>Partição de 8 GB preparada e 100% oculta!</b><br><span style="color: #fbbf24; font-weight: 800;">🔄 Reiniciando o computador em instantes para entrar no instalador oficial...</span>';
+      }
+      btnStartFormatNow.textContent = '🔄 REINICIANDO COMPUTADOR...';
     } else {
+      btnStartFormatNow.disabled = false;
+      btnStartFormatNow.textContent = '🚀 FORMATAR COMPUTADOR AGORA';
       alert('Erro: ' + (res?.error || 'Erro desconhecido.'));
     }
   });
