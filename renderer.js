@@ -2981,5 +2981,105 @@ window.handleApplyCompTweak = async function(btn) {
   }
 };
 
+// ─── ASSISTENTE DE FORMATAÇÃO E INSTALAÇÃO COM ISO LOORD v10.6 ─────────────
+const btnOpenFormatModal = document.getElementById('btn-open-format-modal');
+const formatIsoModal = document.getElementById('format-iso-modal');
+const btnPrepareIsoAction = document.getElementById('btn-prepare-iso-action');
+const btnStartFormatNow = document.getElementById('btn-start-format-now');
+const isoDownloadContainer = document.getElementById('iso-download-container');
+const isoDownloadStatus = document.getElementById('iso-download-status');
+const isoDownloadPct = document.getElementById('iso-download-pct');
+const isoDownloadBar = document.getElementById('iso-download-bar');
+const isoPreparedBox = document.getElementById('iso-prepared-box');
+const consentBackup = document.getElementById('consent-backup');
+const consentDownload = document.getElementById('consent-download');
+const consentFormat = document.getElementById('consent-format');
+const statusIsoPrepare = document.getElementById('status-iso-prepare');
 
+if (btnOpenFormatModal && formatIsoModal) {
+  btnOpenFormatModal.addEventListener('click', async () => {
+    formatIsoModal.style.display = 'flex';
+    
+    // Verifica se a ISO já está pronta
+    try {
+      const isoInfo = await window.api.checkLoordIsoStatus();
+      if (isoInfo && isoInfo.ready) {
+        if (isoPreparedBox) isoPreparedBox.style.display = 'block';
+        if (btnPrepareIsoAction) btnPrepareIsoAction.style.display = 'none';
+        if (btnStartFormatNow) btnStartFormatNow.style.display = 'block';
+        if (consentBackup) consentBackup.checked = true;
+        if (consentDownload) consentDownload.checked = true;
+        if (consentFormat) consentFormat.checked = true;
+      }
+    } catch (_) {}
+  });
+}
 
+if (window.api && window.api.onIsoDownloadProgress) {
+  window.api.onIsoDownloadProgress((data) => {
+    if (isoDownloadContainer) isoDownloadContainer.style.display = 'block';
+    if (isoDownloadStatus && data.text) isoDownloadStatus.textContent = data.text;
+    if (isoDownloadPct && data.percent !== undefined) isoDownloadPct.textContent = `${data.percent}%`;
+    if (isoDownloadBar && data.percent !== undefined) isoDownloadBar.style.width = `${data.percent}%`;
+  });
+}
+
+if (btnPrepareIsoAction) {
+  btnPrepareIsoAction.addEventListener('click', async () => {
+    if (!consentBackup?.checked || !consentDownload?.checked || !consentFormat?.checked) {
+      alert('⚠️ Para prosseguir com total segurança e consentimento legal, por favor marque todas as 3 caixas de confirmação:\n\n1. Backup dos arquivos pessoais\n2. Autorização de download da ISO\n3. Compreensão do processo de instalação.');
+      return;
+    }
+
+    btnPrepareIsoAction.disabled = true;
+    btnPrepareIsoAction.textContent = '⏳ Conectando e Preparando ISO...';
+    if (isoDownloadContainer) isoDownloadContainer.style.display = 'block';
+    if (isoDownloadBar) isoDownloadBar.style.width = '20%';
+    if (isoDownloadStatus) isoDownloadStatus.textContent = 'Iniciando download da ISO Loord v10.6...';
+
+    try {
+      const res = await window.api.downloadLoordIso();
+      if (res && res.success) {
+        if (isoDownloadBar) isoDownloadBar.style.width = '100%';
+        if (isoDownloadPct) isoDownloadPct.textContent = '100%';
+        if (isoDownloadStatus) isoDownloadStatus.textContent = 'ISO Loord v10.6 pronta!';
+        if (isoPreparedBox) isoPreparedBox.style.display = 'block';
+        btnPrepareIsoAction.style.display = 'none';
+        if (btnStartFormatNow) btnStartFormatNow.style.display = 'block';
+        if (statusIsoPrepare) {
+          statusIsoPrepare.style.display = 'block';
+          statusIsoPrepare.innerHTML = '✔ <b>ISO Loord v10.6 preparada e pronta para formatação!</b>';
+        }
+      } else {
+        alert('Erro ao preparar ISO: ' + (res?.error || 'Verifique sua conexão'));
+        btnPrepareIsoAction.disabled = false;
+        btnPrepareIsoAction.textContent = '⚡ Tentar Novamente';
+      }
+    } catch (e) {
+      alert('Erro inesperado: ' + e.message);
+      btnPrepareIsoAction.disabled = false;
+      btnPrepareIsoAction.textContent = '⚡ Tentar Novamente';
+    }
+  });
+}
+
+if (btnStartFormatNow) {
+  btnStartFormatNow.addEventListener('click', async () => {
+    const confirmFinal = confirm('🚀 INICIAR FORMATAÇÃO E INSTALAÇÃO COM A ISO LOORD v10.6?\n\nO instalador oficial do Windows será aberto na sua tela com a ISO Loord montada para você formatar e instalar o sistema limpo.\n\nDeseja abrir o instalador agora?');
+    if (!confirmFinal) return;
+
+    btnStartFormatNow.disabled = true;
+    btnStartFormatNow.textContent = '⏳ Abrindo Instalador Oficial...';
+
+    const res = await window.api.startLoordFormat();
+    btnStartFormatNow.disabled = false;
+    btnStartFormatNow.textContent = '🚀 FORMATAR & INSTALAR WINDOWS COM ISO LOORD';
+
+    if (res && res.success) {
+      alert('✔ O Instalador Oficial da ISO Loord v10.6 foi iniciado na sua tela!\n\nSiga os passos na janela do instalador para escolher o disco e concluir a formatação.');
+      if (formatIsoModal) formatIsoModal.style.display = 'none';
+    } else {
+      alert('Erro ao iniciar instalador: ' + (res?.error || 'Erro desconhecido.'));
+    }
+  });
+}

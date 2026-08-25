@@ -70,6 +70,14 @@ contextBridge.exposeInMainWorld('api', {
   getSystemHardwareInfo: () => ipcRenderer.invoke('get-system-hardware-info'),
   applyCompetitiveEmulatorTweak: (config) => ipcRenderer.invoke('apply-competitive-emulator-tweak', config),
   applyAdaptiveRegedit: (config) => ipcRenderer.invoke('apply-adaptive-regedit', config),
+  // ─── ISO Loord Format & Setup ─────────────────────────────────────
+  checkLoordIsoStatus: () => ipcRenderer.invoke('check-loord-iso-status'),
+  downloadLoordIso: () => ipcRenderer.invoke('download-loord-iso'),
+  startLoordFormat: () => ipcRenderer.invoke('start-loord-format'),
+  onIsoDownloadProgress: (callback) => {
+    ipcRenderer.removeAllListeners('iso-download-progress');
+    ipcRenderer.on('iso-download-progress', (event, data) => callback(data));
+  },
   // ─────────────────────────────────────────────────────────────────
 });
 

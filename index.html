@@ -1577,7 +1577,7 @@
                 <p style="margin: 0; font-size: 12px; color: #94a3b8;">Verifique e receba novas versões e otimizações
                   automaticamente</p>
               </div>
-              <span id="app-version-badge" class="badge badge-success">v2.6.0</span>
+              <span id="app-version-badge" class="badge badge-success">v2.6.1</span>
             </div>
 
             <!-- Update Card Content -->
@@ -1783,44 +1783,23 @@
               </div>
             </div>
 
-            <!-- Memória Virtual Fixa (Pagefile) -->
-            <div class="card" style="border: 1px solid rgba(16, 185, 129, 0.3);">
+            <!-- Card: Formatação Limpa do PC com a ISO Loord v10.6 -->
+            <div class="card" style="border: 2px solid #38bdf8; background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(0,0,0,0.6)); box-shadow: 0 0 25px rgba(56, 189, 248, 0.2);">
               <div
-                style="font-weight: 700; color: #34d399; font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-                <span>🧠 Fixar Memória Virtual (Evitar Queda de FPS e Tela Azul)</span>
+                style="font-weight: 800; color: #38bdf8; font-size: 1.05rem; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <span style="display: flex; align-items: center; gap: 8px;">💿 Formatar PC com a ISO Loord v10.6 Oficial</span>
+                <span class="badge" style="background: #0284c7; color: #fff; font-weight: 800;">INSTALADOR 100% LIMPO</span>
               </div>
-              <p style="font-size: 0.8rem; color: var(--text-gray); margin-bottom: 12px;">
-                Fixa o arquivo de paginação (Pagefile) em 6GB no disco C:. Impede que o Windows redimensione a memória
-                virtual durante a partida, evitando congelamentos do emulador.
+              <p style="font-size: 0.82rem; color: #e2e8f0; margin-bottom: 12px; line-height: 1.5;">
+                Deseja formatar seu computador do zero com a ISO Loord Lite v10.6 Oficial? O assistente prepara seu disco, baixa a ISO oficial em alta velocidade e inicia a instalação limpa de forma segura com seu consentimento.
               </p>
-              <button class="btn btn-outline btn-sm" id="btn-set-pagefile"
-                style="width: 100%; border-color: #10b981; color: #10b981;">⚡ Fixar Memória Virtual em 6GB</button>
-              <div id="status-pagefile" style="margin-top: 8px; font-size: 0.8rem; color: #10b981; display: none;">
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-primary btn-sm" id="btn-open-format-modal"
+                  style="flex: 1; min-width: 220px; background: linear-gradient(135deg, #0ea5e9, #0284c7); border: none; font-weight: 800; font-size: 0.9rem; padding: 12px 18px; box-shadow: 0 4px 15px rgba(14, 165, 233, 0.35);">
+                  💿 Baixar ISO &amp; Preparar PC para Formatar
+                </button>
               </div>
-            </div>
-
-            <!-- Predefinições de Emulador para PC Fraco -->
-            <div class="card" style="border: 1px solid rgba(168, 85, 247, 0.3);">
-              <div
-                style="font-weight: 700; color: #c084fc; font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-                <span>🎮 Configuração Pronta do Emulador (PC Fraco)</span>
-              </div>
-              <p style="font-size: 0.8rem; color: var(--text-gray); margin-bottom: 10px;">
-                Aplica a melhor combinação de Resolução, DPI, Núcleos de CPU e RAM no seu BlueStacks / MSI:
-              </p>
-              <div style="display: flex; gap: 8px; flex-direction: column;">
-                <button class="btn btn-sm" id="btn-preset-potato"
-                  style="background: #e11d48; color: #fff; font-weight: 700;">🥔 Perfil Ultra Batata (800x600 | 160 DPI
-                  | 2 CPU | 1.5GB RAM)</button>
-                <button class="btn btn-sm" id="btn-preset-smooth"
-                  style="background: #2563eb; color: #fff; font-weight: 700;">⚡ Perfil 540p Equilibrado (960x540 | 240
-                  DPI | 2 CPU | 2GB RAM)</button>
-                <button class="btn btn-sm" id="btn-preset-720p"
-                  style="background: #7c3aed; color: #fff; font-weight: 700;">🎮 Perfil 720p Suave (1280x720 | 240 DPI |
-                  2 CPU | 2GB RAM)</button>
-              </div>
-              <div id="status-emu-preset" style="margin-top: 8px; font-size: 0.8rem; color: #10b981; display: none;">
-              </div>
+              <div id="status-iso-prepare" style="margin-top: 10px; font-size: 0.82rem; color: #38bdf8; display: none;"></div>
             </div>
           </div>
 
@@ -1892,75 +1871,112 @@
     </div>
   </div>
 
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- MODAL DE FORMATAÇÃO E INSTALAÇÃO COM A ISO LOORD v10.6 (COM CONSENTIMENTO) -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="format-iso-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(10px); z-index: 100000; justify-content: center; align-items: center; padding: 20px;">
+    <div style="background: #0f172a; border: 2px solid #38bdf8; border-radius: 16px; width: 100%; max-width: 580px; padding: 28px; text-align: center; box-shadow: 0 0 45px rgba(56, 189, 248, 0.35); animation: popupIn 0.3s ease-out; position: relative;">
+      
+      <div style="font-size: 3rem; margin-bottom: 6px;">💿</div>
+      
+      <h2 style="margin: 0 0 6px 0; font-size: 1.3rem; font-weight: 900; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">
+        ASSISTENTE DE FORMATAÇÃO COM ISO LOORD v10.6
+      </h2>
+      <p style="margin: 0 0 16px 0; font-size: 0.82rem; color: #94a3b8; line-height: 1.4;">
+        Reinstalação limpa do Windows utilizando a ISO Oficial Loord v10.6 Lite (Otimizada para Máximo FPS e Menor Input Lag).
+      </p>
+
+      <!-- Box de Termo de Consentimento Legal Obrigatório -->
+      <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; text-align: left;">
+        <div style="font-size: 0.82rem; font-weight: 800; color: #f87171; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          <span>⚠️ TERMO DE CONSENTIMENTO E RESPONSABILIDADE:</span>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.78rem; color: #cbd5e1;">
+          <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="consent-backup" style="margin-top: 2px; accent-color: #38bdf8;">
+            <span>Declaro que fiz o <b>backup de todos os meus arquivos pessoais</b> importantes em um pendrive ou nuvem.</span>
+          </label>
+          <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="consent-download" style="margin-top: 2px; accent-color: #38bdf8;">
+            <span>Autorizo o download da <b>ISO Oficial Loord Lite v10.6 (3.2 GB)</b> e a preparação dos arquivos de instalação.</span>
+          </label>
+          <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="consent-format" style="margin-top: 2px; accent-color: #38bdf8;">
+            <span>Compreendo que a formatação reinstalará o Windows com a ISO limpa e otimizada com meu consentimento explícito.</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Barra de Progresso de Download / Preparo -->
+      <div id="iso-download-container" style="display: none; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: #38bdf8; font-weight: 700; margin-bottom: 4px;">
+          <span id="iso-download-status">Baixando ISO Loord v10.6...</span>
+          <span id="iso-download-pct">0%</span>
+        </div>
+        <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
+          <div id="iso-download-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #0ea5e9, #38bdf8); transition: width 0.3s ease;"></div>
+        </div>
+      </div>
+
+      <!-- Status de Preparação Concluída -->
+      <div id="iso-prepared-box" style="display: none; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.4); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; text-align: left; font-size: 0.8rem; color: #86efac; line-height: 1.5;">
+        ✔ <b>ISO Loord v10.6 Preparada e Pronta!</b><br>
+        O assistente de instalação oficial foi configurado com sucesso. Ao clicar abaixo, o instalador oficial do Windows iniciará o processo de formatação limpa.
+      </div>
+
+      <!-- Botões de Ação -->
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button id="btn-prepare-iso-action" style="width: 100%; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: #fff; font-size: 0.95rem; font-weight: 900; padding: 13px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(14, 165, 233, 0.4);">
+          ⚡ PREPARAR PC & BAIXAR ISO LOORD
+        </button>
+
+        <button id="btn-start-format-now" style="display: none; width: 100%; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #fff; font-size: 1rem; font-weight: 900; padding: 14px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 20px rgba(34, 197, 94, 0.5);">
+          🚀 FORMATAR & INSTALAR WINDOWS COM ISO LOORD
+        </button>
+
+        <button onclick="document.getElementById('format-iso-modal').style.display='none'" style="width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; font-size: 0.82rem; font-weight: 700; padding: 8px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+          ✕ Fechar / Cancelar
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- MODAL DE ATUALIZAÇÃO CENTRALIZADO                                     -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="update-popup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 100000; justify-content: center; align-items: center; padding: 20px;">
+    <div style="background: #11141c; border: 2px solid #f59e0b; border-radius: 16px; width: 100%; max-width: 520px; padding: 28px; text-align: center; box-shadow: 0 0 40px rgba(245, 158, 11, 0.35); animation: popupIn 0.3s ease-out; position: relative;">
+      <div style="font-size: 3rem; margin-bottom: 8px;">🚀</div>
+      <h2 id="update-popup-title" style="margin: 0 0 6px 0; font-size: 1.35rem; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 0.5px;">
+        🚀 NOVA VERSÃO <span id="update-popup-ver-title" style="color: #fbbf24;">v2.6.0</span> DISPONÍVEL!
+      </h2>
+      <p style="margin: 0 0 20px 0; font-size: 0.82rem; color: #94a3b8; line-height: 1.4;">
+        Uma nova versão com melhorias de desempenho e sensibilidade está pronta para você.
+      </p>
+      <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 16px; margin-bottom: 22px; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 12px; font-size: 0.85rem; font-weight: 800;">
+          <span style="color: #f87171;">📌 Sua Versão: <b id="update-popup-cur-ver">v2.5.4</b></span>
+          <span style="color: #4ade80;">🔥 Nova Versão: <b id="update-popup-lat-ver">v2.6.0</b></span>
+        </div>
+        <ul style="margin: 0; padding-left: 18px; font-size: 0.8rem; color: #fbbf24; line-height: 1.8;">
+          <li>👑 <b>Modo ISO Loord v10.6 Oficial</b></li>
+          <li>🎯 <b>Curva de Mira Loord + MMCSS GPU 8</b></li>
+          <li>⚡ <b>Assistente de Formatação com ISO Loord</b></li>
+        </ul>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button id="btn-update-popup-download" style="width: 100%; background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); color: #fff; font-size: 0.98rem; font-weight: 900; padding: 14px; border: none; border-radius: 10px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4); display: flex; align-items: center; justify-content: center; gap: 8px;">
+          ⚡ BAIXAR & ATUALIZAR AGORA
+        </button>
+        <button id="btn-update-popup-close" onclick="document.getElementById('update-popup-modal').style.display='none'" style="width: 100%; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); color: #94a3b8; font-size: 0.85rem; font-weight: 800; padding: 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+          👍 OK, LEMBRAR MAIS TARDE
+        </button>
+      </div>
+    </div>
+  </div>
 
   <script src="renderer.js"></script>
 </body>
-
-</html>
-<div style="font-size: 2.8rem; margin-bottom: 8px;" id="regedit-modal-icon">⚙️</div>
-<h2
-  style="margin: 0 0 6px 0; color: #4ade80; font-size: 1.25rem; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase;"
-  id="regedit-modal-title">PREPARANDO CONFIGURAÇÃO NO SEU PC...</h2>
-<p style="color: #94a3b8; font-size: 0.82rem; margin: 0 0 16px 0; line-height: 1.5;" id="regedit-modal-desc">Calibrando
-  parâmetros de registro, velocidade de ponteiro e curva sem delay...</p>
-
-<!-- Barra de progresso -->
-<div id="regedit-modal-bar-container"
-  style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-bottom: 16px;">
-  <div id="regedit-modal-bar"
-    style="width: 20%; height: 100%; background: linear-gradient(90deg, #f59e0b, #22c55e); border-radius: 4px; transition: width 0.4s ease;">
-  </div>
-</div>
-
-<!-- Resumo detalhado (aparece ao concluir) -->
-<div id="regedit-modal-summary"
-  style="display: none; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px; padding: 12px 14px; margin-bottom: 18px; text-align: left; font-size: 0.8rem; color: #cbd5e1; line-height: 1.6;">
-</div>
-
-<button id="btn-regedit-modal-close"
-  style="display: none; width: 100%; background: linear-gradient(90deg, #22c55e, #16a34a); color: #fff; font-size: 0.92rem; font-weight: 900; padding: 12px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(34, 197, 94, 0.4);">
-  ⚡ OK, PRONTO PRA JOGAR!
-</button>
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
-<!-- MODAL DE ATUALIZAÇÃO CENTRALIZADO (IMAGEM 1 DE REFERÊNCIA)            -->
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
-<div id="update-popup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 100000; justify-content: center; align-items: center; padding: 20px;">
-  <div style="background: #11141c; border: 2px solid #f59e0b; border-radius: 16px; width: 100%; max-width: 520px; padding: 28px; text-align: center; box-shadow: 0 0 40px rgba(245, 158, 11, 0.35); animation: popupIn 0.3s ease-out; position: relative;">
-    
-    <div style="font-size: 3rem; margin-bottom: 8px;">🚀</div>
-    
-    <h2 id="update-popup-title" style="margin: 0 0 6px 0; font-size: 1.35rem; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 0.5px;">
-      🚀 NOVA VERSÃO <span id="update-popup-ver-title" style="color: #fbbf24;">v1.9.7</span> DISPONÍVEL!
-    </h2>
-    <p style="margin: 0 0 20px 0; font-size: 0.82rem; color: #94a3b8; line-height: 1.4;">
-      Uma nova versão com melhorias de desempenho e sensibilidade está pronta para você.
-    </p>
-
-    <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 16px; margin-bottom: 22px; text-align: left;">
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 12px; font-size: 0.85rem; font-weight: 800;">
-        <span style="color: #f87171;">📌 Sua Versão: <b id="update-popup-cur-ver">v1.9.6</b></span>
-        <span style="color: #4ade80;">🔥 Nova Versão: <b id="update-popup-lat-ver">v1.9.7</b></span>
-      </div>
-      <ul style="margin: 0; padding-left: 18px; font-size: 0.8rem; color: #fbbf24; line-height: 1.8;">
-        <li>🧬 <b>Regedit Adaptativa & Detector de Remada</b></li>
-        <li>🎯 <b>Otimizador de Pan & Engine (Anti-Pinar)</b></li>
-        <li>⚡ <b>Melhorias de sensibilidade e estabilidade geral</b></li>
-      </ul>
-    </div>
-
-    <div style="display: flex; flex-direction: column; gap: 10px;">
-      <button id="btn-update-popup-download" style="width: 100%; background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); color: #fff; font-size: 0.98rem; font-weight: 900; padding: 14px; border: none; border-radius: 10px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4); display: flex; align-items: center; justify-content: center; gap: 8px;">
-        ⚡ BAIXAR & ATUALIZAR AGORA (<span id="update-popup-btn-ver">v1.9.7</span>)
-      </button>
-      <button id="btn-update-popup-close" onclick="document.getElementById('update-popup-modal').style.display='none'" style="width: 100%; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); color: #94a3b8; font-size: 0.85rem; font-weight: 800; padding: 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
-        👍 OK, LEMBRAR MAIS TARDE
-      </button>
-    </div>
-
-  </div>
-</div>
-
-<script src="renderer.js"></script>
-</body>
-
 </html>
