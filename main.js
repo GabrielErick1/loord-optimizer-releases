@@ -4218,20 +4218,14 @@ end
 
     fs.writeFileSync(scriptLuaPath, luaContent, 'utf8');
 
-    // Executa o Speedhack como Administrador anexado no HD-Player.exe
     const ceDir = path.dirname(ceExePath);
-    stopSpeedhackProcess();
-
     const winCePath = ceExePath.replace(/'/g, "''");
-    const winScriptPath = scriptLuaPath.replace(/'/g, "''");
-    const runCmd = `powershell -Command "Start-Process '${winCePath}' -ArgumentList '\"${winScriptPath}\"' -Verb RunAs"`;
+    const runCmd = `powershell -Command "Start-Process '${winCePath}' -Verb RunAs"`;
     exec(runCmd, { cwd: ceDir });
 
     return { 
       success: true, 
-      message: action === 'auto-bug' 
-        ? '🚀 FPS Bug Aplicado! (500 ➔ 0.5 x2 Ativado no Free Fire)'
-        : `⚡ Velocidade Speedhack ajustada para ${speed}x!`
+      message: '🎮 Painel Speedhack aberto como Administrador com os controles de FPS!' 
     };
   } catch (err) {
     console.error('[Speedhack] Erro ao aplicar Speedhack:', err);
