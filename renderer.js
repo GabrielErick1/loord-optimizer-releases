@@ -408,7 +408,7 @@ async function applyMouseSettingsOnly() {
   }
 
   const selectedMouseModeEl = document.querySelector('input[name="mouse-mode"]:checked');
-  const mouseMode = selectedMouseModeEl ? selectedMouseModeEl.value : 'loord-3-sense-full-red';
+  const mouseMode = selectedMouseModeEl ? selectedMouseModeEl.value : 'ff-precision-pixel-perfect';
   const pollingRate = selectPolling ? selectPolling.value : '1000';
 
   if (tweakStatusText) tweakStatusText.textContent = 'Aplicando Regedit de sensibilidade no Windows...';
