@@ -3660,6 +3660,21 @@ ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
     const calculatedWinSpeed = Math.max(1, Math.min(20, Math.round(10 * rawMul)));
     applyRealtimeWindowsMouse(calculatedWinSpeed);
 
+    // 1.5. Limpeza profunda de regedits anteriores para não misturar chaves
+    const keysToClean = [
+      'Active', 'ActiveAC', 'ActiveDeveloped', 'ActiveDevoloped', 'ActiveFix', 'ActiveUser', 'Assist',
+      'Beep2', 'DoubleClickSpeed2', 'DoubleClickWidth2', 'Fov', 'MouseCl', 'Mousecontroslub',
+      'MouseCP', 'Mousecrib', 'MouseGrab', 'MouseSpeed2', 'MouseStickOn', 'MouseTK', 'Mousetrack',
+      'DefaultTTL', 'EnablePMTUBHDetect', 'EnablePMTUDiscovery', 'SackOpts', 'Tcp1323Opts',
+      'TCPDelAckTicks', 'TcpMaxDataRetransmissions', 'TcpNoDelay', 'TcpWindowSize',
+      'DockTargetMouse', 'DockTargetMouse1', 'DockTargetMouse2', 'DockTargetPen', 'DockTargetPen1', 'DockTargetPen2'
+    ];
+    for (const keyName of keysToClean) {
+      try {
+        execSync(`reg delete "HKCU\\Control Panel\\Mouse" /v "${keyName}" /f`, { stdio: 'ignore' });
+      } catch (_) {}
+    }
+
     // 2. CURVA ADAPTATIVA & REGEDIT ADAPTATIVA NO REGISTRO DO WINDOWS + MIRA FIXA NO EMULADOR
     const regCommands = [
       // Identificadores visíveis no Regedit (HKCU\Control Panel\Mouse)
