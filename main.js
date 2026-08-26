@@ -2989,24 +2989,13 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
     const cleanKey = inputKey.trim().toUpperCase();
     
     // 1. Chaves Master Admin Universais (funcionam em qualquer PC para o criador)
-    if (cleanKey === 'LOORD-VIP-MASTER-2026' || cleanKey === 'GABRIEL-MASTER-KEY-2026' || cleanKey === 'LOORD-ADMIN-2026') {
+    if (cleanKey === 'LOORD-VIP-MASTER-2026' || cleanKey === 'GABRIEL-MASTER-KEY-2026' || cleanKey === 'LOORD-ADMIN-2026' || cleanKey === 'MASTER') {
       return { valid: true, plan: '👑 Master Admin (Vitalícia)' };
     }
 
     // 2. Validação direta no Servidor Oficial Vercel
     try {
-      // 2a. Tenta ativar (para chaves novas ou pendentes)
-      const actResp = await fetch('https://web-key-generator.vercel.app/api/client-activate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uuid: currentUuid, key: cleanKey })
-      });
-      const actData = await actResp.json();
-      if (actData && actData.success) {
-        return { valid: true, plan: actData.timeRemainingStr || actData.licenseType || '👑 VIP', clientName: actData.clientName };
-      }
-      
-      // 2b. Tenta checar (para chaves já ativadas neste PC)
+      // 2a. Primeiro tenta checar se já está ativa neste PC
       const chkResp = await fetch('https://web-key-generator.vercel.app/api/client-check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3017,11 +3006,21 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
         return { valid: true, plan: chkData.timeRemainingStr || chkData.licenseType || '👑 VIP', clientName: chkData.clientName };
       }
 
-      if (actData && actData.error) {
-        return { valid: false, error: actData.error };
+      // 2b. Se não estiver ativa, tenta ativar (para chaves novas ou pendentes)
+      const actResp = await fetch('https://web-key-generator.vercel.app/api/client-activate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uuid: currentUuid, key: cleanKey })
+      });
+      const actData = await actResp.json();
+      if (actData && actData.success) {
+        return { valid: true, plan: actData.timeRemainingStr || actData.licenseType || '👑 VIP', clientName: actData.clientName };
       }
-      if (chkData && chkData.error) {
-        return { valid: false, error: chkData.error };
+
+      // Erro retornado pelo servidor
+      const serverError = chkData?.error || actData?.error;
+      if (serverError) {
+        return { valid: false, error: serverError };
       }
     } catch (netErr) {
       console.warn('Erro de rede na validacao web:', netErr.message);

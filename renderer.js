@@ -3259,16 +3259,11 @@ if (btnStartFormatNow) {
     });
   }
 
-  // 4. Formatação automática da chave (adiciona traços XXXX-XXXX-XXXX-XXXX)
+  // 4. Formatação de entrada (converte para maiúsculo sem truncar)
   if (inputVipKey) {
     inputVipKey.addEventListener('input', (e) => {
-      let val = e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-      if (val.length > 16) val = val.substring(0, 16);
-      const parts = [];
-      for (let i = 0; i < val.length; i += 4) {
-        parts.push(val.substring(i, i + 4));
-      }
-      e.target.value = parts.join('-');
+      let raw = e.target.value.trim().toUpperCase();
+      e.target.value = raw;
       if (keyAuthError) keyAuthError.style.display = 'none';
     });
 
