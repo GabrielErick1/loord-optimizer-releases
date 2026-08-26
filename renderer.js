@@ -633,177 +633,21 @@ if (toggleMacro && macroForce && macroForceVal && macroForceContainer) {
   });
 }
 
-// --- Activation and Protection System ---
+
+// --- Activation and Protection System (LEGACY - mantido apenas para compatibilidade) ---
+// O novo sistema de ativação é gerenciado pelo initVipKeyAuthentication() no final do arquivo
 const activationScreen = document.getElementById('activation-screen');
-const displayUuidInput = document.getElementById('display-uuid');
-const btnCopyUuid = document.getElementById('btn-copy-uuid');
-const inputKey = document.getElementById('input-key');
-const btnActivate = document.getElementById('btn-activate');
-const activationError = document.getElementById('activation-error');
-let activeLicenseCheckTimer = null;
+if (activationScreen) activationScreen.style.display = 'none'; // Garante que a tela antiga fica oculta
 
 async function checkActivation() {
-  if (!activationScreen) return true;
-
-  let uuid = '';
-  try {
-    uuid = await window.api.getUuid();
-  } catch (e) {
-    uuid = 'UNKNOWN-UUID';
-  }
-
-  if (displayUuidInput) {
-    displayUuidInput.value = uuid;
-  }
-
-  // Setup copy button
-  if (btnCopyUuid) {
-    btnCopyUuid.onclick = () => {
-      navigator.clipboard.writeText(uuid);
-      btnCopyUuid.textContent = 'Copiado!';
-      setTimeout(() => {
-        btnCopyUuid.textContent = 'Copiar';
-      }, 2000);
-    };
-  }
-
-  const savedKey = localStorage.getItem('activation_key');
-  if (savedKey) {
-    try {
-      const response = await fetch('https://web-key-generator.vercel.app/api/client-check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uuid, key: savedKey })
-      });
-      const data = await response.json();
-
-      if (data && data.success) {
-        updateLicenseBadge(true, data.clientName, data.licenseType, data.timeRemainingStr);
-        activationScreen.style.display = 'none';
-        startLicenseHeartbeat(uuid, savedKey);
-        return true;
-      } else {
-        // Licença inválida, expirada, revogada, deletada ou deslogada pelo administrador
-        localStorage.removeItem('activation_key');
-        localStorage.removeItem('client_name');
-        localStorage.removeItem('ffopt_applied_tweaks');
-
-        // Reverter 100% de todas as otimizações e registros automaticamente
-        try {
-          await window.api.revertAllTweaksOnRevoke();
-        } catch (_) { }
-
-        if (activationError) {
-          activationError.textContent = `❌ ${data.error || 'Licença expirada, revogada ou não encontrada no sistema. O computador foi restaurado ao estado original.'}`;
-          activationError.style.display = 'block';
-        }
-      }
-    } catch (e) {
-      console.warn('Erro ao conectar ao servidor de validação:', e);
-    }
-  }
-
-  // Se não tem chave ou chave é inválida: mostrar tela de ativação bloqueando o app
-  updateLicenseBadge(false);
-  activationScreen.style.display = 'flex';
-
-  if (btnActivate) {
-    btnActivate.onclick = async () => {
-      const key = inputKey.value.trim().toUpperCase();
-      if (!key) {
-        if (activationError) {
-          activationError.textContent = '❌ Por favor, digite uma chave de ativação.';
-          activationError.style.display = 'block';
-        }
-        return;
-      }
-
-      btnActivate.disabled = true;
-      btnActivate.textContent = 'Verificando na Nuvem...';
-      if (activationError) activationError.style.display = 'none';
-
-      try {
-        const myUuid = await window.api.getUuid();
-        const webRes = await fetch('https://web-key-generator.vercel.app/api/client-activate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ uuid: myUuid, key })
-        });
-        const webData = await webRes.json();
-
-        if (webData && webData.success) {
-          localStorage.setItem('activation_key', key);
-          if (webData.clientName) {
-            localStorage.setItem('client_name', webData.clientName);
-          }
-          updateLicenseBadge(true, webData.clientName, webData.licenseType, webData.timeRemainingStr);
-          activationScreen.style.display = 'none';
-          startLicenseHeartbeat(myUuid, key);
-
-          await loadAllSettings();
-          restoreAppliedTweaks();
-          bindSaveListeners();
-        } else {
-          if (activationError) {
-            activationError.textContent = `❌ ${webData ? webData.error : 'Chave inválida ou não encontrada no banco de dados.'}`;
-            activationError.style.display = 'block';
-          }
-          btnActivate.disabled = false;
-          btnActivate.textContent = '⚡ Ativar Loord Optimizer';
-        }
-      } catch (e) {
-        if (activationError) {
-          activationError.textContent = '❌ Erro ao conectar ao servidor de ativação. Verifique sua internet.';
-          activationError.style.display = 'block';
-        }
-        btnActivate.disabled = false;
-        btnActivate.textContent = '⚡ Ativar Loord Optimizer';
-      }
-    };
-  }
-
-  return false;
+  // O novo sistema initVipKeyAuthentication() já gerencia a ativação completa
+  // Esta função retorna sempre true para não bloquear o app pelo sistema antigo
+  return true;
 }
 
-// Monitoramento em tempo real (Auto-Kick se chave for revogada, deletada ou deslogada no painel)
 function startLicenseHeartbeat(uuid, key) {
-  if (activeLicenseCheckTimer) clearInterval(activeLicenseCheckTimer);
-
-  activeLicenseCheckTimer = setInterval(async () => {
-    try {
-      const response = await fetch('https://web-key-generator.vercel.app/api/client-check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uuid, key })
-      });
-      const data = await response.json();
-
-      if (!data || !data.success) {
-        // Chave foi revogada, deletada ou deslogada pelo administrador!
-        clearInterval(activeLicenseCheckTimer);
-        localStorage.removeItem('activation_key');
-        localStorage.removeItem('client_name');
-        localStorage.removeItem('ffopt_applied_tweaks');
-
-        // Reverter 100% de todos os tweaks, registros, DNS e emulador de volta ao padrão do Windows
-        try {
-          await window.api.revertAllTweaksOnRevoke();
-        } catch (_) { }
-
-        updateLicenseBadge(false);
-        if (activationError) {
-          activationError.textContent = `❌ ${data?.error || 'Sua licença foi deslogada, revogada ou expirou.'}`;
-          activationError.style.display = 'block';
-        }
-        activationScreen.style.display = 'flex';
-        alert(`❌ ATENÇÃO: Seu acesso ao Loord Optimizer expirou ou foi revogado!\n\n• Todas as otimizações, registros e configurações aplicadas foram REVERTIDAS e restauradas ao estado original do seu computador.`);
-      } else {
-        updateLicenseBadge(true, data.clientName, data.licenseType, data.timeRemainingStr);
-      }
-    } catch (e) { }
-  }, 25000); // Checa a cada 25 segundos
+  // Heartbeat gerenciado pelo novo sistema initVipKeyAuthentication()
 }
-
 
 function updateLicenseBadge(isActivated, clientName, licenseType, timeRemainingStr) {
   const versionLabel = document.querySelector('.version-label');
@@ -837,6 +681,7 @@ function updateLicenseBadge(isActivated, clientName, licenseType, timeRemainingS
     }
   }
 }
+
 
 // --- Save and Load User Settings ---
 const settingsFields = [
