@@ -1,6 +1,6 @@
 {
   "name": "loord-optimizer",
-  "version": "2.8.1",
+  "version": "2.8.2",
   "author": "Loord Optimizer",
   "description": "Loord Optimizer - Otimizador Gamer de Sensibilidade e Emulador",
   "main": "main.js",
@@ -9,8 +9,8 @@
     "obfuscate": "node scripts/obfuscate.js backup-and-obfuscate",
     "restore": "node scripts/obfuscate.js restore",
     "package": "electron-packager . \"Loord Optimizer\" --platform=win32 --arch=x64 --overwrite --win32metadata.requested-execution-level=requireAdministrator --ignore=FFOptimizer-win32-x64 --ignore=\"Loord Optimizer-win32-x64\" --ignore=FFOptimizer_Novo --ignore=BlueStacks_nxt --ignore=BlueStacks_msi5 --ignore=dist",
-    "dist": "npm run obfuscate && electron-builder --win",
-    "publish": "npm run obfuscate && electron-builder --win --publish always"
+    "dist": "node scripts/obfuscate.js backup-and-obfuscate && electron-builder --win && node scripts/obfuscate.js restore",
+    "publish": "node scripts/obfuscate.js backup-and-obfuscate && electron-builder --win --publish always && node scripts/obfuscate.js restore"
   },
   "build": {
     "appId": "com.loord.optimizer",

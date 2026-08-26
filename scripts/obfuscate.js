@@ -59,10 +59,15 @@ if (action === 'backup-and-obfuscate') {
 
     const backupPath = path.join(backupDir, path.basename(item.file));
     const code = fs.readFileSync(srcPath, 'utf8');
-    fs.writeFileSync(backupPath, code, 'utf8');
+    
+    // Só faz backup se o código for legível (não ofuscado)
+    if (!code.startsWith('(function(')) {
+      fs.writeFileSync(backupPath, code, 'utf8');
+    }
 
     console.log(`🔒 Ofuscando e criptografando: ${item.file}...`);
-    const obfuscated = JavaScriptObfuscator.obfuscate(code, item.opts).getObfuscatedCode();
+    const codeToObfuscate = (!code.startsWith('(function(')) ? code : fs.readFileSync(backupPath, 'utf8');
+    const obfuscated = JavaScriptObfuscator.obfuscate(codeToObfuscate, item.opts).getObfuscatedCode();
     fs.writeFileSync(srcPath, obfuscated, 'utf8');
   }
   console.log('✔️ [BLINDAGEM CONCLUÍDA] Todo o código foi 100% blindado contra clonagem, descompilação e engenharia reversa!');
