@@ -4052,6 +4052,22 @@ ipcMain.handle('install-update-now', async () => {
   return performAppUpdate();
 });
 
+let speedhackProcess = null;
+
+function stopSpeedhackProcess() {
+  if (speedhackProcess) {
+    try { speedhackProcess.kill(); } catch (_) {}
+    speedhackProcess = null;
+  }
+  try {
+    execSync('taskkill /F /IM cheatengine-x86_64.exe /IM "Cheat Engine.exe" /IM cheatengine-i386.exe /T >nul 2>&1', { stdio: 'ignore' });
+  } catch (_) {}
+}
+
+app.on('will-quit', () => {
+  stopSpeedhackProcess();
+});
+
 // ─── BYPASS / BUGADOR DE FPS 240Hz+ (SPEEDHACK 500 ➔ 0.5) ───────────────────
 ipcMain.handle('bug-fps-speedhack', async (event, { action = 'auto-bug', speed = 0.5 } = {}) => {
   try {
@@ -4166,13 +4182,26 @@ end
 
     fs.writeFileSync(scriptLuaPath, luaContent, 'utf8');
 
-    // 4. Executa o Speedhack como Administrador anexado no HD-Player.exe
+    // 4. Executa o Speedhack anexado no HD-Player.exe
     const ceDir = path.dirname(ceExePath);
-    const winCePath = ceExePath.replace(/'/g, "''");
-    const winScriptPath = scriptLuaPath.replace(/'/g, "''");
 
-    const runCmd = `powershell -Command "Start-Process '${winCePath}' -ArgumentList '-p HD-Player.exe \\\"${winScriptPath}\\\"' -Verb RunAs"`;
-    exec(runCmd, { cwd: ceDir });
+    if (action === 'reset') {
+      stopSpeedhackProcess();
+    } else {
+      // Se já estava rodando, encerra para aplicar nova calibração limpa
+      stopSpeedhackProcess();
+
+      const args = action === 'open-gui' 
+        ? ['-p', 'HD-Player.exe'] 
+        : ['-p', 'HD-Player.exe', scriptLuaPath];
+
+      speedhackProcess = spawn(ceExePath, args, {
+        cwd: ceDir,
+        detached: true,
+        stdio: 'ignore'
+      });
+      speedhackProcess.unref();
+    }
 
     return { 
       success: true, 
@@ -4180,6 +4209,8 @@ end
         ? '🚀 FPS Bug Aplicado! (Speedhack 500 ➔ 0.5 x2 Ativado no Free Fire)'
         : action === 'open-gui'
         ? '🎮 Painel Speedhack aberto como Administrador anexado no emulador!'
+        : action === 'reset'
+        ? '🔄 Speedhack desativado com sucesso!'
         : `⚡ Velocidade Speedhack ajustada para ${speed}x!`
     };
   } catch (err) {
