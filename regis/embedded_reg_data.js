@@ -26,6 +26,45 @@ const commonLatencyKeys = [
 ];
 
 module.exports = {
+  'regedit-lord-socapa-4x4': {
+    name: 'Regedit do Lord So Capa 4x4',
+    fix: 'Lord 4x4',
+    keys: [
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'Active', type: 'REG_SZ', value: 'Regedit do Lord So Capa 4x4' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'ActiveDeveloped', type: 'REG_SZ', value: 'Regedit do Lord So Capa 4x4' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'ActiveFix', type: 'REG_SZ', value: '4x4' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'ActiveWindowTracking', type: 'REG_DWORD', value: 0 },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'Beep', type: 'REG_SZ', value: 'No' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'DoubleClickHeight', type: 'REG_SZ', value: '4' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'DoubleClickSpeed', type: 'REG_SZ', value: '500' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'DoubleClickWidth', type: 'REG_SZ', value: '4' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'ExtendedSounds', type: 'REG_SZ', value: 'No' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseHoverHeight', type: 'REG_SZ', value: '4' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseHoverWidth', type: 'REG_SZ', value: '4' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseHoverTime', type: 'REG_SZ', value: '10' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseSensitivity', type: 'REG_SZ', value: '10' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseSpeed', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseThreshold1', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseThreshold2', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseTrails', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'SmoothMouseXCurve', type: 'REG_BINARY', value: '0000000000000000156e000000000000004001000000000029dc0300000000000000280000000000ffff0f0000000000' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'SmoothMouseYCurve', type: 'REG_BINARY', value: '0000000000000000fd11010000000000002404000000000000fc12000000000000c0bb01000000000000580200000000' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'SnapToDefaultButton', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'SwapMouseButtons', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Desktop', name: 'MenuShowDelay', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Desktop', name: 'ForegroundLockTimeout', type: 'REG_DWORD', value: 0 },
+      { path: 'HKCU\\Control Panel\\Desktop', name: 'ForegroundFlashCount', type: 'REG_DWORD', value: 0 },
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_Enabled', type: 'REG_DWORD', value: 0 },
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_FSEBehaviorMode', type: 'REG_DWORD', value: 2 },
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_HonorUserFSEBehaviorMode', type: 'REG_DWORD', value: 1 },
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_DXGIHonorFSEWindowsCompatible', type: 'REG_DWORD', value: 1 },
+      { path: 'HKCU\\System\\GameConfigStore', name: 'GameDVR_EFSEFeatureFlags', type: 'REG_DWORD', value: 0 },
+      { path: 'HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\GameDVR', name: 'AppCaptureEnabled', type: 'REG_DWORD', value: 0 },
+      { path: 'HKCU\\Software\\Microsoft\\GameBar', name: 'AutoGameModeEnabled', type: 'REG_DWORD', value: 1 },
+      { path: 'HKCU\\Software\\Microsoft\\GameBar', name: 'AllowAutoGameMode', type: 'REG_DWORD', value: 1 },
+      { path: 'HKCU\\Software\\Microsoft\\GameBar', name: 'UseNexusForGameBarEnabled', type: 'REG_DWORD', value: 0 }
+    ]
+  },
   'regedit-do-flash': {
     name: 'Regedit do Flash',
     fix: 'Flash 1.0',

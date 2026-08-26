@@ -1787,6 +1787,70 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
       }
     }
 
+    if (mouseMode === 'regedit-lord-socapa-4x4') {
+      // 1. Executa a regedit base (.reg)
+      const regStep1 = [
+        'reg add "HKCU\\Control Panel\\Mouse" /v "ActiveWindowTracking" /t REG_DWORD /d 0 /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "Beep" /t REG_SZ /d "No" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "DoubleClickHeight" /t REG_SZ /d "4" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "DoubleClickSpeed" /t REG_SZ /d "500" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "DoubleClickWidth" /t REG_SZ /d "4" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "ExtendedSounds" /t REG_SZ /d "No" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseHoverHeight" /t REG_SZ /d "4" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseHoverWidth" /t REG_SZ /d "4" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseSensitivity" /t REG_SZ /d "8" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseSpeed" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseThreshold1" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseThreshold2" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseTrails" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "SmoothMouseXCurve" /t REG_BINARY /d 0000000000000000156e000000000000004001000000000029dc0300000000000000280000000000 /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "SmoothMouseYCurve" /t REG_BINARY /d 0000000000000000fd11010000000000002404000000000000fc12000000000000c0bb010000000000 /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "SnapToDefaultButton" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "SwapMouseButtons" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseHoverTime" /t REG_DWORD /d 41 /f'
+      ];
+      for (const cmd of regStep1) {
+        try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
+      }
+
+      // 2. Executa a calibração do .bat (.bat)
+      const socapaBatCommands = [
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseSpeed" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseThreshold1" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseThreshold2" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseSensitivity" /t REG_SZ /d "10" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseHoverTime" /t REG_SZ /d "10" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "SnapToDefaultButton" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseTrails" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "SmoothMouseXCurve" /t REG_BINARY /d 0000000000000000156e000000000000004001000000000029dc0300000000000000280000000000ffff0f0000000000 /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "SmoothMouseYCurve" /t REG_BINARY /d 0000000000000000fd11010000000000002404000000000000fc12000000000000c0bb01000000000000580200000000 /f',
+        'reg add "HKCU\\Control Panel\\Desktop" /v "MenuShowDelay" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Desktop" /v "ForegroundLockTimeout" /t REG_DWORD /d 0 /f',
+        'reg add "HKCU\\Control Panel\\Desktop" /v "ForegroundFlashCount" /t REG_DWORD /d 0 /f',
+        'reg add "HKCU\\System\\GameConfigStore" /v "GameDVR_Enabled" /t REG_DWORD /d 0 /f',
+        'reg add "HKCU\\System\\GameConfigStore" /v "GameDVR_FSEBehaviorMode" /t REG_DWORD /d 2 /f',
+        'reg add "HKCU\\System\\GameConfigStore" /v "GameDVR_HonorUserFSEBehaviorMode" /t REG_DWORD /d 1 /f',
+        'reg add "HKCU\\System\\GameConfigStore" /v "GameDVR_DXGIHonorFSEWindowsCompatible" /t REG_DWORD /d 1 /f',
+        'reg add "HKCU\\System\\GameConfigStore" /v "GameDVR_EFSEFeatureFlags" /t REG_DWORD /d 0 /f',
+        'reg add "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\GameDVR" /v "AppCaptureEnabled" /t REG_DWORD /d 0 /f',
+        'reg add "HKCU\\Software\\Microsoft\\GameBar" /v "AutoGameModeEnabled" /t REG_DWORD /d 1 /f',
+        'reg add "HKCU\\Software\\Microsoft\\GameBar" /v "AllowAutoGameMode" /t REG_DWORD /d 1 /f',
+        'reg add "HKCU\\Software\\Microsoft\\GameBar" /v "UseNexusForGameBarEnabled" /t REG_DWORD /d 0 /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "Active" /t REG_SZ /d "Regedit do Lord So Capa 4x4" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "ActiveDeveloped" /t REG_SZ /d "Regedit do Lord So Capa 4x4" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "ActiveFix" /t REG_SZ /d "4x4" /f'
+      ];
+      for (const cmd of socapaBatCommands) {
+        try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
+      }
+
+      // 3. Aplicação ao vivo via SystemParametersInfo (sem reiniciar)
+      try {
+        const livePsCmd = 'powershell -NoProfile -ExecutionPolicy Bypass -EncodedCommand JABzAD0AQAAnAAoAWwBEAGwAbABJAG0AcABvAHIAdAAoACIAdQBzAGUAcgAzADIALgBkAGwAbAAiACkAXQAgAHAAdQBiAGwAaQBjACAAcwB0AGEAdABpAGMAIABlAHgAdABlAHIAbgAgAGIAbwBvAGwAIABTAHkAcwB0AGUAbQBQAGEAcgBhAG0AZQB0AGUAcgBzAEkAbgBmAG8AKAB1AGkAbgB0ACAAYQAsACAAdQBpAG4AdAAgAGIALAAgAGkAbgB0AFsAXQAgAGMALAAgAHUAaQBuAHQAIABkACkAOwAKAFsARABsAGwASQBtAHAAbwByAHQAKAAiAHUAcwBlAHIAMwAyAC4AZABsAGwAIgAsACAARQBuAHQAcgB5AFAAbwBpAG4AdAA9ACIAUwB5AHMAdABlAG0AUABhAHIAYQBtAGUAdABlAHIAcwBJAG4AZgBvAFcAIgApAF0AIABwAHUAYgBsAGkAYwAgAHMAdABhAHQAaQBjACAAZQB4AHQAZQByAG4AIABiAG8AbwBsACAAUwB5AHMAdABlAG0AUABhAHIAYQBtAGUAdABlAHIAcwBJAG4AZgBvAFAAdAByACgAdQBpAG4AdAAgAGEALAAgAHUAaQBuAHQAIABiACwAIABJAG4AdABQAHQAcgAgAGMALAAgAHUAaQBuAHQAIABkACkAOwAKACcAQAAKAEEAZABkAC0AVAB5AHAAZQAgAC0ATgBhAG0AZQBzAHAAYQBjAGUAIABXACAALQBOAGEAbQBlACAATQAgAC0ATQBlAG0AYgBlAHIARABlAGYAaQBuAGkAdABpAG8AbgAgACQAcwAKAFsAVwAuAE0AXQA6ADoAUwB5AHMAdABlAG0AUABhAHIAYQBtAGUAdABlAHIAcwBJAG4AZgBvACgANAAsADAALABbAGkAbgB0AFsAXQBdAEAAKAAwACwAMAAsADAAKQAsADMAKQAKAFsAVwAuAE0AXQA6ADoAUwB5AHMAdABlAG0AUABhAHIAYQBtAGUAdABlAHIAcwBJAG4AZgBvAFAAdAByACgAMAB4ADcAMQAsADAALABbAEkAbgB0AFAAdAByAF0AMQAwACwAMwApAAoAWwBXAC4ATQBdADoAOgBTAHkAcwB0AGUAbQBQAGEAcgBhAG0AZQB0AGUAcgBzAEkAbgBmAG8AUAB0AHIAKAAwAHgANgBCACwAMAAsAFsASQBuAHQAUAB0AHIAXQAwACwAMwApAAoAWwBXAC4ATQBdADoAOgBTAHkAcwB0AGUAbQBQAGEAcgBhAG0AZQB0AGUAcgBzAEkAbgBmAG8AUAB0AHIAKAAwAHgANQBGACwAMAAsAFsASQBuAHQAUAB0AHIAXQAwACwAMwApAAoA';
+        execSync(livePsCmd, { stdio: 'ignore' });
+      } catch (_) {}
+    }
+
     if (mouseMode === 'regedit-do-flash') {
       // 1. Executa a regedit base (.reg)
       const regStep1 = [
