@@ -7,13 +7,13 @@ local function executeFpsBugSequence()
   
   if pid and pid > 0 then
     openProcess(pid)
-    -- Passo 1: 500 (Destrava o limite de FPS do Free Fire)
+    -- Passo 1: 500 (Destrava o limite de FPS do Free Fire e zera o FPS momentaneamente)
     speedhack_setSpeed(500)
-    sleep(400)
+    sleep(1500)
     -- Passo 2: 0.5 (Acelera a taxa de quadros no motor Unity)
     speedhack_setSpeed(0.5)
-    sleep(250)
-    -- Passo 3: 0.5 (Segunda aplicacao para cravar)
+    sleep(500)
+    -- Passo 3: 0.5 (Segunda aplicacao para cravar nos 600+ FPS)
     speedhack_setSpeed(0.5)
     
     print("[Loord Optimizer] FPS Bug aplicado com sucesso em PID: " .. tostring(pid))

@@ -4189,19 +4189,14 @@ if attachedPid then
 end
 `;
     } else if (action === 'open-gui') {
-      // Abre o Cheat Engine / Speedhack diretamente na tela com o emulador já selecionado
-      const ceDir = path.dirname(ceExePath);
-      const args = ['-p', 'HD-Player.exe'];
-      const child = spawn(ceExePath, args, {
-        cwd: ceDir,
-        detached: true,
-        stdio: 'ignore'
-      });
-      child.unref();
+      // Abre o Cheat Engine como Administrador na tela com o emulador já selecionado
+      const winCePath = ceExePath.replace(/'/g, "''");
+      const runCmd = `powershell -Command "Start-Process '${winCePath}' -Verb RunAs"`;
+      exec(runCmd, { cwd: path.dirname(ceExePath) });
 
       return { 
         success: true, 
-        message: '🎮 Painel Speedhack aberto na tela com o emulador selecionado!' 
+        message: '🎮 Painel Speedhack aberto como Administrador!' 
       };
     } else if (action === 'set-speed') {
       const targetSpeed = parseFloat(speed) || 0.5;
@@ -4223,16 +4218,14 @@ end
 
     fs.writeFileSync(scriptLuaPath, luaContent, 'utf8');
 
-    // Executa o Speedhack anexado no HD-Player.exe
+    // Executa o Speedhack como Administrador anexado no HD-Player.exe
     const ceDir = path.dirname(ceExePath);
     stopSpeedhackProcess();
 
-    speedhackProcess = spawn(ceExePath, ['-p', 'HD-Player.exe', scriptLuaPath], {
-      cwd: ceDir,
-      detached: true,
-      stdio: 'ignore'
-    });
-    speedhackProcess.unref();
+    const winCePath = ceExePath.replace(/'/g, "''");
+    const winScriptPath = scriptLuaPath.replace(/'/g, "''");
+    const runCmd = `powershell -Command "Start-Process '${winCePath}' -ArgumentList '\"${winScriptPath}\"' -Verb RunAs"`;
+    exec(runCmd, { cwd: ceDir });
 
     return { 
       success: true, 
