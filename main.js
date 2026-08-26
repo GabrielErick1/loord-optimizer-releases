@@ -260,20 +260,7 @@ ipcMain.handle('check-admin', async () => {
   return systemIsAdmin;
 });
 
-ipcMain.handle('get-uuid', async () => {
-  return getMachineUuid();
-});
 
-
-ipcMain.handle('verify-key', async (event, key) => {
-  try {
-    const uuid = getMachineUuid();
-    const expectedKey = generateKeyForUuid(uuid);
-    return key.trim().toUpperCase() === expectedKey;
-  } catch (e) {
-    return false;
-  }
-});
 
 function getMachineUuid() {
   // 1. Tenta pegar o MachineGuid do Registro do Windows (funciona em 100% dos Windows e ISOs Lite / Ghost Spectre)
