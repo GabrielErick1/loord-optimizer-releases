@@ -5,7 +5,7 @@ const os = require('os');
 const crypto = require('crypto');
 const https = require('https');
 const http = require('http');
-const { exec, execSync } = require('child_process');
+const { spawn, exec, execSync } = require('child_process');
 const { autoUpdater } = require('electron-updater');
 
 // Prevenir travamentos do Chromium em GPUs antigas (Intel HD Graphics 1ª/2ª/3ª geração e ISOs Lite)
