@@ -2996,9 +2996,93 @@ if (btnStartFormatNow) {
   const btnActivateVip = document.getElementById('btn-activate-vip');
   const keyAuthError = document.getElementById('key-auth-error');
 
+  // Elementos do Sidebar
+  const sidebarVipLabel = document.getElementById('sidebar-vip-label');
+  const sidebarClientName = document.getElementById('sidebar-client-name');
+  const sidebarValidity = document.getElementById('sidebar-validity');
+
   if (!lockScreen) return;
 
   let currentHardwareUuid = '';
+
+  // ── Atualiza o sidebar com nome do cliente + validade ──────────────────────
+  function updateSidebarStatus(isActive, clientName, licenseType, timeRemainingStr) {
+    if (sidebarVipLabel) {
+      if (isActive) {
+        if (licenseType === 'temporary' && timeRemainingStr) {
+          sidebarVipLabel.innerHTML = '⏳ VIP ATIVO';
+          sidebarVipLabel.style.color = '#f59e0b';
+        } else {
+          sidebarVipLabel.innerHTML = '💎 VERSÃO VIP';
+          sidebarVipLabel.style.color = '#38bdf8';
+        }
+      } else {
+        sidebarVipLabel.innerHTML = '🔒 BLOQUEADO';
+        sidebarVipLabel.style.color = '#ef4444';
+      }
+    }
+    if (sidebarClientName) {
+      const name = clientName || localStorage.getItem('client_name') || 'VIP';
+      sidebarClientName.textContent = isActive ? `👤 ${name}` : '👤 Sem licença';
+    }
+    if (sidebarValidity) {
+      if (isActive && timeRemainingStr) {
+        sidebarValidity.textContent = `⏱ ${timeRemainingStr}`;
+        sidebarValidity.style.color = licenseType === 'temporary' ? '#f59e0b' : '#10b981';
+      } else if (isActive) {
+        sidebarValidity.textContent = '✅ Vitalícia';
+        sidebarValidity.style.color = '#10b981';
+      } else {
+        sidebarValidity.textContent = '';
+      }
+    }
+    // Também atualiza o sistema legado de badge
+    if (typeof updateLicenseBadge === 'function') {
+      updateLicenseBadge(isActive, clientName, licenseType, timeRemainingStr);
+    }
+  }
+
+  // ── Força logout se alguem está no painel sem chave válida (anti-bypass) ───
+  function forceLogoutSecurity(reason) {
+    if (window._vipHeartbeatTimer) clearInterval(window._vipHeartbeatTimer);
+    if (window._vipSecurityTimer) clearInterval(window._vipSecurityTimer);
+    localStorage.removeItem('loord_vip_key');
+    localStorage.removeItem('activation_key');
+    localStorage.removeItem('client_name');
+    updateSidebarStatus(false);
+    lockScreen.style.display = 'flex';
+    if (keyAuthError) {
+      keyAuthError.textContent = `❌ ${reason || 'Acesso revogado pelo servidor.'}`;
+      keyAuthError.style.display = 'block';
+    }
+    if (inputVipKey) inputVipKey.value = '';
+    console.warn('[SECURITY] Force logout:', reason);
+  }
+
+  // ── Verifica segurança periodicamente (anti-bypass / anti-crack) ───────────
+  function startSecurityWatch(key) {
+    if (window._vipSecurityTimer) clearInterval(window._vipSecurityTimer);
+    window._vipSecurityTimer = setInterval(async () => {
+      try {
+        const activeKey = localStorage.getItem('loord_vip_key') || localStorage.getItem('activation_key');
+
+        // Se não tem chave no localStorage mas está no painel → FORÇA LOGOUT
+        if (!activeKey) {
+          forceLogoutSecurity('Sessão inválida detectada. Faça login novamente.');
+          return;
+        }
+
+        // Valida no servidor
+        const check = await window.api.verifyKey(activeKey);
+        if (!check || !check.valid) {
+          forceLogoutSecurity(check?.error || 'Sua chave foi revogada, expirou ou não pertence a este computador.');
+        } else {
+          // Atualiza sidebar com dados frescos do servidor
+          updateSidebarStatus(true, check.clientName, check.plan?.includes('Vitalícia') ? 'permanent' : 'temporary', check.plan);
+        }
+      } catch (_) {}
+    }, 20000); // Checa a cada 20 segundos
+  }
 
   // 1. Obter o UUID real do computador
   try {
@@ -3045,20 +3129,16 @@ if (btnStartFormatNow) {
       try {
         const currentKey = localStorage.getItem('loord_vip_key') || localStorage.getItem('activation_key') || key;
         if (!currentKey) {
-          lockScreen.style.display = 'flex';
+          forceLogoutSecurity('Sessão expirada. Nenhuma chave ativa encontrada.');
           return;
         }
         const check = await window.api.verifyKey(currentKey);
         if (!check || !check.valid) {
-          clearInterval(window._vipHeartbeatTimer);
-          localStorage.removeItem('loord_vip_key');
-          localStorage.removeItem('activation_key');
-          lockScreen.style.display = 'flex';
-          updateSavedKeyUI('');
-          if (keyAuthError) {
-            keyAuthError.textContent = '❌ Sua chave foi deslogada, revogada ou expirada pelo administrador.';
-            keyAuthError.style.display = 'block';
-          }
+          forceLogoutSecurity(check?.error || 'Sua chave foi deslogada, revogada ou expirada pelo administrador.');
+        } else {
+          // Atualiza sidebar em tempo real
+          const isVitalicia = check.plan && (check.plan.includes('Vitalícia') || check.plan.includes('permanent') || check.plan.includes('💎'));
+          updateSidebarStatus(true, check.clientName, isVitalicia ? 'permanent' : 'temporary', check.plan);
         }
       } catch (_) {}
     }, 15000);
@@ -3070,13 +3150,19 @@ if (btnStartFormatNow) {
     try {
       const check = await window.api.verifyKey(savedKey);
       if (check && check.valid) {
-        // Chave 100% autêntica -> Libera o painel imediatamente!
+        // Chave 100% autêntica → Libera o painel imediatamente!
         lockScreen.style.display = 'none';
         updateSavedKeyUI(savedKey);
+        // Salva nome do cliente
+        if (check.clientName) localStorage.setItem('client_name', check.clientName);
+        // Atualiza sidebar
+        const isVitalicia = check.plan && (check.plan.includes('Vitalícia') || check.plan.includes('permanent') || check.plan.includes('💎'));
+        updateSidebarStatus(true, check.clientName, isVitalicia ? 'permanent' : 'temporary', check.plan);
         startVipHeartbeat(savedKey);
+        startSecurityWatch(savedKey);
         return;
       } else {
-        // Chave expirada ou de outro computador -> Bloqueia e remove
+        // Chave expirada ou de outro computador → Bloqueia e remove
         localStorage.removeItem('loord_vip_key');
         localStorage.removeItem('activation_key');
       }
@@ -3089,16 +3175,13 @@ if (btnStartFormatNow) {
   // Se não tem chave ou a chave é inválida, mantém a tela de bloqueio ativada
   lockScreen.style.display = 'flex';
   updateSavedKeyUI('');
+  updateSidebarStatus(false);
 
   // Logout de Chave
   if (btnLogoutKey) {
     btnLogoutKey.addEventListener('click', () => {
       if (confirm('Deseja realmente desconectar sua chave VIP deste computador?')) {
-        if (window._vipHeartbeatTimer) clearInterval(window._vipHeartbeatTimer);
-        localStorage.removeItem('loord_vip_key');
-        localStorage.removeItem('activation_key');
-        lockScreen.style.display = 'flex';
-        updateSavedKeyUI('');
+        forceLogoutSecurity('Desconectado manualmente.');
         if (inputVipKey) inputVipKey.value = '';
       }
     });
@@ -3141,8 +3224,15 @@ if (btnStartFormatNow) {
           // Salva a chave verificada
           localStorage.setItem('loord_vip_key', keyVal);
           localStorage.setItem('activation_key', keyVal);
+          if (verifyRes.clientName) localStorage.setItem('client_name', verifyRes.clientName);
           updateSavedKeyUI(keyVal);
+
+          // Atualiza sidebar com nome e validade
+          const isVitalicia = verifyRes.plan && (verifyRes.plan.includes('Vitalícia') || verifyRes.plan.includes('permanent') || verifyRes.plan.includes('💎'));
+          updateSidebarStatus(true, verifyRes.clientName, isVitalicia ? 'permanent' : 'temporary', verifyRes.plan);
+
           startVipHeartbeat(keyVal);
+          startSecurityWatch(keyVal);
 
           btnActivateVip.textContent = '🎉 CHAVE ATIVADA COM SUCESSO!';
           btnActivateVip.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
@@ -3170,3 +3260,5 @@ if (btnStartFormatNow) {
     });
   }
 })();
+
+
