@@ -2023,25 +2023,67 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
       execSync(`reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters" /v MouseDataQueueSize /t REG_DWORD /d ${mouseQueueSize} /f /reg:64`, { stdio: 'ignore' });
     } catch (_) { }
 
-    // Atualizar sensibilidade e curva de mouse no Windows em tempo real (sem precisar reiniciar)
+    // ── Aplicação ao Vivo (Live Memory) no Windows & Injeção no Emulador ──
     try {
+      // 1. Descobrir Sensibilidade e HoverTime ativos no registro para repassar ao driver
+      let activeSens = 10;
+      try {
+        const sensOut = execSync('reg query "HKCU\\Control Panel\\Mouse" /v MouseSensitivity', { encoding: 'utf8' });
+        const matchSens = sensOut.match(/MouseSensitivity\s+REG_SZ\s+(\d+)/i);
+        if (matchSens) activeSens = parseInt(matchSens[1], 10) || 10;
+      } catch (_) {}
+
+      // 2. Notificar e atualizar o subsistema User32 do Windows sem reiniciar
       const psSpiCmd = `$s=@'
 [DllImport("user32.dll")] public static extern bool SystemParametersInfo(uint a, uint b, int[] c, uint d);
 [DllImport("user32.dll", EntryPoint="SystemParametersInfoW")] public static extern bool SystemParametersInfoPtr(uint a, uint b, IntPtr c, uint d);
+[DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)] public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, UIntPtr wParam, string lParam, uint fuFlags, uint uTimeout, out UIntPtr lpdwResult);
 '@
 Add-Type -Namespace W -Name M -MemberDefinition $s -ErrorAction SilentlyContinue
 [W.M]::SystemParametersInfo(4,0,[int[]]@(0,0,0),3)
-[W.M]::SystemParametersInfoPtr(0x71,0,[IntPtr]10,3)
+[W.M]::SystemParametersInfoPtr(0x71,0,[IntPtr]${activeSens},3)
 [W.M]::SystemParametersInfoPtr(0x6B,0,[IntPtr]0,3)
 [W.M]::SystemParametersInfoPtr(0x5F,0,[IntPtr]0,3)
+[UIntPtr]$res = [UIntPtr]::Zero
+[W.M]::SendMessageTimeout([IntPtr]0xffff, 0x001A, [UIntPtr]::Zero, "Control Panel\\Mouse", 2, 1000, [ref]$res)
 `;
       execSync(`powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -Command "${psSpiCmd.replace(/\r?\n/g, '; ')}"`, { stdio: 'ignore' });
-    } catch (e) { }
+
+      // 3. Sincronização direta com Emuladores (BlueStacks 4/5, MSI, LDPlayer, Nox)
+      const emuRegCommands = [
+        'reg add "HKCU\\Software\\BlueStacks\\Guests\\Android\\HwProperties" /v "MiraGruda" /t REG_DWORD /d 1 /f',
+        'reg add "HKLM\\SOFTWARE\\BlueStacks\\Guests\\Android\\HwProperties" /v "MiraGruda" /t REG_DWORD /d 1 /f',
+        'reg add "HKCU\\Software\\BlueStacks_msi\\Guests\\Android\\HwProperties" /v "MiraGruda" /t REG_DWORD /d 1 /f',
+        'reg add "HKCU\\Software\\BlueStacks_nxt\\Guests\\Android\\HwProperties" /v "MiraGruda" /t REG_DWORD /d 1 /f',
+        'reg add "HKCU\\Software\\BlueStacks\\Guests\\Android\\sensibility\\0" /v "MiraGruda" /t REG_DWORD /d 1 /f',
+        'reg add "HKCU\\Software\\BlueStacks\\Guests\\Android\\sensibility\\0" /v "sensibility" /t REG_DWORD /d 100 /f',
+        'reg add "HKLM\\SOFTWARE\\BlueStacks\\Guests\\Android\\sensibility\\0" /v "MiraGruda" /t REG_DWORD /d 1 /f',
+        'reg add "HKLM\\SOFTWARE\\BlueStacks\\Guests\\Android\\sensibility\\0" /v "sensibility" /t REG_DWORD /d 100 /f',
+        'reg add "HKCU\\Software\\Nox\\Guests\\Android\\HwProperties" /v "MiraGruda" /t REG_DWORD /d 1 /f',
+        'reg add "HKCU\\Software\\LDPlayer\\Guests\\Android\\HwProperties" /v "MiraGruda" /t REG_DWORD /d 1 /f'
+      ];
+      for (const cmd of emuRegCommands) {
+        try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
+      }
+
+      // 4. Injeção de sensibilidade de ponteiro no Android do emulador via ADB (se ativo)
+      const adb = findAdb();
+      if (adb) {
+        const targets = getActiveAdbTargets();
+        for (const target of targets) {
+          try {
+            execSync(`"${adb}" -s ${target} shell "settings put system pointer_speed 7; settings put secure pointer_speed 7; settings put system touch.pressure.scale 0.001; settings put secure accessibility_display_magnification_enabled 0"`, { stdio: 'ignore', timeout: 3000 });
+          } catch (_) {}
+        }
+      }
+    } catch (e) {
+      console.error('Erro na sincronização ao vivo do mouse/emulador:', e.message);
+    }
 
     return {
       success: true,
       regName: selectedRegConfig ? selectedRegConfig.name : 'Regedit Customizada',
-      message: 'Regedit de sensibilidade aplicada com sucesso no Windows!'
+      message: 'Regedit de sensibilidade aplicada com sucesso no Windows e Emulador!'
     };
   } catch (e) {
     return { success: false, error: e.message };
