@@ -1,6 +1,6 @@
 {
   "name": "loord-optimizer",
-  "version": "2.9.7",
+  "version": "2.9.8",
   "author": "Loord Optimizer",
   "description": "Loord Optimizer - Otimizador Gamer de Sensibilidade e Emulador",
   "main": "main.js",

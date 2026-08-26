@@ -4164,9 +4164,9 @@ ipcMain.handle('bug-fps-speedhack', async (event, { action = 'auto-bug', speed =
     let luaContent = '';
 
     if (action === 'auto-bug') {
-      // Bugar FPS: Sobe para 500 por 400ms e aplica 0.5 DUAS VEZES para cravar em 300+ a 680+ FPS
+      // Sequência completa que o usuário usa: 500 por 1.5s para o FPS ir a 0 (quebrar o limiter), depois 0.5 x2 para disparar para 630+ FPS
       luaContent = `
-local procList = {"HD-Player.exe", "HD-Player", "dnplayer.exe", "Nox.exe", "MEmu.exe", "LdVBoxHeadless.exe"}
+local procList = {"HD-Player.exe", "HD-Player", "MSIAppPlayer.exe", "dnplayer.exe", "Nox.exe", "MEmu.exe", "LdVBoxHeadless.exe"}
 local attachedPid = nil
 for _, name in ipairs(procList) do
   local pid = getProcessIDFromProcessName(name)
@@ -4178,33 +4178,35 @@ for _, name in ipairs(procList) do
 end
 
 if attachedPid then
-  -- 1. Sobe para 500 para arrebentar o limite de FPS do Free Fire
+  -- 1. Sobe para 500 (o FPS fica em 0 no emulador, quebrando o limitador de frames)
   speedhack_setSpeed(500)
-  sleep(400)
-  -- 2. Aplica 0.5 (1a vez)
+  sleep(1500)
+  -- 2. Aplica 0.5 (primeira vez)
   speedhack_setSpeed(0.5)
-  sleep(250)
-  -- 3. Aplica 0.5 (2a vez para cravar)
+  sleep(500)
+  -- 3. Aplica 0.5 (segunda vez para travar a taxa e disparar o FPS para 600+)
   speedhack_setSpeed(0.5)
 end
 `;
     } else if (action === 'open-gui') {
-      // Abre a interface visual do Speedhack já anexada no HD-Player como Administrador
-      luaContent = `
-local procList = {"HD-Player.exe", "HD-Player", "dnplayer.exe", "Nox.exe", "MEmu.exe", "LdVBoxHeadless.exe"}
-for _, name in ipairs(procList) do
-  local pid = getProcessIDFromProcessName(name)
-  if pid and pid > 0 then
-    openProcess(pid)
-    speedhack_setSpeed(0.5)
-    break
-  end
-end
-`;
+      // Abre o Cheat Engine / Speedhack diretamente na tela com o emulador já selecionado
+      const ceDir = path.dirname(ceExePath);
+      const args = ['-p', 'HD-Player.exe'];
+      const child = spawn(ceExePath, args, {
+        cwd: ceDir,
+        detached: true,
+        stdio: 'ignore'
+      });
+      child.unref();
+
+      return { 
+        success: true, 
+        message: '🎮 Painel Speedhack aberto na tela com o emulador selecionado!' 
+      };
     } else if (action === 'set-speed') {
       const targetSpeed = parseFloat(speed) || 0.5;
       luaContent = `
-local procList = {"HD-Player.exe", "HD-Player", "dnplayer.exe", "Nox.exe", "MEmu.exe", "LdVBoxHeadless.exe"}
+local procList = {"HD-Player.exe", "HD-Player", "MSIAppPlayer.exe", "dnplayer.exe", "Nox.exe", "MEmu.exe", "LdVBoxHeadless.exe"}
 for _, name in ipairs(procList) do
   local pid = getProcessIDFromProcessName(name)
   if pid and pid > 0 then
@@ -4215,50 +4217,27 @@ for _, name in ipairs(procList) do
 end
 `;
     } else if (action === 'reset') {
-      luaContent = `
-local procList = {"HD-Player.exe", "HD-Player", "dnplayer.exe", "Nox.exe", "MEmu.exe", "LdVBoxHeadless.exe"}
-for _, name in ipairs(procList) do
-  local pid = getProcessIDFromProcessName(name)
-  if pid and pid > 0 then
-    openProcess(pid)
-    speedhack_setSpeed(1.0)
-    break
-  end
-end
-`;
+      stopSpeedhackProcess();
+      return { success: true, message: '🔄 Speedhack desativado com sucesso!' };
     }
 
     fs.writeFileSync(scriptLuaPath, luaContent, 'utf8');
 
-    // 4. Executa o Speedhack anexado no HD-Player.exe
+    // Executa o Speedhack anexado no HD-Player.exe
     const ceDir = path.dirname(ceExePath);
+    stopSpeedhackProcess();
 
-    if (action === 'reset') {
-      stopSpeedhackProcess();
-    } else {
-      // Se já estava rodando, encerra para aplicar nova calibração limpa
-      stopSpeedhackProcess();
-
-      const args = action === 'open-gui' 
-        ? ['-p', 'HD-Player.exe'] 
-        : ['-p', 'HD-Player.exe', scriptLuaPath];
-
-      speedhackProcess = spawn(ceExePath, args, {
-        cwd: ceDir,
-        detached: true,
-        stdio: 'ignore'
-      });
-      speedhackProcess.unref();
-    }
+    speedhackProcess = spawn(ceExePath, ['-p', 'HD-Player.exe', scriptLuaPath], {
+      cwd: ceDir,
+      detached: true,
+      stdio: 'ignore'
+    });
+    speedhackProcess.unref();
 
     return { 
       success: true, 
       message: action === 'auto-bug' 
-        ? '🚀 FPS Bug Aplicado! (Speedhack 500 ➔ 0.5 x2 Ativado no Free Fire)'
-        : action === 'open-gui'
-        ? '🎮 Painel Speedhack aberto como Administrador anexado no emulador!'
-        : action === 'reset'
-        ? '🔄 Speedhack desativado com sucesso!'
+        ? '🚀 FPS Bug Aplicado! (500 ➔ 0.5 x2 Ativado no Free Fire)'
         : `⚡ Velocidade Speedhack ajustada para ${speed}x!`
     };
   } catch (err) {
