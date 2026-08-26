@@ -414,6 +414,66 @@
             <p style="font-size: 0.8rem; color: var(--text-gray); margin-top: 12px; text-align: center;">*Ajuste esses
               valores nas configurações de mapeamento de teclas dentro do BlueStacks.</p>
           </div>
+
+          <!-- SIMULADOR DE BALÍSTICA & TRAJETÓRIA FÍSICA (PRECISION AIM) -->
+          <div class="card" style="margin-top: 20px; border: 1px solid rgba(56, 189, 248, 0.4); background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(0, 0, 0, 0.6));">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h3 style="margin: 0; color: #38bdf8; font-size: 1.05rem; display: flex; align-items: center; gap: 8px;">
+                🎯 SIMULADOR DE BALÍSTICA &amp; TRAJETÓRIA (PRECISION AIM)
+              </h3>
+              <span class="badge" style="background: #0284c7; color: #fff; font-weight: 800;">FÍSICA &amp; BALÍSTICA 📐</span>
+            </div>
+            <p style="color: #94a3b8; font-size: 0.8rem; margin: 0 0 16px 0;">
+              Calcula a curva de compensação balística com gravidade real (9.81 m/s²) e resistência aerodinâmica contínua para estimar o ponto de impacto e ângulo ideal de elevação de mira.
+            </p>
+
+            <div class="inputs-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+              <div class="input-field">
+                <label for="proj-dist">Distância do Alvo (m):</label>
+                <input type="number" id="proj-dist" value="50" min="1" max="1000" step="1">
+              </div>
+              <div class="input-field">
+                <label for="proj-height">Altura do Alvo (m):</label>
+                <input type="number" id="proj-height" value="0" min="-100" max="100" step="0.5">
+              </div>
+              <div class="input-field">
+                <label for="proj-velocity">Velocidade Projétil (m/s):</label>
+                <input type="number" id="proj-velocity" value="350" min="10" max="2000" step="5">
+              </div>
+              <div class="input-field">
+                <label for="proj-angle">Ângulo Inicial (°):</label>
+                <input type="number" id="proj-angle" value="25" min="0" max="90" step="0.5">
+              </div>
+            </div>
+
+            <button class="btn btn-primary" id="btn-calc-trajectory" style="margin-top: 16px; width: 100%; background: linear-gradient(90deg, #0284c7, #2563eb); border: none; font-weight: 800; padding: 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+              📐 Calcular Trajetória e Ponto de Impacto
+            </button>
+
+            <!-- Resultado da Balística -->
+            <div id="trajectory-result" style="display: none; margin-top: 16px; border-radius: 8px; padding: 14px; background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(14, 165, 233, 0.4);">
+              <div style="font-weight: 800; color: #38bdf8; font-size: 0.92rem; margin-bottom: 10px;">📊 Resultados da Simulação Física:</div>
+              <div class="result-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
+                <div class="result-box">
+                  <span class="label">Ângulo Refinado</span>
+                  <span class="value" id="res-traj-angle" style="color: #38bdf8;">--</span>
+                </div>
+                <div class="result-box">
+                  <span class="label">Tempo até o Alvo</span>
+                  <span class="value" id="res-traj-time" style="color: #38bdf8;">--</span>
+                </div>
+                <div class="result-box">
+                  <span class="label">Ponto de Impacto (Y)</span>
+                  <span class="value" id="res-traj-impact" style="color: #38bdf8;">--</span>
+                </div>
+                <div class="result-box">
+                  <span class="label">Queda Balística (Drop)</span>
+                  <span class="value" id="res-traj-drop" style="color: #38bdf8;">--</span>
+                </div>
+              </div>
+              <p id="res-traj-summary" style="font-size: 0.78rem; color: #bae6fd; margin-top: 10px; line-height: 1.5; margin-bottom: 0;"></p>
+            </div>
+          </div>
         </section>
 
         <!-- TAB: CONFIG DO MOUSE -->
@@ -1657,7 +1717,7 @@
                 <p style="margin: 0; font-size: 12px; color: #94a3b8;">Verifique e receba novas versões e otimizações
                   automaticamente</p>
               </div>
-              <span id="app-version-badge" class="badge badge-success">v3.0.2</span>
+              <span id="app-version-badge" class="badge badge-success">v3.0.3</span>
             </div>
 
             <!-- Update Card Content -->

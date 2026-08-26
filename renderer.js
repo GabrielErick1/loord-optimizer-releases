@@ -93,6 +93,128 @@ if (btnCalculate) {
   });
 }
 
+// --- Simulador de Balística & Trajetória Física (Precision Aim) ---
+class PrecisionAimSimulation {
+  constructor(gravity = 9.81, airResistance = 0.99) {
+    this.gravity = gravity;
+    this.airResistance = airResistance;
+  }
+
+  calculateImpactPoint(startPos, targetPos, velocity, angleDeg, dt = 0.005) {
+    const angleRad = (angleDeg * Math.PI) / 180;
+    let vx = velocity * Math.cos(angleRad);
+    let vy = velocity * Math.sin(angleRad);
+
+    let [x, y] = startPos;
+    const targetX = targetPos[0];
+    let t = 0.0;
+
+    const goingRight = targetX >= x;
+    const maxSteps = 50000;
+
+    for (let i = 0; i < maxSteps; i++) {
+      const xNext = x + vx * dt;
+      const yNext = y + vy * dt - 0.5 * this.gravity * (dt ** 2);
+
+      const crossed = goingRight ? xNext >= targetX : xNext <= targetX;
+      if (crossed) {
+        const fraction = (xNext - x) !== 0 ? (targetX - x) / (xNext - x) : 0;
+        const yFinal = y + (yNext - y) * fraction;
+        const tFinal = t + dt * fraction;
+        return { x: targetX, y: yFinal, t: tFinal, converged: true };
+      }
+
+      if (yNext < Math.min(startPos[1], targetPos[1]) - 10 && vy < 0) {
+        return { x: xNext, y: yNext, t: t + dt, converged: false };
+      }
+
+      vx *= Math.pow(this.airResistance, dt);
+      vy = vy * Math.pow(this.airResistance, dt) - this.gravity * dt;
+
+      x = xNext;
+      y = yNext;
+      t += dt;
+    }
+
+    return { x, y, t, converged: false };
+  }
+
+  adjustAngleForPrecision(startPos, targetPos, velocity, initialAngle = 25, maxIterations = 40, tolerance = 0.01) {
+    let angle = initialAngle;
+    let step = 4.0;
+    let prevError = null;
+
+    for (let i = 0; i < maxIterations; i++) {
+      const angleClamped = Math.max(0, Math.min(89.5, angle));
+      const sim = this.calculateImpactPoint(startPos, targetPos, velocity, angleClamped);
+      const error = targetPos[1] - sim.y;
+
+      if (Math.abs(error) < tolerance) {
+        return { angle: angleClamped, iterations: i + 1, converged: true };
+      }
+
+      if (prevError !== null && (error > 0) !== (prevError > 0)) {
+        step *= 0.5;
+      }
+
+      angle += (error > 0 ? 1 : -1) * step * 0.5;
+      prevError = error;
+    }
+
+    return { angle: Math.max(0, Math.min(89.5, angle)), iterations: maxIterations, converged: false };
+  }
+
+  simulate(distance, targetHeight, velocity, initialAngle) {
+    const startPos = [0, 0];
+    const targetPos = [distance, targetHeight];
+
+    const opt = this.adjustAngleForPrecision(startPos, targetPos, velocity, initialAngle);
+    const impact = this.calculateImpactPoint(startPos, targetPos, velocity, opt.angle);
+
+    // Queda sem compensacao no mesmo tempo
+    const rawDrop = 0.5 * this.gravity * (impact.t ** 2);
+
+    return {
+      angle: opt.angle,
+      impactY: impact.y,
+      time: impact.t,
+      dropCm: rawDrop * 100,
+      converged: opt.converged
+    };
+  }
+}
+
+const btnCalcTrajectory = document.getElementById('btn-calc-trajectory');
+if (btnCalcTrajectory) {
+  btnCalcTrajectory.addEventListener('click', () => {
+    const dist = parseFloat(document.getElementById('proj-dist')?.value) || 50;
+    const height = parseFloat(document.getElementById('proj-height')?.value) || 0;
+    const vel = parseFloat(document.getElementById('proj-velocity')?.value) || 350;
+    const initialAngle = parseFloat(document.getElementById('proj-angle')?.value) || 25;
+
+    const sim = new PrecisionAimSimulation(9.81, 0.99);
+    const res = sim.simulate(dist, height, vel, initialAngle);
+
+    const resultBox = document.getElementById('trajectory-result');
+    const resAngle = document.getElementById('res-traj-angle');
+    const resTime = document.getElementById('res-traj-time');
+    const resImpact = document.getElementById('res-traj-impact');
+    const resDrop = document.getElementById('res-traj-drop');
+    const resSummary = document.getElementById('res-traj-summary');
+
+    if (resAngle) resAngle.textContent = `${res.angle.toFixed(2)}°`;
+    if (resTime) resTime.textContent = `${(res.time * 1000).toFixed(1)} ms (${res.time.toFixed(3)}s)`;
+    if (resImpact) resImpact.textContent = `${res.impactY >= 0 ? '+' : ''}${res.impactY.toFixed(2)} m`;
+    if (resDrop) resDrop.textContent = `${res.dropCm.toFixed(1)} cm`;
+
+    if (resSummary) {
+      resSummary.innerHTML = `💡 <strong>Compensação Balística:</strong> A ${dist}m de distância a ${vel}m/s, o tempo de voo é de <strong>${(res.time * 1000).toFixed(0)}ms</strong> com compensação angular de <strong>${res.angle.toFixed(2)}°</strong> para zerar a gravidade e o arrasto aerodinâmico.`;
+    }
+
+    if (resultBox) resultBox.style.display = 'block';
+  });
+}
+
 // --- Otimizar PC (Toggles and Buttons) ---
 const systemToggles = document.querySelectorAll('.system-toggle');
 const btnApplyAll = document.getElementById('btn-apply-all');
