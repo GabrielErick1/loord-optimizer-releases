@@ -26,6 +26,35 @@ const commonLatencyKeys = [
 ];
 
 module.exports = {
+  'regedit-do-flash': {
+    name: 'Regedit do Flash',
+    fix: 'Flash 1.0',
+    keys: [
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'Active', type: 'REG_SZ', value: 'Regedit do Flash' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'ActiveDeveloped', type: 'REG_SZ', value: 'Regedit do Flash' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'ActiveFix', type: 'REG_SZ', value: '1.0' },
+      { path: 'HKU\\.DEFAULT\\Control Panel\\Mouse', name: 'Beep', type: 'REG_SZ', value: 'No' },
+      { path: 'HKU\\.DEFAULT\\Control Panel\\Mouse', name: 'ExtendedSounds', type: 'REG_SZ', value: 'No' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'ActiveWindowTracking', type: 'REG_DWORD', value: 0 },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'Beep', type: 'REG_SZ', value: 'No' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'DoubleClickHeight', type: 'REG_SZ', value: '4' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'DoubleClickSpeed', type: 'REG_SZ', value: '500' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'DoubleClickWidth', type: 'REG_SZ', value: '4' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'ExtendedSounds', type: 'REG_SZ', value: 'No' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseHoverHeight', type: 'REG_SZ', value: '4' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseHoverWidth', type: 'REG_SZ', value: '4' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseHoverTime', type: 'REG_SZ', value: '8' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseSensitivity', type: 'REG_SZ', value: '10' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseSpeed', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseThreshold1', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseThreshold2', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'MouseTrails', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'SmoothMouseXCurve', type: 'REG_BINARY', value: '0000000000000000c0cc0c0000000000809919000000000040662600000000000033330000000000' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'SmoothMouseYCurve', type: 'REG_BINARY', value: '0000000000000000000038000000000000007000000000000000a800000000000000e00000000000' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'SnapToDefaultButton', type: 'REG_SZ', value: '0' },
+      { path: 'HKCU\\Control Panel\\Mouse', name: 'SwapMouseButtons', type: 'REG_SZ', value: '0' }
+    ]
+  },
   'loord-v0': {
     name: 'LOORD REGEDIT V0',
     fix: '0.0',

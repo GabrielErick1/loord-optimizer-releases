@@ -1787,6 +1787,61 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
       }
     }
 
+    if (mouseMode === 'regedit-do-flash') {
+      // 1. Executa a regedit base (.reg)
+      const regStep1 = [
+        'reg add "HKCU\\Control Panel\\Mouse" /v "ActiveWindowTracking" /t REG_DWORD /d 0 /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "Beep" /t REG_SZ /d "No" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "DoubleClickHeight" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "DoubleClickSpeed" /t REG_SZ /d "480" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "DoubleClickWidth" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "ExtendedSounds" /t REG_SZ /d "No" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseHoverHeight" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseHoverTime" /t REG_SZ /d "1000" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseHoverWidth" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseSensitivity" /t REG_SZ /d "10" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseSpeed" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseThreshold1" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseThreshold2" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseTrails" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "SmoothMouseXCurve" /t REG_BINARY /d 00000000000000000000000000000000000000000000000000000000000000000000000000000000 /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "SmoothMouseYCurve" /t REG_BINARY /d 00000000000000000000000000000000000000000000000000000000000000000000000000000000 /f'
+      ];
+      for (const cmd of regStep1) {
+        try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
+      }
+
+      // 2. Executa a regedit do BAT (.bat) logo em seguida
+      const flashBatCommands = [
+        'reg add "HKU\\.DEFAULT\\Control Panel\\Mouse" /v "Beep" /t REG_SZ /d "No" /f',
+        'reg add "HKU\\.DEFAULT\\Control Panel\\Mouse" /v "ExtendedSounds" /t REG_SZ /d "No" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "ActiveWindowTracking" /t REG_DWORD /d 0 /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "Beep" /t REG_SZ /d "No" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "DoubleClickHeight" /t REG_SZ /d "4" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "DoubleClickSpeed" /t REG_SZ /d "500" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "DoubleClickWidth" /t REG_SZ /d "4" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "ExtendedSounds" /t REG_SZ /d "No" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseHoverHeight" /t REG_SZ /d "4" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseHoverWidth" /t REG_SZ /d "4" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseSensitivity" /t REG_SZ /d "10" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseSpeed" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseThreshold1" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseThreshold2" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseTrails" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "SmoothMouseXCurve" /t REG_BINARY /d 0000000000000000c0cc0c0000000000809919000000000040662600000000000033330000000000 /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "SmoothMouseYCurve" /t REG_BINARY /d 0000000000000000000038000000000000007000000000000000a800000000000000e00000000000 /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "SnapToDefaultButton" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "SwapMouseButtons" /t REG_SZ /d "0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseHoverTime" /t REG_SZ /d "8" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "Active" /t REG_SZ /d "Regedit do Flash" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "ActiveDeveloped" /t REG_SZ /d "Regedit do Flash" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "ActiveFix" /t REG_SZ /d "1.0" /f'
+      ];
+      for (const cmd of flashBatCommands) {
+        try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
+      }
+    }
+
     if (mouseMode === 'mira-clean-loord' || mouseMode === 'mira-clean-pesadinho') {
       const miraFixaCommands = [
         'reg add "HKCU\\Control Panel\\Mouse" /v "Active" /t REG_SZ /d "MIRA CREN LOORD" /f',
