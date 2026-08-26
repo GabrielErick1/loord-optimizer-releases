@@ -43,9 +43,10 @@ contextBridge.exposeInMainWorld('api', {
   // ─── Touch Engine & Sensibilidade iPhone / Android Real ──────────
   applyTouchEngineProfile: (profile, port) => ipcRenderer.invoke('apply-touch-engine-profile', profile, port),
   setAndroidDpi: (dpiValue, port) => ipcRenderer.invoke('set-android-dpi', dpiValue, port),
-  // ─── FPS & Delay Fix ─────────────────────────────────────────────
+  // ─── FPS & Delay Fix & Speedhack Bugger ─────────────────────────
   unlockFpsHz: (hz) => ipcRenderer.invoke('unlock-fps-hz', hz),
   removeFreeFireDelay: () => ipcRenderer.invoke('remove-freefire-delay'),
+  bugFpsSpeedhack: (options) => ipcRenderer.invoke('bug-fps-speedhack', options),
   // ─── Device Profiles & ROM Flasher ──────────────────────────────
   changeDeviceProfile: (profile) => ipcRenderer.invoke('change-device-profile', profile),
   flashSystemTweaks: (port) => ipcRenderer.invoke('flash-system-tweaks', port),

@@ -4006,9 +4006,120 @@ ipcMain.handle('download-update-progress', async (event, downloadUrl) => {
 ipcMain.on('install-update', () => {
   performAppUpdate();
 });
-
 ipcMain.handle('install-update-now', async () => {
   return performAppUpdate();
+});
+
+// ─── BYPASS / BUGADOR DE FPS 240Hz+ (SPEEDHACK 500 ➔ 0.5) ───────────────────
+ipcMain.handle('bug-fps-speedhack', async (event, { action = 'auto-bug', speed = 0.5 } = {}) => {
+  try {
+    // 1. Procurar o executável do Cheat Engine / Speedhack
+    const possibleCePaths = [
+      path.join(__dirname, 'subidofps', 'cheatengine-x86_64.exe'),
+      path.join(__dirname, 'subidofps', 'Cheat Engine.exe'),
+      path.join(process.resourcesPath || '', 'subidofps', 'cheatengine-x86_64.exe'),
+      path.join(process.resourcesPath || '', 'subidofps', 'Cheat Engine.exe'),
+      path.join(__dirname, 'cdm.exe'),
+      path.join(process.resourcesPath || '', 'cdm.exe')
+    ];
+
+    let ceExePath = null;
+    for (const p of possibleCePaths) {
+      if (fs.existsSync(p)) {
+        ceExePath = p;
+        break;
+      }
+    }
+
+    if (!ceExePath) {
+      return { success: false, error: 'Módulo Speedhack não encontrado em subidofps.' };
+    }
+
+    // 2. Verificar se o emulador (HD-Player.exe) está rodando
+    let emulatorRunning = false;
+    try {
+      const tasklist = execSync('tasklist /FI "IMAGENAME eq HD-Player.exe" /NH', { encoding: 'utf8' });
+      if (tasklist && tasklist.toLowerCase().includes('hd-player.exe')) {
+        emulatorRunning = true;
+      } else {
+        const altCheck = execSync('tasklist', { encoding: 'utf8' });
+        if (/hd-player|dnplayer|nox\.exe|memu\.exe/i.test(altCheck)) {
+          emulatorRunning = true;
+        }
+      }
+    } catch (_) {}
+
+    if (!emulatorRunning) {
+      return { success: false, error: 'Emulador não detectado! Abra o BlueStacks / MSI e entre no Free Fire primeiro.' };
+    }
+
+    // 3. Gerar script Lua personalizado para aplicar o bug de FPS
+    const scriptLuaPath = path.join(os.tmpdir(), 'loord_speedhack_bug.lua');
+    let luaContent = '';
+
+    if (action === 'auto-bug') {
+      // Bugar FPS: Sobe para 500 por 350ms e trava em 0.5
+      luaContent = `
+local procList = {"HD-Player.exe", "HD-Player", "dnplayer.exe", "Nox.exe", "MEmu.exe", "LdVBoxHeadless.exe"}
+local attachedPid = nil
+for _, name in ipairs(procList) do
+  local pid = getProcessIDFromProcessName(name)
+  if pid and pid > 0 then
+    openProcess(pid)
+    attachedPid = pid
+    break
+  end
+end
+
+if attachedPid then
+  speedhack_setSpeed(500)
+  sleep(350)
+  speedhack_setSpeed(0.5)
+end
+`;
+    } else if (action === 'set-speed') {
+      const targetSpeed = parseFloat(speed) || 0.5;
+      luaContent = `
+local procList = {"HD-Player.exe", "HD-Player", "dnplayer.exe", "Nox.exe", "MEmu.exe", "LdVBoxHeadless.exe"}
+for _, name in ipairs(procList) do
+  local pid = getProcessIDFromProcessName(name)
+  if pid and pid > 0 then
+    openProcess(pid)
+    speedhack_setSpeed(${targetSpeed})
+    break
+  end
+end
+`;
+    } else if (action === 'reset') {
+      luaContent = `
+local procList = {"HD-Player.exe", "HD-Player", "dnplayer.exe", "Nox.exe", "MEmu.exe", "LdVBoxHeadless.exe"}
+for _, name in ipairs(procList) do
+  local pid = getProcessIDFromProcessName(name)
+  if pid and pid > 0 then
+    openProcess(pid)
+    speedhack_setSpeed(1.0)
+    break
+  end
+end
+`;
+    }
+
+    fs.writeFileSync(scriptLuaPath, luaContent, 'utf8');
+
+    // 4. Executa o Speedhack em background
+    const ceDir = path.dirname(ceExePath);
+    exec(`"${ceExePath}" "${scriptLuaPath}"`, { cwd: ceDir, windowsHide: true });
+
+    return { 
+      success: true, 
+      message: action === 'auto-bug' 
+        ? '🚀 FPS Bug Aplicado! (Speedhack 500 ➔ 0.5 Ativado no Free Fire)'
+        : `⚡ Velocidade Speedhack ajustada para ${speed}x!`
+    };
+  } catch (err) {
+    console.error('[Speedhack] Erro ao aplicar Speedhack:', err);
+    return { success: false, error: 'Erro ao aplicar Speedhack: ' + err.message };
+  }
 });
 
 function performAppUpdate() {
