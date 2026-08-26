@@ -1787,6 +1787,39 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
       }
     }
 
+    if (mouseMode === 'mira-clean-loord' || mouseMode === 'mira-clean-pesadinho') {
+      const miraFixaCommands = [
+        'reg add "HKCU\\Control Panel\\Mouse" /v "Active" /t REG_SZ /d "MIRA CREN LOORD" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "ActiveDeveloped" /t REG_SZ /d "LOORD MIRA CREN VIP" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "ActiveFix" /t REG_SZ /d "18.0" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "DockTargetMouse" /t REG_SZ /d "20" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "DockTargetMouse1" /t REG_SZ /d "50" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "DockTargetMouse2" /t REG_SZ /d "1" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "DockTargetPen" /t REG_SZ /d "30" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "DoubleClickHeight2" /t REG_SZ /d "0,7" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "DoubleClickSpeed" /t REG_SZ /d "500" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseHoverTime" /t REG_DWORD /d 41 /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "Mousecontrolusb" /t REG_SZ /d "1" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "MouseSensitivity" /t REG_SZ /d "10" /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "SmoothMouseXCurve" /t REG_BINARY /d 0000000000000000402c000000000000180000000000000028000000000000000000000000000000 /f',
+        'reg add "HKCU\\Control Panel\\Mouse" /v "SmoothMouseYCurve" /t REG_BINARY /d 0000000000000000b000000000000000c000000000000000d0000000000000000000000000000000 /f',
+        // Injeções de Mira Fixa / MiraGruda no Registro do Android / Emuladores (BlueStacks, MSI App Player, Nox, LDPlayer)
+        'reg add "HKCU\\Software\\BlueStacks\\Guests\\Android\\HwProperties" /v "MiraGruda" /t REG_DWORD /d 1 /f',
+        'reg add "HKLM\\SOFTWARE\\BlueStacks\\Guests\\Android\\HwProperties" /v "MiraGruda" /t REG_DWORD /d 1 /f',
+        'reg add "HKCU\\Software\\BlueStacks_msi\\Guests\\Android\\HwProperties" /v "MiraGruda" /t REG_DWORD /d 1 /f',
+        'reg add "HKCU\\Software\\BlueStacks_nxt\\Guests\\Android\\HwProperties" /v "MiraGruda" /t REG_DWORD /d 1 /f',
+        'reg add "HKCU\\Software\\BlueStacks\\Guests\\Android\\sensibility\\0" /v "MiraGruda" /t REG_DWORD /d 1 /f',
+        'reg add "HKCU\\Software\\BlueStacks\\Guests\\Android\\sensibility\\0" /v "sensibility" /t REG_DWORD /d 100 /f',
+        'reg add "HKLM\\SOFTWARE\\BlueStacks\\Guests\\Android\\sensibility\\0" /v "MiraGruda" /t REG_DWORD /d 1 /f',
+        'reg add "HKLM\\SOFTWARE\\BlueStacks\\Guests\\Android\\sensibility\\0" /v "sensibility" /t REG_DWORD /d 100 /f',
+        'reg add "HKCU\\Software\\Nox\\Guests\\Android\\HwProperties" /v "MiraGruda" /t REG_DWORD /d 1 /f',
+        'reg add "HKCU\\Software\\LDPlayer\\Guests\\Android\\HwProperties" /v "MiraGruda" /t REG_DWORD /d 1 /f'
+      ];
+      for (const cmd of miraFixaCommands) {
+        try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
+      }
+    }
+
     if (mouseMode === 'loord-3-sense-full-red') {
       try {
         await runCmd('bcdedit /set useplatformclock false').catch(() => { });
