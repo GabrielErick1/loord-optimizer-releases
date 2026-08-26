@@ -1760,16 +1760,69 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
     const selectedRegData = require('./regis/encrypted_reg_data.js');
     const selectedRegConfig = selectedRegData[mouseMode || 'loord-3-sense-full-red'];
 
-    // Limpar chaves anteriores para não misturar regedits
-    const keysToClean = [
+    // ── Limpeza Completa e Dinâmica de Regedits Antigas ──
+    // Remove 100% das chaves customizadas anteriores para manter SOMENTE a nova regedit ativa
+    try {
+      const stdMouseProps = new Set([
+        '',
+        '(padrão)',
+        '(default)',
+        'activewindowtracking',
+        'beep',
+        'doubleclickheight',
+        'doubleclickspeed',
+        'doubleclickwidth',
+        'extendedsounds',
+        'mousehoverheight',
+        'mousehovertime',
+        'mousehoverwidth',
+        'mousesensitivity',
+        'mousespeed',
+        'mousethreshold1',
+        'mousethreshold2',
+        'mousetrails',
+        'smoothmousexcurve',
+        'smoothmouseycurve',
+        'snaptodefaultbutton',
+        'swapmousebuttons'
+      ]);
+
+      const out = execSync('reg query "HKCU\\Control Panel\\Mouse"', { encoding: 'utf8' });
+      const lines = out.split('\n');
+      for (const l of lines) {
+        const t = l.trim();
+        if (!t) continue;
+        if (t.startsWith('HKEY_CURRENT_USER\\Control Panel\\Mouse\\')) {
+          try { execSync(`reg delete "${t}" /f`, { stdio: 'ignore' }); } catch (_) {}
+          continue;
+        }
+        const parts = t.split(/\s+/);
+        const name = parts[0];
+        if (name && !stdMouseProps.has(name.toLowerCase())) {
+          try {
+            execSync(`reg delete "HKCU\\Control Panel\\Mouse" /v "${name}" /f`, { stdio: 'ignore' });
+          } catch (_) {}
+        }
+      }
+    } catch (e) {
+      console.error('Erro na varredura dinâmica de limpeza de chaves residuais:', e.message);
+    }
+
+    const staticKeysToClean = [
       'Active', 'ActiveAC', 'ActiveDeveloped', 'ActiveDevoloped', 'ActiveFix', 'ActiveUser',
-      'Beep2', 'DoubleClickSpeed2', 'DoubleClickWidth2', 'Fov', 'MouseCl', 'Mousecontroslub',
-      'MouseCP', 'Mousecrib', 'MouseGrab', 'MouseSpeed2', 'MouseStickOn', 'MouseTK', 'Mousetrack',
+      'Beep2', 'DoubleClickHeight2', 'DoubleClickSpeed2', 'DoubleClickWidth2', 'Fov',
+      'MouseAccel_Scale', 'MouseActiveWindowTracking', 'MouseCl', 'MouseCL', 'Mousecontrolusb',
+      'Mousecontroslub', 'MouseCP', 'Mousecrib', 'MouseGrab', 'MouseSpeed2', 'MouseStickOn',
+      'MouseTK', 'Mousetrack', 'ClickLock', 'ClickLockTime',
+      'DockTargetMouse', 'DockTargetMouse1', 'DockTargetMouse2',
+      'DockTargetMouseDragOutWidth', 'DockTargetMouseSideMoveWidth', 'DockTargetMouseWidth',
+      'DockTargetPen', 'DockTargetPen1', 'DockTargetPen2',
+      'DockTargetPenDragOutWidth', 'DockTargetPenSideMoveWidth', 'DockTargetPenWidth',
       'DefaultTTL', 'EnablePMTUBHDetect', 'EnablePMTUDiscovery', 'SackOpts', 'Tcp1323Opts',
       'TCPDelAckTicks', 'TcpMaxDataRetransmissions', 'TcpNoDelay', 'TcpWindowSize'
     ];
 
-    for (const keyName of keysToClean) {
+    for (const keyName of staticKeysToClean) {
       try {
         execSync(`reg delete "HKCU\\Control Panel\\Mouse" /v "${keyName}" /f`, { stdio: 'ignore' });
       } catch (e) { }
