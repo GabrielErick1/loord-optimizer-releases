@@ -4219,13 +4219,18 @@ end
     fs.writeFileSync(scriptLuaPath, luaContent, 'utf8');
 
     const ceDir = path.dirname(ceExePath);
-    const winCePath = ceExePath.replace(/'/g, "''");
-    const runCmd = `powershell -Command "Start-Process '${winCePath}' -Verb RunAs"`;
-    exec(runCmd, { cwd: ceDir });
+    stopSpeedhackProcess();
+
+    speedhackProcess = spawn(ceExePath, [], {
+      cwd: ceDir,
+      detached: true,
+      stdio: 'ignore'
+    });
+    speedhackProcess.unref();
 
     return { 
       success: true, 
-      message: '🎮 Painel Speedhack aberto como Administrador com os controles de FPS!' 
+      message: '🚀 FPS Bug Ativado! (Cheat Engine conectado em HD-Player.exe)' 
     };
   } catch (err) {
     console.error('[Speedhack] Erro ao aplicar Speedhack:', err);
