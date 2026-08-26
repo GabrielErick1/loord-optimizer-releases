@@ -3034,6 +3034,26 @@ if (btnAutoBugFps) {
   });
 }
 
+const btnOpenSpeedhackGui = document.getElementById('btn-open-speedhack-gui');
+if (btnOpenSpeedhackGui) {
+  btnOpenSpeedhackGui.addEventListener('click', async () => {
+    try {
+      const res = await window.api.bugFpsSpeedhack({ action: 'open-gui' });
+      if (res && res.success) {
+        if (statusSpeedhackFps) {
+          statusSpeedhackFps.style.display = 'block';
+          statusSpeedhackFps.style.color = '#38bdf8';
+          statusSpeedhackFps.textContent = '✔ Painel Speedhack aberto como Administrador!';
+        }
+      } else {
+        alert(res?.error || 'Erro ao abrir painel Speedhack.');
+      }
+    } catch (e) {
+      alert('Erro: ' + e.message);
+    }
+  });
+}
+
 if (presetSpeedBtns) {
   presetSpeedBtns.forEach(btn => {
     btn.addEventListener('click', async () => {

@@ -4100,7 +4100,7 @@ ipcMain.handle('bug-fps-speedhack', async (event, { action = 'auto-bug', speed =
     let luaContent = '';
 
     if (action === 'auto-bug') {
-      // Bugar FPS: Sobe para 500 por 350ms e trava em 0.5
+      // Bugar FPS: Sobe para 500 por 400ms e aplica 0.5 DUAS VEZES para cravar em 300+ a 680+ FPS
       luaContent = `
 local procList = {"HD-Player.exe", "HD-Player", "dnplayer.exe", "Nox.exe", "MEmu.exe", "LdVBoxHeadless.exe"}
 local attachedPid = nil
@@ -4114,9 +4114,27 @@ for _, name in ipairs(procList) do
 end
 
 if attachedPid then
+  -- 1. Sobe para 500 para arrebentar o limite de FPS do Free Fire
   speedhack_setSpeed(500)
-  sleep(350)
+  sleep(400)
+  -- 2. Aplica 0.5 (1a vez)
   speedhack_setSpeed(0.5)
+  sleep(250)
+  -- 3. Aplica 0.5 (2a vez para cravar)
+  speedhack_setSpeed(0.5)
+end
+`;
+    } else if (action === 'open-gui') {
+      // Abre a interface visual do Speedhack já anexada no HD-Player como Administrador
+      luaContent = `
+local procList = {"HD-Player.exe", "HD-Player", "dnplayer.exe", "Nox.exe", "MEmu.exe", "LdVBoxHeadless.exe"}
+for _, name in ipairs(procList) do
+  local pid = getProcessIDFromProcessName(name)
+  if pid and pid > 0 then
+    openProcess(pid)
+    speedhack_setSpeed(0.5)
+    break
+  end
 end
 `;
     } else if (action === 'set-speed') {
@@ -4148,14 +4166,20 @@ end
 
     fs.writeFileSync(scriptLuaPath, luaContent, 'utf8');
 
-    // 4. Executa o Speedhack em background
+    // 4. Executa o Speedhack como Administrador anexado no HD-Player.exe
     const ceDir = path.dirname(ceExePath);
-    exec(`"${ceExePath}" "${scriptLuaPath}"`, { cwd: ceDir, windowsHide: true });
+    const winCePath = ceExePath.replace(/'/g, "''");
+    const winScriptPath = scriptLuaPath.replace(/'/g, "''");
+
+    const runCmd = `powershell -Command "Start-Process '${winCePath}' -ArgumentList '-p HD-Player.exe \\\"${winScriptPath}\\\"' -Verb RunAs"`;
+    exec(runCmd, { cwd: ceDir });
 
     return { 
       success: true, 
       message: action === 'auto-bug' 
-        ? '🚀 FPS Bug Aplicado! (Speedhack 500 ➔ 0.5 Ativado no Free Fire)'
+        ? '🚀 FPS Bug Aplicado! (Speedhack 500 ➔ 0.5 x2 Ativado no Free Fire)'
+        : action === 'open-gui'
+        ? '🎮 Painel Speedhack aberto como Administrador anexado no emulador!'
         : `⚡ Velocidade Speedhack ajustada para ${speed}x!`
     };
   } catch (err) {
