@@ -1,0 +1,5 @@
+owner: GabrielErick1
+repo: loord-optimizer-releases
+provider: github
+releaseType: release
+updaterCacheDirName: loord-optimizer-updater
