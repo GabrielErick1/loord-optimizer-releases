@@ -74,6 +74,9 @@ contextBridge.exposeInMainWorld('api', {
   applyCompetitiveEmulatorTweak: (config) => ipcRenderer.invoke('apply-competitive-emulator-tweak', config),
   applyAdaptiveRegedit: (config) => ipcRenderer.invoke('apply-adaptive-regedit', config),
   applyAdaptiveProfile: (profileName) => ipcRenderer.invoke('apply-adaptive-profile', profileName),
+  // ─── Regedit Full Capa (RareFix) ──────────────────────────────────
+  applyRarefixProfile: (profile) => ipcRenderer.invoke('apply-rarefix-profile', profile),
+  openRarefixHta: () => ipcRenderer.invoke('open-rarefix-hta'),
   // ─── ISO Loord Format & Setup ─────────────────────────────────────
   checkLoordIsoStatus: () => ipcRenderer.invoke('check-loord-iso-status'),
   downloadLoordIso: () => ipcRenderer.invoke('download-loord-iso'),

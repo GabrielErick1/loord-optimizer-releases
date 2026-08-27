@@ -4215,6 +4215,103 @@ ipcMain.handle('apply-adaptive-profile', async (event, profileName) => {
   }
 });
 
+// ── REGEDIT FULL CAPA (RAREFIX PRECISÃO MÁXIMA 1:1) ───────────────────────────
+ipcMain.handle('apply-rarefix-profile', async (event, profileNameOrSpeed) => {
+  try {
+    let speed = 11;
+    let isRestore = false;
+    let profileLabel = 'PRECISÃO (FULL CAPA)';
+
+    if (typeof profileNameOrSpeed === 'number') {
+      speed = Math.max(1, Math.min(20, Math.round(profileNameOrSpeed)));
+      profileLabel = `Sensibilidade ${speed}`;
+    } else if (typeof profileNameOrSpeed === 'string') {
+      const p = profileNameOrSpeed.toUpperCase().trim();
+      if (p === 'ESTAVEL' || p === 'ESTÁVEL' || p === '8') {
+        speed = 8;
+        profileLabel = 'ESTÁVEL (Sensibilidade 8)';
+      } else if (p === 'EQUILIBRADO' || p === '10') {
+        speed = 10;
+        profileLabel = 'EQUILIBRADO (Sensibilidade 10)';
+      } else if (p === 'PRECISAO' || p === 'PRECISÃO' || p === 'FULL_CAPA' || p === '11') {
+        speed = 11;
+        profileLabel = 'PRECISÃO FULL CAPA (Sensibilidade 11)';
+      } else if (p === 'RAPIDO' || p === 'RÁPIDO' || p === '13') {
+        speed = 13;
+        profileLabel = 'RÁPIDO (Sensibilidade 13)';
+      } else if (p === 'RESTAURAR') {
+        speed = 10;
+        isRestore = true;
+        profileLabel = 'PADRÃO WINDOWS';
+      } else if (!isNaN(parseInt(p))) {
+        speed = Math.max(1, Math.min(20, parseInt(p)));
+        profileLabel = `Sensibilidade ${speed}`;
+      }
+    }
+
+    const mouseSpeedVal = isRestore ? '1' : '0';
+    const thresh1 = '6';
+    const thresh2 = '10';
+
+    // 1. Grava no Registro com alta precisão
+    execSync(`reg add "HKCU\\Control Panel\\Mouse" /v MouseSensitivity /t REG_SZ /d "${speed}" /f`, { stdio: 'ignore' });
+    execSync(`reg add "HKCU\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d "${mouseSpeedVal}" /f`, { stdio: 'ignore' });
+    execSync(`reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d "${thresh1}" /f`, { stdio: 'ignore' });
+    execSync(`reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d "${thresh2}" /f`, { stdio: 'ignore' });
+
+    // Curva linear 1:1 sem aceleração negativa ou aceleração fantasma
+    if (!isRestore) {
+      execSync(`reg add "HKCU\\Control Panel\\Mouse" /v SmoothMouseXCurve /t REG_BINARY /d 0000000000000000156e000000000000004001000000000000a00300000000000040080000000000 /f`, { stdio: 'ignore' });
+      execSync(`reg add "HKCU\\Control Panel\\Mouse" /v SmoothMouseYCurve /t REG_BINARY /d 00000000000000000018000000000000004000000000000000800000000000000000010000000000 /f`, { stdio: 'ignore' });
+    }
+
+    // 2. Dispara SystemParametersInfo ao vivo via P/Invoke
+    try {
+      const psCmd = `Add-Type -TypeDefinition '[DllImport(\"user32.dll\")] public static extern bool SystemParametersInfo(uint a, uint b, int[] c, uint d); [DllImport(\"user32.dll\", EntryPoint=\"SystemParametersInfoW\")] public static extern bool SystemParametersInfoPtr(uint a, uint b, IntPtr c, uint d);' -Name RareFixMouse -Namespace Win32; [Win32.RareFixMouse]::SystemParametersInfoPtr(0x0071, 0, [IntPtr]${speed}, 3); [Win32.RareFixMouse]::SystemParametersInfo(0x0004, 0, [int[]]@(${thresh1}, ${thresh2}, ${mouseSpeedVal}), 3);`;
+      execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psCmd}"`, { stdio: 'ignore', windowsHide: true });
+    } catch (_) {}
+
+    return {
+      success: true,
+      profile: profileLabel,
+      speed: speed,
+      isRestore: isRestore,
+      summary: isRestore
+        ? '✔ Configuração padrão do Windows restaurada com sucesso (Sensibilidade 10, Aceleração Padrão).'
+        : `✔ Perfil RareFix ${profileLabel} aplicado com sucesso! Resposta 1:1, mira calibrada e aceleração estabilizada.`,
+      logs: [
+        `MouseSensitivity = ${speed}`,
+        `MouseSpeed = ${mouseSpeedVal}`,
+        `MouseThreshold1 = ${thresh1}`,
+        `MouseThreshold2 = ${thresh2}`,
+        `SystemParametersInfo (SPI_SETMOUSESPEED & SPI_SETMOUSE) enviado ao vivo para o Windows.`
+      ]
+    };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('open-rarefix-hta', async () => {
+  try {
+    const candidates = [
+      path.join(__dirname, 'melhor regis', 'RareFix.hta'),
+      path.join(process.resourcesPath || '', 'melhor regis', 'RareFix.hta'),
+      path.join(app.getAppPath(), 'melhor regis', 'RareFix.hta'),
+      'c:\\Users\\Gabriel\\Downloads\\Configuração emulador\\Nova pasta (4)\\melhor regis\\RareFix.hta'
+    ];
+    const htaPath = candidates.find(p => p && fs.existsSync(p));
+    if (!htaPath) {
+      throw new Error('Arquivo RareFix.hta não encontrado.');
+    }
+    const { spawn } = require('child_process');
+    spawn('mshta.exe', [htaPath], { detached: true, stdio: 'ignore' }).unref();
+    return { success: true, path: htaPath };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
 // ── REGEDIT ADAPTATIVA HANDLER (INJEÇÃO NO WINDOWS + EMULADORES EM TEMPO REAL) ────
 ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
   try {

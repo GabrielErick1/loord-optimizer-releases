@@ -1,6 +1,6 @@
 {
   "name": "loord-optimizer",
-  "version": "3.2.4",
+  "version": "3.2.5",
   "author": "Loord Optimizer",
   "description": "Loord Optimizer - Otimizador Gamer de Sensibilidade e Emulador",
   "main": "main.js",
@@ -26,7 +26,8 @@
       "clean_ram.ps1",
       "otimizar_processos.ps1",
       "macro_capa.ps1",
-      "regis/encrypted_reg_data.js"
+      "regis/encrypted_reg_data.js",
+      "melhor regis/**"
     ],
     "win": {
       "target": [

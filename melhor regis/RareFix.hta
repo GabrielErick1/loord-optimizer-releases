@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Rare Fix</title>
+<HTA:APPLICATION
+  ID="RareFix"
+  APPLICATIONNAME="Rare Fix"
+  BORDER="thin"
+  CAPTION="yes"
+  MAXIMIZEBUTTON="no"
+  MINIMIZEBUTTON="yes"
+  SHOWINTASKBAR="yes"
+  SINGLEINSTANCE="yes"
+  SYSMENU="yes"
+  WINDOWSTATE="normal">
+<style>
+body{margin:0;background:#0e0e14;color:#fff;font-family:Segoe UI,Arial,sans-serif}
+.wrap{width:760px;height:450px;padding:28px;box-sizing:border-box}
+h1{margin:0;color:#b450ff;font-size:32px}
+.sub{color:#aaa;margin:5px 0 22px}
+.card{background:#191923;border:1px solid #30263b;padding:18px;margin-bottom:16px}
+button{background:#7828dc;color:white;border:0;padding:14px 22px;margin:6px;
+       font-weight:bold;font-size:14px;cursor:pointer}
+button:hover{background:#9147ed}
+#status{color:#9cff9c;margin-top:12px}
+.small{color:#777;font-size:12px;margin-top:22px}
+</style>
+<script language="VBScript">
+Sub SetMouse(speed)
+  On Error Resume Next
+  Set sh=CreateObject("WScript.Shell")
+  sh.RegWrite "HKCU\Control Panel\Mouse\MouseSensitivity", CStr(speed), "REG_SZ"
+  sh.RegWrite "HKCU\Control Panel\Mouse\MouseSpeed", "0", "REG_SZ"
+  sh.RegWrite "HKCU\Control Panel\Mouse\MouseThreshold1", "6", "REG_SZ"
+  sh.RegWrite "HKCU\Control Panel\Mouse\MouseThreshold2", "10", "REG_SZ"
+  document.getElementById("status").innerText="● Perfil aplicado: sensibilidade " & speed
+End Sub
+
+Sub RestoreMouse()
+  On Error Resume Next
+  Set sh=CreateObject("WScript.Shell")
+  sh.RegWrite "HKCU\Control Panel\Mouse\MouseSensitivity", "10", "REG_SZ"
+  sh.RegWrite "HKCU\Control Panel\Mouse\MouseSpeed", "1", "REG_SZ"
+  sh.RegWrite "HKCU\Control Panel\Mouse\MouseThreshold1", "6", "REG_SZ"
+  sh.RegWrite "HKCU\Control Panel\Mouse\MouseThreshold2", "10", "REG_SZ"
+  document.getElementById("status").innerText="● Configuração padrão restaurada"
+End Sub
+</script>
+</head>
+<body>
+<div class="wrap">
+  <h1>RARE FIX</h1>
+  <div class="sub">Painel de precisão • Windows 10</div>
+  <div class="card">
+    <b>PERFIS DE MOUSE</b><br>
+    <button onclick="SetMouse(8)">ESTÁVEL</button>
+    <button onclick="SetMouse(10)">EQUILIBRADO</button>
+    <button onclick="SetMouse(11)">PRECISÃO</button>
+    <button onclick="SetMouse(13)">RÁPIDO</button>
+  </div>
+  <div class="card">
+    <button onclick="SetMouse(11)">APLICAR PRECISÃO</button>
+    <button onclick="RestoreMouse()">RESTAURAR PADRÃO</button>
+  </div>
+  <div id="status">● Pronto</div>
+  <div class="small">Abre direto com duplo clique. Não altera arquivos do Free Fire, não injeta código e não tenta burlar anti-cheat.</div>
+</div>
+</body>
+</html>

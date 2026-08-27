@@ -3485,6 +3485,51 @@ if (btnApplyAdaptiveProfile) {
   });
 }
 
+// ─── RARE FIX ORIGINAL (PERFIS DE MOUSE E PRECISÃO) ───────────────────────────
+const rarefixBtns = document.querySelectorAll('.rarefix-btn');
+const rarefixStatusMsg = document.getElementById('rarefix-status-msg');
+
+rarefixBtns.forEach(btn => {
+  btn.addEventListener('mouseenter', () => {
+    btn.style.background = '#9147ed';
+  });
+  btn.addEventListener('mouseleave', () => {
+    btn.style.background = '#7828dc';
+  });
+
+  btn.addEventListener('click', async () => {
+    const speed = btn.getAttribute('data-speed');
+    try {
+      if (rarefixStatusMsg) {
+        rarefixStatusMsg.style.color = '#fde047';
+        rarefixStatusMsg.innerText = '● Aplicando...';
+      }
+
+      if (speed === 'restore') {
+        const res = await window.api.applyRarefixProfile('RESTAURAR');
+        if (rarefixStatusMsg) {
+          rarefixStatusMsg.style.color = '#9cff9c';
+          rarefixStatusMsg.innerText = '● Configuração padrão restaurada';
+        }
+      } else {
+        const sensVal = parseInt(speed) || 11;
+        const res = await window.api.applyRarefixProfile(sensVal);
+        if (rarefixStatusMsg) {
+          rarefixStatusMsg.style.color = '#9cff9c';
+          rarefixStatusMsg.innerText = `● Perfil aplicado: sensibilidade ${sensVal}`;
+        }
+      }
+    } catch (err) {
+      if (rarefixStatusMsg) {
+        rarefixStatusMsg.style.color = '#ef4444';
+        rarefixStatusMsg.innerText = `● Erro ao aplicar: ${err.message}`;
+      }
+    }
+  });
+});
+
+
+
 
 
 
