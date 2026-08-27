@@ -1678,7 +1678,7 @@
                 <p style="margin: 0; font-size: 12px; color: #94a3b8;">Verifique e receba novas versões e otimizações
                   automaticamente</p>
               </div>
-              <span id="app-version-badge" class="badge badge-success">v3.0.9</span>
+              <span id="app-version-badge" class="badge badge-success">v3.1.0</span>
             </div>
 
             <!-- Update Card Content -->
@@ -1888,16 +1888,20 @@
             <div class="card" style="border: 2px solid #38bdf8; background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(0,0,0,0.6)); box-shadow: 0 0 25px rgba(56, 189, 248, 0.2);">
               <div
                 style="font-weight: 800; color: #38bdf8; font-size: 1.05rem; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                <span style="display: flex; align-items: center; gap: 8px;">💿 Formatar PC com a ISO Loord v10.6 Oficial</span>
+                <span style="display: flex; align-items: center; gap: 8px;">💿 Criar Partição &amp; Formatar PC com ISO Loord v10.6</span>
                 <span class="badge" style="background: #0284c7; color: #fff; font-weight: 800;">INSTALADOR 100% LIMPO</span>
               </div>
               <p style="font-size: 0.82rem; color: #e2e8f0; margin-bottom: 12px; line-height: 1.5;">
-                Deseja formatar seu computador do zero com a ISO Loord Lite v10.6 Oficial? O assistente prepara seu disco, baixa a ISO oficial em alta velocidade e inicia a instalação limpa de forma segura com seu consentimento.
+                Deseja formatar seu computador do zero com a ISO Loord Lite v10.6 Oficial? O assistente cria automaticamente uma <b>partição de boot no seu HD/SSD</b>, prepara os arquivos de instalação e inicia a formatação limpa.
               </p>
               <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <button class="btn btn-primary btn-sm" id="btn-open-format-modal"
                   style="flex: 1; min-width: 220px; background: linear-gradient(135deg, #0ea5e9, #0284c7); border: none; font-weight: 800; font-size: 0.9rem; padding: 12px 18px; box-shadow: 0 4px 15px rgba(14, 165, 233, 0.35);">
-                  💿 Baixar ISO &amp; Preparar PC para Formatar
+                  💾 1. Criar Partição no HD/SSD &amp; Baixar ISO
+                </button>
+                <button class="btn btn-success btn-sm" id="btn-card-format-now"
+                  style="display: none; flex: 1; min-width: 220px; background: linear-gradient(135deg, #22c55e, #16a34a); border: none; font-weight: 800; font-size: 0.9rem; padding: 12px 18px; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.35);">
+                  🚀 2. Formatar Computador Agora
                 </button>
               </div>
               <div id="status-iso-prepare" style="margin-top: 10px; font-size: 0.82rem; color: #38bdf8; display: none;"></div>
@@ -2000,11 +2004,11 @@
           </label>
           <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
             <input type="checkbox" id="consent-download" style="margin-top: 2px; accent-color: #38bdf8;">
-            <span>Autorizo o download da <b>ISO Oficial Loord Lite v10.6 (3.2 GB)</b> e a preparação dos arquivos de instalação.</span>
+            <span>Autorizo o download da <b>ISO Oficial Loord Lite v10.6 (3.2 GB)</b> e a criação da partição de instalação no HD/SSD.</span>
           </label>
           <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
             <input type="checkbox" id="consent-format" style="margin-top: 2px; accent-color: #38bdf8;">
-            <span>Compreendo que a formatação reinstalará o Windows com a ISO limpa e otimizada com meu consentimento explícito.</span>
+            <span>Compreendo que a formatação reinstalará o Windows com a ISO limpa e otimizada pelo boot do disco.</span>
           </label>
         </div>
       </div>
@@ -2012,7 +2016,7 @@
       <!-- Barra de Progresso de Download / Preparo -->
       <div id="iso-download-container" style="display: none; margin-bottom: 16px;">
         <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: #38bdf8; font-weight: 700; margin-bottom: 4px;">
-          <span id="iso-download-status">Baixando ISO Loord v10.6...</span>
+          <span id="iso-download-status">Criando partição e preparando ISO Loord v10.6...</span>
           <span id="iso-download-pct">0%</span>
         </div>
         <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
@@ -2020,20 +2024,28 @@
         </div>
       </div>
 
-      <!-- Status de Preparação Concluída -->
-      <div id="iso-prepared-box" style="display: none; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.4); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; text-align: left; font-size: 0.8rem; color: #86efac; line-height: 1.5;">
-        ✔ <b>Ambiente de Instalação de 8 GB Preparado e 100% Oculto!</b><br>
-        O instalador oficial da ISO Loord v10.6 foi configurado com sucesso no disco. Ao clicar abaixo, seu computador reiniciará automaticamente direto na tela de instalação para você formatar e instalar o Windows limpo.
+      <!-- Status de Partição Criada com Sucesso -->
+      <div id="iso-prepared-box" style="display: none; background: rgba(34, 197, 94, 0.15); border: 2px solid #22c55e; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; text-align: left; font-size: 0.84rem; color: #86efac; line-height: 1.5; box-shadow: 0 0 20px rgba(34, 197, 94, 0.25);">
+        <div style="font-weight: 900; font-size: 0.95rem; color: #4ade80; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+          <span>✅ PARTIÇÃO CRIADA COM SUCESSO NO HD/SSD!</span>
+        </div>
+        <div style="color: #f0fdf4; font-size: 0.8rem; margin-bottom: 6px;">
+          • <b>Partição de Instalação:</b> Unidade <code>L:\ (LOORD_SETUP - 8 GB)</code><br>
+          • <b>Status:</b> Arquivos oficiais da ISO Loord Lite v10.6 gravados e prontos para boot.
+        </div>
+        <div style="color: #cbd5e1; font-size: 0.78rem; border-top: 1px solid rgba(34, 197, 94, 0.3); padding-top: 6px;">
+          💡 <i>Ao clicar em <b>"FORMATAR COMPUTADOR AGORA"</b> abaixo, seu computador reiniciará direto no instalador pelo boot do seu HD/SSD para você formatar e instalar o Windows limpo!</i>
+        </div>
       </div>
 
-      <!-- Botões de Ação -->
+      <!-- Botões de Ação na Sequência Solicitada -->
       <div style="display: flex; flex-direction: column; gap: 10px;">
         <button id="btn-prepare-iso-action" style="width: 100%; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: #fff; font-size: 0.95rem; font-weight: 900; padding: 13px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(14, 165, 233, 0.4);">
-          ⚡ PREPARAR PC & BAIXAR ISO LOORD
+          💾 1. CRIAR PARTIÇÃO NO HD/SSD &amp; PREPARAR ARQUIVOS DA ISO
         </button>
 
         <button id="btn-start-format-now" style="display: none; width: 100%; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #fff; font-size: 1rem; font-weight: 900; padding: 14px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 20px rgba(34, 197, 94, 0.5);">
-          🚀 FORMATAR COMPUTADOR AGORA
+          🚀 2. FORMATAR COMPUTADOR AGORA (REINICIAR NO INSTALADOR)
         </button>
 
         <button onclick="document.getElementById('format-iso-modal').style.display='none'" style="width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; font-size: 0.82rem; font-weight: 700; padding: 8px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">

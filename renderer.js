@@ -2856,6 +2856,7 @@ window.handleApplyCompTweak = async function(btn) {
 
 // ─── ASSISTENTE DE FORMATAÇÃO PROTEGIDO COM ISO LOORD v10.6 ────────────────
 const btnOpenFormatModal = document.getElementById('btn-open-format-modal');
+const btnCardFormatNow = document.getElementById('btn-card-format-now');
 const formatIsoModal = document.getElementById('format-iso-modal');
 const btnPrepareIsoAction = document.getElementById('btn-prepare-iso-action');
 const btnStartFormatNow = document.getElementById('btn-start-format-now');
@@ -2888,13 +2889,30 @@ async function refreshUsbList() {
   } catch (_) {}
 }
 
+async function checkPartitionStatusOnLoad() {
+  try {
+    const isoInfo = await window.api.checkLoordIsoStatus();
+    if (isoInfo && (isoInfo.partitionReady || isoInfo.ready)) {
+      if (isoPreparedBox) isoPreparedBox.style.display = 'block';
+      if (btnPrepareIsoAction) btnPrepareIsoAction.style.display = 'none';
+      if (btnStartFormatNow) btnStartFormatNow.style.display = 'block';
+      if (btnCardFormatNow) btnCardFormatNow.style.display = 'inline-block';
+      if (statusIsoPrepare) {
+        statusIsoPrepare.style.display = 'block';
+        statusIsoPrepare.innerHTML = '✅ <b>Partição de Instalação Pronta no HD/SSD (L: LOORD_SETUP)</b>';
+      }
+    }
+  } catch (_) {}
+}
+checkPartitionStatusOnLoad();
+
 if (btnOpenFormatModal && formatIsoModal) {
   btnOpenFormatModal.addEventListener('click', async () => {
     formatIsoModal.style.display = 'flex';
 
     try {
       const isoInfo = await window.api.checkLoordIsoStatus();
-      if (isoInfo && isoInfo.ready) {
+      if (isoInfo && (isoInfo.partitionReady || isoInfo.ready)) {
         if (isoPreparedBox) isoPreparedBox.style.display = 'block';
         if (btnPrepareIsoAction) btnPrepareIsoAction.style.display = 'none';
         if (btnStartFormatNow) btnStartFormatNow.style.display = 'block';
@@ -2903,6 +2921,17 @@ if (btnOpenFormatModal && formatIsoModal) {
         if (consentFormat) consentFormat.checked = true;
       }
     } catch (_) {}
+  });
+}
+
+if (btnCardFormatNow) {
+  btnCardFormatNow.addEventListener('click', () => {
+    if (formatIsoModal) {
+      formatIsoModal.style.display = 'flex';
+      if (isoPreparedBox) isoPreparedBox.style.display = 'block';
+      if (btnPrepareIsoAction) btnPrepareIsoAction.style.display = 'none';
+      if (btnStartFormatNow) btnStartFormatNow.style.display = 'block';
+    }
   });
 }
 
@@ -2927,49 +2956,54 @@ if (window.api && window.api.onUsbProgress) {
 if (btnPrepareIsoAction) {
   btnPrepareIsoAction.addEventListener('click', async () => {
     if (!consentBackup?.checked || !consentDownload?.checked || !consentFormat?.checked) {
-      alert('⚠️ Para prosseguir com total segurança e consentimento legal, por favor marque todas as 3 caixas de confirmação:\n\n1. Backup dos arquivos pessoais\n2. Autorização de preparação do sistema\n3. Compreensão do processo de instalação.');
+      alert('⚠️ Para prosseguir com total segurança e consentimento legal, por favor marque todas as 3 caixas de confirmação:\n\n1. Backup dos arquivos pessoais\n2. Autorização para criar partição de instalação no HD/SSD\n3. Compreensão do processo de formatação.');
       return;
     }
 
     btnPrepareIsoAction.disabled = true;
-    btnPrepareIsoAction.textContent = '⏳ Conectando e Preparando Ambiente...';
+    btnPrepareIsoAction.textContent = '⏳ 1. Criando Partição no HD/SSD & Baixando ISO...';
     if (isoDownloadContainer) isoDownloadContainer.style.display = 'block';
-    if (isoDownloadBar) isoDownloadBar.style.width = '20%';
-    if (isoDownloadStatus) isoDownloadStatus.textContent = 'Baixando e configurando ambiente limpo...';
+    if (isoDownloadBar) isoDownloadBar.style.width = '15%';
+    if (isoDownloadStatus) isoDownloadStatus.textContent = 'Iniciando criação da partição e preparação dos arquivos...';
 
     try {
       const res = await window.api.downloadLoordIso();
       if (res && res.success) {
         if (isoDownloadBar) isoDownloadBar.style.width = '100%';
         if (isoDownloadPct) isoDownloadPct.textContent = '100%';
-        if (isoDownloadStatus) isoDownloadStatus.textContent = 'Ambiente de instalação preparado!';
+        if (isoDownloadStatus) isoDownloadStatus.textContent = 'Partição LOORD_SETUP (L:) criada com sucesso!';
+        
+        // Mensagem explícita de sucesso da partição criada
+        alert('✅ PARTIÇÃO CRIADA COM SUCESSO NO HD/SSD!\n\n• Unidade de Instalação: L:\\ (LOORD_SETUP - 8 GB)\n• Status: Arquivos de instalação da ISO Loord Lite v10.6 gravados no disco.\n\nAgora você pode clicar no botão "2. FORMATAR COMPUTADOR AGORA" para reiniciar e formatar o PC direto pelo boot do seu HD/SSD!');
+        
         if (isoPreparedBox) isoPreparedBox.style.display = 'block';
         btnPrepareIsoAction.style.display = 'none';
         if (btnStartFormatNow) btnStartFormatNow.style.display = 'block';
+        if (btnCardFormatNow) btnCardFormatNow.style.display = 'inline-block';
         if (statusIsoPrepare) {
           statusIsoPrepare.style.display = 'block';
-          statusIsoPrepare.innerHTML = '✔ <b>Ambiente preparado e pronto para formatação!</b>';
+          statusIsoPrepare.innerHTML = '✅ <b>Partição de Instalação Pronta no HD/SSD (L: LOORD_SETUP)</b>';
         }
       } else {
-        alert('Erro ao preparar ambiente: ' + (res?.error || 'Verifique sua conexão'));
+        alert('Erro ao criar partição: ' + (res?.error || 'Verifique se há espaço suficiente no disco.'));
         btnPrepareIsoAction.disabled = false;
-        btnPrepareIsoAction.textContent = '⚡ Tentar Novamente';
+        btnPrepareIsoAction.textContent = '💾 1. Tentar Criar Partição Novamente';
       }
     } catch (e) {
       alert('Erro inesperado: ' + e.message);
       btnPrepareIsoAction.disabled = false;
-      btnPrepareIsoAction.textContent = '⚡ Tentar Novamente';
+      btnPrepareIsoAction.textContent = '💾 1. Tentar Criar Partição Novamente';
     }
   });
 }
 
 if (btnStartFormatNow) {
   btnStartFormatNow.addEventListener('click', async () => {
-    const confirmFinal = confirm('🚀 INICIAR FORMATAÇÃO LIMPA COM A ISO LOORD v10.6?\n\nO assistente criará automaticamente uma partição oculta de 8 GB no seu SSD/HD e reiniciará o computador direto na tela do Instalador Oficial para você formatar e instalar o sistema limpo com máximo FPS!\n\nDeseja reiniciar e formatar agora?');
+    const confirmFinal = confirm('🚀 INICIAR FORMATAÇÃO PELO BOOT DO HD/SSD?\n\nO computador reiniciará automaticamente direto na tela do Instalador Oficial da ISO Loord Lite v10.6 gravado na sua partição para você formatar e instalar o Windows limpo com máximo FPS!\n\nDeseja reiniciar e formatar agora?');
     if (!confirmFinal) return;
 
     btnStartFormatNow.disabled = true;
-    btnStartFormatNow.textContent = '⏳ Preparando Partição Oculta de 8 GB...';
+    btnStartFormatNow.textContent = '⏳ Configurando Boot e Reiniciando...';
     if (isoDownloadContainer) isoDownloadContainer.style.display = 'block';
 
     const res = await window.api.startLoordFormat();
@@ -2977,13 +3011,13 @@ if (btnStartFormatNow) {
     if (res && res.success) {
       if (isoPreparedBox) {
         isoPreparedBox.style.display = 'block';
-        isoPreparedBox.innerHTML = '🎉 <b>Partição de 8 GB preparada e 100% oculta!</b><br><span style="color: #fbbf24; font-weight: 800;">🔄 Reiniciando o computador em instantes para entrar no instalador oficial...</span>';
+        isoPreparedBox.innerHTML = '🎉 <b>Boot Configurado com Sucesso!</b><br><span style="color: #fbbf24; font-weight: 800;">🔄 Reiniciando o computador em instantes direto no instalador pelo HD/SSD...</span>';
       }
       btnStartFormatNow.textContent = '🔄 REINICIANDO COMPUTADOR...';
     } else {
       btnStartFormatNow.disabled = false;
-      btnStartFormatNow.textContent = '🚀 FORMATAR COMPUTADOR AGORA';
-      alert('Erro: ' + (res?.error || 'Erro desconhecido.'));
+      btnStartFormatNow.textContent = '🚀 2. FORMATAR COMPUTADOR AGORA';
+      alert('Erro: ' + (res?.error || 'Erro ao configurar boot.'));
     }
   });
 }

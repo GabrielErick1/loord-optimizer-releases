@@ -3275,12 +3275,14 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
 ipcMain.handle('check-loord-iso-status', async () => {
   try {
     const localIso = getKnownLocalIsoPath();
-    if (localIso) {
-      return { ready: true };
-    }
-    return { ready: false };
+    const isPartitionReady = fs.existsSync('L:\\setup.exe') || fs.existsSync('L:\\sources\\boot.wim') || fs.existsSync('L:\\sources\\install.esd') || fs.existsSync('L:\\sources\\install.wim');
+    return {
+      ready: !!localIso || isPartitionReady,
+      partitionReady: isPartitionReady,
+      isoPath: localIso
+    };
   } catch (e) {
-    return { ready: false, error: e.message };
+    return { ready: false, partitionReady: false, error: e.message };
   }
 });
 
