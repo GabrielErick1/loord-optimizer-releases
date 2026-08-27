@@ -3106,15 +3106,21 @@ function resolveMediafireDirectUrl(mediafirePageUrl) {
   return new Promise((resolve) => {
     https.get(mediafirePageUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7'
       }
     }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        return resolve(resolveMediafireDirectUrl(res.headers.location));
+      }
       let body = '';
       res.on('data', chunk => body += chunk);
       res.on('end', () => {
-        const m = body.match(/aria-label="Download file"[^>]*href="([^"]+)"/i) ||
+        const m = body.match(/href="([^"]*download[0-9]*\.mediafire\.com\/[^"]+)"/i) ||
+                  body.match(/aria-label="Download file"[^>]*href="([^"]+)"/i) ||
                   body.match(/id="downloadButton"[^>]*href="([^"]+)"/i) ||
-                  body.match(/href="(https:\/\/[^"]*mediafire[^"]*\/[^"]+\.iso[^"]*)"/i) ||
+                  body.match(/href="([^"]+\.iso[^"]*)"/i) ||
                   body.match(/href="(https:\/\/download[^"]+mediafire[^"]+)"/i);
         if (m && m[1]) {
           resolve(m[1]);
@@ -3131,7 +3137,7 @@ function streamDownloadFile(url, destPath, onProgress) {
     const protocol = url.startsWith('https') ? https : http;
     const req = protocol.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
       }
     }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
@@ -3308,9 +3314,17 @@ ipcMain.handle('download-loord-iso', async (event) => {
 
     let targetIso = getKnownLocalIsoPath();
     if (!targetIso) {
-      sendProgress(10, 'Obtendo conexão direta de alta velocidade...');
-      let directUrl = await resolveMediafireDirectUrl(LOORD_MEDIAFIRE_PAGE);
-      if (!directUrl) directUrl = LOORD_GDRIVE_FALLBACK;
+      let directUrl = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        sendProgress(10, `Conectando ao servidor oficial Mediafire (Tentativa ${attempt}/3)...`);
+        directUrl = await resolveMediafireDirectUrl(LOORD_MEDIAFIRE_PAGE);
+        if (directUrl) break;
+        await new Promise(r => setTimeout(r, 1500));
+      }
+
+      if (!directUrl) {
+        throw new Error('Não foi possível obter o link de download direto da ISO no Mediafire. Verifique sua conexão com a internet.');
+      }
 
       sendProgress(15, 'Baixando ISO Oficial Loord Lite v10.6 (3.2 GB)...');
       if (!fs.existsSync(LOORD_SYS_DIR)) {
@@ -3575,11 +3589,23 @@ ipcMain.handle('start-loord-format', async () => {
       } catch {}
 
       reagentc /disable | Out-Null;
-      if (Test-Path "L:\\sources\\boot.wim") {
-        Copy-Item "L:\\sources\\boot.wim" "$reDir\\Winre.wim" -Force;
-      }
-      if (Test-Path "L:\\boot\\boot.sdi") {
-        Copy-Item "L:\\boot\\boot.sdi" "$reDir\\boot.sdi" -Force;
+      
+      # Garante copia do boot.wim e boot.sdi mesmo com particao oculta
+      $iso = '${LOORD_SYS_FILE.replace(/'/g, "''")}';
+      if (-not (Test-Path "$reDir\\Winre.wim")) {
+        if (Test-Path "L:\\sources\\boot.wim") {
+          Copy-Item "L:\\sources\\boot.wim" "$reDir\\Winre.wim" -Force;
+          Copy-Item "L:\\boot\\boot.sdi" "$reDir\\boot.sdi" -Force;
+        } elseif (Test-Path $iso) {
+          $m = Mount-DiskImage -ImagePath $iso -StorageType ISO -PassThru -ErrorAction SilentlyContinue;
+          Start-Sleep -Seconds 2;
+          $isoDrive = ($m | Get-Volume).DriveLetter + ":";
+          if (Test-Path "$isoDrive\\sources\\boot.wim") {
+            Copy-Item "$isoDrive\\sources\\boot.wim" "$reDir\\Winre.wim" -Force;
+            Copy-Item "$isoDrive\\boot\\boot.sdi" "$reDir\\boot.sdi" -Force;
+          }
+          Dismount-DiskImage -ImagePath $iso -ErrorAction SilentlyContinue | Out-Null;
+        }
       }
 
       reagentc /setreimage /path $reDir /target C:\\Windows | Out-Null;
