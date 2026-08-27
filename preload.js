@@ -91,6 +91,10 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.removeAllListeners('usb-progress');
     ipcRenderer.on('usb-progress', (event, data) => callback(data));
   },
+  onMacroStateChanged: (callback) => {
+    ipcRenderer.removeAllListeners('macro-state-changed');
+    ipcRenderer.on('macro-state-changed', (event, data) => callback(data));
+  },
   // ─────────────────────────────────────────────────────────────────
 });
 

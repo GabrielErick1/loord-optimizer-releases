@@ -714,12 +714,45 @@ if (toggleMacro) {
     }
   }, 400);
 
+  function playMacroBeepAudio(enabled) {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = enabled ? 1200 : 450;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.15);
+    } catch (_) {}
+  }
+
+  // Ouve alteração de estado dos atalhos globais F7/F8
+  if (window.api && window.api.onMacroStateChanged) {
+    window.api.onMacroStateChanged((data) => {
+      if (!data) return;
+      const isActive = !!data.active;
+      if (toggleMacro) {
+        toggleMacro.checked = isActive;
+      }
+      if (macroForceContainer) {
+        macroForceContainer.style.display = isActive ? 'block' : 'none';
+      }
+      localStorage.setItem('loord_macro_active', isActive ? 'true' : 'false');
+      playMacroBeepAudio(isActive);
+    });
+  }
+
   toggleMacro.addEventListener('change', async (e) => {
     const active = e.target.checked;
     localStorage.setItem('loord_macro_active', active ? 'true' : 'false');
     if (macroForceContainer) {
       macroForceContainer.style.display = active ? 'block' : 'none';
     }
+    playMacroBeepAudio(active);
 
     if (active) {
       const speed = getMacroCurrentSpeed();

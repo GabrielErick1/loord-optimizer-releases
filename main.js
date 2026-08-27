@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, globalShortcut } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -198,18 +198,47 @@ app.whenReady().then(() => {
     setTimeout(() => autoUpdater.checkForUpdates(), 5000);
   }
   // ─────────────────────────────────────────────────────────────────
+
+  // Atalhos Globais F7 e F8 para a Macro de Recoil
+  try {
+    globalShortcut.register('F7', () => {
+      toggleMacroGlobalState();
+    });
+    globalShortcut.register('F8', () => {
+      toggleMacroGlobalState();
+    });
+  } catch (e) {
+    console.error('[GlobalShortcut] Erro ao registrar F7/F8:', e);
+  }
 });
+
+let macroEnabledState = true;
+
+function toggleMacroGlobalState() {
+  macroEnabledState = !macroEnabledState;
+  const configActivePath = path.join(os.tmpdir(), 'loord_macro_active.txt');
+  try {
+    fs.writeFileSync(configActivePath, macroEnabledState ? 'true' : 'false', 'utf8');
+  } catch (_) {}
+
+  try {
+    shell.beep();
+  } catch (_) {}
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('macro-state-changed', { active: macroEnabledState });
+  }
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
 app.on('will-quit', () => {
-  if (macroProcess) {
-    try {
-      macroProcess.kill('SIGTERM');
-    } catch (e) { }
-  }
+  try {
+    globalShortcut.unregisterAll();
+  } catch (_) {}
+  killMacroProcess();
   try {
     execSync('taskkill /f /fi "WINDOWTITLE eq MacroCapaFreeFire*"', { stdio: 'ignore' });
   } catch (e) { }
