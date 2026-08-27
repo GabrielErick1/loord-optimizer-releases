@@ -4832,3 +4832,130 @@ del "${targetPathWin}" >nul 2>&1
   }
 }
 
+// ─── MOTOR DA MACRO DE RECOIL & DESCIDA Y (F2, F3, F6, F7) ──────────────────
+async function killMacroProcess() {
+  if (macroProcess) {
+    try {
+      if (!macroProcess.killed) macroProcess.kill('SIGKILL');
+    } catch (_) {}
+    macroProcess = null;
+  }
+  try {
+    execSync(`powershell -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*loord_recoil_engine.ps1*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"`, { stdio: 'ignore' });
+  } catch (_) {}
+}
+
+app.on('will-quit', () => {
+  killMacroProcess();
+});
+
+ipcMain.handle('start-macro', async (event, speed) => {
+  try {
+    await killMacroProcess();
+
+    const numSpeed = typeof speed === 'number' ? speed : parseFloat(speed) || 0.5;
+    const tmpScript = path.join(os.tmpdir(), 'loord_recoil_engine.ps1');
+
+    const scriptContent = `# Loord Recoil Engine - Puxada Y Suave
+param([double]$Velocidade = ${numSpeed})
+
+$code = @"
+using System;
+using System.Runtime.InteropServices;
+using System.Threading;
+
+public class MacroEngine {
+    [DllImport("user32.dll")] public static extern short GetAsyncKeyState(int vKey);
+    [DllImport("user32.dll")] public static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, int dwExtraInfo);
+
+    private const int MOUSEEVENTF_MOVE = 0x0001;
+    private const int VK_LBUTTON = 0x01; // Botao esquerdo do mouse (Atirar)
+    private const int VK_F2      = 0x71;
+    private const int VK_F3      = 0x72;
+    private const int VK_F6      = 0x75;
+    private const int VK_F7      = 0x76;
+
+    public static void Run(double speed) {
+        if (speed <= 0.0) speed = 0.5;
+        double accumY = 0.0;
+        bool macroAtiva = true;
+        try { Console.Beep(1200, 150); } catch {}
+
+        while (true) {
+            bool f2 = (GetAsyncKeyState(VK_F2) & 0x8000) != 0;
+            bool f3 = (GetAsyncKeyState(VK_F3) & 0x8000) != 0;
+            bool f6 = (GetAsyncKeyState(VK_F6) & 0x8000) != 0;
+            bool f7 = (GetAsyncKeyState(VK_F7) & 0x8000) != 0;
+
+            if (f2 || f3 || f6 || f7) {
+                macroAtiva = !macroAtiva;
+                try { Console.Beep(macroAtiva ? 1200 : 500, 150); } catch {}
+                Thread.Sleep(300);
+            }
+
+            if (macroAtiva) {
+                bool shooting = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+                if (shooting) {
+                    accumY += speed;
+                    if (accumY >= 1.0) {
+                        int stepY = (int)Math.Floor(accumY);
+                        mouse_event(MOUSEEVENTF_MOVE, 0, stepY, 0, 0); // Puxa o cursor suavemente para baixo
+                        accumY -= stepY;
+                    }
+                    Thread.Sleep(7);
+                } else {
+                    accumY = 0.0;
+                    Thread.Sleep(5);
+                }
+            } else {
+                Thread.Sleep(20);
+            }
+        }
+    }
+}
+"@
+
+Add-Type -TypeDefinition $code -Language CSharp
+[MacroEngine]::Run($Velocidade)
+`;
+
+    fs.writeFileSync(tmpScript, scriptContent, 'utf8');
+
+    const { spawn } = require('child_process');
+    macroProcess = spawn('powershell.exe', [
+      '-NoProfile',
+      '-ExecutionPolicy',
+      'Bypass',
+      '-WindowStyle',
+      'Hidden',
+      '-File',
+      tmpScript,
+      '-Velocidade',
+      String(numSpeed)
+    ], {
+      windowsHide: true,
+      detached: true,
+      stdio: 'ignore'
+    });
+
+    macroProcess.unref();
+
+    console.log(`[MACRO] Iniciada com sucesso! Velocidade: ${numSpeed}`);
+    return { success: true };
+  } catch (e) {
+    console.error('Erro ao iniciar macro:', e);
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('stop-macro', async () => {
+  try {
+    await killMacroProcess();
+    console.log('[MACRO] Parada com sucesso!');
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+
