@@ -683,26 +683,19 @@ const btnApplyMouse = document.getElementById('btn-apply-mouse');
 if (btnApplyMouse) {
   btnApplyMouse.addEventListener('click', async () => {
     try {
-      const speed = getMacroCurrentSpeed();
-      if (toggleMacro) {
-        toggleMacro.checked = true;
-      }
-      if (macroForceContainer) {
-        macroForceContainer.style.display = 'block';
-      }
-      localStorage.setItem('loord_macro_active', 'true');
-      localStorage.setItem('loord_macro_speed', String(speed));
+      // 1. Aplica a Regedit de Sensibilidade selecionada no Registro do Windows
+      await applyMouseSettingsOnly();
 
-      if (window.api && window.api.startMacro) {
-        await window.api.startMacro(speed);
-      }
+      // 2. Se a macro estiver ativa, garante o start na velocidade atual
+      if (toggleMacro && toggleMacro.checked) {
+        const speed = getMacroCurrentSpeed();
+        localStorage.setItem('loord_macro_active', 'true');
+        localStorage.setItem('loord_macro_speed', String(speed));
 
-      btnApplyMouse.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-      btnApplyMouse.innerHTML = '<span>⚡</span> Configurações Aplicadas & Macro Ativada!';
-      setTimeout(() => {
-        btnApplyMouse.style.background = '';
-        btnApplyMouse.innerHTML = '<span>⚡</span> Aplicar Configurações';
-      }, 2500);
+        if (window.api && window.api.startMacro) {
+          await window.api.startMacro(speed);
+        }
+      }
     } catch (err) {
       console.error('Erro ao aplicar configurações de mouse/macro:', err);
     }
