@@ -211,13 +211,13 @@ app.whenReady().then(() => {
     console.error('[GlobalShortcut] Erro ao registrar F7/F8:', e);
   }
 
-  // Inicia o motor nativo da macro em background 1.5s após abrir o app
+  // Inicia o motor nativo da macro em background (em modo pausado/desativado) 1.5s após abrir o app
   setTimeout(() => {
-    startMacroNative(0.5).catch((e) => console.error('[Macro AutoBoot]', e));
+    startMacroNative(0.5, false).catch((e) => console.error('[Macro AutoBoot]', e));
   }, 1500);
 });
 
-let macroEnabledState = true;
+let macroEnabledState = false;
 
 async function toggleMacroGlobalState() {
   macroEnabledState = !macroEnabledState;
@@ -229,10 +229,6 @@ async function toggleMacroGlobalState() {
   try {
     shell.beep();
   } catch (_) {}
-
-  if (macroEnabledState) {
-    await startMacroNative();
-  }
 
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('macro-state-changed', { active: macroEnabledState });
@@ -5038,13 +5034,14 @@ public class Program {
   return null;
 }
 
-async function startMacroNative(speed = 0.5) {
+async function startMacroNative(speed = 0.5, active = true) {
   try {
+    macroEnabledState = !!active;
     const numSpeed = typeof speed === 'number' ? speed : parseFloat(speed) || 0.5;
     const configSpeedPath = path.join(os.tmpdir(), 'loord_macro_speed.txt');
     const configActivePath = path.join(os.tmpdir(), 'loord_macro_active.txt');
     fs.writeFileSync(configSpeedPath, String(numSpeed), 'utf8');
-    fs.writeFileSync(configActivePath, 'true', 'utf8');
+    fs.writeFileSync(configActivePath, macroEnabledState ? 'true' : 'false', 'utf8');
 
     // Se já estiver rodando, apenas atualiza arquivos
     try {

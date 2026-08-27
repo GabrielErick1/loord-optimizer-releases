@@ -636,14 +636,9 @@ function updateMacroSpeedUI(val) {
     }
   });
 
-  if (toggleMacro) {
-    toggleMacro.checked = true;
-    if (macroForceContainer) macroForceContainer.style.display = 'block';
-  }
-  localStorage.setItem('loord_macro_active', 'true');
   localStorage.setItem('loord_macro_speed', formatted);
 
-  if (window.api && window.api.startMacro) {
+  if (toggleMacro && toggleMacro.checked && window.api && window.api.startMacro) {
     window.api.startMacro(parseFloat(formatted)).catch(() => {});
   }
 }
@@ -689,7 +684,6 @@ if (btnApplyMouse) {
       // 2. Se a macro estiver ativa, garante o start na velocidade atual
       if (toggleMacro && toggleMacro.checked) {
         const speed = getMacroCurrentSpeed();
-        localStorage.setItem('loord_macro_active', 'true');
         localStorage.setItem('loord_macro_speed', String(speed));
 
         if (window.api && window.api.startMacro) {
@@ -703,27 +697,12 @@ if (btnApplyMouse) {
 }
 
 if (toggleMacro) {
-  // Restaura estado inicial salvo (ativo por padrão)
-  const savedActive = localStorage.getItem('loord_macro_active') !== 'false';
-  const savedSpeed = localStorage.getItem('loord_macro_speed') || '0.5';
+  // Inicia sempre DESATIVADO por padrão ao abrir o painel
+  toggleMacro.checked = false;
+  if (macroForceContainer) macroForceContainer.style.display = 'block';
   
+  const savedSpeed = localStorage.getItem('loord_macro_speed') || '0.5';
   updateMacroSpeedUI(savedSpeed);
-
-  if (savedActive) {
-    toggleMacro.checked = true;
-    if (macroForceContainer) macroForceContainer.style.display = 'block';
-  } else {
-    toggleMacro.checked = false;
-    if (macroForceContainer) macroForceContainer.style.display = 'none';
-  }
-
-  // Inicia o motor nativo da macro imediatamente no carregamento da interface
-  setTimeout(() => {
-    if (toggleMacro.checked && window.api && window.api.startMacro) {
-      const speed = getMacroCurrentSpeed();
-      window.api.startMacro(speed).catch((e) => console.error('[MACRO AUTO-START]', e));
-    }
-  }, 400);
 
   function playMacroBeepAudio(enabled) {
     try {

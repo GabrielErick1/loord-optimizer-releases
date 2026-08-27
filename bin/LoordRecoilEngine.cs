@@ -56,7 +56,7 @@ namespace LoordOptimizer
             if (speed <= 0.0) speed = 0.1;
             if (speed > 50.0) speed = 50.0;
 
-            bool macroAtiva = true;
+            bool macroAtiva = false;
             double accumY = 0.0;
             string configSpeedPath = Path.Combine(Path.GetTempPath(), "loord_macro_speed.txt");
             string configActivePath = Path.Combine(Path.GetTempPath(), "loord_macro_active.txt");
