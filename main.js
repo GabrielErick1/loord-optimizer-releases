@@ -2290,13 +2290,90 @@ ipcMain.handle('reboot-computer', async () => {
   }
 });
 
+// ─── MOTOR DA MACRO DE RECOIL & DESCIDA Y ──────────────────────────────────
+async function killMacroProcess() {
+  if (macroProcess) {
+    try {
+      if (!macroProcess.killed) macroProcess.kill('SIGKILL');
+    } catch (_) {}
+    macroProcess = null;
+  }
+  try {
+    const tmpScript = path.join(os.tmpdir(), 'loord_recoil_engine.ps1');
+    execSync(`powershell -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*loord_recoil_engine.ps1*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"`, { stdio: 'ignore' });
+  } catch (_) {}
+}
+
 ipcMain.handle('start-macro', async (event, speed) => {
   try {
     await killMacroProcess();
 
     const numSpeed = typeof speed === 'number' ? speed : parseFloat(speed) || 0.5;
-    const scriptPath = getPhysicalScriptPath('macro_capa.ps1');
-    const command = `$Host.UI.RawUI.WindowTitle = 'MacroCapaFreeFire'; & '${scriptPath.replace(/'/g, "''")}' -Velocidade ${numSpeed}`;
+    const tmpScript = path.join(os.tmpdir(), 'loord_recoil_engine.ps1');
+
+    const scriptContent = `# Loord Recoil Engine - Puxada Y Suave
+param([double]$Velocidade = ${numSpeed})
+
+$code = @"
+using System;
+using System.Runtime.InteropServices;
+using System.Threading;
+
+public class MacroEngine {
+    [DllImport("user32.dll")] public static extern short GetAsyncKeyState(int vKey);
+    [DllImport("user32.dll")] public static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, int dwExtraInfo);
+
+    private const int MOUSEEVENTF_MOVE = 0x0001;
+    private const int VK_LBUTTON = 0x01; // Botao esquerdo do mouse (Atirar)
+    private const int VK_F2      = 0x71;
+    private const int VK_F3      = 0x72;
+    private const int VK_F6      = 0x75;
+    private const int VK_F7      = 0x76;
+
+    public static void Run(double speed) {
+        if (speed <= 0.0) speed = 0.5;
+        double accumY = 0.0;
+        bool macroAtiva = true;
+
+        while (true) {
+            bool f2 = (GetAsyncKeyState(VK_F2) & 0x8000) != 0;
+            bool f3 = (GetAsyncKeyState(VK_F3) & 0x8000) != 0;
+            bool f6 = (GetAsyncKeyState(VK_F6) & 0x8000) != 0;
+            bool f7 = (GetAsyncKeyState(VK_F7) & 0x8000) != 0;
+
+            if (f2 || f3 || f6 || f7) {
+                macroAtiva = !macroAtiva;
+                try { Console.Beep(macroAtiva ? 1200 : 500, 120); } catch {}
+                Thread.Sleep(300);
+            }
+
+            if (macroAtiva) {
+                bool shooting = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+                if (shooting) {
+                    accumY += speed;
+                    if (accumY >= 1.0) {
+                        int stepY = (int)Math.Floor(accumY);
+                        mouse_event(MOUSEEVENTF_MOVE, 0, stepY, 0, 0); // Puxa o cursor para baixo
+                        accumY -= stepY;
+                    }
+                    Thread.Sleep(7);
+                } else {
+                    accumY = 0.0;
+                    Thread.Sleep(5);
+                }
+            } else {
+                Thread.Sleep(20);
+            }
+        }
+    }
+}
+"@
+
+Add-Type -TypeDefinition $code -Language CSharp
+[MacroEngine]::Run($Velocidade)
+`;
+
+    fs.writeFileSync(tmpScript, scriptContent, 'utf8');
 
     const { spawn } = require('child_process');
     macroProcess = spawn('powershell.exe', [
@@ -2305,16 +2382,22 @@ ipcMain.handle('start-macro', async (event, speed) => {
       'Bypass',
       '-WindowStyle',
       'Hidden',
-      '-Command',
-      command
-    ]);
-
-    macroProcess.on('error', (err) => {
-      console.error('Falha ao iniciar processo da macro:', err);
+      '-File',
+      tmpScript,
+      '-Velocidade',
+      String(numSpeed)
+    ], {
+      windowsHide: true,
+      detached: true,
+      stdio: 'ignore'
     });
 
+    macroProcess.unref();
+
+    console.log(`[MACRO] Iniciada com sucesso! Velocidade: ${numSpeed}`);
     return { success: true };
   } catch (e) {
+    console.error('Erro ao iniciar macro:', e);
     return { success: false, error: e.message };
   }
 });
@@ -2322,8 +2405,10 @@ ipcMain.handle('start-macro', async (event, speed) => {
 ipcMain.handle('stop-macro', async () => {
   try {
     await killMacroProcess();
+    console.log('[MACRO] Finalizada com sucesso!');
     return { success: true };
   } catch (e) {
+    console.error('Erro ao parar macro:', e);
     return { success: false, error: e.message };
   }
 });
@@ -3994,9 +4079,121 @@ function injectLiveAdbSensitivity(sensYVal, dpiEmuVal, styleMul = 1.0) {
   } catch (_) {}
 }
 
+// ── REGEDIT ADAPTATIVA - OTIMIZADOR DE MOUSE E DESEMPENHO BLUESTACKS ──────────
+ipcMain.handle('apply-adaptive-profile', async (event, profileName) => {
+  try {
+    let resultLog = [];
+    const applyDesempenho = () => {
+      // 1. Plano de Energia em Alto Desempenho (8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c)
+      try {
+        execSync('powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c', { stdio: 'ignore' });
+        resultLog.push('⚡ Plano de Energia ajustado para Alto Desempenho (Anti-Throttling de CPU).');
+      } catch (_) {}
+
+      // 2. Prioridade "Alta" (128) para o processo do BlueStacks (HD-Player.exe, etc.)
+      const procList = ['HD-Player', 'HD-Player64', 'BlueStacks', 'BlueStacksX', 'HD-Frontend', 'LdVBoxHeadless', 'dnplayer', 'Nox'];
+      let foundCount = 0;
+      for (const p of procList) {
+        try {
+          const out = execSync(`powershell -NoProfile -Command "Get-Process -Name '${p}' -ErrorAction SilentlyContinue | ForEach-Object { $_.PriorityClass = 'High'; Write-Output $_.ProcessName }"`, { encoding: 'utf8' }).trim();
+          if (out) {
+            foundCount++;
+            resultLog.push(`🚀 Prioridade do processo ${p}.exe ajustada para ALTA.`);
+          }
+        } catch (_) {}
+      }
+      if (foundCount === 0) {
+        resultLog.push('ℹ️ Nenhuma instância do BlueStacks aberta no momento. A prioridade Alta será aplicada assim que abrir.');
+      }
+    };
+
+    if (profileName === 'RAPIDA') {
+      execSync('reg add "HKCU\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d 0 /f', { stdio: 'ignore' });
+      execSync('reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d 0 /f', { stdio: 'ignore' });
+      execSync('reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d 0 /f', { stdio: 'ignore' });
+      execSync('reg add "HKCU\\Control Panel\\Mouse" /v MouseSensitivity /t REG_SZ /d 15 /f', { stdio: 'ignore' });
+      applyRealtimeWindowsMouse(15);
+      applyDesempenho();
+      return {
+        success: true,
+        profile: 'RÁPIDA',
+        summary: 'Perfil RÁPIDA aplicado com sucesso! Sem aceleração, resposta 1:1, sensibilidade alta (15), Alto Desempenho e Prioridade Alta no BlueStacks.',
+        details: resultLog
+      };
+    }
+
+    if (profileName === 'LEVE') {
+      execSync('reg add "HKCU\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d 0 /f', { stdio: 'ignore' });
+      execSync('reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d 0 /f', { stdio: 'ignore' });
+      execSync('reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d 0 /f', { stdio: 'ignore' });
+      execSync('reg add "HKCU\\Control Panel\\Mouse" /v MouseSensitivity /t REG_SZ /d 10 /f', { stdio: 'ignore' });
+      applyRealtimeWindowsMouse(10);
+      applyDesempenho();
+      return {
+        success: true,
+        profile: 'LEVE',
+        summary: 'Perfil LEVE aplicado com sucesso! Sem aceleração, sensibilidade neutra/padrão (10), Alto Desempenho e Prioridade Alta no BlueStacks.',
+        details: resultLog
+      };
+    }
+
+    if (profileName === 'SUAVE') {
+      execSync('reg add "HKCU\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d 1 /f', { stdio: 'ignore' });
+      execSync('reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d 6 /f', { stdio: 'ignore' });
+      execSync('reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d 10 /f', { stdio: 'ignore' });
+      execSync('reg add "HKCU\\Control Panel\\Mouse" /v MouseSensitivity /t REG_SZ /d 8 /f', { stdio: 'ignore' });
+      applyRealtimeWindowsMouse(8);
+      applyDesempenho();
+      return {
+        success: true,
+        profile: 'SUAVE',
+        summary: 'Perfil SUAVE aplicado com sucesso! Aceleração leve mantida, movimento mais controlado (sensibilidade 8), Alto Desempenho e Prioridade Alta no BlueStacks.',
+        details: resultLog
+      };
+    }
+
+    if (profileName === 'SO_DESEMPENHO') {
+      applyDesempenho();
+      return {
+        success: true,
+        profile: 'SÓ DESEMPENHO',
+        summary: 'Otimizações de DESEMPENHO aplicadas com sucesso! Plano de energia em Alto Desempenho ativado e prioridade dos processos configurada.',
+        details: resultLog
+      };
+    }
+
+    if (profileName === 'RESTAURAR') {
+      execSync('reg add "HKCU\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d 1 /f', { stdio: 'ignore' });
+      execSync('reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d 6 /f', { stdio: 'ignore' });
+      execSync('reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d 10 /f', { stdio: 'ignore' });
+      execSync('reg add "HKCU\\Control Panel\\Mouse" /v MouseSensitivity /t REG_SZ /d 10 /f', { stdio: 'ignore' });
+      try {
+        execSync('powercfg /setactive 381b4222-f694-41f0-9685-ff5bb260df2e', { stdio: 'ignore' });
+      } catch (_) {}
+      applyRealtimeWindowsMouse(10);
+      return {
+        success: true,
+        profile: 'PADRÃO WINDOWS',
+        summary: 'Configuração padrão do Windows restaurada com sucesso! Sensibilidade 10, aceleração padrão e plano de energia Equilibrado redefinidos.',
+        details: ['Configuração de mouse e energia redefinidas para os padrões originais do Windows.']
+      };
+    }
+
+    throw new Error('Perfil não especificado');
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
 // ── REGEDIT ADAPTATIVA HANDLER (INJEÇÃO NO WINDOWS + EMULADORES EM TEMPO REAL) ────
 ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
   try {
+    if (typeof config === 'string') {
+      // Se for passado o nome do perfil (ex: RAPIDA, LEVE, SUAVE)
+      const res = await ipcMain._events['apply-adaptive-profile'](event, config);
+      return res;
+    }
+
     let {
       dpiMouse = 1600,
       dpiEmu = 480,

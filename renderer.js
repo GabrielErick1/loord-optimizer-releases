@@ -3509,5 +3509,61 @@ if (presetSpeedBtns) {
   }
 })();
 
+// ─── OTIMIZADOR DE MOUSE E DESEMPENHO BLUESTACKS (REGEDIT ADAPTATIVA) ──────────
+const btnApplyAdaptiveProfile = document.getElementById('btn-apply-adaptive-profile');
+const adaptiveProfileResult = document.getElementById('adaptive-profile-result');
+const adaptiveProfileTitle = document.getElementById('adaptive-profile-title');
+const adaptiveProfileSummary = document.getElementById('adaptive-profile-summary');
+const adaptiveProfileDetails = document.getElementById('adaptive-profile-details');
+const adaptiveProfileError = document.getElementById('adaptive-profile-error');
+const adaptiveProfileErrorMsg = document.getElementById('adaptive-profile-error-msg');
+
+if (btnApplyAdaptiveProfile) {
+  btnApplyAdaptiveProfile.addEventListener('click', async () => {
+    try {
+      const selectedRadio = document.querySelector('input[name="adapt-profile-choice"]:checked');
+      const profile = selectedRadio ? selectedRadio.value : 'RAPIDA';
+
+      btnApplyAdaptiveProfile.disabled = true;
+      const originalText = btnApplyAdaptiveProfile.innerHTML;
+      btnApplyAdaptiveProfile.innerHTML = '⏳ Aplicando Regedit e Otimizando Desempenho...';
+
+      if (adaptiveProfileResult) adaptiveProfileResult.style.display = 'none';
+      if (adaptiveProfileError) adaptiveProfileError.style.display = 'none';
+
+      const res = await window.api.applyAdaptiveProfile(profile);
+
+      btnApplyAdaptiveProfile.disabled = false;
+      btnApplyAdaptiveProfile.innerHTML = originalText;
+
+      if (res && res.success) {
+        if (adaptiveProfileResult) {
+          adaptiveProfileResult.style.display = 'block';
+          if (adaptiveProfileTitle) adaptiveProfileTitle.innerHTML = `✅ Perfil [${res.profile}] Aplicado com Sucesso!`;
+          if (adaptiveProfileSummary) adaptiveProfileSummary.textContent = res.summary;
+          if (adaptiveProfileDetails && Array.isArray(res.details)) {
+            adaptiveProfileDetails.innerHTML = res.details.map(d => `<div>• ${d}</div>`).join('');
+          }
+        }
+      } else {
+        if (adaptiveProfileError) {
+          adaptiveProfileError.style.display = 'block';
+          if (adaptiveProfileErrorMsg) adaptiveProfileErrorMsg.textContent = res?.error || 'Erro ao aplicar perfil adaptativo.';
+        }
+      }
+    } catch (err) {
+      if (btnApplyAdaptiveProfile) {
+        btnApplyAdaptiveProfile.disabled = false;
+        btnApplyAdaptiveProfile.innerHTML = '⚡ Aplicar Perfil Selecionado no Windows &amp; BlueStacks';
+      }
+      if (adaptiveProfileError) {
+        adaptiveProfileError.style.display = 'block';
+        if (adaptiveProfileErrorMsg) adaptiveProfileErrorMsg.textContent = err.message || 'Erro inesperado';
+      }
+    }
+  });
+}
+
+
 
 

@@ -135,157 +135,119 @@
             <button id="btn-global-update-now" style="background: #ffffff; color: #d97706; border: none; font-size: 0.82rem; font-weight: 900; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.25); display: flex; align-items: center; gap: 4px;">
               ⚡ ATUALIZAR (<span id="global-update-btn-ver">...</span>)
             </button>
-            <button id="btn-global-update-close" style="background: rgba(0, 0, 0, 0.25); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 6px; padding: 6px 10px; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.2s;">
-              ✕
-            </button>
-          </div>
-        </div>
-
-        <!-- TAB: REGEDIT ADAPTATIVA -->
-        <section id="tab-regedit-adaptativa" class="tab-content">
-          <div class="card" style="border: 2px solid #f59e0b; background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(0,0,0,0.6)); box-shadow: 0 0 25px rgba(245,158,11,0.2);">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+            <button id="btn-global-update-close" style="background: rgba(0, 0, 0, 0.25); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 6px; padding: 6px 10px; font-size: 0.85rem; font-weight: 700; cursor: pointer; transitio        <section id="tab-regedit-adaptativa" class="tab-content">
+          <div class="card" style="border: 2px solid #f59e0b; background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(0,0,0,0.65)); box-shadow: 0 0 25px rgba(245,158,11,0.25); border-radius: 12px; padding: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
               <h2 style="margin:0; color:#fbbf24; font-size:1.15rem; display:flex; align-items:center; gap:8px;">
-                🧬 REGEDIT ADAPTATIVA PERSONALIZADA
+                ⚡ OTIMIZADOR DE MOUSE E DESEMPENHO - BLUESTACKS
               </h2>
-              <span class="badge" style="background:#f59e0b; color:#000; font-weight:900;">VIP EXCLUSIVO</span>
+              <span class="badge" style="background:#f59e0b; color:#000; font-weight:900;">REGEDIT ADAPTATIVA 🔥</span>
             </div>
-            <p style="color:#cbd5e1; font-size:0.8rem; margin:0 0 16px 0; line-height:1.5;">
-              Preencha seus valores reais do emulador. O sistema vai <strong>calcular e gerar uma regedit única</strong> calibrada para a sua sensibilidade — sem input lag, sem trava, mira grudando no capa.
+            <p style="color:#cbd5e1; font-size:0.84rem; margin:0 0 16px 0; line-height:1.5;">
+              Ajustes reais e documentados do Windows: curva de resposta e velocidade 1:1 (<code style="color:#fde68a;">HKCU\Control Panel\Mouse</code>), plano de energia em <strong>Alto Desempenho</strong> e prioridade máxima de processo para instâncias do BlueStacks (<code style="color:#fde68a;">HD-Player.exe</code>).
             </p>
 
-            <div class="inputs-grid" style="margin-bottom:14px;">
-              <div class="input-field">
-                <label for="adapt-dpi-mouse" style="color:#fbbf24; font-weight:700;">🖱️ DPI do Mouse Físico</label>
-                <input type="text" id="adapt-dpi-mouse" value="1600" placeholder="ex: 800, 1600">
-                <span style="font-size:0.7rem; color:#94a3b8; margin-top:2px;">Veja no software do seu mouse (G Hub, Synapse...)</span>
-              </div>
-              <div class="input-field">
-                <label for="adapt-dpi-emu" style="color:#fbbf24; font-weight:700;">🎮 DPI do Emulador</label>
-                <input type="text" id="adapt-dpi-emu" value="480" placeholder="ex: 240, 320, 480">
-                <span style="font-size:0.7rem; color:#94a3b8; margin-top:2px;">Configurado dentro do BlueStacks / MSI</span>
-              </div>
-            </div>
-
-            <div class="inputs-grid" style="margin-bottom:16px;">
-              <div class="input-field">
-                <label for="adapt-sens-x" style="color:#38bdf8; font-weight:700;">↔️ Sensibilidade X (Lateral/Giro)</label>
-                <input type="text" id="adapt-sens-x" value="1,67" placeholder="ex: 1,67 ou 2.0">
-                <span style="font-size:0.7rem; color:#94a3b8; margin-top:2px;">Sens X nas configurações do Keymap</span>
-              </div>
-              <div class="input-field">
-                <label for="adapt-sens-y" style="color:#38bdf8; font-weight:700;">↕️ Sensibilidade Y (Capa/Subida)</label>
-                <input type="text" id="adapt-sens-y" value="1,67" placeholder="ex: 1,67 ou 0.40">
-                <span style="font-size:0.7rem; color:#94a3b8; margin-top:2px;">Sens Y nas configurações do Keymap</span>
-              </div>
-            </div>
-
-            <!-- Seletor de Estilo de Mira -->
-            <div style="margin-bottom:16px;">
-              <label style="font-size:0.82rem; color:#cbd5e1; font-weight:800; display:block; margin-bottom:8px;">
-                ⚙️ Estilo de Mira — Escolha um preset ou ajuste manualmente:
+            <!-- Escolha do Perfil -->
+            <div style="margin-bottom: 20px;">
+              <label style="font-size:0.9rem; color:#fbbf24; font-weight:800; display:block; margin-bottom:12px;">
+                🎯 Escolha um perfil de sensibilidade de mouse e desempenho:
               </label>
-              <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                <button type="button" id="style-btn-suave" onclick="setAdaptStyle('suave')"
-                  style="background:rgba(14,165,233,0.12); border: 2px solid rgba(14,165,233,0.4); border-radius:8px; padding:10px 6px; text-align:center; cursor:pointer; color:#fff; transition:all 0.2s;">
-                  <div style="font-size:1.2rem;">🌊</div>
-                  <div style="font-weight:800; font-size:0.82rem; color:#38bdf8;">SUAVE</div>
-                  <div style="font-size:0.68rem; color:#94a3b8;">Mira fluida e controlada</div>
-                  <div style="font-size:0.72rem; color:#7dd3fc; font-weight:700; margin-top:3px;">Multiplicador: 0.78</div>
-                </button>
-                <button type="button" id="style-btn-equilibrado" onclick="setAdaptStyle('equilibrado')"
-                  style="background:rgba(245,158,11,0.22); border: 2px solid #f59e0b; border-radius:8px; padding:10px 6px; text-align:center; cursor:pointer; color:#fff; transition:all 0.2s; box-shadow:0 0 12px rgba(245,158,11,0.3);">
-                  <div style="font-size:1.2rem;">⚡</div>
-                  <div style="font-weight:800; font-size:0.82rem; color:#fbbf24;">EQUILIBRADO</div>
-                  <div style="font-size:0.68rem; color:#94a3b8;">Balanceia capa e controle</div>
-                  <div style="font-size:0.72rem; color:#fde68a; font-weight:700; margin-top:3px;">Multiplicador: 1.00</div>
-                </button>
-                <button type="button" id="style-btn-pesada" onclick="setAdaptStyle('pesada')"
-                  style="background:rgba(239,68,68,0.12); border: 2px solid rgba(239,68,68,0.4); border-radius:8px; padding:10px 6px; text-align:center; cursor:pointer; color:#fff; transition:all 0.2s;">
-                  <div style="font-size:1.2rem;">🔥</div>
-                  <div style="font-weight:800; font-size:0.82rem; color:#f87171;">PESADA</div>
-                  <div style="font-size:0.68rem; color:#94a3b8;">Mira agressiva, puxada forte</div>
-                  <div style="font-size:0.72rem; color:#fca5a5; font-weight:700; margin-top:3px;">Multiplicador: 1.22</div>
-                </button>
+
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <!-- [1] RAPIDA -->
+                <label class="radio-card adaptive-profile-card" data-profile="RAPIDA"
+                  style="border: 2px solid #ef4444; background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(0,0,0,0.6)); cursor: pointer; padding: 12px 14px; border-radius: 8px; display: flex; align-items: flex-start; gap: 12px; transition: all 0.2s;">
+                  <input type="radio" name="adapt-profile-choice" value="RAPIDA" checked style="margin-top: 4px; accent-color: #ef4444;">
+                  <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+                      <span style="color: #ff4757; font-weight: 900; font-size: 0.95rem;">[1] ⚡ RÁPIDA — Sem Aceleração &amp; Resposta 1:1 (Sensibilidade Alta: 15)</span>
+                      <span style="background: #ef4444; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;">FPS / MIRA RÁPIDA 🏆</span>
+                    </div>
+                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #fecdd3; line-height: 1.4;">
+                      Sem aceleração (MouseSpeed 0, Thresholds 0), resposta 1:1 com sensibilidade alta 15, plano de Alto Desempenho e prioridade Alta no BlueStacks.
+                    </p>
+                  </div>
+                </label>
+
+                <!-- [2] LEVE -->
+                <label class="radio-card adaptive-profile-card" data-profile="LEVE"
+                  style="border: 2px solid #38bdf8; background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(0,0,0,0.6)); cursor: pointer; padding: 12px 14px; border-radius: 8px; display: flex; align-items: flex-start; gap: 12px; transition: all 0.2s;">
+                  <input type="radio" name="adapt-profile-choice" value="LEVE" style="margin-top: 4px; accent-color: #38bdf8;">
+                  <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+                      <span style="color: #38bdf8; font-weight: 900; font-size: 0.95rem;">[2] ⚖️ LEVE — Sem Aceleração &amp; Sensibilidade Neutra (Sensibilidade: 10)</span>
+                      <span style="background: #0284c7; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;">EQUILIBRADO 🎯</span>
+                    </div>
+                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #bae6fd; line-height: 1.4;">
+                      Resposta 1:1 equilibrada sem aceleração com sensibilidade neutra padrão 10. Bom ponto de partida para qualquer DPI.
+                    </p>
+                  </div>
+                </label>
+
+                <!-- [3] SUAVE -->
+                <label class="radio-card adaptive-profile-card" data-profile="SUAVE"
+                  style="border: 2px solid #10b981; background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(0,0,0,0.6)); cursor: pointer; padding: 12px 14px; border-radius: 8px; display: flex; align-items: flex-start; gap: 12px; transition: all 0.2s;">
+                  <input type="radio" name="adapt-profile-choice" value="SUAVE" style="margin-top: 4px; accent-color: #10b981;">
+                  <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+                      <span style="color: #34d399; font-weight: 900; font-size: 0.95rem;">[3] 🌊 SUAVE — Movimento Controlado &amp; Menos Brusco (Sensibilidade: 8)</span>
+                      <span style="background: #059669; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;">CONTROLE TOTAL 💎</span>
+                    </div>
+                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #a7f3d0; line-height: 1.4;">
+                      Aceleração leve mantida (MouseSpeed 1, Thresholds 6/10) com sensibilidade reduzida para 8. Movimento macio e menos brusco para travar a mira na cabeça.
+                    </p>
+                  </div>
+                </label>
+
+                <!-- [4] SO_DESEMPENHO -->
+                <label class="radio-card adaptive-profile-card" data-profile="SO_DESEMPENHO"
+                  style="border: 1px solid rgba(245, 158, 11, 0.6); background: rgba(245, 158, 11, 0.08); cursor: pointer; padding: 12px 14px; border-radius: 8px; display: flex; align-items: flex-start; gap: 12px; transition: all 0.2s;">
+                  <input type="radio" name="adapt-profile-choice" value="SO_DESEMPENHO" style="margin-top: 4px; accent-color: #f59e0b;">
+                  <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+                      <span style="color: #fbbf24; font-weight: 800; font-size: 0.92rem;">[4] 🚀 SÓ DESEMPENHO — Plano de Energia &amp; Prioridade (Sem mexer no mouse)</span>
+                      <span style="background: #d97706; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;">DESEMPENHO PURO</span>
+                    </div>
+                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #fde68a; line-height: 1.4;">
+                      Ativa o plano de energia de Alto Desempenho no Windows e eleva a prioridade de processo do BlueStacks para Alta, sem alterar a sensibilidade do mouse.
+                    </p>
+                  </div>
+                </label>
+
+                <!-- [5] RESTAURAR -->
+                <label class="radio-card adaptive-profile-card" data-profile="RESTAURAR"
+                  style="border: 1px solid rgba(148, 163, 184, 0.4); background: rgba(148, 163, 184, 0.06); cursor: pointer; padding: 12px 14px; border-radius: 8px; display: flex; align-items: flex-start; gap: 12px; transition: all 0.2s;">
+                  <input type="radio" name="adapt-profile-choice" value="RESTAURAR" style="margin-top: 4px; accent-color: #94a3b8;">
+                  <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+                      <span style="color: #cbd5e1; font-weight: 800; font-size: 0.92rem;">[5] 🔄 RESTAURAR PADRÃO DO WINDOWS</span>
+                      <span style="background: #475569; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;">RESET ↩️</span>
+                    </div>
+                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #94a3b8; line-height: 1.4;">
+                      Restaura a aceleração padrão do Windows (MouseSpeed 1, Thresholds 6/10, Sensi 10) e volta o plano de energia para o modo Equilibrado padrão.
+                    </p>
+                  </div>
+                </label>
               </div>
             </div>
 
-            <!-- Slider fino do multiplicador -->
-            <div style="background:rgba(0,0,0,0.35); border-radius:8px; padding:12px 14px; margin-bottom:16px; border:1px solid rgba(255,255,255,0.06);">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                <span style="font-size:0.8rem; color:#cbd5e1; font-weight:700;">🎚️ Força da Curva (Multiplicador)</span>
-                <div style="display:flex; align-items:center; gap:6px;">
-                  <input type="text" id="adapt-style-mul-input" value="1,00"
-                    style="width:58px; text-align:center; padding:3px 6px; font-size:0.85rem; font-weight:800; color:#fbbf24; background:rgba(0,0,0,0.6); border:1px solid #f59e0b; border-radius:4px;">
-                  <span style="font-size:0.72rem; color:#94a3b8;">0.40 → 2.00</span>
-                </div>
-              </div>
-              <input type="range" id="adapt-style-mul" min="0.40" max="2.00" step="0.01" value="1.00"
-                style="width:100%; accent-color:#f59e0b; cursor:pointer;">
-              <div style="display:flex; justify-content:space-between; font-size:0.68rem; color:#6b7280; margin-top:3px;">
-                <span>🌊 0.40 — Ultrafluida</span>
-                <span>⚡ 1.00 — 1:1 Padrão</span>
-                <span>🔥 2.00 — Ultraagressiva</span>
-              </div>
-            </div>
-
-            <!-- ── DETECTOR DE REMADA AUTOMÁTICO ──────────────────────── -->
-            <div style="background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.35); border-radius:10px; padding:14px; margin-bottom:16px;">
-              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                <span style="font-size:1.1rem;">🎯</span>
-                <span style="font-size:0.85rem; font-weight:900; color:#c084fc;">DETECTOR DE REMADA AUTOMÁTICO</span>
-                <span style="font-size:0.65rem; background:#7c3aed; color:#fff; padding:2px 6px; border-radius:4px; font-weight:800;">AUTO</span>
-              </div>
-              <p style="font-size:0.77rem; color:#d8b4fe; margin:0 0 10px 0; line-height:1.5;">Puxe o mouse <strong>aqui dentro</strong> como faz no jogo (remada de capa, giro lateral). O painel detecta sua velocidade real e calibra o multiplicador sozinho.</p>
-
-              <!-- Zona de captura -->
-              <div id="remada-zone"
-                style="width:100%; height:120px; border-radius:10px; border: 2px dashed rgba(168,85,247,0.6); background: rgba(10,12,20,0.6); cursor:crosshair; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; transition: all 0.2s; user-select:none;">
-                <div id="remada-idle-msg" style="text-align:center; pointer-events:none; z-index:2; position:relative;">
-                  <div style="font-size:1.6rem; animation: pulseUpdate 1.8s infinite;">🖱️</div>
-                  <div style="font-size:0.8rem; color:#fde68a; font-weight:700; margin-top:4px;">Mova o mouse aqui fazendo o movimento de subida de capa</div>
-                </div>
-                <div id="remada-active-msg" style="display:none; text-align:center; pointer-events:none; z-index:2; position:absolute; top:10px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.65); padding:4px 14px; border-radius:6px; border:1px solid rgba(251,191,36,0.4);">
-                  <div style="font-size:0.92rem; color:#fbbf24; font-weight:800;" id="remada-speed-live">🚀 Medindo Velocidade...</div>
-                </div>
-                <!-- Rastro visual da remada -->
-                <canvas id="remada-canvas" width="800" height="120" style="position:absolute; top:0; left:0; width:100%; height:120px; pointer-events:none; opacity:1;"></canvas>
-              </div>
-
-              <!-- Resultado da detecção -->
-              <div id="remada-result" style="display:none; margin-top:10px; padding:10px 12px; background:rgba(168,85,247,0.12); border-radius:8px; border:1px solid rgba(168,85,247,0.4);">
-                <div style="font-size:0.8rem; color:#e9d5ff; line-height:1.7;" id="remada-result-text"></div>
-                <button id="btn-apply-remada-result" onclick="applyRemadaResult()" type="button"
-                  style="margin-top:8px; width:100%; padding:8px; background:linear-gradient(90deg,#7c3aed,#a855f7); border:none; border-radius:6px; color:#fff; font-weight:800; font-size:0.82rem; cursor:pointer; transition:all 0.2s;">
-                  ✅ USAR ESTE MULTIPLICADOR NA MINHA REGEDIT
-                </button>
-              </div>
-
-              <div style="display:flex; gap:8px; margin-top:8px;">
-                <button id="btn-reset-remada" onclick="resetRemada()" type="button"
-                  style="flex:1; padding:6px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#9ca3af; font-size:0.75rem; cursor:pointer;">
-                  🔄 Resetar
-                </button>
-                <div style="flex:3; font-size:0.68rem; color:#6b7280; display:flex; align-items:center; line-height:1.3;">
-                  Quanto mais rápida a remada → multiplicador menor (controle). Lenta → multiplicador maior (impulso).
-                </div>
-              </div>
-            </div>
-            <!-- ───────────────────────────────────────────────────────── -->
-
-            <input type="hidden" id="adapt-style-value" value="equilibrado">
-
-            <button class="btn btn-primary" id="btn-apply-adaptive-reg" onclick="handleApplyAdaptiveRegedit(this)" style="width:100%; background: linear-gradient(90deg, #f59e0b, #ef4444); border:none; font-size:0.95rem; font-weight:900; letter-spacing:0.5px; padding:13px; border-radius:8px; cursor:pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(239,68,68,0.35);">
-              ⚡ Aplicar Regedit Adaptativa
+            <!-- Botão de Aplicação -->
+            <button class="btn btn-primary" id="btn-apply-adaptive-profile" type="button"
+              style="width:100%; background: linear-gradient(90deg, #f59e0b, #ef4444); border:none; font-size:1rem; font-weight:900; letter-spacing:0.5px; padding:14px; border-radius:8px; cursor:pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(239,68,68,0.35);">
+              ⚡ Aplicar Perfil Selecionado no Windows &amp; BlueStacks
             </button>
 
-            <!-- Resultado -->
-            <div id="adaptive-reg-result" style="display:none; margin-top:16px; border-radius:8px; padding:14px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.4);">
-              <div style="font-weight:800; color:#4ade80; font-size:0.9rem; margin-bottom:8px;">✅ Regedit Personalizada Aplicada com Sucesso!</div>
-              <div id="adaptive-reg-summary" style="font-size:0.78rem; color:#bbf7d0; line-height:1.7;"></div>
+            <!-- Feedback de Sucesso e Logs -->
+            <div id="adaptive-profile-result" style="display:none; margin-top:16px; border-radius:8px; padding:14px; background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.4);">
+              <div style="font-weight:900; color:#4ade80; font-size:0.95rem; margin-bottom:6px;" id="adaptive-profile-title">
+                ✅ Perfil Aplicado com Sucesso!
+              </div>
+              <div id="adaptive-profile-summary" style="font-size:0.8rem; color:#bbf7d0; line-height:1.6; margin-bottom:8px;"></div>
+              <div id="adaptive-profile-details" style="font-size:0.75rem; color:#86efac; line-height:1.5; border-top: 1px dashed rgba(34,197,94,0.3); padding-top: 6px;"></div>
             </div>
-            <div id="adaptive-reg-error" style="display:none; margin-top:16px; border-radius:8px; padding:12px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.4);">
-              <div style="font-weight:800; color:#f87171; font-size:0.85rem;">❌ <span id="adaptive-reg-error-msg"></span></div>
+
+            <div id="adaptive-profile-error" style="display:none; margin-top:16px; border-radius:8px; padding:12px; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.4);">
+              <div style="font-weight:800; color:#f87171; font-size:0.85rem;" id="adaptive-profile-error-msg"></div>
             </div>
           </div>
 
@@ -1715,7 +1677,7 @@
                 <p style="margin: 0; font-size: 12px; color: #94a3b8;">Verifique e receba novas versões e otimizações
                   automaticamente</p>
               </div>
-              <span id="app-version-badge" class="badge badge-success">v3.1.9</span>
+              <span id="app-version-badge" class="badge badge-success">v3.2.0</span>
             </div>
 
             <!-- Update Card Content -->
