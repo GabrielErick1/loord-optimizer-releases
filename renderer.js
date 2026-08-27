@@ -2857,8 +2857,10 @@ window.handleApplyCompTweak = async function(btn) {
 // ─── ASSISTENTE DE FORMATAÇÃO PROTEGIDO COM ISO LOORD v10.6 ────────────────
 const btnOpenFormatModal = document.getElementById('btn-open-format-modal');
 const formatIsoModal = document.getElementById('format-iso-modal');
+const btnDownloadIsoAction = document.getElementById('btn-download-iso-action');
 const btnPrepareIsoAction = document.getElementById('btn-prepare-iso-action');
 const btnStartFormatNow = document.getElementById('btn-start-format-now');
+const btnRemovePartitionAction = document.getElementById('btn-remove-partition-action');
 const isoDownloadContainer = document.getElementById('iso-download-container');
 const isoDownloadStatus = document.getElementById('iso-download-status');
 const isoDownloadPct = document.getElementById('iso-download-pct');
@@ -2889,17 +2891,39 @@ async function refreshUsbList() {
 }
 
 if (btnOpenFormatModal && formatIsoModal) {
-  btnOpenFormatModal.addEventListener('click', () => {
+  btnOpenFormatModal.addEventListener('click', async () => {
     formatIsoModal.style.display = 'flex';
-    // Sempre inicia no passo 1 (Criar Partição)
-    if (btnPrepareIsoAction) {
-      btnPrepareIsoAction.style.display = 'block';
-      btnPrepareIsoAction.disabled = false;
-      btnPrepareIsoAction.textContent = '💾 1. CRIAR PARTIÇÃO NO HD/SSD & PREPARAR ARQUIVOS DA ISO';
+    
+    // Reseta visualização inicial
+    if (btnDownloadIsoAction) {
+      btnDownloadIsoAction.style.display = 'block';
+      btnDownloadIsoAction.disabled = false;
+      btnDownloadIsoAction.textContent = '⬇️ 1. BAIXAR ISO OFICIAL LOORD (ARQUIVOS BLINDADOS)';
     }
+    if (btnPrepareIsoAction) btnPrepareIsoAction.style.display = 'none';
     if (btnStartFormatNow) btnStartFormatNow.style.display = 'none';
     if (isoPreparedBox) isoPreparedBox.style.display = 'none';
     if (isoDownloadContainer) isoDownloadContainer.style.display = 'none';
+
+    // Checa se já tem ISO baixada ou partição pronta
+    try {
+      const status = await window.api.checkLoordIsoStatus();
+      if (status) {
+        if (status.partitionReady) {
+          if (btnDownloadIsoAction) btnDownloadIsoAction.style.display = 'none';
+          if (btnPrepareIsoAction) btnPrepareIsoAction.style.display = 'none';
+          if (btnStartFormatNow) btnStartFormatNow.style.display = 'block';
+          if (isoPreparedBox) isoPreparedBox.style.display = 'block';
+        } else if (status.isoDownloaded) {
+          if (btnDownloadIsoAction) btnDownloadIsoAction.style.display = 'none';
+          if (btnPrepareIsoAction) {
+            btnPrepareIsoAction.style.display = 'block';
+            btnPrepareIsoAction.disabled = false;
+            btnPrepareIsoAction.textContent = '💾 2. PREPARAR COMPUTADOR PARA FORMATAR (CRIAR BOOT)';
+          }
+        }
+      }
+    } catch (_) {}
   });
 }
 
@@ -2921,54 +2945,91 @@ if (window.api && window.api.onUsbProgress) {
   });
 }
 
-if (btnPrepareIsoAction) {
-  btnPrepareIsoAction.addEventListener('click', async () => {
+// ── PASSO 1: BAIXAR A ISO ──
+if (btnDownloadIsoAction) {
+  btnDownloadIsoAction.addEventListener('click', async () => {
     if (!consentBackup?.checked || !consentDownload?.checked || !consentFormat?.checked) {
-      alert('⚠️ Para prosseguir com total segurança e consentimento legal, por favor marque todas as 3 caixas de confirmação:\n\n1. Backup dos arquivos pessoais\n2. Autorização para criar partição de instalação no HD/SSD\n3. Compreensão do processo de formatação.');
+      alert('⚠️ Para prosseguir com total segurança e consentimento legal, por favor marque todas as 3 caixas de confirmação:\n\n1. Backup dos arquivos pessoais\n2. Autorização para download da ISO e criação da partição de instalação\n3. Compreensão do processo de formatação.');
       return;
     }
 
-    btnPrepareIsoAction.disabled = true;
-    btnPrepareIsoAction.textContent = '⏳ 1. Criando Partição no HD/SSD & Baixando ISO...';
+    btnDownloadIsoAction.disabled = true;
+    btnDownloadIsoAction.textContent = '⏳ Baixando arquivos blindados da ISO (3.2 GB)...';
     if (isoDownloadContainer) isoDownloadContainer.style.display = 'block';
-    if (isoDownloadBar) isoDownloadBar.style.width = '15%';
-    if (isoDownloadStatus) isoDownloadStatus.textContent = 'Iniciando criação da partição e preparação dos arquivos no HD/SSD...';
+    if (isoDownloadBar) isoDownloadBar.style.width = '10%';
+    if (isoDownloadStatus) isoDownloadStatus.textContent = 'Iniciando download seguro com os servidores...';
 
     try {
       const res = await window.api.downloadLoordIso();
       if (res && res.success) {
         if (isoDownloadBar) isoDownloadBar.style.width = '100%';
         if (isoDownloadPct) isoDownloadPct.textContent = '100%';
-        if (isoDownloadStatus) isoDownloadStatus.textContent = 'Partição LOORD_SETUP (L:) criada com sucesso!';
+        if (isoDownloadStatus) isoDownloadStatus.textContent = 'Download concluído com sucesso!';
         
-        // Alerta explícito de partição criada com sucesso
-        alert('✅ PARTIÇÃO CRIADA COM SUCESSO NO HD/SSD!\n\n• Unidade de Instalação: L:\\ (LOORD_SETUP - 8 GB)\n• Status: Arquivos oficiais da ISO Loord Lite v10.6 gravados no disco.\n\nClique em OK para liberar o botão de formatação do computador.');
+        alert('✅ ISO OFICIAL LOORD BAIXADA COM SUCESSO!\n\nOs arquivos foram salvos de forma protegida e blindada no sistema.\n\nClique no botão "2. PREPARAR COMPUTADOR PARA FORMATAR" para configurar a partição de boot segura.');
         
-        // Atualiza a tela: Esconde botão 1 e exibe botão 2 (Formatar)
+        btnDownloadIsoAction.style.display = 'none';
+        if (btnPrepareIsoAction) {
+          btnPrepareIsoAction.style.display = 'block';
+          btnPrepareIsoAction.disabled = false;
+          btnPrepareIsoAction.textContent = '💾 2. PREPARAR COMPUTADOR PARA FORMATAR (CRIAR BOOT)';
+        }
+      } else {
+        alert('Erro ao baixar ISO: ' + (res?.error || 'Verifique sua conexão com a internet.'));
+        btnDownloadIsoAction.disabled = false;
+        btnDownloadIsoAction.textContent = '⬇️ 1. Tentar Baixar ISO Novamente';
+      }
+    } catch (e) {
+      alert('Erro inesperado no download: ' + e.message);
+      btnDownloadIsoAction.disabled = false;
+      btnDownloadIsoAction.textContent = '⬇️ 1. Tentar Baixar ISO Novamente';
+    }
+  });
+}
+
+// ── PASSO 2: PREPARAR O COMPUTADOR E PARTIÇÃO PROTEGIDA ──
+if (btnPrepareIsoAction) {
+  btnPrepareIsoAction.addEventListener('click', async () => {
+    btnPrepareIsoAction.disabled = true;
+    btnPrepareIsoAction.textContent = '⏳ Preparando computador e blindando partição de boot...';
+    if (isoDownloadContainer) isoDownloadContainer.style.display = 'block';
+    if (isoDownloadBar) isoDownloadBar.style.width = '30%';
+    if (isoDownloadStatus) isoDownloadStatus.textContent = 'Criando partição de 8 GB e copiando arquivos protegidos...';
+
+    try {
+      const res = await window.api.prepareLoordPartition();
+      if (res && res.success) {
+        if (isoDownloadBar) isoDownloadBar.style.width = '100%';
+        if (isoDownloadPct) isoDownloadPct.textContent = '100%';
+        if (isoDownloadStatus) isoDownloadStatus.textContent = 'Computador preparado com sucesso!';
+
+        alert('✅ COMPUTADOR PREPARADO PARA FORMATAÇÃO COM SUCESSO!\n\n• Partição de instalação criada e blindada com proteção total anti-cópia.\n• Unidades temporárias desmontadas do sistema.\n\nClique em OK para liberar a opção de formatar o computador agora.');
+
         if (isoPreparedBox) isoPreparedBox.style.display = 'block';
         btnPrepareIsoAction.style.display = 'none';
         if (btnStartFormatNow) {
           btnStartFormatNow.style.display = 'block';
           btnStartFormatNow.disabled = false;
-          btnStartFormatNow.textContent = '🚀 2. FORMATAR COMPUTADOR AGORA (REINICIAR NO INSTALADOR)';
+          btnStartFormatNow.textContent = '🚀 3. FORMATAR COMPUTADOR AGORA (REINICIAR NO INSTALADOR)';
         }
         if (statusIsoPrepare) {
           statusIsoPrepare.style.display = 'block';
-          statusIsoPrepare.innerHTML = '✅ <b>Partição de Instalação Pronta no HD/SSD (L: LOORD_SETUP)</b>';
+          statusIsoPrepare.innerHTML = '✅ <b>Computador Preparado para Formatação Limpa</b>';
         }
       } else {
-        alert('Erro ao criar partição: ' + (res?.error || 'Verifique se há espaço suficiente no disco.'));
+        alert('Erro ao preparar computador: ' + (res?.error || 'Erro desconhecido.'));
         btnPrepareIsoAction.disabled = false;
-        btnPrepareIsoAction.textContent = '💾 1. Tentar Criar Partição Novamente';
+        btnPrepareIsoAction.textContent = '💾 2. Tentar Preparar Novamente';
       }
     } catch (e) {
-      alert('Erro inesperado: ' + e.message);
+      alert('Erro ao preparar partição: ' + e.message);
       btnPrepareIsoAction.disabled = false;
-      btnPrepareIsoAction.textContent = '💾 1. Tentar Criar Partição Novamente';
+      btnPrepareIsoAction.textContent = '💾 2. Tentar Preparar Novamente';
     }
   });
 }
 
+// ── PASSO 3: INICIAR FORMATAÇÃO E REINICIAR ──
 if (btnStartFormatNow) {
   btnStartFormatNow.addEventListener('click', async () => {
     const confirmFinal = confirm('🚀 INICIAR FORMATAÇÃO PELO BOOT DO HD/SSD?\n\nO computador reiniciará automaticamente direto na tela do Instalador Oficial da ISO Loord Lite v10.6 gravado na sua partição para você formatar e instalar o Windows limpo com máximo FPS!\n\nDeseja reiniciar e formatar agora?');
@@ -2988,13 +3049,12 @@ if (btnStartFormatNow) {
       btnStartFormatNow.textContent = '🔄 REINICIANDO COMPUTADOR...';
     } else {
       btnStartFormatNow.disabled = false;
-      btnStartFormatNow.textContent = '🚀 2. FORMATAR COMPUTADOR AGORA';
+      btnStartFormatNow.textContent = '🚀 3. FORMATAR COMPUTADOR AGORA';
       alert('Erro: ' + (res?.error || 'Erro ao configurar boot.'));
     }
   });
 }
 
-const btnRemovePartitionAction = document.getElementById('btn-remove-partition-action');
 if (btnRemovePartitionAction) {
   btnRemovePartitionAction.addEventListener('click', async () => {
     const confirmDel = confirm('🗑️ EXCLUIR PARTIÇÃO DE FORMATAÇÃO E RESTAURAR ESPAÇO?\n\nA partição de 8 GB será apagada do seu HD/SSD e todo o espaço será devolvido à unidade C:. Deseja continuar?');
@@ -3009,10 +3069,11 @@ if (btnRemovePartitionAction) {
         alert('✅ ' + res.message);
         if (isoPreparedBox) isoPreparedBox.style.display = 'none';
         if (btnStartFormatNow) btnStartFormatNow.style.display = 'none';
-        if (btnPrepareIsoAction) {
-          btnPrepareIsoAction.style.display = 'block';
-          btnPrepareIsoAction.disabled = false;
-          btnPrepareIsoAction.textContent = '💾 1. CRIAR PARTIÇÃO NO HD/SSD & PREPARAR ARQUIVOS DA ISO';
+        if (btnPrepareIsoAction) btnPrepareIsoAction.style.display = 'none';
+        if (btnDownloadIsoAction) {
+          btnDownloadIsoAction.style.display = 'block';
+          btnDownloadIsoAction.disabled = false;
+          btnDownloadIsoAction.textContent = '⬇️ 1. BAIXAR ISO OFICIAL LOORD (ARQUIVOS BLINDADOS)';
         }
         if (statusIsoPrepare) {
           statusIsoPrepare.style.display = 'none';

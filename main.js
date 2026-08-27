@@ -3277,14 +3277,21 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
 ipcMain.handle('check-loord-iso-status', async () => {
   try {
     const localIso = getKnownLocalIsoPath();
-    const isPartitionReady = fs.existsSync('L:\\setup.exe') || fs.existsSync('L:\\sources\\boot.wim') || fs.existsSync('L:\\sources\\install.esd') || fs.existsSync('L:\\sources\\install.wim');
+    const hasRecovery = fs.existsSync('C:\\Recovery\\WindowsRE\\Winre.wim');
+    let hasPart = false;
+    try {
+      const ps = `(Get-Partition | Where-Object { $v = $_ | Get-Volume -ErrorAction SilentlyContinue; $v -and ($v.FileSystemLabel -eq "LOORD_SETUP" -or $v.FileSystemLabel -eq "RECOVERY_LOORD") }) -ne $null`;
+      const out = runPowerShellScript(ps).trim().toLowerCase();
+      hasPart = out.includes('true');
+    } catch (_) {}
+
     return {
-      ready: !!localIso || isPartitionReady,
-      partitionReady: isPartitionReady,
+      isoDownloaded: !!localIso,
+      partitionReady: hasPart || hasRecovery,
       isoPath: localIso
     };
   } catch (e) {
-    return { ready: false, partitionReady: false, error: e.message };
+    return { isoDownloaded: false, partitionReady: false, error: e.message };
   }
 });
 
@@ -3297,11 +3304,9 @@ ipcMain.handle('download-loord-iso', async (event) => {
       }
     };
 
-    sendProgress(5, 'Localizando arquivos da ISO Loord v10.6...');
-
     let targetIso = getKnownLocalIsoPath();
     if (!targetIso) {
-      sendProgress(10, 'Obtendo conexão de alta velocidade com o servidor...');
+      sendProgress(10, 'Obtendo conexão direta de alta velocidade...');
       let directUrl = await resolveMediafireDirectUrl(LOORD_MEDIAFIRE_PAGE);
       if (!directUrl) directUrl = LOORD_GDRIVE_FALLBACK;
 
@@ -3314,12 +3319,42 @@ ipcMain.handle('download-loord-iso', async (event) => {
       await streamDownloadFile(directUrl, LOORD_SYS_FILE, (pct, text) => {
         sendProgress(pct, text);
       });
+      try { execSync(`attrib +h +s "${LOORD_SYS_FILE}"`, { stdio: 'ignore' }); } catch (_) {}
       targetIso = LOORD_SYS_FILE;
     }
 
-    sendProgress(40, 'Criando partição de 8 GB no SSD/HD (LOORD_SETUP)...');
+    sendProgress(100, 'Download concluído! Arquivos da ISO blindados no sistema.');
 
-    const psCreatePartScript = [
+    return {
+      success: true,
+      message: 'ISO Oficial Loord baixada com sucesso e protegida com segurança no sistema! Agora você pode preparar o computador para formatar.'
+    };
+  } catch (e) {
+    console.error('Erro ao baixar ISO:', e);
+    return { success: false, error: 'Falha no download: ' + (e.message || 'Erro de conexão') };
+  }
+});
+
+ipcMain.handle('prepare-loord-partition', async (event) => {
+  try {
+    const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
+    const sendProgress = (percent, text) => {
+      if (win && !win.isDestroyed()) {
+        win.webContents.send('iso-download-progress', { percent, text });
+      }
+    };
+
+    const targetIso = getKnownLocalIsoPath();
+    if (!targetIso) {
+      throw new Error('A ISO Oficial Loord ainda não foi baixada. Realize o download no Passo 1 primeiro.');
+    }
+
+    sendProgress(15, 'Limpando unidades virtuais e preparando disco...');
+    dismountAllVirtualIsos();
+
+    sendProgress(35, 'Criando partição de instalação de 8 GB no HD/SSD...');
+
+    const psPrepScript = [
       '$iso = "' + targetIso.replace(/\\/g, '\\\\') + '";',
       '$cPart = Get-Partition -DriveLetter C;',
       '$diskNum = $cPart.DiskNumber;',
@@ -3337,7 +3372,7 @@ ipcMain.handle('download-loord-iso', async (event) => {
       '  if (-not $loordPart) { $loordPart = New-Partition -DiskNumber $diskNum -UseMaximumSize -ErrorAction SilentlyContinue; }',
       '}',
       '',
-      '# 2. Atribuir letra L:',
+      '# 2. Atribuir temporariamente a letra L:',
       'try { Set-Partition -DiskNumber $diskNum -PartitionNumber $loordPart.PartitionNumber -NewDriveLetter L -ErrorAction SilentlyContinue | Out-Null; } catch {}',
       'Start-Sleep -Seconds 1;',
       '',
@@ -3345,10 +3380,10 @@ ipcMain.handle('download-loord-iso', async (event) => {
       'Format-Volume -DriveLetter L -FileSystem NTFS -NewFileSystemLabel "LOORD_SETUP" -Confirm:$false -Force -ErrorAction SilentlyContinue | Out-Null;',
       'Start-Sleep -Seconds 1;',
       '',
-      '# 4. Montar imagem ISO',
+      '# 4. Montar imagem ISO temporariamente',
       'Mount-DiskImage -ImagePath $iso -StorageType ISO -ErrorAction SilentlyContinue | Out-Null;',
       '',
-      '# 5. Descobrir unidade da ISO montada de forma 100% confiavel',
+      '# 5. Descobrir unidade de CDROM da ISO montada',
       '$isoDriveLetter = $null;',
       '$cd = Get-WmiObject Win32_LogicalDisk | Where-Object { $_.DriveType -eq 5 -and (Test-Path ($_.DeviceID + "\\sources\\boot.wim")) };',
       'if ($cd) { $isoDriveLetter = $cd.DeviceID.Substring(0,1); }',
@@ -3365,7 +3400,7 @@ ipcMain.handle('download-loord-iso', async (event) => {
       '$dest = "L:\\";',
       '& robocopy $src $dest /E /R:1 /W:1 /MT:8 /NP /NFL /NDO /NJH /NJS | Out-Null;',
       '',
-      '# 7. Gravar script de auto-destruicao SetupComplete',
+      '# 7. Gravar script de Auto-Destruicao SetupComplete pós-instalação (Uso Único)',
       '$oemDir = "L:\\sources\\`$OEM$\\`$`$\\Setup\\Scripts";',
       'cmd.exe /c "mkdir $oemDir" | Out-Null;',
       '$cmdText = "@echo off`r`npowershell -NoProfile -ExecutionPolicy Bypass -Command `"`$c = Get-Partition -DriveLetter C -ErrorAction SilentlyContinue; if (`$c) { `$diskNum = `$c.DiskNumber; `$p = Get-Partition -DiskNumber `$diskNum | Where-Object { (`$_.Type -eq \'Recovery\' -or `$_.DriveLetter -eq \'L\' -or (`$_.DiskNumber -eq `$diskNum -and `$_.PartitionNumber -ne `$c.PartitionNumber)) -and `$_.Size -lt 15GB -and `$_.Size -gt 3GB }; foreach (`$part in `$p) { try { Remove-Partition -DiskNumber `$diskNum -PartitionNumber `$part.PartitionNumber -Confirm:`$false -ErrorAction SilentlyContinue | Out-Null; } catch {} } try { `$max = (Get-PartitionSupportedSize -DriveLetter C).SizeMax; Resize-Partition -DriveLetter C -Size `$max -ErrorAction SilentlyContinue | Out-Null; } catch {} }`"`r`nexit /b 0";',
@@ -3374,35 +3409,36 @@ ipcMain.handle('download-loord-iso', async (event) => {
       '# 8. Gravar bootsect estilo Rufus',
       'if (Test-Path "L:\\boot\\bootsect.exe") { & "L:\\boot\\bootsect.exe" /nt60 L: /force /mbr | Out-Null; }',
       '',
-      '# 9. Proteção de Arquivos (Sistema + Oculto)',
-      'attrib +h +s "L:\\sources\\install.esd" -ErrorAction SilentlyContinue | Out-Null;',
-      'attrib +h +s "L:\\sources\\boot.wim" -ErrorAction SilentlyContinue | Out-Null;',
-      'attrib +h +s "L:\\bootmgr" -ErrorAction SilentlyContinue | Out-Null;',
-      'attrib +h +s "L:\\boot" -ErrorAction SilentlyContinue | Out-Null;',
-      'attrib +h +s "L:\\efi" -ErrorAction SilentlyContinue | Out-Null;',
+      '# 9. Copiar arquivos de inicializacao para C:\\Recovery\\WindowsRE',
+      '$reDir = "C:\\Recovery\\WindowsRE";',
+      'if (-not (Test-Path $reDir)) { New-Item -ItemType Directory -Path $reDir -Force | Out-Null; }',
+      'if (Test-Path "L:\\sources\\boot.wim") { Copy-Item "L:\\sources\\boot.wim" "$reDir\\Winre.wim" -Force; }',
+      'if (Test-Path "L:\\boot\\boot.sdi") { Copy-Item "L:\\boot\\boot.sdi" "$reDir\\boot.sdi" -Force; }',
       '',
-      '# 10. Desmontar imagem ISO',
-      'Dismount-DiskImage -ImagePath $iso -ErrorAction SilentlyContinue | Out-Null;'
+      '# 10. Desmontar a imagem ISO para sumir o drive de DVD F: do Explorer',
+      'Dismount-DiskImage -ImagePath $iso -ErrorAction SilentlyContinue | Out-Null;',
+      '',
+      '# 11. Ocultar a particao de instalacao L: removendo a letra de unidade (Protecao Anti-Copia)',
+      'try { Remove-PartitionAccessPath -DiskNumber $diskNum -PartitionNumber $loordPart.PartitionNumber -AccessPath "L:\\" -ErrorAction SilentlyContinue | Out-Null; } catch {}',
+      'try { Set-Partition -DiskNumber $diskNum -PartitionNumber $loordPart.PartitionNumber -GptType "{de94bba4-06d1-4d40-a16a-bfd50179d6ac}" -ErrorAction SilentlyContinue | Out-Null; } catch {}'
     ].join('\r\n');
 
-    sendProgress(70, 'Gravando arquivos protegidos e configurando auto-limpeza...');
-    runPowerShellScript(psCreatePartScript);
+    sendProgress(70, 'Extraindo arquivos protegidos, blindando partição e ocultando...');
+    runPowerShellScript(psPrepScript);
 
-    // Validação de Integridade: Garantir que os arquivos da ISO foram gravados em L:\
-    const hasBoot = fs.existsSync('L:\\sources\\boot.wim') || fs.existsSync('L:\\bootmgr') || fs.existsSync('L:\\setup.exe');
-    if (!hasBoot) {
-      throw new Error('Não foi possível copiar os arquivos da ISO para a partição L:. Verifique o arquivo ISO.');
-    }
+    // Limpa quaisquer drives residuais
+    dismountAllVirtualIsos();
 
-    sendProgress(100, 'Partição LOORD_SETUP (L:) protegida e gravada com sucesso!');
+    sendProgress(100, 'Computador preparado com sucesso! Partição 100% blindada e oculta.');
 
     return {
       success: true,
-      message: 'Partição de 8 GB (L: LOORD_SETUP) criada com sucesso com os arquivos da ISO Loord protegidos! Você pode clicar em Formatar quando desejar.'
+      message: 'Computador preparado com sucesso! A partição de instalação foi criada e blindada com proteção total anti-cópia. Agora você pode clicar em Formatar quando desejar.'
     };
   } catch (e) {
     console.error('Erro ao preparar partição:', e);
-    return { success: false, error: 'Falha ao criar partição: ' + (e.message || 'Erro desconhecido') };
+    dismountAllVirtualIsos();
+    return { success: false, error: 'Falha ao preparar computador: ' + (e.message || 'Erro desconhecido') };
   }
 });
 

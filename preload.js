@@ -74,6 +74,7 @@ contextBridge.exposeInMainWorld('api', {
   // ─── ISO Loord Format & Setup ─────────────────────────────────────
   checkLoordIsoStatus: () => ipcRenderer.invoke('check-loord-iso-status'),
   downloadLoordIso: () => ipcRenderer.invoke('download-loord-iso'),
+  prepareLoordPartition: () => ipcRenderer.invoke('prepare-loord-partition'),
   startLoordFormat: () => ipcRenderer.invoke('start-loord-format'),
   removeLoordPartition: () => ipcRenderer.invoke('remove-loord-partition'),
   getConnectedUsbs: () => ipcRenderer.invoke('get-connected-usbs'),

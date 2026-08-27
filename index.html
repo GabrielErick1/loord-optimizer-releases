@@ -1678,7 +1678,7 @@
                 <p style="margin: 0; font-size: 12px; color: #94a3b8;">Verifique e receba novas versões e otimizações
                   automaticamente</p>
               </div>
-              <span id="app-version-badge" class="badge badge-success">v3.1.4</span>
+              <span id="app-version-badge" class="badge badge-success">v3.1.5</span>
             </div>
 
             <!-- Update Card Content -->
@@ -2020,28 +2020,32 @@
         </div>
       </div>
 
-      <!-- Status de Partição Criada com Sucesso -->
+      <!-- Status de Computador e Partição Prontos -->
       <div id="iso-prepared-box" style="display: none; background: rgba(34, 197, 94, 0.15); border: 2px solid #22c55e; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; text-align: left; font-size: 0.84rem; color: #86efac; line-height: 1.5; box-shadow: 0 0 20px rgba(34, 197, 94, 0.25);">
         <div style="font-weight: 900; font-size: 0.95rem; color: #4ade80; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
-          <span>✅ PARTIÇÃO CRIADA COM SUCESSO NO HD/SSD!</span>
+          <span>✅ COMPUTADOR PREPARADO PARA FORMATAÇÃO!</span>
         </div>
         <div style="color: #f0fdf4; font-size: 0.8rem; margin-bottom: 6px;">
-          • <b>Partição de Instalação:</b> Unidade <code>L:\ (LOORD_SETUP - 8 GB)</code><br>
-          • <b>Status:</b> Arquivos oficiais da ISO Loord Lite v10.6 gravados e prontos para boot.
+          • <b>Status:</b> Arquivos oficiais da ISO Loord Lite gravados na partição de boot com proteção total.<br>
+          • <b>Segurança:</b> Os arquivos foram blindados contra cópia e estão 100% prontos para o boot limpo.
         </div>
         <div style="color: #cbd5e1; font-size: 0.78rem; border-top: 1px solid rgba(34, 197, 94, 0.3); padding-top: 6px;">
-          💡 <i>Ao clicar em <b>"FORMATAR COMPUTADOR AGORA"</b> abaixo, seu computador reiniciará direto no instalador pelo boot do seu HD/SSD para você formatar e instalar o Windows limpo!</i>
+          💡 <i>Ao clicar em <b>"FORMATAR COMPUTADOR AGORA"</b> abaixo, seu computador reiniciará direto no instalador pelo boot do seu HD/SSD para formatar e instalar o Windows limpo!</i>
         </div>
       </div>
 
       <!-- Botões de Ação na Sequência Solicitada -->
       <div style="display: flex; flex-direction: column; gap: 10px;">
-        <button id="btn-prepare-iso-action" style="width: 100%; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: #fff; font-size: 0.95rem; font-weight: 900; padding: 13px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(14, 165, 233, 0.4);">
-          💾 1. CRIAR PARTIÇÃO NO HD/SSD &amp; PREPARAR ARQUIVOS DA ISO
+        <button id="btn-download-iso-action" style="width: 100%; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: #fff; font-size: 0.95rem; font-weight: 900; padding: 13px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(14, 165, 233, 0.4);">
+          ⬇️ 1. BAIXAR ISO OFICIAL LOORD (ARQUIVOS BLINDADOS)
+        </button>
+
+        <button id="btn-prepare-iso-action" style="display: none; width: 100%; background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%); color: #fff; font-size: 0.95rem; font-weight: 900; padding: 13px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(56, 189, 248, 0.4);">
+          💾 2. PREPARAR COMPUTADOR PARA FORMATAR (CRIAR BOOT)
         </button>
 
         <button id="btn-start-format-now" style="display: none; width: 100%; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #fff; font-size: 1rem; font-weight: 900; padding: 14px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 20px rgba(34, 197, 94, 0.5);">
-          🚀 2. FORMATAR COMPUTADOR AGORA (REINICIAR NO INSTALADOR)
+          🚀 3. FORMATAR COMPUTADOR AGORA (REINICIAR NO INSTALADOR)
         </button>
 
         <button id="btn-remove-partition-action" style="width: 100%; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; font-size: 0.82rem; font-weight: 800; padding: 9px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
