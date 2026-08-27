@@ -4867,15 +4867,18 @@ using System.Threading;
 public class MacroEngine {
     [DllImport("user32.dll")] public static extern short GetAsyncKeyState(int vKey);
     [DllImport("user32.dll")] public static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, int dwExtraInfo);
+    [DllImport("winmm.dll")] public static extern uint timeBeginPeriod(uint uMilliseconds);
 
     private const int MOUSEEVENTF_MOVE = 0x0001;
     private const int VK_LBUTTON = 0x01; // Botao esquerdo do mouse (Atirar)
+    private const int VK_RBUTTON = 0x02; // Botao direito do mouse (Mirar / Atirar)
     private const int VK_F2      = 0x71;
     private const int VK_F3      = 0x72;
     private const int VK_F6      = 0x75;
     private const int VK_F7      = 0x76;
 
     public static void Run(double speed) {
+        try { timeBeginPeriod(1); } catch {}
         if (speed <= 0.0) speed = 0.5;
         double accumY = 0.0;
         bool macroAtiva = true;
@@ -4894,21 +4897,21 @@ public class MacroEngine {
             }
 
             if (macroAtiva) {
-                bool shooting = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-                if (shooting) {
-                    accumY += speed;
+                bool isShooting = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+                if (isShooting) {
+                    accumY += (speed * 1.5);
                     if (accumY >= 1.0) {
                         int stepY = (int)Math.Floor(accumY);
-                        mouse_event(MOUSEEVENTF_MOVE, 0, stepY, 0, 0); // Puxa o cursor suavemente para baixo
+                        mouse_event(MOUSEEVENTF_MOVE, 0, stepY, 0, 0); // Puxa o cursor para baixo de acordo com a velocidade
                         accumY -= stepY;
                     }
-                    Thread.Sleep(7);
+                    Thread.Sleep(5);
                 } else {
                     accumY = 0.0;
                     Thread.Sleep(5);
                 }
             } else {
-                Thread.Sleep(20);
+                Thread.Sleep(15);
             }
         }
     }
