@@ -692,22 +692,27 @@ if (btnApplyMouse) {
 }
 
 if (toggleMacro) {
-  // Restaura estado inicial salvo
-  const savedActive = localStorage.getItem('loord_macro_active') === 'true';
-  const savedSpeed = localStorage.getItem('loord_macro_speed');
-  if (savedSpeed) {
-    updateMacroSpeedUI(savedSpeed);
-  }
+  // Restaura estado inicial salvo (ativo por padrão)
+  const savedActive = localStorage.getItem('loord_macro_active') !== 'false';
+  const savedSpeed = localStorage.getItem('loord_macro_speed') || '0.5';
+  
+  updateMacroSpeedUI(savedSpeed);
+
   if (savedActive) {
     toggleMacro.checked = true;
     if (macroForceContainer) macroForceContainer.style.display = 'block';
-    setTimeout(() => {
-      const speed = getMacroCurrentSpeed();
-      if (window.api && window.api.startMacro) {
-        window.api.startMacro(speed);
-      }
-    }, 500);
+  } else {
+    toggleMacro.checked = false;
+    if (macroForceContainer) macroForceContainer.style.display = 'none';
   }
+
+  // Inicia o motor nativo da macro imediatamente no carregamento da interface
+  setTimeout(() => {
+    if (toggleMacro.checked && window.api && window.api.startMacro) {
+      const speed = getMacroCurrentSpeed();
+      window.api.startMacro(speed).catch((e) => console.error('[MACRO AUTO-START]', e));
+    }
+  }, 400);
 
   toggleMacro.addEventListener('change', async (e) => {
     const active = e.target.checked;
