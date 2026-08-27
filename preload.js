@@ -14,8 +14,6 @@ contextBridge.exposeInMainWorld('api', {
   optimizeWindowsMaster: () => ipcRenderer.invoke('optimize-windows-master'),
   applySingleTweak: (data) => ipcRenderer.invoke('apply-single-tweak', data),
   rebootComputer: () => ipcRenderer.invoke('reboot-computer'),
-  startMacro: (force) => ipcRenderer.invoke('start-macro', force),
-  stopMacro: () => ipcRenderer.invoke('stop-macro'),
   getUuid: () => ipcRenderer.invoke('get-uuid'),
   getMachineUUID: () => ipcRenderer.invoke('get-uuid'),
   verifyKey: (key) => ipcRenderer.invoke('verify-key', key),

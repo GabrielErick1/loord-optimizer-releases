@@ -1,6 +1,6 @@
 {
   "name": "loord-optimizer",
-  "version": "3.3.2",
+  "version": "3.3.3",
   "author": "Loord Optimizer",
   "description": "Loord Optimizer - Otimizador Gamer de Sensibilidade e Emulador",
   "main": "main.js",
@@ -16,6 +16,9 @@
     "appId": "com.loord.optimizer",
     "productName": "Loord Optimizer",
     "asar": true,
+    "asarUnpack": [
+      "bin/**"
+    ],
     "files": [
       "main.js",
       "preload.js",

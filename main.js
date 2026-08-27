@@ -4850,18 +4850,33 @@ app.on('will-quit', () => {
 });
 
 function getRecoilEngineExe() {
+  const tempExe = path.join(os.tmpdir(), 'LoordRecoilEngine.exe');
+
+  // 1) Se existir no bin do projeto ou descompactado
   const possiblePaths = [
-    path.join(__dirname, 'bin', 'LoordRecoilEngine.exe'),
+    path.join(process.resourcesPath || '', 'app.asar.unpacked', 'bin', 'LoordRecoilEngine.exe'),
     path.join(process.resourcesPath || '', 'bin', 'LoordRecoilEngine.exe'),
-    path.join(app.getAppPath(), 'bin', 'LoordRecoilEngine.exe'),
-    path.join(os.tmpdir(), 'LoordRecoilEngine.exe')
+    path.join(__dirname, 'bin', 'LoordRecoilEngine.exe')
   ];
 
   for (const p of possiblePaths) {
-    if (fs.existsSync(p)) return p;
+    try {
+      if (fs.existsSync(p)) {
+        // Se estiver dentro do asar ou no disco, garante cópia física em tempExe
+        try {
+          const buf = fs.readFileSync(p);
+          fs.writeFileSync(tempExe, buf);
+          return tempExe;
+        } catch (_) {
+          return p;
+        }
+      }
+    } catch (_) {}
   }
 
-  // Se não existir, compila na hora via csc.exe do .NET Framework 4.0 (nativo do Windows)
+  if (fs.existsSync(tempExe)) return tempExe;
+
+  // 2) Se não existir, compila na hora via csc.exe do .NET Framework 4.0 (nativo do Windows)
   try {
     const csSource = `
 using System;

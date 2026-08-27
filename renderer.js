@@ -260,13 +260,7 @@ if (btnApplyAllModules) {
   });
 }
 
-// Additional Tab Apply Buttons
-const btnApplyMouse = document.getElementById('btn-apply-mouse');
-if (btnApplyMouse) {
-  btnApplyMouse.addEventListener('click', async () => {
-    await applyMouseSettingsOnly();
-  });
-}
+
 
 const btnApplyEmulator = document.getElementById('btn-apply-emulator');
 if (btnApplyEmulator) {
@@ -666,15 +660,65 @@ presetMacroBtns.forEach(btn => {
   });
 });
 
+const btnApplyMouse = document.getElementById('btn-apply-mouse');
+
+if (btnApplyMouse) {
+  btnApplyMouse.addEventListener('click', async () => {
+    try {
+      const speed = getMacroCurrentSpeed();
+      if (toggleMacro) {
+        toggleMacro.checked = true;
+      }
+      if (macroForceContainer) {
+        macroForceContainer.style.display = 'block';
+      }
+      localStorage.setItem('loord_macro_active', 'true');
+      localStorage.setItem('loord_macro_speed', String(speed));
+
+      if (window.api && window.api.startMacro) {
+        await window.api.startMacro(speed);
+      }
+
+      btnApplyMouse.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+      btnApplyMouse.innerHTML = '<span>⚡</span> Configurações Aplicadas & Macro Ativada!';
+      setTimeout(() => {
+        btnApplyMouse.style.background = '';
+        btnApplyMouse.innerHTML = '<span>⚡</span> Aplicar Configurações';
+      }, 2500);
+    } catch (err) {
+      console.error('Erro ao aplicar configurações de mouse/macro:', err);
+    }
+  });
+}
+
 if (toggleMacro) {
+  // Restaura estado inicial salvo
+  const savedActive = localStorage.getItem('loord_macro_active') === 'true';
+  const savedSpeed = localStorage.getItem('loord_macro_speed');
+  if (savedSpeed) {
+    updateMacroSpeedUI(savedSpeed);
+  }
+  if (savedActive) {
+    toggleMacro.checked = true;
+    if (macroForceContainer) macroForceContainer.style.display = 'block';
+    setTimeout(() => {
+      const speed = getMacroCurrentSpeed();
+      if (window.api && window.api.startMacro) {
+        window.api.startMacro(speed);
+      }
+    }, 500);
+  }
+
   toggleMacro.addEventListener('change', async (e) => {
     const active = e.target.checked;
+    localStorage.setItem('loord_macro_active', active ? 'true' : 'false');
     if (macroForceContainer) {
       macroForceContainer.style.display = active ? 'block' : 'none';
     }
 
     if (active) {
       const speed = getMacroCurrentSpeed();
+      localStorage.setItem('loord_macro_speed', String(speed));
       if (window.api && window.api.startMacro) {
         await window.api.startMacro(speed);
       }
