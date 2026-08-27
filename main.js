@@ -210,11 +210,16 @@ app.whenReady().then(() => {
   } catch (e) {
     console.error('[GlobalShortcut] Erro ao registrar F7/F8:', e);
   }
+
+  // Inicia o motor nativo da macro em background 1.5s após abrir o app
+  setTimeout(() => {
+    startMacroNative(0.5).catch((e) => console.error('[Macro AutoBoot]', e));
+  }, 1500);
 });
 
 let macroEnabledState = true;
 
-function toggleMacroGlobalState() {
+async function toggleMacroGlobalState() {
   macroEnabledState = !macroEnabledState;
   const configActivePath = path.join(os.tmpdir(), 'loord_macro_active.txt');
   try {
@@ -224,6 +229,10 @@ function toggleMacroGlobalState() {
   try {
     shell.beep();
   } catch (_) {}
+
+  if (macroEnabledState) {
+    await startMacroNative();
+  }
 
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('macro-state-changed', { active: macroEnabledState });
@@ -5035,7 +5044,7 @@ public class Program {
   return null;
 }
 
-ipcMain.handle('start-macro', async (event, speed) => {
+async function startMacroNative(speed = 0.5) {
   try {
     const numSpeed = typeof speed === 'number' ? speed : parseFloat(speed) || 0.5;
     const configSpeedPath = path.join(os.tmpdir(), 'loord_macro_speed.txt');
@@ -5077,6 +5086,10 @@ ipcMain.handle('start-macro', async (event, speed) => {
     console.error('Erro ao iniciar macro:', e);
     return { success: false, error: e.message };
   }
+}
+
+ipcMain.handle('start-macro', async (event, speed) => {
+  return await startMacroNative(speed);
 });
 
 ipcMain.handle('stop-macro', async () => {
