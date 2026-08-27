@@ -3030,28 +3030,12 @@ ipcMain.handle('transform-windows-lite', async () => {
   }
 });
 
-function getElevateExePath() {
-  const p1 = path.join(__dirname, 'resources', 'subidofps', 'elevate.exe');
-  const p2 = path.join(__dirname, 'subidofps', 'elevate.exe');
-  const p3 = path.join(process.resourcesPath || '', 'subidofps', 'elevate.exe');
-  if (fs.existsSync(p1)) return p1;
-  if (fs.existsSync(p2)) return p2;
-  if (fs.existsSync(p3)) return p3;
-  return null;
-}
-
 function runPowerShellScript(scriptContent) {
   const tmpScriptPath = path.join(os.tmpdir(), `loord_${Date.now()}_${Math.random().toString(36).substring(7)}.ps1`);
   try {
     fs.writeFileSync(tmpScriptPath, scriptContent, 'utf8');
-    const elevateExe = getElevateExePath();
-    if (elevateExe) {
-      const res = execSync(`"${elevateExe}" -w powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${tmpScriptPath}"`, { windowsHide: true });
-      return res ? res.toString() : '';
-    } else {
-      const res = execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${tmpScriptPath}"`, { windowsHide: true });
-      return res ? res.toString() : '';
-    }
+    const res = execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${tmpScriptPath}"`, { windowsHide: true });
+    return res ? res.toString() : '';
   } finally {
     try { if (fs.existsSync(tmpScriptPath)) fs.unlinkSync(tmpScriptPath); } catch (_) {}
   }
