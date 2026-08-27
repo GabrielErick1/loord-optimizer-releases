@@ -3485,36 +3485,10 @@ if (btnApplyAdaptiveProfile) {
   });
 }
 
-// ─── RARE FIX VIP ENGINE (PERFIS DE MOUSE E PRECISÃO 1:1) ─────────────────────
+// ─── LOORD PRECISION VIP ENGINE (PERFIS DE MOUSE E PRECISÃO 1:1) ─────────────
 const rarefixBtns = document.querySelectorAll('.rarefix-btn');
 const rarefixStatusMsg = document.getElementById('rarefix-status-msg');
 const rarefixActiveBadge = document.getElementById('rarefix-active-badge');
-const btnOpenRarefixGui = document.getElementById('btn-open-rarefix-gui');
-
-if (btnOpenRarefixGui) {
-  btnOpenRarefixGui.addEventListener('click', async () => {
-    try {
-      if (rarefixStatusMsg) {
-        rarefixStatusMsg.style.color = '#c084fc';
-        rarefixStatusMsg.innerHTML = '<span>●</span> Abrindo interface externa RareFix.hta...';
-      }
-      const res = await window.api.openRarefixHta();
-      if (res && res.success) {
-        if (rarefixStatusMsg) {
-          rarefixStatusMsg.style.color = '#34d399';
-          rarefixStatusMsg.innerHTML = '<span>✔</span> Painel RareFix aberto com sucesso!';
-        }
-      } else {
-        throw new Error(res?.error || 'Não foi possível iniciar o painel HTA.');
-      }
-    } catch (err) {
-      if (rarefixStatusMsg) {
-        rarefixStatusMsg.style.color = '#ef4444';
-        rarefixStatusMsg.innerHTML = `<span>✖</span> Erro ao abrir HTA: ${err.message}`;
-      }
-    }
-  });
-}
 
 rarefixBtns.forEach(btn => {
   btn.addEventListener('click', async () => {
