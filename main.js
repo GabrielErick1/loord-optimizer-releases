@@ -3354,28 +3354,45 @@ ipcMain.handle('download-loord-iso', async (event) => {
       # 3. Formata com rotulo LOORD_SETUP
       Format-Volume -DriveLetter L -FileSystem NTFS -NewFileSystemLabel "LOORD_SETUP" -Confirm:$false -Force -ErrorAction SilentlyContinue | Out-Null;
 
-      # 4. Monta a ISO e copia 100% dos arquivos para L:\
-      $m = Get-DiskImage -ImagePath $iso;
-      if (-not $m.Attached) {
-        $m = Mount-DiskImage -ImagePath $iso -StorageType ISO -PassThru;
+      # 4. Monta a ISO e copia 100% dos arquivos estilo Rufus
+      Mount-DiskImage -ImagePath $iso -StorageType ISO -ErrorAction SilentlyContinue | Out-Null;
+      $img = Get-DiskImage -ImagePath $iso;
+      $isoVol = Get-Volume -DiskImage $img -ErrorAction SilentlyContinue;
+      if (-not $isoVol) {
+        $isoVol = $img | Get-Volume -ErrorAction SilentlyContinue;
       }
-      $isoDrive = ($m | Get-Volume).DriveLetter + ':';
+      $isoDriveLetter = $isoVol.DriveLetter;
+      if (-not $isoDriveLetter) {
+        $cd = Get-Volume | Where-Object { $_.DriveType -eq 'CD-ROM' -and (Test-Path ($_.DriveLetter + ':\sources\boot.wim')) };
+        $isoDriveLetter = $cd.DriveLetter;
+      }
+      if (-not $isoDriveLetter) {
+        $isoDriveLetter = 'E';
+      }
+      $src = $isoDriveLetter + ':\';
+      $dest = 'L:\';
 
-      robocopy "$isoDrive\\" "L:\\" /MIR /R:1 /W:1 /NP /NFL /NDO /NJH /NJS /MT:8 | Out-Null;
+      robocopy $src $dest /E /R:1 /W:1 /MT:8 /NP /NFL /NDO /NJH /NJS | Out-Null;
 
-      # 5. Grava setor de boot
-      if (Test-Path "L:\\boot\\bootsect.exe") {
-        & "L:\\boot\\bootsect.exe" /nt60 L: /force /mbr | Out-Null;
+      # 5. Grava setor de boot estilo Rufus
+      if (Test-Path "L:\boot\bootsect.exe") {
+        & "L:\boot\bootsect.exe" /nt60 L: /force /mbr | Out-Null;
       }
 
       # 6. Desmonta a ISO
       Dismount-DiskImage -ImagePath $iso -ErrorAction SilentlyContinue | Out-Null;
     `;
 
-    sendProgress(70, 'Copiando arquivos da ISO para a nova partição (3.2 GB)...');
+    sendProgress(70, 'Gravando arquivos de boot e instalação na partição L: (3.2 GB)...');
     runPowerShellScript(psCreatePartScript);
 
-    sendProgress(100, 'Partição LOORD_SETUP (L:) criada e visível com sucesso!');
+    // Validação de Integridade: Garantir que os arquivos da ISO foram gravados em L:\
+    const hasBoot = fs.existsSync('L:\\sources\\boot.wim') || fs.existsSync('L:\\bootmgr') || fs.existsSync('L:\\setup.exe');
+    if (!hasBoot) {
+      throw new Error('Não foi possível copiar os arquivos da ISO para a partição L:. Verifique o arquivo ISO.');
+    }
+
+    sendProgress(100, 'Partição LOORD_SETUP (L:) criada e gravada com sucesso!');
 
     return {
       success: true,
