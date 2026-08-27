@@ -144,9 +144,9 @@ app.on('second-instance', () => {
 });
 
 app.whenReady().then(() => {
-  dismountAllVirtualIsos();
-  cleanHostsFileOfBluestacks();
-  sanitizeBluestacksConfFiles();
+  try { dismountAllVirtualIsos(); } catch (_) {}
+  try { cleanSecurityHosts(); } catch (_) {}
+  try { sanitizeBluestacksConfFiles(); } catch (_) {}
   checkAdminPrivileges((isAdmin) => {
     systemIsAdmin = isAdmin;
     createWindow();
@@ -241,6 +241,7 @@ function cleanSecurityHosts() {
     }
   } catch (_) { }
 }
+const cleanHostsFileOfBluestacks = cleanSecurityHosts;
 
 // IPC Handlers
 ipcMain.on('window-control', (event, action) => {
