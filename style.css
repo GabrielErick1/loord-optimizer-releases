@@ -1140,3 +1140,321 @@ select {
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.08); opacity: 0.88; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   SEMI PRECISION REGIS (RAREFIX) — DESIGN PREMIUM LOORD OPTIMIZER
+   ═══════════════════════════════════════════════════════════════ */
+.rarefix-container {
+  max-width: 100%;
+  animation: tabFadeIn 0.3s ease forwards;
+}
+
+.rarefix-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.rarefix-title {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #c084fc, #e879f9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rarefix-badge {
+  background: linear-gradient(135deg, #8b5cf6, #d946ef);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 20px;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+  letter-spacing: 0.5px;
+}
+
+.rarefix-info-banner {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(30, 27, 75, 0.4));
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.rarefix-info-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.rarefix-info-text {
+  font-size: 0.83rem;
+  color: #e2e8f0;
+  line-height: 1.5;
+}
+
+.rarefix-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.rarefix-card {
+  background: linear-gradient(145deg, #13131a, #1a1a24);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.rarefix-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: transparent;
+  transition: background 0.3s;
+}
+
+.rarefix-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(168, 85, 247, 0.4);
+  box-shadow: 0 8px 24px rgba(168, 85, 247, 0.15);
+}
+
+.rarefix-card.recommended {
+  border-color: rgba(168, 85, 247, 0.5);
+  background: linear-gradient(145deg, rgba(168, 85, 247, 0.12), #151520);
+  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.2);
+}
+
+.rarefix-card.recommended::before {
+  background: linear-gradient(90deg, #c084fc, #e879f9);
+}
+
+.rarefix-card.active-profile {
+  border-color: #a855f7 !important;
+  background: linear-gradient(145deg, rgba(168, 85, 247, 0.2), #181826) !important;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.35) !important;
+}
+
+.rarefix-card.active-profile::before {
+  background: linear-gradient(90deg, #a855f7, #38bdf8) !important;
+}
+
+
+.rarefix-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.rarefix-card-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rarefix-tag {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+}
+
+.rarefix-tag.vip {
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  color: #ffffff;
+}
+
+.rarefix-card-desc {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  line-height: 1.45;
+  margin-bottom: 14px;
+  flex: 1;
+}
+
+.rarefix-stat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  color: #c084fc;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.rarefix-action-btn {
+  width: 100%;
+  background: #252533;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 9px 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.rarefix-action-btn:hover {
+  background: #8b5cf6;
+  border-color: #a855f7;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);
+}
+
+.rarefix-card.recommended .rarefix-action-btn {
+  background: linear-gradient(135deg, #9333ea, #c026d3);
+  border: none;
+  box-shadow: 0 4px 15px rgba(147, 51, 234, 0.35);
+}
+
+.rarefix-card.recommended .rarefix-action-btn:hover {
+  background: linear-gradient(135deg, #a855f7, #d946ef);
+  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.5);
+}
+
+.rarefix-actions-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+
+.rarefix-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.rarefix-btn-primary {
+  background: linear-gradient(135deg, #9333ea, #6366f1);
+  color: #ffffff;
+  border: none;
+  font-size: 0.92rem;
+  font-weight: 800;
+  padding: 12px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 18px rgba(147, 51, 234, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.rarefix-btn-primary:hover {
+  background: linear-gradient(135deg, #a855f7, #818cf8);
+  box-shadow: 0 6px 24px rgba(168, 85, 247, 0.5);
+  transform: translateY(-1px);
+}
+
+.rarefix-btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.92rem;
+  font-weight: 700;
+  padding: 12px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.rarefix-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.rarefix-status-box {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rarefix-status-text {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #34d399;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rarefix-status-pill {
+  font-size: 0.7rem;
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 800;
+}
+
+.rarefix-footer-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.rarefix-foot-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}

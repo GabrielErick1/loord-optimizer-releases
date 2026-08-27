@@ -3485,48 +3485,87 @@ if (btnApplyAdaptiveProfile) {
   });
 }
 
-// ─── RARE FIX ORIGINAL (PERFIS DE MOUSE E PRECISÃO) ───────────────────────────
+// ─── RARE FIX VIP ENGINE (PERFIS DE MOUSE E PRECISÃO 1:1) ─────────────────────
 const rarefixBtns = document.querySelectorAll('.rarefix-btn');
 const rarefixStatusMsg = document.getElementById('rarefix-status-msg');
+const rarefixActiveBadge = document.getElementById('rarefix-active-badge');
+const btnOpenRarefixGui = document.getElementById('btn-open-rarefix-gui');
+
+if (btnOpenRarefixGui) {
+  btnOpenRarefixGui.addEventListener('click', async () => {
+    try {
+      if (rarefixStatusMsg) {
+        rarefixStatusMsg.style.color = '#c084fc';
+        rarefixStatusMsg.innerHTML = '<span>●</span> Abrindo interface externa RareFix.hta...';
+      }
+      const res = await window.api.openRarefixHta();
+      if (res && res.success) {
+        if (rarefixStatusMsg) {
+          rarefixStatusMsg.style.color = '#34d399';
+          rarefixStatusMsg.innerHTML = '<span>✔</span> Painel RareFix aberto com sucesso!';
+        }
+      } else {
+        throw new Error(res?.error || 'Não foi possível iniciar o painel HTA.');
+      }
+    } catch (err) {
+      if (rarefixStatusMsg) {
+        rarefixStatusMsg.style.color = '#ef4444';
+        rarefixStatusMsg.innerHTML = `<span>✖</span> Erro ao abrir HTA: ${err.message}`;
+      }
+    }
+  });
+}
 
 rarefixBtns.forEach(btn => {
-  btn.addEventListener('mouseenter', () => {
-    btn.style.background = '#9147ed';
-  });
-  btn.addEventListener('mouseleave', () => {
-    btn.style.background = '#7828dc';
-  });
-
   btn.addEventListener('click', async () => {
     const speed = btn.getAttribute('data-speed');
+    const allCards = document.querySelectorAll('.rarefix-card');
+    
     try {
       if (rarefixStatusMsg) {
         rarefixStatusMsg.style.color = '#fde047';
-        rarefixStatusMsg.innerText = '● Aplicando...';
+        rarefixStatusMsg.innerHTML = '<span>●</span> Calibrando curva e sensibilidade no Windows...';
       }
 
       if (speed === 'restore') {
         const res = await window.api.applyRarefixProfile('RESTAURAR');
+        allCards.forEach(c => c.classList.remove('active-profile'));
         if (rarefixStatusMsg) {
-          rarefixStatusMsg.style.color = '#9cff9c';
-          rarefixStatusMsg.innerText = '● Configuração padrão restaurada';
+          rarefixStatusMsg.style.color = '#34d399';
+          rarefixStatusMsg.innerHTML = '<span>✔</span> Configuração e aceleração padrão do Windows restauradas com sucesso!';
+        }
+        if (rarefixActiveBadge) {
+          rarefixActiveBadge.textContent = 'PADRÃO WINDOWS';
+          rarefixActiveBadge.style.background = 'rgba(148, 163, 184, 0.2)';
+          rarefixActiveBadge.style.color = '#cbd5e1';
         }
       } else {
         const sensVal = parseInt(speed) || 11;
         const res = await window.api.applyRarefixProfile(sensVal);
+        
+        allCards.forEach(c => c.classList.remove('active-profile'));
+        const targetCard = document.getElementById(`card-rarefix-${sensVal}`);
+        if (targetCard) targetCard.classList.add('active-profile');
+
         if (rarefixStatusMsg) {
-          rarefixStatusMsg.style.color = '#9cff9c';
-          rarefixStatusMsg.innerText = `● Perfil aplicado: sensibilidade ${sensVal}`;
+          rarefixStatusMsg.style.color = '#34d399';
+          rarefixStatusMsg.innerHTML = `<span>✔</span> Perfil ativado com sucesso! <strong>Sensibilidade ${sensVal}</strong> (Resposta 1:1 Sem Aceleração)`;
+        }
+        if (rarefixActiveBadge) {
+          rarefixActiveBadge.textContent = `SENSI ${sensVal} ATIVA ⚡`;
+          rarefixActiveBadge.style.background = 'rgba(168, 85, 247, 0.25)';
+          rarefixActiveBadge.style.color = '#c084fc';
         }
       }
     } catch (err) {
       if (rarefixStatusMsg) {
         rarefixStatusMsg.style.color = '#ef4444';
-        rarefixStatusMsg.innerText = `● Erro ao aplicar: ${err.message}`;
+        rarefixStatusMsg.innerHTML = `<span>✖</span> Erro ao aplicar precisão: ${err.message}`;
       }
     }
   });
 });
+
 
 
 

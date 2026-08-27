@@ -343,56 +343,150 @@
           </div>
         </section>
 
-        <!-- TAB: SEMI PRECISION REGIS (RARE FIX ORIGINAL) -->
+        <!-- TAB: SEMI PRECISION REGIS (RARE FIX VIP ENGINE) -->
         <section id="tab-semi-precision-regis" class="tab-content">
-          <div style="background:#0e0e14; color:#fff; font-family:'Segoe UI',Arial,sans-serif; padding:28px; border-radius:12px; border:1px solid #30263b; box-sizing:border-box; max-width:820px;">
-            <h1 style="margin:0; color:#b450ff; font-size:32px; font-weight:bold; letter-spacing:0.5px;">RARE FIX</h1>
-            <div style="color:#aaa; margin:5px 0 22px; font-size:14px;">Painel de precisão • Windows 10</div>
+          <div class="rarefix-container">
+            
+            <!-- Header da Aba -->
+            <div class="rarefix-header">
+              <div>
+                <h2 class="rarefix-title">
+                  <span>🎯</span> SEMI PRECISION REGIS
+                </h2>
+                <p class="subtitle" style="margin-bottom: 0; margin-top: 4px;">
+                  Calibração de precisão milimétrica e resposta 1:1 no kernel do Windows para Free Fire &amp; BlueStacks
+                </p>
+              </div>
+              <span class="rarefix-badge">RARE FIX ENGINE 1:1 🔥</span>
+            </div>
 
-            <!-- Card 1: Perfis de Mouse -->
-            <div style="background:#191923; border:1px solid #30263b; padding:18px; margin-bottom:16px; border-radius:6px;">
-              <b style="color:#ffffff; font-size:14px; display:block; margin-bottom:10px; letter-spacing:0.5px;">PERFIS DE MOUSE</b>
-              <div style="display:flex; flex-wrap:wrap; gap:10px;">
-                <button class="rarefix-btn" data-speed="8" id="btn-rarefix-estavel"
-                  style="background:#7828dc; color:white; border:0; padding:14px 24px; font-weight:bold; font-size:14px; cursor:pointer; border-radius:4px; transition:background 0.2s;">
-                  ESTÁVEL
-                </button>
-                <button class="rarefix-btn" data-speed="10" id="btn-rarefix-equilibrado"
-                  style="background:#7828dc; color:white; border:0; padding:14px 24px; font-weight:bold; font-size:14px; cursor:pointer; border-radius:4px; transition:background 0.2s;">
-                  EQUILIBRADO
-                </button>
-                <button class="rarefix-btn" data-speed="11" id="btn-rarefix-precisao"
-                  style="background:#7828dc; color:white; border:0; padding:14px 24px; font-weight:bold; font-size:14px; cursor:pointer; border-radius:4px; transition:background 0.2s;">
-                  PRECISÃO
-                </button>
-                <button class="rarefix-btn" data-speed="13" id="btn-rarefix-rapido"
-                  style="background:#7828dc; color:white; border:0; padding:14px 24px; font-weight:bold; font-size:14px; cursor:pointer; border-radius:4px; transition:background 0.2s;">
-                  RÁPIDO
-                </button>
+            <!-- Banner Informativo -->
+            <div class="rarefix-info-banner">
+              <div class="rarefix-info-icon">🧬</div>
+              <div class="rarefix-info-text">
+                <strong>Otimização de Hardware 1:1:</strong> Ajusta a curva de aceleração e a escala de precisão no registro nativo do Windows (<code style="color:#c084fc;">HKCU\Control Panel\Mouse</code>). Elimina travamentos de mira, estabiliza a sensibilidade X/Y e previne que a mira passe da cabeça.
               </div>
             </div>
 
-            <!-- Card 2: Ações Diretas -->
-            <div style="background:#191923; border:1px solid #30263b; padding:18px; margin-bottom:16px; border-radius:6px; display:flex; flex-wrap:wrap; gap:10px;">
-              <button class="rarefix-btn" data-speed="11" id="btn-rarefix-aplicar-precisao"
-                style="background:#7828dc; color:white; border:0; padding:14px 24px; font-weight:bold; font-size:14px; cursor:pointer; border-radius:4px; transition:background 0.2s;">
-                APLICAR PRECISÃO
-              </button>
-              <button class="rarefix-btn" data-speed="restore" id="btn-rarefix-restaurar-padrao"
-                style="background:#7828dc; color:white; border:0; padding:14px 24px; font-weight:bold; font-size:14px; cursor:pointer; border-radius:4px; transition:background 0.2s;">
-                RESTAURAR PADRÃO
-              </button>
+            <!-- Grid de Perfis de Precisão -->
+            <div class="card" style="padding: 18px 20px; margin-bottom: 18px;">
+              <h3 style="color: #c084fc; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+                <span>🎯</span> PERFIS DE PRECISÃO &amp; VELOCIDADE DE MOUSE
+              </h3>
+
+              <div class="rarefix-grid">
+                
+                <!-- [1] ESTÁVEL (8) -->
+                <div class="rarefix-card" id="card-rarefix-8">
+                  <div class="rarefix-card-header">
+                    <div class="rarefix-card-title">
+                      <span>🛡️</span> ESTÁVEL
+                    </div>
+                    <span class="rarefix-tag">CONTROLE ALTO</span>
+                  </div>
+                  <div class="rarefix-stat-badge">⚡ Sensibilidade: 8 (Lenta/Firme)</div>
+                  <div class="rarefix-card-desc">
+                    Movimento macio e ultra controlado. Impede a mira de tremer ou subir além da cabeça em armas de um tiro e snipers.
+                  </div>
+                  <button class="rarefix-action-btn rarefix-btn" data-speed="8" id="btn-rarefix-estavel">
+                    ⚡ Ativar Estável
+                  </button>
+                </div>
+
+                <!-- [2] EQUILIBRADO (10) -->
+                <div class="rarefix-card" id="card-rarefix-10">
+                  <div class="rarefix-card-header">
+                    <div class="rarefix-card-title">
+                      <span>⚖️</span> EQUILIBRADO
+                    </div>
+                    <span class="rarefix-tag">PADRÃO PRO</span>
+                  </div>
+                  <div class="rarefix-stat-badge">⚡ Sensibilidade: 10 (Neutra 1:1)</div>
+                  <div class="rarefix-card-desc">
+                    Resposta linear balanceada para qualquer DPI. Excelente estabilidade horizontal e vertical para trocação padrão.
+                  </div>
+                  <button class="rarefix-action-btn rarefix-btn" data-speed="10" id="btn-rarefix-equilibrado">
+                    ⚡ Ativar Equilibrado
+                  </button>
+                </div>
+
+                <!-- [3] PRECISÃO (11) - RECOMENDADO -->
+                <div class="rarefix-card recommended" id="card-rarefix-11">
+                  <div class="rarefix-card-header">
+                    <div class="rarefix-card-title">
+                      <span>🎯</span> PRECISÃO
+                    </div>
+                    <span class="rarefix-tag vip">RECOMENDADO 🔥</span>
+                  </div>
+                  <div class="rarefix-stat-badge" style="color: #f472b6;">⚡ Sensibilidade: 11 (Foco em Capa)</div>
+                  <div class="rarefix-card-desc">
+                    Ajuste fino milimétrico com tração suave para puxadas rápidas de capa. Cola direto na cabeça com retorno estável.
+                  </div>
+                  <button class="rarefix-action-btn rarefix-btn" data-speed="11" id="btn-rarefix-precisao">
+                    👑 Ativar Precisão 1:1
+                  </button>
+                </div>
+
+                <!-- [4] RÁPIDO (13) -->
+                <div class="rarefix-card" id="card-rarefix-13">
+                  <div class="rarefix-card-header">
+                    <div class="rarefix-card-title">
+                      <span>⚡</span> RÁPIDO
+                    </div>
+                    <span class="rarefix-tag">ALTA RESPOSTA</span>
+                  </div>
+                  <div class="rarefix-stat-badge">⚡ Sensibilidade: 13 (Rush Rápido)</div>
+                  <div class="rarefix-card-desc">
+                    Resposta instantânea de 360° para movimentação insana de rushadores, sem aceleração errática do Windows.
+                  </div>
+                  <button class="rarefix-action-btn rarefix-btn" data-speed="13" id="btn-rarefix-rapido">
+                    ⚡ Ativar Rápido
+                  </button>
+                </div>
+
+              </div>
             </div>
 
-            <!-- Status do Script -->
-            <div id="rarefix-status-msg" style="color:#9cff9c; margin-top:14px; font-size:14px; font-weight:bold; min-height:20px;">
-              ● Pronto
+            <!-- Painel de Ações Rápidas & Restauração -->
+            <div class="rarefix-actions-panel">
+              <h3 style="color: #cbd5e1; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <span>⚙️</span> CONTROLES RÁPIDOS
+              </h3>
+
+              <div class="rarefix-actions-grid">
+                <button class="rarefix-btn-primary rarefix-btn" data-speed="11" id="btn-rarefix-aplicar-precisao">
+                  <span>⚡</span> Aplicar Precisão Recomendada (11)
+                </button>
+                <button class="rarefix-btn-secondary rarefix-btn" data-speed="restore" id="btn-rarefix-restaurar-padrao">
+                  <span>🔄</span> Restaurar Padrão do Windows
+                </button>
+                <button class="rarefix-btn-secondary" id="btn-open-rarefix-gui" style="border-color: rgba(168, 85, 247, 0.3);">
+                  <span>📂</span> Abrir Painel RareFix (.HTA)
+                </button>
+              </div>
+
+              <!-- Status em Tempo Real -->
+              <div class="rarefix-status-box" id="rarefix-status-container">
+                <div class="rarefix-status-text" id="rarefix-status-msg">
+                  <span>●</span> Sistema pronto para calibração de precisão
+                </div>
+                <div class="rarefix-status-pill" id="rarefix-active-badge">NATIVO 1:1</div>
+              </div>
             </div>
 
-            <!-- Rodapé informativo -->
-            <div style="color:#777; font-size:12px; margin-top:22px; line-height:1.4;">
-              Abre direto com duplo clique. Não altera arquivos do Free Fire, não injeta código e não tenta burlar anti-cheat.
+            <!-- Rodapé com Badges de Segurança -->
+            <div class="rarefix-footer-badges">
+              <div class="rarefix-foot-badge">
+                <span>🛡️</span> 100% Seguro no Windows (Kernel Mouse API)
+              </div>
+              <div class="rarefix-foot-badge">
+                <span>🔒</span> Zero Injeção de Código / Sem Risco de Ban
+              </div>
+              <div class="rarefix-foot-badge">
+                <span>🎮</span> Compatível com BlueStacks 5, MSI e PC Geral
+              </div>
             </div>
+
           </div>
         </section>
 
