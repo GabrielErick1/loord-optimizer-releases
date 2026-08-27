@@ -2994,6 +2994,41 @@ if (btnStartFormatNow) {
   });
 }
 
+const btnRemovePartitionAction = document.getElementById('btn-remove-partition-action');
+if (btnRemovePartitionAction) {
+  btnRemovePartitionAction.addEventListener('click', async () => {
+    const confirmDel = confirm('🗑️ EXCLUIR PARTIÇÃO DE FORMATAÇÃO E RESTAURAR ESPAÇO?\n\nA partição de 8 GB será apagada do seu HD/SSD e todo o espaço será devolvido à unidade C:. Deseja continuar?');
+    if (!confirmDel) return;
+
+    btnRemovePartitionAction.disabled = true;
+    btnRemovePartitionAction.textContent = '⏳ Excluindo partição e expandindo disco C:...';
+
+    try {
+      const res = await window.api.removeLoordPartition();
+      if (res && res.success) {
+        alert('✅ ' + res.message);
+        if (isoPreparedBox) isoPreparedBox.style.display = 'none';
+        if (btnStartFormatNow) btnStartFormatNow.style.display = 'none';
+        if (btnPrepareIsoAction) {
+          btnPrepareIsoAction.style.display = 'block';
+          btnPrepareIsoAction.disabled = false;
+          btnPrepareIsoAction.textContent = '💾 1. CRIAR PARTIÇÃO NO HD/SSD & PREPARAR ARQUIVOS DA ISO';
+        }
+        if (statusIsoPrepare) {
+          statusIsoPrepare.style.display = 'none';
+        }
+      } else {
+        alert('Erro ao excluir partição: ' + (res?.error || 'Erro desconhecido.'));
+      }
+    } catch (e) {
+      alert('Erro: ' + e.message);
+    } finally {
+      btnRemovePartitionAction.disabled = false;
+      btnRemovePartitionAction.textContent = '🗑️ Desfazer / Excluir Partição e Restaurar Espaço do Disco';
+    }
+  });
+}
+
 // ─── SPEEDHACK FPS BUGGER 240+ (500 ➔ 0.5) ──────────────────────────────────
 const btnAutoBugFps = document.getElementById('btn-auto-bug-fps');
 const statusSpeedhackFps = document.getElementById('status-speedhack-fps');

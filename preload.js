@@ -75,6 +75,7 @@ contextBridge.exposeInMainWorld('api', {
   checkLoordIsoStatus: () => ipcRenderer.invoke('check-loord-iso-status'),
   downloadLoordIso: () => ipcRenderer.invoke('download-loord-iso'),
   startLoordFormat: () => ipcRenderer.invoke('start-loord-format'),
+  removeLoordPartition: () => ipcRenderer.invoke('remove-loord-partition'),
   getConnectedUsbs: () => ipcRenderer.invoke('get-connected-usbs'),
   createBootableUsb: (letter) => ipcRenderer.invoke('create-bootable-usb', letter),
   onIsoDownloadProgress: (callback) => {

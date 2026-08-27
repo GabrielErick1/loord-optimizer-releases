@@ -3374,16 +3374,36 @@ ipcMain.handle('download-loord-iso', async (event) => {
 
       robocopy $src $dest /E /R:1 /W:1 /MT:8 /NP /NFL /NDO /NJH /NJS | Out-Null;
 
-      # 5. Grava setor de boot estilo Rufus
+      # 5. Injeta script de Auto-Destruição da Partição pós-instalação (Uso Único)
+      $oemDir = 'L:\sources\$OEM$\$$\Setup\Scripts';
+      if (-not (Test-Path $oemDir)) {
+        New-Item -ItemType Directory -Path $oemDir -Force | Out-Null;
+      }
+      $cleanupScript = @'
+@echo off
+:: Auto-destruicao automatica da particao de instalacao e recuperacao de 100% do espaco
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$c = Get-Partition -DriveLetter C -ErrorAction SilentlyContinue; if ($c) { $diskNum = $c.DiskNumber; $p = Get-Partition -DiskNumber $diskNum | Where-Object { ($_.Type -eq 'Recovery' -or $_.DriveLetter -eq 'L' -or ($_.DiskNumber -eq $diskNum -and $_.PartitionNumber -ne $c.PartitionNumber)) -and $_.Size -lt 15GB -and $_.Size -gt 3GB }; foreach ($part in $p) { try { Remove-Partition -DiskNumber $diskNum -PartitionNumber $part.PartitionNumber -Confirm:$false -ErrorAction SilentlyContinue | Out-Null; } catch {} } try { $max = (Get-PartitionSupportedSize -DriveLetter C).SizeMax; Resize-Partition -DriveLetter C -Size $max -ErrorAction SilentlyContinue | Out-Null; } catch {} }"
+exit /b 0
+'@;
+      Set-Content -Path "$oemDir\SetupComplete.cmd" -Value $cleanupScript -Encoding ASCII -Force;
+
+      # 6. Grava setor de boot estilo Rufus
       if (Test-Path "L:\boot\bootsect.exe") {
         & "L:\boot\bootsect.exe" /nt60 L: /force /mbr | Out-Null;
       }
 
-      # 6. Desmonta a ISO
+      # 7. Proteção de Arquivos (Sistema + Oculto)
+      attrib +h +s "L:\sources\install.esd" -ErrorAction SilentlyContinue | Out-Null;
+      attrib +h +s "L:\sources\boot.wim" -ErrorAction SilentlyContinue | Out-Null;
+      attrib +h +s "L:\bootmgr" -ErrorAction SilentlyContinue | Out-Null;
+      attrib +h +s "L:\boot" -ErrorAction SilentlyContinue | Out-Null;
+      attrib +h +s "L:\efi" -ErrorAction SilentlyContinue | Out-Null;
+
+      # 8. Desmonta a ISO
       Dismount-DiskImage -ImagePath $iso -ErrorAction SilentlyContinue | Out-Null;
     `;
 
-    sendProgress(70, 'Gravando arquivos de boot e instalação na partição L: (3.2 GB)...');
+    sendProgress(70, 'Gravando arquivos protegidos e configurando auto-limpeza...');
     runPowerShellScript(psCreatePartScript);
 
     // Validação de Integridade: Garantir que os arquivos da ISO foram gravados em L:\
@@ -3392,15 +3412,43 @@ ipcMain.handle('download-loord-iso', async (event) => {
       throw new Error('Não foi possível copiar os arquivos da ISO para a partição L:. Verifique o arquivo ISO.');
     }
 
-    sendProgress(100, 'Partição LOORD_SETUP (L:) criada e gravada com sucesso!');
+    sendProgress(100, 'Partição LOORD_SETUP (L:) protegida e gravada com sucesso!');
 
     return {
       success: true,
-      message: 'Partição de 8 GB (L: LOORD_SETUP) criada com sucesso com os arquivos da ISO Loord! Você pode conferir em "Este Computador" e clicar em Formatar quando desejar.'
+      message: 'Partição de 8 GB (L: LOORD_SETUP) criada com sucesso com os arquivos da ISO Loord protegidos! Você pode clicar em Formatar quando desejar.'
     };
   } catch (e) {
     console.error('Erro ao preparar partição:', e);
     return { success: false, error: 'Falha ao criar partição: ' + (e.message || 'Erro desconhecido') };
+  }
+});
+
+ipcMain.handle('remove-loord-partition', async () => {
+  try {
+    const ps = `
+      $c = Get-Partition -DriveLetter C -ErrorAction SilentlyContinue;
+      if (-not $c) {
+        throw "Unidade C: não encontrada.";
+      }
+      $diskNum = $c.DiskNumber;
+      $loordPart = Get-Partition -DiskNumber $diskNum | Where-Object {
+        $v = $_ | Get-Volume -ErrorAction SilentlyContinue;
+        ($v -and ($v.FileSystemLabel -eq "LOORD_SETUP" -or $v.FileSystemLabel -eq "RECOVERY_LOORD")) -or $_.DriveLetter -eq "L"
+      };
+      if ($loordPart) {
+        foreach ($lp in $loordPart) {
+          Remove-Partition -DiskNumber $diskNum -PartitionNumber $lp.PartitionNumber -Confirm:$false | Out-Null;
+        }
+        Start-Sleep -Seconds 1;
+        $maxSize = (Get-PartitionSupportedSize -DriveLetter C).SizeMax;
+        Resize-Partition -DriveLetter C -Size $maxSize | Out-Null;
+      }
+    `;
+    runPowerShellScript(ps);
+    return { success: true, message: 'Partição de formatação excluída com sucesso e espaço do disco C: restaurado ao normal!' };
+  } catch (e) {
+    return { success: false, error: e.message || 'Falha ao remover partição.' };
   }
 });
 
