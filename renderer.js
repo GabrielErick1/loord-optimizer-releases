@@ -602,33 +602,86 @@ if (btnRestoreBackup) {
 }
 
 
-// --- Macro de Capa ---
+// --- Assistente de Recoil & Puxada Y (Descida Suave de Mira) ---
 const toggleMacro = document.getElementById('toggle-macro');
-const macroForce = document.getElementById('macro-force');
-const macroForceVal = document.getElementById('macro-force-val');
 const macroForceContainer = document.getElementById('macro-force-container');
+const macroForceSlider = document.getElementById('macro-force');
+const macroSpeedInput = document.getElementById('macro-speed-input');
+const presetMacroBtns = document.querySelectorAll('.preset-macro-btn');
 
-if (toggleMacro && macroForce && macroForceVal && macroForceContainer) {
-  toggleMacro.addEventListener('change', async () => {
-    const active = toggleMacro.checked;
-    if (active) {
-      macroForceContainer.style.display = 'block';
-      const force = parseInt(macroForce.value) || 4;
-      await window.api.startMacro(force);
+function getMacroCurrentSpeed() {
+  if (macroSpeedInput) {
+    const val = parseFloat(macroSpeedInput.value);
+    if (!isNaN(val) && val > 0) return val;
+  }
+  if (macroForceSlider) {
+    const val = parseFloat(macroForceSlider.value);
+    if (!isNaN(val) && val > 0) return val;
+  }
+  return 0.5;
+}
+
+function updateMacroSpeedUI(val) {
+  const num = parseFloat(val);
+  if (isNaN(num) || num < 0.1) return;
+  const formatted = num.toFixed(1);
+
+  if (macroForceSlider) macroForceSlider.value = formatted;
+  if (macroSpeedInput) macroSpeedInput.value = formatted;
+
+  presetMacroBtns.forEach(btn => {
+    const bSpeed = parseFloat(btn.getAttribute('data-speed')).toFixed(1);
+    if (bSpeed === formatted) {
+      btn.style.background = 'rgba(14, 165, 233, 0.25)';
+      btn.style.borderColor = '#0284c7';
+      btn.style.color = '#38bdf8';
     } else {
-      macroForceContainer.style.display = 'none';
-      await window.api.stopMacro();
+      btn.style.background = 'rgba(255, 255, 255, 0.06)';
+      btn.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+      btn.style.color = '#cbd5e1';
     }
   });
 
-  macroForce.addEventListener('input', () => {
-    macroForceVal.textContent = macroForce.value;
-  });
+  if (toggleMacro && toggleMacro.checked && window.api && window.api.startMacro) {
+    window.api.startMacro(parseFloat(formatted));
+  }
+}
 
-  macroForce.addEventListener('change', async () => {
-    if (toggleMacro.checked) {
-      const force = parseInt(macroForce.value) || 4;
-      await window.api.startMacro(force);
+if (macroForceSlider) {
+  macroForceSlider.addEventListener('input', (e) => {
+    updateMacroSpeedUI(e.target.value);
+  });
+}
+
+if (macroSpeedInput) {
+  macroSpeedInput.addEventListener('input', (e) => {
+    updateMacroSpeedUI(e.target.value);
+  });
+}
+
+presetMacroBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const speed = btn.getAttribute('data-speed');
+    if (speed) updateMacroSpeedUI(speed);
+  });
+});
+
+if (toggleMacro) {
+  toggleMacro.addEventListener('change', async (e) => {
+    const active = e.target.checked;
+    if (macroForceContainer) {
+      macroForceContainer.style.display = active ? 'block' : 'none';
+    }
+
+    if (active) {
+      const speed = getMacroCurrentSpeed();
+      if (window.api && window.api.startMacro) {
+        await window.api.startMacro(speed);
+      }
+    } else {
+      if (window.api && window.api.stopMacro) {
+        await window.api.stopMacro();
+      }
     }
   });
 }
@@ -746,15 +799,15 @@ async function loadAllSettings() {
       }
     });
 
-    // Restore slider labels or UI displays
-    if (macroForce && macroForceVal) {
-      macroForceVal.textContent = macroForce.value;
+    // Restore Macro Recoil / Descida Y speed and state
+    if (macroForceSlider) {
+      updateMacroSpeedUI(macroForceSlider.value || 0.5);
     }
     if (toggleMacro && macroForceContainer) {
       macroForceContainer.style.display = toggleMacro.checked ? 'block' : 'none';
       if (toggleMacro.checked) {
-        const force = parseInt(macroForce.value) || 4;
-        await window.api.startMacro(force);
+        const speed = getMacroCurrentSpeed();
+        await window.api.startMacro(speed);
       }
     }
 
@@ -3455,5 +3508,6 @@ if (presetSpeedBtns) {
     });
   }
 })();
+
 
 

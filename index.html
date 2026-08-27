@@ -600,19 +600,24 @@
             </div>
           </div>
 
-          <div class="card">
-            <h3>Macro de Capa (Assistente de Puxada Y)</h3>
-            <p>Simula um arrasto suave do mouse para cima no instante do disparo, auxiliando a mira a fixar na cabeça do
-              oponente.</p>
+          <div class="card" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 12px; padding: 18px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <h3 style="margin: 0; font-size: 1.05rem; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+                <span>🎯 Assistente de Recoil &amp; Puxada Y (Descida Suave)</span>
+              </h3>
+              <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px;">PRECISÃO DECIMAL</span>
+            </div>
+            <p style="margin: 0 0 14px 0; font-size: 0.82rem; color: #94a3b8; line-height: 1.4;">
+              Simula um controle suave do mouse para <b>baixo (descida da mira)</b> no instante do disparo, estabilizando o recuo das armas. Permite ajuste fino com valores decimais (ex: 0.1 ou 0.5 para descer minimamente).
+            </p>
 
             <div class="toggle-row"
-              style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; margin-bottom: 12px;">
+              style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px; margin-bottom: 14px;">
               <div class="toggle-info" style="max-width: 80%;">
-                <h4 style="margin: 0; font-size: 1rem; color: var(--text-color);">Ativar Macro de Capa</h4>
-                <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: var(--text-gray);">Ativa automaticamente ao
-                  <strong>segurar o botão esquerdo do mouse</strong>. Atalho: <span
-                    style="color:#f97316;font-weight:600;">[ F2 / F3 / F6 / F7 ]</span> Liga/Desliga em tempo real (com
-                  sinal sonoro).</p>
+                <h4 style="margin: 0; font-size: 0.95rem; color: #f8fafc; font-weight: 700;">Ativar Descida Automática ao Atirar</h4>
+                <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #94a3b8;">
+                  Ativa ao <strong>segurar o botão esquerdo do mouse</strong>. Atalho em jogo: <span style="color:#f97316; font-weight: 700;">[ F2 / F3 / F6 / F7 ]</span> Liga/Desliga com bipe sonoro.
+                </p>
               </div>
               <label class="switch">
                 <input type="checkbox" id="toggle-macro">
@@ -620,12 +625,44 @@
               </label>
             </div>
 
-            <div class="input-field" id="macro-force-container" style="display: none; margin-top: 12px;">
-              <label for="macro-force"
-                style="display: block; font-size: 0.85rem; margin-bottom: 6px; color: var(--text-color);">Força da
-                Puxada Y (Sensibilidade de Subida): <strong id="macro-force-val"
-                  style="color: #38bdf8;">4</strong></label>
-              <input type="range" id="macro-force" min="1" max="10" value="4" style="width: 100%; cursor: pointer;">
+            <div id="macro-force-container" style="display: none; background: rgba(14, 165, 233, 0.05); border: 1px solid rgba(14, 165, 233, 0.2); border-radius: 10px; padding: 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <label for="macro-speed-input" style="font-size: 0.85rem; font-weight: 700; color: #e2e8f0; display: flex; align-items: center; gap: 6px;">
+                  <span>Velocidade / Força da Descida (Y):</span>
+                </label>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <input type="number" id="macro-speed-input" min="0.1" max="5.0" step="0.1" value="0.5"
+                    style="width: 70px; background: #0f172a; border: 1px solid #0284c7; color: #38bdf8; font-weight: 900; font-size: 0.95rem; border-radius: 6px; padding: 4px 8px; text-align: center;">
+                  <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 700;">px/tick</span>
+                </div>
+              </div>
+
+              <input type="range" id="macro-force" min="0.1" max="5.0" step="0.1" value="0.5"
+                style="width: 100%; height: 6px; accent-color: #38bdf8; cursor: pointer; margin-bottom: 12px;">
+
+              <!-- Presets Rápidos -->
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button type="button" class="preset-macro-btn" data-speed="0.1"
+                  style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                  0.1 (Mínima)
+                </button>
+                <button type="button" class="preset-macro-btn" data-speed="0.3"
+                  style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                  0.3 (Leve)
+                </button>
+                <button type="button" class="preset-macro-btn" data-speed="0.5"
+                  style="background: rgba(14, 165, 233, 0.25); border: 1px solid #0284c7; color: #38bdf8; font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                  0.5 (Recomendado)
+                </button>
+                <button type="button" class="preset-macro-btn" data-speed="1.0"
+                  style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                  1.0 (Médio)
+                </button>
+                <button type="button" class="preset-macro-btn" data-speed="2.0"
+                  style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                  2.0 (Forte)
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1678,7 +1715,7 @@
                 <p style="margin: 0; font-size: 12px; color: #94a3b8;">Verifique e receba novas versões e otimizações
                   automaticamente</p>
               </div>
-              <span id="app-version-badge" class="badge badge-success">v3.1.8</span>
+              <span id="app-version-badge" class="badge badge-success">v3.1.9</span>
             </div>
 
             <!-- Update Card Content -->

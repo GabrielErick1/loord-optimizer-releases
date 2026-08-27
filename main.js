@@ -2290,12 +2290,13 @@ ipcMain.handle('reboot-computer', async () => {
   }
 });
 
-ipcMain.handle('start-macro', async (event, force) => {
+ipcMain.handle('start-macro', async (event, speed) => {
   try {
     await killMacroProcess();
 
+    const numSpeed = typeof speed === 'number' ? speed : parseFloat(speed) || 0.5;
     const scriptPath = getPhysicalScriptPath('macro_capa.ps1');
-    const command = `$Host.UI.RawUI.WindowTitle = 'MacroCapaFreeFire'; & '${scriptPath.replace(/'/g, "''")}' -Forca ${force}`;
+    const command = `$Host.UI.RawUI.WindowTitle = 'MacroCapaFreeFire'; & '${scriptPath.replace(/'/g, "''")}' -Velocidade ${numSpeed}`;
 
     const { spawn } = require('child_process');
     macroProcess = spawn('powershell.exe', [
