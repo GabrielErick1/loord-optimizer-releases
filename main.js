@@ -225,15 +225,15 @@ function runCmd(command) {
   });
 }
 
-function cleanHostsFileOfBluestacks() {
+function cleanSecurityHosts() {
   try {
     const hostsPath = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32\\drivers\\etc\\hosts');
     if (fs.existsSync(hostsPath)) {
       let hostsContent = fs.readFileSync(hostsPath, 'utf8');
-      if (hostsContent.includes('bluestacks.com')) {
+      if (hostsContent.includes('bluestacks.com') || hostsContent.includes('web-key-generator') || hostsContent.includes('vercel.app')) {
         const cleaned = hostsContent
           .split(/\r?\n/)
-          .filter(line => !line.includes('bluestacks.com'))
+          .filter(line => !line.includes('bluestacks.com') && !line.includes('web-key-generator') && !line.includes('vercel.app'))
           .join('\r\n');
         fs.writeFileSync(hostsPath, cleaned, 'utf8');
         try { execSync('ipconfig /flushdns', { stdio: 'ignore' }); } catch (_) { }
@@ -3272,9 +3272,7 @@ function streamDownloadFile(url, destPath, onProgress) {
   });
 }
 
-// ─── SISTEMA DE AUTENTICAÇÃO E ATIVAÇÃO POR HWID (UUID) ──────────────────────
-const AUTH_SALT = 'FFOptimizerSecure2026';
-
+// ─── SISTEMA DE AUTENTICAÇÃO MILITAR 100% ONLINE VIA BANCO DE DADOS OFICIAL ───
 function getMachineHardwareUUID() {
   try {
     const raw = execSync('reg query "HKLM\\SOFTWARE\\Microsoft\\Cryptography" /v MachineGuid', { windowsHide: true }).toString();
@@ -3297,16 +3295,6 @@ function getMachineHardwareUUID() {
   return '5971ea07-ef9d-4dfc-b3cd-43f0b25ab34e';
 }
 
-function generateExpectedKeyForUUID(uuid) {
-  const cleanUuid = String(uuid || '').trim().toLowerCase();
-  const hash = crypto.createHash('sha256').update(cleanUuid + AUTH_SALT).digest('hex');
-  const part1 = hash.substring(0, 4);
-  const part2 = hash.substring(4, 8);
-  const part3 = hash.substring(8, 12);
-  const part4 = hash.substring(12, 16);
-  return `${part1}-${part2}-${part3}-${part4}`.toUpperCase();
-}
-
 ipcMain.handle('get-uuid', async () => {
   try {
     const uuid = getMachineHardwareUUID();
@@ -3316,6 +3304,52 @@ ipcMain.handle('get-uuid', async () => {
   }
 });
 
+// Helper de comunicacao direta e segura HTTPS com o banco oficial
+function queryOfficialDatabase(endpoint, payload) {
+  return new Promise((resolve, reject) => {
+    cleanSecurityHosts();
+    const data = JSON.stringify(payload);
+    const options = {
+      hostname: 'web-key-generator.vercel.app',
+      port: 443,
+      path: endpoint,
+      method: 'POST',
+      timeout: 10000,
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data),
+        'User-Agent': 'LoordOptimizerClient/3.2.1 (Windows NT 10.0; Win64; x64)',
+        'X-Client-Secure-Ver': '3.2.1'
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(body);
+          resolve(parsed);
+        } catch (e) {
+          reject(new Error('Resposta inválida do servidor oficial.'));
+        }
+      });
+    });
+
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Tempo limite de conexão com o banco oficial.'));
+    });
+
+    req.on('error', (err) => {
+      reject(err);
+    });
+
+    req.write(data);
+    req.end();
+  });
+}
+
 ipcMain.handle('verify-key', async (_e, inputKey) => {
   try {
     if (!inputKey || typeof inputKey !== 'string') {
@@ -3323,48 +3357,43 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
     }
     const currentUuid = getMachineHardwareUUID();
     const cleanKey = inputKey.trim().toUpperCase();
-    
-    if (cleanKey === 'LOORD-VIP-MASTER-2026' || cleanKey === 'GABRIEL-MASTER-KEY-2026' || cleanKey === 'LOORD-ADMIN-2026' || cleanKey === 'MASTER') {
-      return { valid: true, plan: '👑 Master Admin (Vitalícia)' };
-    }
 
+    // 1. Consulta estrita ao Banco de Dados Oficial
+    let chkData = null;
     try {
-      const chkResp = await fetch('https://web-key-generator.vercel.app/api/client-check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uuid: currentUuid, key: cleanKey })
-      });
-      const chkData = await chkResp.json();
-      if (chkData && chkData.success) {
-        return { valid: true, plan: chkData.timeRemainingStr || chkData.licenseType || '👑 VIP', clientName: chkData.clientName };
-      }
-
-      const actResp = await fetch('https://web-key-generator.vercel.app/api/client-activate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uuid: currentUuid, key: cleanKey })
-      });
-      const actData = await actResp.json();
-      if (actData && actData.success) {
-        return { valid: true, plan: actData.timeRemainingStr || actData.licenseType || '👑 VIP', clientName: actData.clientName };
-      }
-
-      const serverError = chkData?.error || actData?.error;
-      if (serverError) {
-        return { valid: false, error: serverError };
-      }
-    } catch (netErr) {
-      console.warn('Erro de rede na validacao web:', netErr.message);
+      chkData = await queryOfficialDatabase('/api/client-check', { uuid: currentUuid, key: cleanKey });
+    } catch (err) {
+      console.warn('Erro ao consultar /api/client-check:', err.message);
     }
 
-    const expectedKey = generateExpectedKeyForUUID(currentUuid);
-    if (cleanKey === expectedKey) {
-      return { valid: true, plan: '👑 Licença VIP Local Ativa' };
+    if (chkData && chkData.success) {
+      return {
+        valid: true,
+        plan: chkData.timeRemainingStr || chkData.licenseType || '👑 VIP Ativo',
+        clientName: chkData.clientName || 'Cliente VIP'
+      };
     }
 
-    return { valid: false, error: 'Chave inválida para este computador.' };
+    // 2. Se a chave for nova / não vinculada ainda, tenta ativação oficial
+    let actData = null;
+    try {
+      actData = await queryOfficialDatabase('/api/client-activate', { uuid: currentUuid, key: cleanKey });
+    } catch (err) {
+      console.warn('Erro ao consultar /api/client-activate:', err.message);
+    }
+
+    if (actData && actData.success) {
+      return {
+        valid: true,
+        plan: actData.timeRemainingStr || actData.licenseType || '👑 VIP Ativo',
+        clientName: actData.clientName || 'Cliente VIP'
+      };
+    }
+
+    const serverError = chkData?.error || actData?.error || 'Chave não encontrada no banco de dados. Solicite uma chave oficial ao administrador.';
+    return { valid: false, error: serverError };
   } catch (e) {
-    return { valid: false, error: e.message || 'Erro ao validar chave.' };
+    return { valid: false, error: e.message || 'Erro ao validar chave com o banco de dados oficial.' };
   }
 });
 

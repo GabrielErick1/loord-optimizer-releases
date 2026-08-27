@@ -3392,13 +3392,26 @@ if (presetSpeedBtns) {
     }, 15000);
   }
 
+  // ── Verificação de Mudança de Versão / Código (Auto-Logout em Updates) ──────
+  const CURRENT_SECURITY_BUILD = '3.2.2';
+  const lastAuthenticatedBuild = localStorage.getItem('loord_auth_build_ver');
+  if (lastAuthenticatedBuild && lastAuthenticatedBuild !== CURRENT_SECURITY_BUILD) {
+    console.log('[SECURITY] Nova versão ou atualização de código detectada! Deslogando sessão para validação no banco oficial...');
+    localStorage.removeItem('loord_vip_key');
+    localStorage.removeItem('activation_key');
+    localStorage.removeItem('client_name');
+    localStorage.setItem('loord_auth_build_ver', CURRENT_SECURITY_BUILD);
+  } else if (!lastAuthenticatedBuild) {
+    localStorage.setItem('loord_auth_build_ver', CURRENT_SECURITY_BUILD);
+  }
+
   // 3. Verificar se já existe uma chave válida salva no computador
   const savedKey = localStorage.getItem('loord_vip_key') || localStorage.getItem('activation_key');
   if (savedKey) {
     try {
       const check = await window.api.verifyKey(savedKey);
       if (check && check.valid) {
-        // Chave 100% autêntica → Libera o painel imediatamente!
+        // Chave 100% autêntica validada no banco de dados oficial!
         lockScreen.style.display = 'none';
         updateSavedKeyUI(savedKey);
         // Salva nome do cliente
@@ -3410,7 +3423,7 @@ if (presetSpeedBtns) {
         startSecurityWatch(savedKey);
         return;
       } else {
-        // Chave expirada ou de outro computador → Bloqueia e remove
+        // Chave expirada ou não encontrada no banco oficial → Bloqueia e remove
         localStorage.removeItem('loord_vip_key');
         localStorage.removeItem('activation_key');
       }
