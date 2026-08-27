@@ -3007,12 +3007,7 @@ ipcMain.handle('transform-windows-lite', async () => {
       // 13. SSD TRIM & Rede QoS 0% & Netsh Anti-Bufferbloat
       'fsutil behavior set DisableDeleteNotify 0',
       'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched" /v NonBestEffortLimit /t REG_DWORD /d 0 /f /reg:64',
-      'netsh int tcp set global autotuninglevel=normal',
-      'netsh int tcp set global congestionprovider=ctcp',
-      'netsh int tcp set global ecncapability=disabled',
-      'netsh int tcp set global timestamps=disabled',
-      'netsh int tcp set global rss=enabled',
-      'netsh int tcp set global rsc=disabled'
+      'netsh int tcp set global autotuninglevel=normal'
     ];
 
     for (const cmd of liteCommands) {
@@ -3034,6 +3029,33 @@ ipcMain.handle('transform-windows-lite', async () => {
     return { success: false, error: e.message };
   }
 });
+
+function getElevateExePath() {
+  const p1 = path.join(__dirname, 'resources', 'subidofps', 'elevate.exe');
+  const p2 = path.join(__dirname, 'subidofps', 'elevate.exe');
+  const p3 = path.join(process.resourcesPath || '', 'subidofps', 'elevate.exe');
+  if (fs.existsSync(p1)) return p1;
+  if (fs.existsSync(p2)) return p2;
+  if (fs.existsSync(p3)) return p3;
+  return null;
+}
+
+function runPowerShellScript(scriptContent) {
+  const tmpScriptPath = path.join(os.tmpdir(), `loord_${Date.now()}_${Math.random().toString(36).substring(7)}.ps1`);
+  try {
+    fs.writeFileSync(tmpScriptPath, scriptContent, 'utf8');
+    const elevateExe = getElevateExePath();
+    if (elevateExe) {
+      const res = execSync(`"${elevateExe}" -w powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${tmpScriptPath}"`, { windowsHide: true });
+      return res ? res.toString() : '';
+    } else {
+      const res = execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${tmpScriptPath}"`, { windowsHide: true });
+      return res ? res.toString() : '';
+    }
+  } finally {
+    try { if (fs.existsSync(tmpScriptPath)) fs.unlinkSync(tmpScriptPath); } catch (_) {}
+  }
+}
 
 // ─── ASSISTENTE DE FORMATAÇÃO PROTEGIDO COM ISO LOORD v10.6 ────────────────
 const LOORD_MEDIAFIRE_PAGE = 'https://www.mediafire.com/file/ai4tgfft0btdsym/Loord_v10.6.0%2529.iso/file';
@@ -3057,17 +3079,6 @@ function getKnownLocalIsoPath() {
     } catch (_) {}
   }
   return null;
-}
-
-function runPowerShellScript(scriptContent) {
-  const tmpScriptPath = path.join(os.tmpdir(), `loord_${Date.now()}_${Math.random().toString(36).substring(7)}.ps1`);
-  try {
-    fs.writeFileSync(tmpScriptPath, scriptContent, 'utf8');
-    const res = execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${tmpScriptPath}"`, { windowsHide: true });
-    return res ? res.toString() : '';
-  } finally {
-    try { if (fs.existsSync(tmpScriptPath)) fs.unlinkSync(tmpScriptPath); } catch (_) {}
-  }
 }
 
 function dismountAllVirtualIsos() {
@@ -3101,6 +3112,7 @@ function resolveMediafireDirectUrl(mediafirePageUrl) {
       res.on('end', () => {
         const m = body.match(/aria-label="Download file"[^>]*href="([^"]+)"/i) ||
                   body.match(/id="downloadButton"[^>]*href="([^"]+)"/i) ||
+                  body.match(/href="(https:\/\/[^"]*mediafire[^"]*\/[^"]+\.iso[^"]*)"/i) ||
                   body.match(/href="(https:\/\/download[^"]+mediafire[^"]+)"/i);
         if (m && m[1]) {
           resolve(m[1]);
@@ -3142,7 +3154,6 @@ function streamDownloadFile(url, destPath, onProgress) {
           if (totalBytes > 0) {
             pct = Math.min(99, Math.round((downloadedBytes / totalBytes) * 100));
           } else {
-            // Se content-length não vier, calcula estimando 3.2 GB
             pct = Math.min(99, Math.round((downloadedBytes / (3.2 * 1024 * 1024 * 1024)) * 100));
           }
           const mbDownloaded = (downloadedBytes / (1024 * 1024)).toFixed(1);
@@ -3171,7 +3182,6 @@ function streamDownloadFile(url, destPath, onProgress) {
 const AUTH_SALT = 'FFOptimizerSecure2026';
 
 function getMachineHardwareUUID() {
-  // 1. Comando Nativo do Windows (Instantâneo e 100% compatível com a Vercel)
   try {
     const raw = execSync('reg query "HKLM\\SOFTWARE\\Microsoft\\Cryptography" /v MachineGuid', { windowsHide: true }).toString();
     const match = raw.match(/MachineGuid\s+REG_SZ\s+([^\r\n]+)/i);
@@ -3180,13 +3190,11 @@ function getMachineHardwareUUID() {
     }
   } catch (_) {}
 
-  // 2. PowerShell Fallback
   try {
     const out = execSync('powershell.exe -NoProfile -Command "(Get-ItemProperty -Path \'HKLM:\\SOFTWARE\\Microsoft\\Cryptography\').MachineGuid"', { windowsHide: true }).toString().trim().toLowerCase();
     if (out && out.length >= 8) return out;
   } catch (_) {}
 
-  // 3. WMIC Fallback
   try {
     const out = execSync('wmic csproduct get uuid', { windowsHide: true }).toString().replace(/UUID/i, '').trim().toLowerCase();
     if (out && out.length >= 8 && out !== 'ffffffff-ffff-ffff-ffff-ffffffffffff') return out;
@@ -3222,14 +3230,11 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
     const currentUuid = getMachineHardwareUUID();
     const cleanKey = inputKey.trim().toUpperCase();
     
-    // 1. Chaves Master Admin Universais (funcionam em qualquer PC para o criador)
     if (cleanKey === 'LOORD-VIP-MASTER-2026' || cleanKey === 'GABRIEL-MASTER-KEY-2026' || cleanKey === 'LOORD-ADMIN-2026' || cleanKey === 'MASTER') {
       return { valid: true, plan: '👑 Master Admin (Vitalícia)' };
     }
 
-    // 2. Validação direta no Servidor Oficial Vercel
     try {
-      // 2a. Primeiro tenta checar se já está ativa neste PC
       const chkResp = await fetch('https://web-key-generator.vercel.app/api/client-check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3240,7 +3245,6 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
         return { valid: true, plan: chkData.timeRemainingStr || chkData.licenseType || '👑 VIP', clientName: chkData.clientName };
       }
 
-      // 2b. Se não estiver ativa, tenta ativar (para chaves novas ou pendentes)
       const actResp = await fetch('https://web-key-generator.vercel.app/api/client-activate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3251,7 +3255,6 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
         return { valid: true, plan: actData.timeRemainingStr || actData.licenseType || '👑 VIP', clientName: actData.clientName };
       }
 
-      // Erro retornado pelo servidor
       const serverError = chkData?.error || actData?.error;
       if (serverError) {
         return { valid: false, error: serverError };
@@ -3260,13 +3263,12 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
       console.warn('Erro de rede na validacao web:', netErr.message);
     }
 
-    // 3. Fallback: Validação Criptográfica Offline por UUID
     const expectedKey = generateExpectedKeyForUUID(currentUuid);
     if (cleanKey === expectedKey) {
-      return { valid: true, plan: '👑 VIP Vitalícia' };
+      return { valid: true, plan: '👑 Licença VIP Local Ativa' };
     }
 
-    return { valid: false, error: 'Chave inválida ou não pertence a este computador!' };
+    return { valid: false, error: 'Chave inválida para este computador.' };
   } catch (e) {
     return { valid: false, error: e.message || 'Erro ao validar chave.' };
   }
@@ -3317,91 +3319,71 @@ ipcMain.handle('download-loord-iso', async (event) => {
 
     sendProgress(40, 'Criando partição de 8 GB no SSD/HD (LOORD_SETUP)...');
 
-    const psCreatePartScript = `
-      $iso = '${targetIso.replace(/'/g, "''")}';
-      $cPart = Get-Partition -DriveLetter C;
-      $diskNum = $cPart.DiskNumber;
-      $diskStyle = (Get-Disk -Number $diskNum).PartitionStyle;
-
-      # 1. Encontra ou cria a particao de 8 GB
-      $loordPart = Get-Partition -DiskNumber $diskNum | Where-Object { 
-        $v = $_ | Get-Volume -ErrorAction SilentlyContinue;
-        $v -and ($v.FileSystemLabel -eq "LOORD_SETUP" -or $v.FileSystemLabel -eq "RECOVERY_LOORD")
-      };
-
-      if (-not $loordPart) {
-        $shrinkBytes = 8589934592;
-        $newSize = $cPart.Size - $shrinkBytes;
-        try {
-          Resize-Partition -DriveLetter C -Size $newSize -ErrorAction SilentlyContinue | Out-Null;
-        } catch {}
-        
-        $loordPart = New-Partition -DiskNumber $diskNum -Size 8GB -ErrorAction SilentlyContinue;
-        if (-not $loordPart) {
-          $loordPart = New-Partition -DiskNumber $diskNum -UseMaximumSize -ErrorAction SilentlyContinue;
-        }
-      }
-
-      # 2. Atribui letra L: se nao tiver
-      if (-not $loordPart.DriveLetter) {
-        try {
-          Set-Partition -DiskNumber $diskNum -PartitionNumber $loordPart.PartitionNumber -NewDriveLetter L -ErrorAction SilentlyContinue | Out-Null;
-        } catch {
-          Add-PartitionAccessPath -DiskNumber $diskNum -PartitionNumber $loordPart.PartitionNumber -AccessPath "L:\\" -ErrorAction SilentlyContinue | Out-Null;
-        }
-      }
-
-      # 3. Formata com rotulo LOORD_SETUP
-      Format-Volume -DriveLetter L -FileSystem NTFS -NewFileSystemLabel "LOORD_SETUP" -Confirm:$false -Force -ErrorAction SilentlyContinue | Out-Null;
-
-      # 4. Monta a ISO e copia 100% dos arquivos estilo Rufus
-      Mount-DiskImage -ImagePath $iso -StorageType ISO -ErrorAction SilentlyContinue | Out-Null;
-      $img = Get-DiskImage -ImagePath $iso;
-      $isoVol = Get-Volume -DiskImage $img -ErrorAction SilentlyContinue;
-      if (-not $isoVol) {
-        $isoVol = $img | Get-Volume -ErrorAction SilentlyContinue;
-      }
-      $isoDriveLetter = $isoVol.DriveLetter;
-      if (-not $isoDriveLetter) {
-        $cd = Get-Volume | Where-Object { $_.DriveType -eq 'CD-ROM' -and (Test-Path ($_.DriveLetter + ':\sources\boot.wim')) };
-        $isoDriveLetter = $cd.DriveLetter;
-      }
-      if (-not $isoDriveLetter) {
-        $isoDriveLetter = 'E';
-      }
-      $src = $isoDriveLetter + ':\';
-      $dest = 'L:\';
-
-      robocopy $src $dest /E /R:1 /W:1 /MT:8 /NP /NFL /NDO /NJH /NJS | Out-Null;
-
-      # 5. Injeta script de Auto-Destruição da Partição pós-instalação (Uso Único)
-      $oemDir = 'L:\sources\$OEM$\$$\Setup\Scripts';
-      if (-not (Test-Path $oemDir)) {
-        New-Item -ItemType Directory -Path $oemDir -Force | Out-Null;
-      }
-      $cleanupScript = @'
-@echo off
-:: Auto-destruicao automatica da particao de instalacao e recuperacao de 100% do espaco
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$c = Get-Partition -DriveLetter C -ErrorAction SilentlyContinue; if ($c) { $diskNum = $c.DiskNumber; $p = Get-Partition -DiskNumber $diskNum | Where-Object { ($_.Type -eq 'Recovery' -or $_.DriveLetter -eq 'L' -or ($_.DiskNumber -eq $diskNum -and $_.PartitionNumber -ne $c.PartitionNumber)) -and $_.Size -lt 15GB -and $_.Size -gt 3GB }; foreach ($part in $p) { try { Remove-Partition -DiskNumber $diskNum -PartitionNumber $part.PartitionNumber -Confirm:$false -ErrorAction SilentlyContinue | Out-Null; } catch {} } try { $max = (Get-PartitionSupportedSize -DriveLetter C).SizeMax; Resize-Partition -DriveLetter C -Size $max -ErrorAction SilentlyContinue | Out-Null; } catch {} }"
-exit /b 0
-'@;
-      Set-Content -Path "$oemDir\SetupComplete.cmd" -Value $cleanupScript -Encoding ASCII -Force;
-
-      # 6. Grava setor de boot estilo Rufus
-      if (Test-Path "L:\boot\bootsect.exe") {
-        & "L:\boot\bootsect.exe" /nt60 L: /force /mbr | Out-Null;
-      }
-
-      # 7. Proteção de Arquivos (Sistema + Oculto)
-      attrib +h +s "L:\sources\install.esd" -ErrorAction SilentlyContinue | Out-Null;
-      attrib +h +s "L:\sources\boot.wim" -ErrorAction SilentlyContinue | Out-Null;
-      attrib +h +s "L:\bootmgr" -ErrorAction SilentlyContinue | Out-Null;
-      attrib +h +s "L:\boot" -ErrorAction SilentlyContinue | Out-Null;
-      attrib +h +s "L:\efi" -ErrorAction SilentlyContinue | Out-Null;
-
-      # 8. Desmonta a ISO
-      Dismount-DiskImage -ImagePath $iso -ErrorAction SilentlyContinue | Out-Null;
-    `;
+    const psCreatePartScript = [
+      '$iso = "' + targetIso.replace(/\\/g, '\\\\') + '";',
+      '$cPart = Get-Partition -DriveLetter C;',
+      '$diskNum = $cPart.DiskNumber;',
+      '',
+      '# 1. Encontrar ou criar a particao de 8 GB',
+      '$loordPart = Get-Partition -DiskNumber $diskNum | Where-Object {',
+      '  $v = $_ | Get-Volume -ErrorAction SilentlyContinue;',
+      '  $v -and ($v.FileSystemLabel -eq "LOORD_SETUP" -or $v.FileSystemLabel -eq "RECOVERY_LOORD")',
+      '};',
+      'if (-not $loordPart) {',
+      '  $shrinkBytes = 8589934592;',
+      '  $newSize = $cPart.Size - $shrinkBytes;',
+      '  try { Resize-Partition -DriveLetter C -Size $newSize -ErrorAction SilentlyContinue | Out-Null; } catch {}',
+      '  $loordPart = New-Partition -DiskNumber $diskNum -Size 8GB -ErrorAction SilentlyContinue;',
+      '  if (-not $loordPart) { $loordPart = New-Partition -DiskNumber $diskNum -UseMaximumSize -ErrorAction SilentlyContinue; }',
+      '}',
+      '',
+      '# 2. Atribuir letra L:',
+      'try { Set-Partition -DiskNumber $diskNum -PartitionNumber $loordPart.PartitionNumber -NewDriveLetter L -ErrorAction SilentlyContinue | Out-Null; } catch {}',
+      'Start-Sleep -Seconds 1;',
+      '',
+      '# 3. Formatar como NTFS LOORD_SETUP',
+      'Format-Volume -DriveLetter L -FileSystem NTFS -NewFileSystemLabel "LOORD_SETUP" -Confirm:$false -Force -ErrorAction SilentlyContinue | Out-Null;',
+      'Start-Sleep -Seconds 1;',
+      '',
+      '# 4. Montar imagem ISO',
+      'Mount-DiskImage -ImagePath $iso -StorageType ISO -ErrorAction SilentlyContinue | Out-Null;',
+      '',
+      '# 5. Descobrir unidade da ISO montada de forma 100% confiavel',
+      '$isoDriveLetter = $null;',
+      '$cd = Get-WmiObject Win32_LogicalDisk | Where-Object { $_.DriveType -eq 5 -and (Test-Path ($_.DeviceID + "\\sources\\boot.wim")) };',
+      'if ($cd) { $isoDriveLetter = $cd.DeviceID.Substring(0,1); }',
+      'if (-not $isoDriveLetter) {',
+      '  $allCds = Get-Volume | Where-Object { $_.DriveType -eq "CD-ROM" -and $_.DriveLetter };',
+      '  foreach ($c in $allCds) {',
+      '    if (Test-Path ($c.DriveLetter + ":\\sources\\boot.wim")) { $isoDriveLetter = $c.DriveLetter; break; }',
+      '  }',
+      '}',
+      'if (-not $isoDriveLetter) { throw "Unidade de CD-ROM da ISO montada nao encontrada."; }',
+      '',
+      '# 6. Copiar arquivos para L:\\',
+      '$src = $isoDriveLetter + ":\\";',
+      '$dest = "L:\\";',
+      '& robocopy $src $dest /E /R:1 /W:1 /MT:8 /NP /NFL /NDO /NJH /NJS | Out-Null;',
+      '',
+      '# 7. Gravar script de auto-destruicao SetupComplete',
+      '$oemDir = "L:\\sources\\`$OEM$\\`$`$\\Setup\\Scripts";',
+      'cmd.exe /c "mkdir $oemDir" | Out-Null;',
+      '$cmdText = "@echo off`r`npowershell -NoProfile -ExecutionPolicy Bypass -Command `"`$c = Get-Partition -DriveLetter C -ErrorAction SilentlyContinue; if (`$c) { `$diskNum = `$c.DiskNumber; `$p = Get-Partition -DiskNumber `$diskNum | Where-Object { (`$_.Type -eq \'Recovery\' -or `$_.DriveLetter -eq \'L\' -or (`$_.DiskNumber -eq `$diskNum -and `$_.PartitionNumber -ne `$c.PartitionNumber)) -and `$_.Size -lt 15GB -and `$_.Size -gt 3GB }; foreach (`$part in `$p) { try { Remove-Partition -DiskNumber `$diskNum -PartitionNumber `$part.PartitionNumber -Confirm:`$false -ErrorAction SilentlyContinue | Out-Null; } catch {} } try { `$max = (Get-PartitionSupportedSize -DriveLetter C).SizeMax; Resize-Partition -DriveLetter C -Size `$max -ErrorAction SilentlyContinue | Out-Null; } catch {} }`"`r`nexit /b 0";',
+      '[System.IO.File]::WriteAllText((Join-Path $oemDir "SetupComplete.cmd"), $cmdText);',
+      '',
+      '# 8. Gravar bootsect estilo Rufus',
+      'if (Test-Path "L:\\boot\\bootsect.exe") { & "L:\\boot\\bootsect.exe" /nt60 L: /force /mbr | Out-Null; }',
+      '',
+      '# 9. Proteção de Arquivos (Sistema + Oculto)',
+      'attrib +h +s "L:\\sources\\install.esd" -ErrorAction SilentlyContinue | Out-Null;',
+      'attrib +h +s "L:\\sources\\boot.wim" -ErrorAction SilentlyContinue | Out-Null;',
+      'attrib +h +s "L:\\bootmgr" -ErrorAction SilentlyContinue | Out-Null;',
+      'attrib +h +s "L:\\boot" -ErrorAction SilentlyContinue | Out-Null;',
+      'attrib +h +s "L:\\efi" -ErrorAction SilentlyContinue | Out-Null;',
+      '',
+      '# 10. Desmontar imagem ISO',
+      'Dismount-DiskImage -ImagePath $iso -ErrorAction SilentlyContinue | Out-Null;'
+    ].join('\r\n');
 
     sendProgress(70, 'Gravando arquivos protegidos e configurando auto-limpeza...');
     runPowerShellScript(psCreatePartScript);
