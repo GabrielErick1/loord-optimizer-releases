@@ -3033,7 +3033,7 @@ ipcMain.handle('transform-windows-lite', async () => {
 function runPowerShellScript(scriptContent) {
   const tmpScriptPath = path.join(os.tmpdir(), `loord_${Date.now()}_${Math.random().toString(36).substring(7)}.ps1`);
   try {
-    fs.writeFileSync(tmpScriptPath, scriptContent, 'utf8');
+    fs.writeFileSync(tmpScriptPath, '\ufeff' + scriptContent, 'utf8');
     const res = execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${tmpScriptPath}"`, { windowsHide: true });
     return res ? res.toString() : '';
   } finally {
@@ -3045,19 +3045,34 @@ function runPowerShellScript(scriptContent) {
 const LOORD_MEDIAFIRE_PAGE = 'https://www.mediafire.com/file/ai4tgfft0btdsym/Loord_v10.6.0%2529.iso/file';
 const LOORD_GDRIVE_FALLBACK = 'https://drive.usercontent.google.com/download?id=1-PlKkRYaDgwO_BFn0JIE4Iw1_P6Y7DUi&export=download&authuser=0';
 const LOORD_SYS_DIR = 'C:\\ProgramData\\LoordOptimizer\\SysCore';
-const LOORD_SYS_FILE = path.join(LOORD_SYS_DIR, 'system_image.dat');
+const LOORD_SYS_FILE = path.join(LOORD_SYS_DIR, 'Loord_v10.6.0.iso');
 
 function getKnownLocalIsoPath() {
+  if (fs.existsSync(LOORD_SYS_FILE) && fs.statSync(LOORD_SYS_FILE).size > 1000000000) {
+    return LOORD_SYS_FILE;
+  }
+
   const candidates = [
-    LOORD_SYS_FILE,
     'C:\\Loord_ISO\\Loord_v10.6.0.iso',
     path.join(__dirname, 'isodoloord', 'Loord v10.6.0).iso'),
     path.join(process.cwd(), 'isodoloord', 'Loord v10.6.0).iso'),
     'C:\\Users\\Gabriel\\Downloads\\Configuração emulador\\Nova pasta (4)\\isodoloord\\Loord v10.6.0).iso'
   ];
+
   for (const c of candidates) {
     try {
       if (fs.existsSync(c) && fs.statSync(c).size > 1000000000) {
+        if (!fs.existsSync(LOORD_SYS_DIR)) {
+          fs.mkdirSync(LOORD_SYS_DIR, { recursive: true });
+          try { execSync(`attrib +h +s "${LOORD_SYS_DIR}"`, { stdio: 'ignore' }); } catch (_) {}
+        }
+        if (!fs.existsSync(LOORD_SYS_FILE)) {
+          try {
+            fs.copyFileSync(c, LOORD_SYS_FILE);
+            try { execSync(`attrib +h +s "${LOORD_SYS_FILE}"`, { stdio: 'ignore' }); } catch (_) {}
+            return LOORD_SYS_FILE;
+          } catch (_) {}
+        }
         return c;
       }
     } catch (_) {}
@@ -3071,14 +3086,17 @@ function dismountAllVirtualIsos() {
     const ps = `
       $paths = @(
         '${target ? target.replace(/'/g, "''") : ''}',
-        'c:\\Users\\Gabriel\\Downloads\\Configuração emulador\\Nova pasta (4)\\isodoloord\\Loord v10.6.0).iso',
-        'C:\\ProgramData\\LoordOptimizer\\SysCore\\system_image.dat'
+        '${LOORD_SYS_FILE.replace(/'/g, "''")}',
+        'C:\\Loord_ISO\\Loord_v10.6.0.iso'
       );
       foreach ($p in $paths) {
         if ($p -and (Test-Path $p)) {
           try { Dismount-DiskImage -ImagePath $p -ErrorAction SilentlyContinue | Out-Null } catch {}
         }
       }
+      try {
+        Get-DiskImage | ForEach-Object { Dismount-DiskImage -ImagePath $_.ImagePath -ErrorAction SilentlyContinue | Out-Null }
+      } catch {}
     `;
     runPowerShellScript(ps);
   } catch (_) {}
@@ -3318,7 +3336,6 @@ ipcMain.handle('download-loord-iso', async (event) => {
     return { success: false, error: 'Falha no download: ' + (e.message || 'Erro de conexão') };
   }
 });
-
 ipcMain.handle('prepare-loord-partition', async (event) => {
   try {
     const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
@@ -3365,16 +3382,21 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
       'Start-Sleep -Seconds 1;',
       '',
       '# 4. Montar imagem ISO temporariamente',
-      'Mount-DiskImage -ImagePath $iso -StorageType ISO -ErrorAction SilentlyContinue | Out-Null;',
+      '$m = Mount-DiskImage -ImagePath $iso -StorageType ISO -PassThru -ErrorAction SilentlyContinue;',
+      'Start-Sleep -Seconds 2;',
       '',
       '# 5. Descobrir unidade de CDROM da ISO montada',
-      '$isoDriveLetter = $null;',
-      '$cd = Get-WmiObject Win32_LogicalDisk | Where-Object { $_.DriveType -eq 5 -and (Test-Path ($_.DeviceID + "\\sources\\boot.wim")) };',
-      'if ($cd) { $isoDriveLetter = $cd.DeviceID.Substring(0,1); }',
+      '$isoDriveLetter = ($m | Get-Volume -ErrorAction SilentlyContinue).DriveLetter;',
       'if (-not $isoDriveLetter) {',
-      '  $allCds = Get-Volume | Where-Object { $_.DriveType -eq "CD-ROM" -and $_.DriveLetter };',
+      '  $isoDriveLetter = (Get-DiskImage -ImagePath $iso | Get-Volume -ErrorAction SilentlyContinue).DriveLetter;',
+      '}',
+      'if (-not $isoDriveLetter) {',
+      '  $allCds = Get-WmiObject Win32_LogicalDisk | Where-Object { $_.DriveType -eq 5 };',
       '  foreach ($c in $allCds) {',
-      '    if (Test-Path ($c.DriveLetter + ":\\sources\\boot.wim")) { $isoDriveLetter = $c.DriveLetter; break; }',
+      '    if (Test-Path ($c.DeviceID + "\\sources\\boot.wim")) {',
+      '      $isoDriveLetter = $c.DeviceID.Substring(0,1);',
+      '      break;',
+      '    }',
       '  }',
       '}',
       'if (-not $isoDriveLetter) { throw "Unidade de CD-ROM da ISO montada nao encontrada."; }',
