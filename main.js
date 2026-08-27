@@ -4982,7 +4982,7 @@ public class Program {
             if (macroAtiva) {
                 bool shooting = (GetAsyncKeyState(VK_LBUTTON) < 0);
                 if (shooting) {
-                    accumY += (speed * 0.8);
+                    accumY += (speed * 3.0);
                     if (accumY >= 1.0) {
                         int stepY = (int)Math.Floor(accumY);
                         mouse_event(MOUSEEVENTF_MOVE, 0, stepY, 0, 0);
@@ -4992,13 +4992,13 @@ public class Program {
                         }
                         accumY -= stepY;
                     }
-                    Thread.Sleep(8);
+                    Thread.Sleep(6);
                 } else {
                     accumY = 0.0;
                     Thread.Sleep(5);
                 }
             } else {
-                Thread.Sleep(15);
+                Thread.Sleep(20);
             }
         }
     }
@@ -5022,14 +5022,19 @@ public class Program {
 ipcMain.handle('start-macro', async (event, speed) => {
   try {
     const numSpeed = typeof speed === 'number' ? speed : parseFloat(speed) || 0.5;
-    const configPath = path.join(os.tmpdir(), 'loord_macro_speed.txt');
-    fs.writeFileSync(configPath, String(numSpeed), 'utf8');
+    const configSpeedPath = path.join(os.tmpdir(), 'loord_macro_speed.txt');
+    const configActivePath = path.join(os.tmpdir(), 'loord_macro_active.txt');
+    fs.writeFileSync(configSpeedPath, String(numSpeed), 'utf8');
+    fs.writeFileSync(configActivePath, 'true', 'utf8');
 
-    // Se já estiver rodando, apenas atualizou o arquivo de velocidade em tempo real
-    if (macroProcess && !macroProcess.killed) {
-      console.log(`[MACRO] Velocidade atualizada dinamicamente para: ${numSpeed}`);
-      return { success: true, updated: true };
-    }
+    // Se já estiver rodando, apenas atualiza arquivos
+    try {
+      const checkRunning = execSync('powershell -NoProfile -Command "Get-Process -Name LoordRecoilEngine -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id"', { encoding: 'utf8' }).trim();
+      if (checkRunning) {
+        console.log(`[MACRO] LoordRecoilEngine ativo (PID: ${checkRunning}). Velocidade: ${numSpeed}`);
+        return { success: true, updated: true };
+      }
+    } catch (_) {}
 
     await killMacroProcess();
 
@@ -5038,14 +5043,17 @@ ipcMain.handle('start-macro', async (event, speed) => {
       throw new Error('Não foi possível inicializar o executável do motor de recoil.');
     }
 
-    const { spawn } = require('child_process');
-    macroProcess = spawn(exePath, [String(numSpeed)], {
-      detached: true,
-      stdio: 'ignore',
-      windowsHide: true
-    });
-
-    macroProcess.unref();
+    try {
+      const psCmd = `powershell -NoProfile -Command "Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = '\\"${exePath.replace(/\\/g, '\\\\')}\\" ${numSpeed}' }"`;
+      execSync(psCmd, { stdio: 'ignore' });
+    } catch (_) {
+      const { spawn } = require('child_process');
+      macroProcess = spawn(exePath, [String(numSpeed)], {
+        detached: true,
+        stdio: 'ignore'
+      });
+      macroProcess.unref();
+    }
 
     console.log(`[MACRO] Executável nativo iniciado com sucesso! (${exePath}) Velocidade: ${numSpeed}`);
     return { success: true };
@@ -5057,6 +5065,10 @@ ipcMain.handle('start-macro', async (event, speed) => {
 
 ipcMain.handle('stop-macro', async () => {
   try {
+    const configActivePath = path.join(os.tmpdir(), 'loord_macro_active.txt');
+    try {
+      fs.writeFileSync(configActivePath, 'false', 'utf8');
+    } catch (_) {}
     await killMacroProcess();
     console.log('[MACRO] Parada com sucesso!');
     return { success: true };
