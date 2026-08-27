@@ -636,8 +636,15 @@ function updateMacroSpeedUI(val) {
     }
   });
 
-  if (toggleMacro && toggleMacro.checked && window.api && window.api.startMacro) {
-    window.api.startMacro(parseFloat(formatted));
+  if (toggleMacro) {
+    toggleMacro.checked = true;
+    if (macroForceContainer) macroForceContainer.style.display = 'block';
+  }
+  localStorage.setItem('loord_macro_active', 'true');
+  localStorage.setItem('loord_macro_speed', formatted);
+
+  if (window.api && window.api.startMacro) {
+    window.api.startMacro(parseFloat(formatted)).catch(() => {});
   }
 }
 
@@ -658,6 +665,17 @@ presetMacroBtns.forEach(btn => {
     const speed = btn.getAttribute('data-speed');
     if (speed) updateMacroSpeedUI(speed);
   });
+});
+
+// Listener de tecla F7 e F8 direto na janela
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'F7' || e.key === 'F8') {
+    e.preventDefault();
+    if (toggleMacro) {
+      toggleMacro.checked = !toggleMacro.checked;
+      toggleMacro.dispatchEvent(new Event('change'));
+    }
+  }
 });
 
 const btnApplyMouse = document.getElementById('btn-apply-mouse');

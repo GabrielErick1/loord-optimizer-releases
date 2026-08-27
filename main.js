@@ -4881,24 +4881,40 @@ app.on('will-quit', () => {
 function getRecoilEngineExe() {
   const tempExe = path.join(os.tmpdir(), 'LoordRecoilEngine.exe');
 
-  // 1) Se existir no bin do projeto ou descompactado
-  const possiblePaths = [
+  const possibleDiskPaths = [
     path.join(process.resourcesPath || '', 'app.asar.unpacked', 'bin', 'LoordRecoilEngine.exe'),
-    path.join(process.resourcesPath || '', 'bin', 'LoordRecoilEngine.exe'),
+    path.join(__dirname.replace('app.asar', 'app.asar.unpacked'), 'bin', 'LoordRecoilEngine.exe'),
+    path.join(app.getAppPath().replace('app.asar', 'app.asar.unpacked'), 'bin', 'LoordRecoilEngine.exe'),
     path.join(__dirname, 'bin', 'LoordRecoilEngine.exe')
   ];
 
-  for (const p of possiblePaths) {
+  for (const p of possibleDiskPaths) {
     try {
-      if (fs.existsSync(p)) {
-        // Se estiver dentro do asar ou no disco, garante cópia física em tempExe
-        try {
-          const buf = fs.readFileSync(p);
-          fs.writeFileSync(tempExe, buf);
-          return tempExe;
-        } catch (_) {
-          return p;
-        }
+      if (!p.includes('app.asar\\') && !p.includes('app.asar/') && fs.existsSync(p) && fs.statSync(p).size > 1000) {
+        return p;
+      }
+    } catch (_) {}
+  }
+
+  // Se já existe no temp e é válido, usa ele
+  try {
+    if (fs.existsSync(tempExe) && fs.statSync(tempExe).size > 1000) {
+      return tempExe;
+    }
+  } catch (_) {}
+
+  // Tenta extrair do asar
+  const asarPaths = [
+    path.join(__dirname, 'bin', 'LoordRecoilEngine.exe'),
+    path.join(process.resourcesPath || '', 'bin', 'LoordRecoilEngine.exe')
+  ];
+
+  for (const ap of asarPaths) {
+    try {
+      if (fs.existsSync(ap)) {
+        const buf = fs.readFileSync(ap);
+        fs.writeFileSync(tempExe, buf);
+        if (fs.existsSync(tempExe)) return tempExe;
       }
     } catch (_) {}
   }
