@@ -4832,16 +4832,16 @@ del "${targetPathWin}" >nul 2>&1
   }
 }
 
-// ─── MOTOR DA MACRO DE RECOIL & DESCIDA Y (F2, F3, F6, F7) ──────────────────
+// ─── MOTOR DA MACRO DE RECOIL & DESCIDA Y (F7, F8, F2, F3, F6) ─────────────
 async function killMacroProcess() {
   if (macroProcess) {
     try {
-      if (!macroProcess.killed) macroProcess.kill('SIGKILL');
+      if (!macroProcess.killed) macroProcess.kill();
     } catch (_) {}
     macroProcess = null;
   }
   try {
-    execSync(`powershell -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*loord_recoil_engine.ps1*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"`, { stdio: 'ignore' });
+    execSync('taskkill /F /IM LoordRecoilEngine.exe >nul 2>&1', { stdio: 'ignore' });
   } catch (_) {}
 }
 
@@ -4849,63 +4849,106 @@ app.on('will-quit', () => {
   killMacroProcess();
 });
 
-ipcMain.handle('start-macro', async (event, speed) => {
+function getRecoilEngineExe() {
+  const possiblePaths = [
+    path.join(__dirname, 'bin', 'LoordRecoilEngine.exe'),
+    path.join(process.resourcesPath || '', 'bin', 'LoordRecoilEngine.exe'),
+    path.join(app.getAppPath(), 'bin', 'LoordRecoilEngine.exe'),
+    path.join(os.tmpdir(), 'LoordRecoilEngine.exe')
+  ];
+
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) return p;
+  }
+
+  // Se não existir, compila na hora via csc.exe do .NET Framework 4.0 (nativo do Windows)
   try {
-    await killMacroProcess();
-
-    const numSpeed = typeof speed === 'number' ? speed : parseFloat(speed) || 0.5;
-    const tmpScript = path.join(os.tmpdir(), 'loord_recoil_engine.ps1');
-
-    const scriptContent = `# Loord Recoil Engine - Puxada Y Suave
-param([double]$Velocidade = ${numSpeed})
-
-$code = @"
+    const csSource = `
 using System;
+using System.Globalization;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-public class MacroEngine {
+public class Program {
     [DllImport("user32.dll")] public static extern short GetAsyncKeyState(int vKey);
     [DllImport("user32.dll")] public static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, int dwExtraInfo);
+    [DllImport("user32.dll")] public static extern bool GetCursorPos(out POINT lpPoint);
+    [DllImport("user32.dll")] public static extern bool SetCursorPos(int X, int Y);
+    [DllImport("user32.dll")] public static extern bool MessageBeep(uint uType);
     [DllImport("winmm.dll")] public static extern uint timeBeginPeriod(uint uMilliseconds);
 
+    public struct POINT { public int X; public int Y; }
+
     private const int MOUSEEVENTF_MOVE = 0x0001;
-    private const int VK_LBUTTON = 0x01; // Botao esquerdo do mouse (Atirar)
-    private const int VK_RBUTTON = 0x02; // Botao direito do mouse (Mirar / Atirar)
+    private const int VK_LBUTTON = 0x01; // Botao Esquerdo (Atirar)
     private const int VK_F2      = 0x71;
     private const int VK_F3      = 0x72;
     private const int VK_F6      = 0x75;
     private const int VK_F7      = 0x76;
+    private const int VK_F8      = 0x77;
 
-    public static void Run(double speed) {
+    public static void Main(string[] args) {
         try { timeBeginPeriod(1); } catch {}
-        if (speed <= 0.0) speed = 0.5;
-        double accumY = 0.0;
+        double speed = 1.0;
+        if (args.Length > 0) {
+            string raw = args[0].Replace(',', '.');
+            double parsed;
+            if (double.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out parsed)) {
+                speed = parsed;
+            }
+        }
+        if (speed <= 0.0) speed = 0.1;
+        if (speed > 50.0) speed = 50.0;
+
         bool macroAtiva = true;
-        try { Console.Beep(1200, 150); } catch {}
+        try { MessageBeep(0); } catch {}
+
+        double accumY = 0.0;
+        string configPath = Path.Combine(Path.GetTempPath(), "loord_macro_speed.txt");
+        int checkConfigCounter = 0;
 
         while (true) {
-            bool f2 = (GetAsyncKeyState(VK_F2) & 0x8000) != 0;
-            bool f3 = (GetAsyncKeyState(VK_F3) & 0x8000) != 0;
-            bool f6 = (GetAsyncKeyState(VK_F6) & 0x8000) != 0;
-            bool f7 = (GetAsyncKeyState(VK_F7) & 0x8000) != 0;
+            bool f7 = (GetAsyncKeyState(VK_F7) < 0);
+            bool f8 = (GetAsyncKeyState(VK_F8) < 0);
+            bool f2 = (GetAsyncKeyState(VK_F2) < 0);
+            bool f3 = (GetAsyncKeyState(VK_F3) < 0);
+            bool f6 = (GetAsyncKeyState(VK_F6) < 0);
 
-            if (f2 || f3 || f6 || f7) {
+            if (f7 || f8 || f2 || f3 || f6) {
                 macroAtiva = !macroAtiva;
-                try { Console.Beep(macroAtiva ? 1200 : 500, 150); } catch {}
+                try { MessageBeep(0); } catch {}
                 Thread.Sleep(300);
             }
 
+            checkConfigCounter++;
+            if (checkConfigCounter > 20) {
+                checkConfigCounter = 0;
+                try {
+                    if (File.Exists(configPath)) {
+                        string cfg = File.ReadAllText(configPath).Trim().Replace(',', '.');
+                        double newSpd;
+                        if (double.TryParse(cfg, NumberStyles.Any, CultureInfo.InvariantCulture, out newSpd)) {
+                            if (newSpd > 0.0) speed = newSpd;
+                        }
+                    }
+                } catch {}
+            }
+
             if (macroAtiva) {
-                bool isShooting = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-                if (isShooting) {
-                    accumY += (speed * 1.5);
+                bool shooting = (GetAsyncKeyState(VK_LBUTTON) < 0);
+                if (shooting) {
+                    accumY += (speed * 0.8);
                     if (accumY >= 1.0) {
                         int stepY = (int)Math.Floor(accumY);
-                        mouse_event(MOUSEEVENTF_MOVE, 0, stepY, 0, 0); // Puxa o cursor para baixo de acordo com a velocidade
+                        mouse_event(MOUSEEVENTF_MOVE, 0, stepY, 0, 0);
+                        POINT cur;
+                        if (GetCursorPos(out cur)) {
+                            SetCursorPos(cur.X, cur.Y + stepY);
+                        }
                         accumY -= stepY;
                     }
-                    Thread.Sleep(5);
+                    Thread.Sleep(8);
                 } else {
                     accumY = 0.0;
                     Thread.Sleep(5);
@@ -4916,34 +4959,51 @@ public class MacroEngine {
         }
     }
 }
-"@
-
-Add-Type -TypeDefinition $code -Language CSharp
-[MacroEngine]::Run($Velocidade)
 `;
+    const tmpCs = path.join(os.tmpdir(), 'LoordRecoilEngine.cs');
+    const tmpExe = path.join(os.tmpdir(), 'LoordRecoilEngine.exe');
+    fs.writeFileSync(tmpCs, csSource, 'utf8');
+    const cscPath = 'C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe';
+    if (fs.existsSync(cscPath)) {
+      execSync(`"${cscPath}" /nologo /optimize /target:winexe /out:"${tmpExe}" "${tmpCs}"`, { stdio: 'ignore' });
+      if (fs.existsSync(tmpExe)) return tmpExe;
+    }
+  } catch (e) {
+    console.error('[MacroEngine] Erro ao compilar:', e);
+  }
 
-    fs.writeFileSync(tmpScript, scriptContent, 'utf8');
+  return null;
+}
+
+ipcMain.handle('start-macro', async (event, speed) => {
+  try {
+    const numSpeed = typeof speed === 'number' ? speed : parseFloat(speed) || 0.5;
+    const configPath = path.join(os.tmpdir(), 'loord_macro_speed.txt');
+    fs.writeFileSync(configPath, String(numSpeed), 'utf8');
+
+    // Se já estiver rodando, apenas atualizou o arquivo de velocidade em tempo real
+    if (macroProcess && !macroProcess.killed) {
+      console.log(`[MACRO] Velocidade atualizada dinamicamente para: ${numSpeed}`);
+      return { success: true, updated: true };
+    }
+
+    await killMacroProcess();
+
+    const exePath = getRecoilEngineExe();
+    if (!exePath) {
+      throw new Error('Não foi possível inicializar o executável do motor de recoil.');
+    }
 
     const { spawn } = require('child_process');
-    macroProcess = spawn('powershell.exe', [
-      '-NoProfile',
-      '-ExecutionPolicy',
-      'Bypass',
-      '-WindowStyle',
-      'Hidden',
-      '-File',
-      tmpScript,
-      '-Velocidade',
-      String(numSpeed)
-    ], {
-      windowsHide: true,
+    macroProcess = spawn(exePath, [String(numSpeed)], {
       detached: true,
-      stdio: 'ignore'
+      stdio: 'ignore',
+      windowsHide: true
     });
 
     macroProcess.unref();
 
-    console.log(`[MACRO] Iniciada com sucesso! Velocidade: ${numSpeed}`);
+    console.log(`[MACRO] Executável nativo iniciado com sucesso! (${exePath}) Velocidade: ${numSpeed}`);
     return { success: true };
   } catch (e) {
     console.error('Erro ao iniciar macro:', e);
@@ -4960,5 +5020,6 @@ ipcMain.handle('stop-macro', async () => {
     return { success: false, error: e.message };
   }
 });
+
 
 
