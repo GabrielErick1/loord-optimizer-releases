@@ -4934,7 +4934,6 @@ function getRecoilEngineExe() {
   try {
     const csSource = `
 using System;
-using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -4950,20 +4949,14 @@ public class Program {
     public struct POINT { public int X; public int Y; }
 
     private const int MOUSEEVENTF_MOVE = 0x0001;
-    private const int VK_LBUTTON = 0x01; // Botao Esquerdo (Atirar)
-    private const int VK_F2      = 0x71;
-    private const int VK_F3      = 0x72;
-    private const int VK_F6      = 0x75;
-    private const int VK_F7      = 0x76;
-    private const int VK_F8      = 0x77;
+    private const int VK_LBUTTON = 0x01;
 
     public static void Main(string[] args) {
         try { timeBeginPeriod(1); } catch {}
-        double speed = 1.0;
+        double speed = 0.5;
         if (args.Length > 0) {
-            string raw = args[0].Replace(',', '.');
             double parsed;
-            if (double.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out parsed)) {
+            if (double.TryParse(args[0].Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out parsed)) {
                 speed = parsed;
             }
         }
@@ -4971,34 +4964,34 @@ public class Program {
         if (speed > 50.0) speed = 50.0;
 
         bool macroAtiva = true;
-        try { MessageBeep(0); } catch {}
-
         double accumY = 0.0;
-        string configPath = Path.Combine(Path.GetTempPath(), "loord_macro_speed.txt");
-        int checkConfigCounter = 0;
+        string configSpeedPath = Path.Combine(Path.GetTempPath(), "loord_macro_speed.txt");
+        string configActivePath = Path.Combine(Path.GetTempPath(), "loord_macro_active.txt");
+        int loopCounter = 0;
 
         while (true) {
-            bool f7 = (GetAsyncKeyState(VK_F7) < 0);
-            bool f8 = (GetAsyncKeyState(VK_F8) < 0);
-            bool f2 = (GetAsyncKeyState(VK_F2) < 0);
-            bool f3 = (GetAsyncKeyState(VK_F3) < 0);
-            bool f6 = (GetAsyncKeyState(VK_F6) < 0);
-
-            if (f7 || f8 || f2 || f3 || f6) {
-                macroAtiva = !macroAtiva;
-                try { MessageBeep(0); } catch {}
-                Thread.Sleep(300);
-            }
-
-            checkConfigCounter++;
-            if (checkConfigCounter > 20) {
-                checkConfigCounter = 0;
+            loopCounter++;
+            if (loopCounter % 8 == 0) {
                 try {
-                    if (File.Exists(configPath)) {
-                        string cfg = File.ReadAllText(configPath).Trim().Replace(',', '.');
-                        double newSpd;
-                        if (double.TryParse(cfg, NumberStyles.Any, CultureInfo.InvariantCulture, out newSpd)) {
-                            if (newSpd > 0.0) speed = newSpd;
+                    if (File.Exists(configActivePath)) {
+                        using (var fs = new FileStream(configActivePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                        using (var reader = new StreamReader(fs)) {
+                            string act = reader.ReadToEnd().Trim().ToLower();
+                            if (act == "true" || act == "1") macroAtiva = true;
+                            else if (act == "false" || act == "0") macroAtiva = false;
+                        }
+                    }
+                } catch {}
+
+                try {
+                    if (File.Exists(configSpeedPath)) {
+                        using (var fs = new FileStream(configSpeedPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                        using (var reader = new StreamReader(fs)) {
+                            string cfg = reader.ReadToEnd().Trim().Replace(',', '.');
+                            double newSpd;
+                            if (double.TryParse(cfg, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out newSpd)) {
+                                if (newSpd > 0.0) speed = newSpd;
+                            }
                         }
                     }
                 } catch {}
@@ -5007,7 +5000,7 @@ public class Program {
             if (macroAtiva) {
                 bool shooting = (GetAsyncKeyState(VK_LBUTTON) < 0);
                 if (shooting) {
-                    accumY += (speed * 3.0);
+                    accumY += (speed * 0.5);
                     if (accumY >= 1.0) {
                         int stepY = (int)Math.Floor(accumY);
                         mouse_event(MOUSEEVENTF_MOVE, 0, stepY, 0, 0);
@@ -5017,12 +5010,13 @@ public class Program {
                         }
                         accumY -= stepY;
                     }
-                    Thread.Sleep(6);
+                    Thread.Sleep(8);
                 } else {
                     accumY = 0.0;
-                    Thread.Sleep(5);
+                    Thread.Sleep(6);
                 }
             } else {
+                accumY = 0.0;
                 Thread.Sleep(20);
             }
         }

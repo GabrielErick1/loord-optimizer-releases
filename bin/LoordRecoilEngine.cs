@@ -33,11 +33,6 @@ namespace LoordOptimizer
 
         private const int MOUSEEVENTF_MOVE = 0x0001;
         private const int VK_LBUTTON = 0x01; // Botao Esquerdo (Atirar / Disparo)
-        private const int VK_F2      = 0x71;
-        private const int VK_F3      = 0x72;
-        private const int VK_F6      = 0x75;
-        private const int VK_F7      = 0x76;
-        private const int VK_F8      = 0x77;
 
         [STAThread]
         public static void Main(string[] args)
@@ -62,42 +57,46 @@ namespace LoordOptimizer
             if (speed > 50.0) speed = 50.0;
 
             bool macroAtiva = true;
-            try { MessageBeep(0); } catch { }
-
             double accumY = 0.0;
-            string configPath = Path.Combine(Path.GetTempPath(), "loord_macro_speed.txt");
+            string configSpeedPath = Path.Combine(Path.GetTempPath(), "loord_macro_speed.txt");
+            string configActivePath = Path.Combine(Path.GetTempPath(), "loord_macro_active.txt");
             int loopCounter = 0;
 
             while (true)
             {
                 loopCounter++;
 
-                // Monitora atalhos de ligar/desligar: F7, F8, F2, F3, F6
-                bool f7 = (GetAsyncKeyState(VK_F7) < 0);
-                bool f8 = (GetAsyncKeyState(VK_F8) < 0);
-                bool f2 = (GetAsyncKeyState(VK_F2) < 0);
-                bool f3 = (GetAsyncKeyState(VK_F3) < 0);
-                bool f6 = (GetAsyncKeyState(VK_F6) < 0);
-
-                if (f7 || f8 || f2 || f3 || f6)
-                {
-                    macroAtiva = !macroAtiva;
-                    try { MessageBeep(0); } catch { }
-                    Thread.Sleep(300);
-                }
-
-                // Sincroniza velocidade atualizada em tempo real a cada ~100ms
-                if (loopCounter % 20 == 0)
+                // Sincroniza estado e velocidade com o painel a cada ~50ms
+                if (loopCounter % 8 == 0)
                 {
                     try
                     {
-                        if (File.Exists(configPath))
+                        if (File.Exists(configActivePath))
                         {
-                            string cfg = File.ReadAllText(configPath).Trim().Replace(',', '.');
-                            double newSpd;
-                            if (double.TryParse(cfg, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out newSpd))
+                            using (var fs = new FileStream(configActivePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                            using (var reader = new StreamReader(fs))
                             {
-                                if (newSpd > 0.0) speed = newSpd;
+                                string act = reader.ReadToEnd().Trim().ToLower();
+                                if (act == "true" || act == "1") macroAtiva = true;
+                                else if (act == "false" || act == "0") macroAtiva = false;
+                            }
+                        }
+                    }
+                    catch { }
+
+                    try
+                    {
+                        if (File.Exists(configSpeedPath))
+                        {
+                            using (var fs = new FileStream(configSpeedPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                            using (var reader = new StreamReader(fs))
+                            {
+                                string cfg = reader.ReadToEnd().Trim().Replace(',', '.');
+                                double newSpd;
+                                if (double.TryParse(cfg, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out newSpd))
+                                {
+                                    if (newSpd > 0.0) speed = newSpd;
+                                }
                             }
                         }
                     }
@@ -110,12 +109,15 @@ namespace LoordOptimizer
                     bool isShooting = (GetAsyncKeyState(VK_LBUTTON) < 0);
                     if (isShooting)
                     {
-                        // Escala proporcional precisa:
-                        // 0.1 = minima quase imperceptivel
-                        // 0.5 = suave
-                        // 1.0 = media
-                        // 10.0 = maxima
-                        accumY += (speed * 0.8);
+                        // Escala proporcional real:
+                        // 0.1: quase imperceptivel / muito lenta (para controle fino)
+                        // 0.2: lenta e suave
+                        // 0.5: moderada
+                        // 1.0: recomendada
+                        // 2.5: media-alta
+                        // 5.0: forte
+                        // 10.0: maxima
+                        accumY += (speed * 0.5);
                         if (accumY >= 1.0)
                         {
                             int stepY = (int)Math.Floor(accumY);
@@ -137,11 +139,12 @@ namespace LoordOptimizer
                     else
                     {
                         accumY = 0.0;
-                        Thread.Sleep(5);
+                        Thread.Sleep(6);
                     }
                 }
                 else
                 {
+                    accumY = 0.0;
                     Thread.Sleep(20);
                 }
             }
