@@ -23,6 +23,7 @@
       "main.js",
       "preload.js",
       "renderer.js",
+      "i18n.js",
       "index.html",
       "style.css",
       "package.json",
