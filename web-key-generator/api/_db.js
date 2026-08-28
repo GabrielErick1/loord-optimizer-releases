@@ -6,7 +6,7 @@ const crypto = require('crypto');
 const localDbPath = path.join(os.tmpdir(), 'ffopt_users.json');
 const localLicensesPath = path.join(os.tmpdir(), 'ffopt_licenses.json');
 const defaultSalt = 'FFOptimizerDbSalt2026';
-const sessionSecret = 'SecretSessionKey2026';
+const sessionSecret = 'SecretSessionKey2026_LiveAuth_8h_ForceLogout_GlobalReset_v5';
 const activationSalt = 'FFOptimizerSecure2026';
 
 async function parseRequestBody(req) {
@@ -245,9 +245,9 @@ function hashPassword(password) {
 }
 
 function createSessionToken(username, isAdmin, role) {
-  const resolvedRole = role || (username.toLowerCase() === 'gabriel' ? 'owner' : (isAdmin ? 'admin' : 'vendedor'));
-  const expiry = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
-  const payload = JSON.stringify({ username, isAdmin: resolvedRole === 'owner' || !!isAdmin, role: resolvedRole, expiry });
+  const resolvedRole = role || (username.toLowerCase() === 'gabriel' ? 'worn' : (isAdmin ? 'admin' : 'vendedor'));
+  const expiry = Date.now() + 8 * 60 * 60 * 1000; // Validade rigorosa de 8 horas (após isso, desloga)
+  const payload = JSON.stringify({ username, isAdmin: resolvedRole === 'worn' || resolvedRole === 'owner' || !!isAdmin, role: resolvedRole, expiry });
   const signature = crypto.createHmac('sha256', sessionSecret).update(payload).digest('hex');
   return Buffer.from(JSON.stringify({ payload, signature })).toString('base64');
 }
@@ -259,10 +259,11 @@ function verifySessionToken(token) {
     if (signature !== expectedSignature) return null;
     
     const { username, isAdmin, role, expiry } = JSON.parse(payload);
-    if (Date.now() > expiry) return null;
+    // Token expira rigorosamente após 8 horas
+    if (!expiry || Date.now() > expiry) return null;
     
-    const resolvedRole = role || (username.toLowerCase() === 'gabriel' ? 'owner' : (isAdmin ? 'admin' : 'vendedor'));
-    return { username, isAdmin: resolvedRole === 'owner' || !!isAdmin, role: resolvedRole };
+    const resolvedRole = role || (username.toLowerCase() === 'gabriel' ? 'worn' : (isAdmin ? 'admin' : 'vendedor'));
+    return { username, isAdmin: resolvedRole === 'worn' || resolvedRole === 'owner' || !!isAdmin, role: resolvedRole, expiry };
   } catch (e) {
     return null;
   }
@@ -291,7 +292,39 @@ async function verifyAuth(req) {
   const sessionUser = verifySessionToken(token);
   if (!sessionUser) return null;
 
-  return sessionUser;
+  // ─────────────────────────────────────────────────────────────────
+  // VALIDAÇÃO EM TEMPO REAL NO BANCO DE DADOS:
+  // Se o usuário foi rebaixado de cargo (ex: admin para vendedor)
+  // ou inativado/excluído, a mudança é aplicada NA MESMA HORA!
+  // ─────────────────────────────────────────────────────────────────
+  try {
+    const users = await getOrInitUsers();
+    const cleanUsername = sessionUser.username.trim().toLowerCase();
+    const dbUser = users.find(u => u.username && u.username.trim().toLowerCase() === cleanUsername);
+
+    // Se o usuário foi excluído, inativado ou aguarda aprovação, desloga e bloqueia imediatamente
+    if (!dbUser || dbUser.status === 'inactive' || dbUser.status === 'pending_approval') {
+      return null;
+    }
+
+    const currentRole = getUserRole(dbUser);
+    const currentIsAdmin = (currentRole === 'worn' || currentRole === 'owner' || currentRole === 'admin');
+
+    return {
+      username: dbUser.username,
+      role: currentRole,
+      isAdmin: currentIsAdmin,
+      status: dbUser.status || 'active',
+      allowedPlans: Array.isArray(dbUser.allowedPlans) ? dbUser.allowedPlans : [],
+      directPlans: Array.isArray(dbUser.directPlans) ? dbUser.directPlans : [],
+      allPlansDirect: !!dbUser.allPlansDirect,
+      freeDailyLimit: dbUser.freeDailyLimit !== undefined ? dbUser.freeDailyLimit : 5,
+      freeUsageToday: dbUser.freeUsageToday || null
+    };
+  } catch (e) {
+    console.error('Erro na validação em tempo real de sessão:', e);
+    return sessionUser;
+  }
 }
 
 const localPlansPath = path.join(os.tmpdir(), 'ffopt_plans.json');

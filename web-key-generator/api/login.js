@@ -69,7 +69,7 @@ module.exports = async (req, res) => {
     }
 
     const userRole = getUserRole(user);
-    const isAdm = userRole === 'owner' || !!user.isAdmin;
+    const isAdm = userRole === 'worn' || userRole === 'owner' || !!user.isAdmin;
     const token = createSessionToken(user.username, isAdm, userRole);
     res.status(200).json({
       success: true,

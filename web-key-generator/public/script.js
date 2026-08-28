@@ -185,13 +185,23 @@ btnLogin.addEventListener('click', async () => {
 });
 
 // Ação de Logout
-btnLogout.addEventListener('click', () => {
+function forceLogout(reason) {
   userToken = null;
   localStorage.removeItem('admin_token');
   localStorage.removeItem('admin_username');
   localStorage.removeItem('admin_is_admin');
   localStorage.removeItem('admin_role');
   if (activePixPollTimer) clearInterval(activePixPollTimer);
+  dashboardContainer.style.display = 'none';
+  loginContainer.style.display = 'block';
+  if (reason && loginError) {
+    loginError.textContent = `⚠️ ${reason}`;
+    loginError.style.display = 'block';
+  }
+}
+
+btnLogout.addEventListener('click', () => {
+  forceLogout();
   location.reload();
 });
 
@@ -247,15 +257,63 @@ function initDashboard(username, isAdmin, role) {
   if (isWorn || userRole === 'admin') loadUsers();
 }
 
-// Auto-login se já tiver token
+// Auto-login com validação obrigatória no servidor (Desloga tokens antigos e tokens > 8h)
 (async function checkExistingSession() {
-  if (userToken) {
-    const savedUser = localStorage.getItem('admin_username') || 'gabriel';
-    const isMaster = (savedUser.toLowerCase() === 'gabriel') || localStorage.getItem('admin_is_admin') === 'true';
-    const savedRole = (savedUser.toLowerCase() === 'gabriel') ? 'worn' : (localStorage.getItem('admin_role') || (isMaster ? 'admin' : 'vendedor'));
-    initDashboard(savedUser, isMaster, savedRole);
+  if (!userToken) {
+    loginContainer.style.display = 'block';
+    dashboardContainer.style.display = 'none';
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/api/check-session`, {
+      headers: { 'Authorization': `Bearer ${userToken}` }
+    });
+
+    if (res.status === 401 || res.status === 403) {
+      forceLogout('Sua sessão expirou (limite de 8 horas) ou foi encerrada pelo servidor. Faça login novamente.');
+      return;
+    }
+
+    const data = await res.json();
+    if (data.success && data.username) {
+      localStorage.setItem('admin_username', data.username);
+      localStorage.setItem('admin_is_admin', String(data.isAdmin));
+      localStorage.setItem('admin_role', data.role);
+      initDashboard(data.username, data.isAdmin, data.role);
+    } else {
+      forceLogout('Sessão expirada. Por favor, faça login novamente.');
+    }
+  } catch (e) {
+    forceLogout('Sua sessão foi encerrada. Por favor, faça login novamente.');
   }
 })();
+
+// Heartbeat em segundo plano a cada 20s: atualiza cargo em tempo real ou desloga se expirou/inativou
+setInterval(async () => {
+  if (!userToken) return;
+  try {
+    const res = await fetch(`${API_URL}/api/check-session`, {
+      headers: { 'Authorization': `Bearer ${userToken}` }
+    });
+
+    if (res.status === 401 || res.status === 403) {
+      forceLogout('Sua sessão expirou (8 horas) ou seu acesso foi inativado. Faça login novamente.');
+      return;
+    }
+
+    const data = await res.json();
+    if (data && data.success && data.role) {
+      const currentRole = localStorage.getItem('admin_role');
+      if (currentRole !== data.role) {
+        console.log(`[AUTH REALTIME] Cargo alterado pelo Worn: ${currentRole} -> ${data.role}`);
+        localStorage.setItem('admin_role', data.role);
+        localStorage.setItem('admin_is_admin', String(data.isAdmin));
+        initDashboard(data.username, data.isAdmin, data.role);
+      }
+    }
+  } catch (_) {}
+}, 20000);
 
 // Seletor de Cargo no Formulário de Cadastro
 function setNewUserRoleSelection(role) {
