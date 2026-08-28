@@ -57,6 +57,7 @@ contextBridge.exposeInMainWorld('api', {
   resetNetworkDhcp: () => ipcRenderer.invoke('reset-network-dhcp'),
   // ─── Macro de Controle de Recoil & Puxada Y ─────────────────────
   startMacro: (speed) => ipcRenderer.invoke('start-macro', speed),
+  setMacroSpeed: (speed) => ipcRenderer.invoke('set-macro-speed', speed),
   stopMacro: () => ipcRenderer.invoke('stop-macro'),
   // ─── Game Booster Turbo ──────────────────────────────────────────
   boostGameTurbo: () => ipcRenderer.invoke('boost-game-turbo'),

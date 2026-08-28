@@ -638,6 +638,10 @@ function updateMacroSpeedUI(val) {
 
   localStorage.setItem('loord_macro_speed', formatted);
 
+  // Sincroniza sempre com o backend nativo em tempo real
+  if (window.api && window.api.setMacroSpeed) {
+    window.api.setMacroSpeed(parseFloat(formatted)).catch(() => {});
+  }
   if (toggleMacro && toggleMacro.checked && window.api && window.api.startMacro) {
     window.api.startMacro(parseFloat(formatted)).catch(() => {});
   }
@@ -686,6 +690,9 @@ if (btnApplyMouse) {
         const speed = getMacroCurrentSpeed();
         localStorage.setItem('loord_macro_speed', String(speed));
 
+        if (window.api && window.api.setMacroSpeed) {
+          await window.api.setMacroSpeed(speed);
+        }
         if (window.api && window.api.startMacro) {
           await window.api.startMacro(speed);
         }
@@ -732,6 +739,15 @@ if (toggleMacro) {
         macroForceContainer.style.display = 'block';
       }
       localStorage.setItem('loord_macro_active', isActive ? 'true' : 'false');
+      if (data.speed !== undefined && data.speed !== null) {
+        const num = parseFloat(data.speed);
+        if (!isNaN(num) && num > 0) {
+          const formatted = num.toFixed(1);
+          if (macroForceSlider) macroForceSlider.value = formatted;
+          if (macroSpeedInput) macroSpeedInput.value = formatted;
+          localStorage.setItem('loord_macro_speed', formatted);
+        }
+      }
       playMacroBeepAudio(isActive);
     });
   }
@@ -747,6 +763,9 @@ if (toggleMacro) {
     if (active) {
       const speed = getMacroCurrentSpeed();
       localStorage.setItem('loord_macro_speed', String(speed));
+      if (window.api && window.api.setMacroSpeed) {
+        window.api.setMacroSpeed(speed).catch(() => {});
+      }
       if (window.api && window.api.startMacro) {
         await window.api.startMacro(speed);
       }

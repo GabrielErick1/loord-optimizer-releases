@@ -218,23 +218,26 @@ app.whenReady().then(() => {
 });
 
 let macroEnabledState = false;
+let macroCurrentSpeed = 0.5;
 
 async function toggleMacroGlobalState() {
   macroEnabledState = !macroEnabledState;
   const configActivePath = path.join(os.tmpdir(), 'loord_macro_active.txt');
+  const configSpeedPath = path.join(os.tmpdir(), 'loord_macro_speed.txt');
   try {
     fs.writeFileSync(configActivePath, macroEnabledState ? 'true' : 'false', 'utf8');
+    fs.writeFileSync(configSpeedPath, String(macroCurrentSpeed), 'utf8');
   } catch (_) {}
 
   try {
     shell.beep();
   } catch (_) {}
 
-  // Garante que o motor nativo esteja rodando em background
-  startMacroNative(0.5, macroEnabledState).catch(() => {});
+  // Garante que o motor nativo esteja rodando em background com a velocidade atual do usuário
+  startMacroNative(macroCurrentSpeed, macroEnabledState).catch(() => {});
 
   if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send('macro-state-changed', { active: macroEnabledState });
+    mainWindow.webContents.send('macro-state-changed', { active: macroEnabledState, speed: macroCurrentSpeed });
   }
 }
 
@@ -4999,20 +5002,16 @@ public class Program {
             if (macroAtiva) {
                 bool shooting = (GetAsyncKeyState(VK_LBUTTON) < 0);
                 if (shooting) {
-                    accumY += (speed * 0.5);
+                    accumY += (speed * 0.18);
                     if (accumY >= 1.0) {
                         int stepY = (int)Math.Floor(accumY);
                         mouse_event(MOUSEEVENTF_MOVE, 0, stepY, 0, 0);
-                        POINT cur;
-                        if (GetCursorPos(out cur)) {
-                            SetCursorPos(cur.X, cur.Y + stepY);
-                        }
                         accumY -= stepY;
                     }
-                    Thread.Sleep(8);
+                    Thread.Sleep(10);
                 } else {
                     accumY = 0.0;
-                    Thread.Sleep(6);
+                    Thread.Sleep(10);
                 }
             } else {
                 accumY = 0.0;
@@ -5037,10 +5036,16 @@ public class Program {
   return null;
 }
 
-async function startMacroNative(speed = 0.5, active = true) {
+async function startMacroNative(speed = null, active = true) {
   try {
     macroEnabledState = !!active;
-    const numSpeed = typeof speed === 'number' ? speed : parseFloat(speed) || 0.5;
+    if (speed !== null && speed !== undefined) {
+      const num = typeof speed === 'number' ? speed : parseFloat(speed);
+      if (!isNaN(num) && num > 0) {
+        macroCurrentSpeed = num;
+      }
+    }
+    const numSpeed = macroCurrentSpeed;
     const configSpeedPath = path.join(os.tmpdir(), 'loord_macro_speed.txt');
     const configActivePath = path.join(os.tmpdir(), 'loord_macro_active.txt');
     fs.writeFileSync(configSpeedPath, String(numSpeed), 'utf8');
@@ -5083,7 +5088,19 @@ async function startMacroNative(speed = 0.5, active = true) {
 }
 
 ipcMain.handle('start-macro', async (event, speed) => {
-  return await startMacroNative(speed);
+  return await startMacroNative(speed, true);
+});
+
+ipcMain.handle('set-macro-speed', async (event, speed) => {
+  const num = typeof speed === 'number' ? speed : parseFloat(speed);
+  if (!isNaN(num) && num > 0) {
+    macroCurrentSpeed = num;
+    const configSpeedPath = path.join(os.tmpdir(), 'loord_macro_speed.txt');
+    try {
+      fs.writeFileSync(configSpeedPath, String(macroCurrentSpeed), 'utf8');
+    } catch (_) {}
+  }
+  return { success: true, speed: macroCurrentSpeed };
 });
 
 ipcMain.handle('stop-macro', async () => {
