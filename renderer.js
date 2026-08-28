@@ -729,7 +729,7 @@ if (toggleMacro) {
         toggleMacro.checked = isActive;
       }
       if (macroForceContainer) {
-        macroForceContainer.style.display = isActive ? 'block' : 'none';
+        macroForceContainer.style.display = 'block';
       }
       localStorage.setItem('loord_macro_active', isActive ? 'true' : 'false');
       playMacroBeepAudio(isActive);
@@ -740,7 +740,7 @@ if (toggleMacro) {
     const active = e.target.checked;
     localStorage.setItem('loord_macro_active', active ? 'true' : 'false');
     if (macroForceContainer) {
-      macroForceContainer.style.display = active ? 'block' : 'none';
+      macroForceContainer.style.display = 'block';
     }
     playMacroBeepAudio(active);
 

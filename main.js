@@ -211,10 +211,10 @@ app.whenReady().then(() => {
     console.error('[GlobalShortcut] Erro ao registrar F7/F8:', e);
   }
 
-  // Inicia o motor nativo da macro em background (em modo pausado/desativado) 1.5s após abrir o app
+  // Inicia o motor nativo da macro em background (em modo pausado/desativado) logo na abertura
   setTimeout(() => {
     startMacroNative(0.5, false).catch((e) => console.error('[Macro AutoBoot]', e));
-  }, 1500);
+  }, 800);
 });
 
 let macroEnabledState = false;
@@ -229,6 +229,9 @@ async function toggleMacroGlobalState() {
   try {
     shell.beep();
   } catch (_) {}
+
+  // Garante que o motor nativo esteja rodando em background
+  startMacroNative(0.5, macroEnabledState).catch(() => {});
 
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('macro-state-changed', { active: macroEnabledState });
@@ -5085,12 +5088,12 @@ ipcMain.handle('start-macro', async (event, speed) => {
 
 ipcMain.handle('stop-macro', async () => {
   try {
+    macroEnabledState = false;
     const configActivePath = path.join(os.tmpdir(), 'loord_macro_active.txt');
     try {
       fs.writeFileSync(configActivePath, 'false', 'utf8');
     } catch (_) {}
-    await killMacroProcess();
-    console.log('[MACRO] Parada com sucesso!');
+    console.log('[MACRO] Pausada em standby com sucesso!');
     return { success: true };
   } catch (e) {
     return { success: false, error: e.message };
