@@ -48,7 +48,7 @@
   nsExec::Exec 'powercfg -setactive 381b4222-f694-41f0-9685-ff5bb260df2e'
 
   ; 5. Restaura DNS para DHCP e limpa cache
-  nsExec::Exec 'powershell.exe -NoProfile -Command "Get-NetAdapter | Where-Object Status -eq Up | ForEach-Object { netsh interface ip set dns name=\\\"$($_.Name)\\\" source=dhcp; netsh interface ip set wins name=\\\"$($_.Name)\\\" source=dhcp }"'
+  nsExec::Exec 'powershell.exe -NoProfile -Command "Get-NetAdapter | Where-Object Status -eq ''Up'' | Set-DnsClientServerAddress -ResetServerAddresses"'
   nsExec::Exec 'ipconfig /flushdns'
 
   ; 6. Reativa serviços padrão do Windows
