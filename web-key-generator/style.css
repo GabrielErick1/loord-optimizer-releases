@@ -27,12 +27,15 @@ body {
 }
 
 /* Authentication Page */
-.auth-container {
+.auth-container,
+#login-container {
   min-height: 100vh;
+  width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 20px;
+  box-sizing: border-box;
 }
 
 .auth-card {
@@ -41,6 +44,7 @@ body {
   border-radius: 16px;
   width: 100%;
   max-width: 420px;
+  margin: auto;
   padding: 40px 30px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
   text-align: center;

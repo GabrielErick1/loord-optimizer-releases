@@ -75,7 +75,58 @@ module.exports = async (req, res) => {
       const body = await parseRequestBody(req);
       const { action, usernameToUpdate, newPassword, usernameToToggle, newUsername, newRole, newIsAdmin, allowedPlans, directPlans, allPlansDirect, freeDailyLimit, syncUsers } = body;
 
-      // 0. Ação de Editar Usuário Completo (Cargo, Senha, Planos Permitidos, Planos Diretos, Limite Diário)
+      // 0. Ação de Excluir Usuário via POST (100% compatível com qualquer navegador/proxy)
+      if (action === 'delete-user' || action === 'delete') {
+        const urlObj = new URL(req.url, 'http://localhost');
+        const queryUser = urlObj.searchParams.get('usernameToDelete') || urlObj.searchParams.get('username');
+        const targetUsername = (body.usernameToDelete || usernameToUpdate || queryUser || '').trim();
+
+        if (!targetUsername) {
+          res.status(400).json({ success: false, error: 'Nome de usuário requerido para exclusão.' });
+          return;
+        }
+
+        if (targetUsername.toLowerCase() === 'gabriel') {
+          res.status(400).json({ success: false, error: 'O usuário principal (gabriel) não pode ser excluído.' });
+          return;
+        }
+
+        let users = await getOrInitUsers();
+        const index = users.findIndex(u => u.username.toLowerCase() === targetUsername.toLowerCase());
+        if (index === -1) {
+          res.status(404).json({ success: false, error: 'Usuário não encontrado.' });
+          return;
+        }
+
+        const targetUser = users[index];
+        const targetRole = getUserRole(targetUser);
+
+        // Se não for Worn/Owner, admin só pode excluir vendedor
+        if (!isOwner && targetRole !== 'vendedor') {
+          res.status(403).json({ success: false, error: 'Apenas Super Administradores podem excluir outros administradores.' });
+          return;
+        }
+
+        users.splice(index, 1);
+        await saveUsers(users);
+
+        // Limpa aprovações pendentes deste usuário se houver
+        try {
+          let approvals = await getApprovals();
+          if (Array.isArray(approvals)) {
+            const cleanApprovals = approvals.filter(a => (a.requestedBy || '').toLowerCase() !== targetUsername.toLowerCase() && (a.username || '').toLowerCase() !== targetUsername.toLowerCase());
+            if (cleanApprovals.length !== approvals.length) {
+              await saveApprovals(cleanApprovals);
+            }
+          }
+        } catch (_) {}
+
+        const userList = await getEnrichedUserList();
+        res.status(200).json({ success: true, message: 'Usuário removido com sucesso.', users: userList });
+        return;
+      }
+
+      // 1. Ação de Editar Usuário Completo (Cargo, Senha, Planos Permitidos, Planos Diretos, Limite Diário)
       if (action === 'edit-user') {
         if (!usernameToUpdate) {
           res.status(400).json({ success: false, error: 'Usuário não informado.' });
@@ -322,33 +373,52 @@ module.exports = async (req, res) => {
     }
   } 
   else if (req.method === 'DELETE') {
-    if (!isOwner) {
-      res.status(403).json({ success: false, error: 'Apenas Super Administradores (Owners) podem excluir usuários.' });
-      return;
-    }
-
     try {
-      const { usernameToDelete } = await parseRequestBody(req);
+      const urlObj = new URL(req.url, 'http://localhost');
+      const queryUser = urlObj.searchParams.get('usernameToDelete') || urlObj.searchParams.get('username');
+      const body = await parseRequestBody(req);
+      const usernameToDelete = (body.usernameToDelete || queryUser || '').trim();
+
       if (!usernameToDelete) {
         res.status(400).json({ success: false, error: 'Nome de usuário requerido para exclusão.' });
         return;
       }
 
-      if (usernameToDelete.trim().toLowerCase() === 'gabriel') {
+      if (usernameToDelete.toLowerCase() === 'gabriel') {
         res.status(400).json({ success: false, error: 'O usuário principal (gabriel) não pode ser excluído.' });
         return;
       }
 
       let users = await getOrInitUsers();
-      const index = users.findIndex(u => u.username.toLowerCase() === usernameToDelete.trim().toLowerCase());
+      const index = users.findIndex(u => u.username.toLowerCase() === usernameToDelete.toLowerCase());
       
       if (index === -1) {
         res.status(404).json({ success: false, error: 'Usuário não encontrado.' });
         return;
       }
 
+      const targetUser = users[index];
+      const targetRole = getUserRole(targetUser);
+
+      // Se não for Worn/Owner, admin só pode excluir vendedor
+      if (!isOwner && targetRole !== 'vendedor') {
+        res.status(403).json({ success: false, error: 'Apenas Super Administradores podem excluir outros administradores.' });
+        return;
+      }
+
       users.splice(index, 1);
       await saveUsers(users);
+
+      // Limpa aprovações pendentes deste usuário se houver
+      try {
+        let approvals = await getApprovals();
+        if (Array.isArray(approvals)) {
+          const cleanApprovals = approvals.filter(a => (a.requestedBy || '').toLowerCase() !== usernameToDelete.toLowerCase() && (a.username || '').toLowerCase() !== usernameToDelete.toLowerCase());
+          if (cleanApprovals.length !== approvals.length) {
+            await saveApprovals(cleanApprovals);
+          }
+        }
+      } catch (_) {}
 
       const userList = await getEnrichedUserList();
       res.status(200).json({ success: true, message: 'Usuário removido com sucesso.', users: userList });

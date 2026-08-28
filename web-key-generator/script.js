@@ -193,7 +193,7 @@ function forceLogout(reason) {
   localStorage.removeItem('admin_role');
   if (activePixPollTimer) clearInterval(activePixPollTimer);
   dashboardContainer.style.display = 'none';
-  loginContainer.style.display = 'block';
+  loginContainer.style.display = 'flex';
   if (reason && loginError) {
     loginError.textContent = `⚠️ ${reason}`;
     loginError.style.display = 'block';
@@ -260,7 +260,7 @@ function initDashboard(username, isAdmin, role) {
 // Auto-login com validação obrigatória no servidor (Desloga tokens antigos e tokens > 8h)
 (async function checkExistingSession() {
   if (!userToken) {
-    loginContainer.style.display = 'block';
+    loginContainer.style.display = 'flex';
     dashboardContainer.style.display = 'none';
     return;
   }
@@ -1445,19 +1445,26 @@ window.deleteUser = async function(username) {
   if (!confirm(`Deseja realmente remover o usuário "${username}"?`)) return;
 
   try {
-    const res = await fetch(`${API_URL}/api/users`, {
-      method: 'DELETE',
+    const res = await fetch(`${API_URL}/api/users?usernameToDelete=${encodeURIComponent(username)}`, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${userToken}`
       },
-      body: JSON.stringify({ usernameToDelete: username })
+      body: JSON.stringify({ action: 'delete-user', usernameToDelete: username })
     });
     const data = await res.json();
-    if (data.success) loadUsers();
-    else alert(`Erro: ${data.error || 'Não foi possível excluir o usuário.'}`);
+    if (data.success) {
+      if (Array.isArray(data.users)) {
+        renderUsersList(data.users);
+      } else {
+        loadUsers();
+      }
+    } else {
+      alert(`Erro: ${data.error || 'Não foi possível excluir o usuário.'}`);
+    }
   } catch (e) {
-    alert('Erro ao excluir usuário.');
+    alert(`Erro ao excluir usuário: ${e.message || e}`);
   }
 };
 
