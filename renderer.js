@@ -3290,20 +3290,32 @@ if (btnRemovePartitionAction) {
   }
 
   // ── Força logout se alguem está no painel sem chave válida (anti-bypass) ───
-  function forceLogoutSecurity(reason) {
+  async function forceLogoutSecurity(reason) {
     if (window._vipHeartbeatTimer) clearInterval(window._vipHeartbeatTimer);
     if (window._vipSecurityTimer) clearInterval(window._vipSecurityTimer);
+
+    // Reverte 100% das otimizações, regedits e restaura configurações originais do Windows
+    try {
+      if (window.api && window.api.revertAllTweaksOnRevoke) {
+        console.log('[SECURITY] Revertendo todas as otimizações e restaurando configurações originais do Windows...');
+        await window.api.revertAllTweaksOnRevoke();
+      }
+    } catch (e) {
+      console.error('[SECURITY] Erro no rollback ao deslogar:', e);
+    }
+
     localStorage.removeItem('loord_vip_key');
     localStorage.removeItem('activation_key');
     localStorage.removeItem('client_name');
+    localStorage.removeItem('ffopt_applied_tweaks');
     updateSidebarStatus(false);
     lockScreen.style.display = 'flex';
     if (keyAuthError) {
-      keyAuthError.textContent = `❌ ${reason || 'Acesso revogado pelo servidor.'}`;
+      keyAuthError.textContent = `❌ ${reason || 'Acesso revogado pelo servidor. Configurações restauradas.'}`;
       keyAuthError.style.display = 'block';
     }
     if (inputVipKey) inputVipKey.value = '';
-    console.warn('[SECURITY] Force logout:', reason);
+    console.warn('[SECURITY] Force logout e restauração concluídos:', reason);
   }
 
   // ── Verifica segurança periodicamente (anti-bypass / anti-crack) ───────────
@@ -3313,16 +3325,16 @@ if (btnRemovePartitionAction) {
       try {
         const activeKey = localStorage.getItem('loord_vip_key') || localStorage.getItem('activation_key');
 
-        // Se não tem chave no localStorage mas está no painel → FORÇA LOGOUT
+        // Se não tem chave no localStorage mas está no painel → FORÇA LOGOUT E ROLLBACK
         if (!activeKey) {
-          forceLogoutSecurity('Sessão inválida detectada. Faça login novamente.');
+          await forceLogoutSecurity('Sessão inválida detectada. Faça login novamente.');
           return;
         }
 
         // Valida no servidor
         const check = await window.api.verifyKey(activeKey);
         if (!check || !check.valid) {
-          forceLogoutSecurity(check?.error || 'Sua chave foi revogada, expirou ou não pertence a este computador.');
+          await forceLogoutSecurity(check?.error || 'Sua chave foi revogada, expirou ou não pertence a este computador.');
         } else {
           // Atualiza sidebar com dados frescos do servidor
           updateSidebarStatus(true, check.clientName, check.plan?.includes('Vitalícia') ? 'permanent' : 'temporary', check.plan);
@@ -3376,12 +3388,12 @@ if (btnRemovePartitionAction) {
       try {
         const currentKey = localStorage.getItem('loord_vip_key') || localStorage.getItem('activation_key') || key;
         if (!currentKey) {
-          forceLogoutSecurity('Sessão expirada. Nenhuma chave ativa encontrada.');
+          await forceLogoutSecurity('Sessão expirada. Nenhuma chave ativa encontrada.');
           return;
         }
         const check = await window.api.verifyKey(currentKey);
         if (!check || !check.valid) {
-          forceLogoutSecurity(check?.error || 'Sua chave foi deslogada, revogada ou expirada pelo administrador.');
+          await forceLogoutSecurity(check?.error || 'Sua chave foi deslogada, revogada ou expirada pelo administrador.');
         } else {
           // Atualiza sidebar em tempo real
           const isVitalicia = check.plan && (check.plan.includes('Vitalícia') || check.plan.includes('permanent') || check.plan.includes('💎'));
@@ -3422,9 +3434,16 @@ if (btnRemovePartitionAction) {
         startSecurityWatch(savedKey);
         return;
       } else {
-        // Chave expirada ou não encontrada no banco oficial → Bloqueia e remove
+        // Chave expirada ou não encontrada no banco oficial → Bloqueia, restaura Windows e remove
+        try {
+          if (window.api && window.api.revertAllTweaksOnRevoke) {
+            await window.api.revertAllTweaksOnRevoke();
+          }
+        } catch (_) {}
         localStorage.removeItem('loord_vip_key');
         localStorage.removeItem('activation_key');
+        localStorage.removeItem('client_name');
+        localStorage.removeItem('ffopt_applied_tweaks');
       }
     } catch (_) {
       localStorage.removeItem('loord_vip_key');
@@ -3439,9 +3458,9 @@ if (btnRemovePartitionAction) {
 
   // Logout de Chave
   if (btnLogoutKey) {
-    btnLogoutKey.addEventListener('click', () => {
-      if (confirm('Deseja realmente desconectar sua chave VIP deste computador?')) {
-        forceLogoutSecurity('Desconectado manualmente.');
+    btnLogoutKey.addEventListener('click', async () => {
+      if (confirm('Deseja realmente desconectar sua chave VIP deste computador?\n\nTodas as regedits e otimizações aplicadas serão desfeitas e seu Windows será restaurado ao estado original.')) {
+        await forceLogoutSecurity('Desconectado manualmente pelo usuário. Todas as configurações originais foram restauradas.');
         if (inputVipKey) inputVipKey.value = '';
       }
     });

@@ -45,33 +45,66 @@ app.setPath('userData', customUserData);
 let mainWindow;
 let macroProcess = null;
 const backupDir = path.join(app.getPath('userData'), 'Backup_Sensibilidade');
+// Diretório oculto dedicado para preservação do estado original do computador
+const originalStateDir = path.join(app.getPath('appData'), 'LoordOptimizer_OriginalState');
 
-// Ensure backup directory exists
 if (!fs.existsSync(backupDir)) {
   try { fs.mkdirSync(backupDir, { recursive: true }); } catch (_) { }
 }
 
-function createInitialSystemBackup() {
+async function ensureInitialSystemRestorePoint() {
   try {
-    if (!fs.existsSync(backupDir)) {
-      fs.mkdirSync(backupDir, { recursive: true });
+    if (!fs.existsSync(originalStateDir)) {
+      fs.mkdirSync(originalStateDir, { recursive: true });
+      try {
+        // Marca a pasta como oculta no Windows
+        execSync(`attrib +h "${originalStateDir}"`, { stdio: 'ignore' });
+      } catch (_) {}
     }
 
-    const mouseBak = path.join(backupDir, 'Mouse_Original.reg');
-    if (!fs.existsSync(mouseBak)) {
-      try { execSync(`reg export "HKCU\\Control Panel\\Mouse" "${mouseBak}" /y`, { stdio: 'ignore' }); } catch (_) { }
+    const markerPath = path.join(originalStateDir, 'backup_marker.json');
+    if (fs.existsSync(markerPath)) {
+      console.log('[RESTORE-POINT] Ponto de restauração e backup original já salvos anteriormente.');
+      return { success: true, alreadyExists: true };
     }
 
-    const sysProfileBak = path.join(backupDir, 'SystemProfile_Original.reg');
-    if (!fs.existsSync(sysProfileBak)) {
-      try { execSync(`reg export "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" "${sysProfileBak}" /y`, { stdio: 'ignore' }); } catch (_) { }
+    console.log('[RESTORE-POINT] Criando ponto de restauração oculto e capturando estado original do Windows...');
+
+    // 1. Cria Ponto de Restauração Oficial do Windows (Restore Point) em background
+    try {
+      const psRestorePoint = "Enable-ComputerRestore -Drive 'C:\\' -ErrorAction SilentlyContinue; Checkpoint-Computer -Description 'LoordOptimizer_Original_State' -RestorePointType 'MODIFY_SETTINGS' -ErrorAction SilentlyContinue";
+      execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psRestorePoint}"`, { stdio: 'ignore', timeout: 15000 });
+    } catch (_) {}
+
+    // 2. Exporta e salva backups das configurações originais (.reg) do Windows
+    const registryExports = [
+      { key: 'HKCU\\Control Panel\\Mouse', file: 'Mouse_Original.reg' },
+      { key: 'HKCU\\Control Panel\\Desktop', file: 'Desktop_Original.reg' },
+      { key: 'HKCU\\Control Panel\\Keyboard', file: 'Keyboard_Original.reg' },
+      { key: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters', file: 'Mouclass_Original.reg' },
+      { key: 'HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl', file: 'PriorityControl_Original.reg' },
+      { key: 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile', file: 'SystemProfile_Original.reg' },
+      { key: 'HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management', file: 'Memory_Original.reg' },
+      { key: 'HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters', file: 'Tcpip_Original.reg' }
+    ];
+
+    for (const item of registryExports) {
+      const dest = path.join(originalStateDir, item.file);
+      if (!fs.existsSync(dest)) {
+        try {
+          execSync(`reg export "${item.key}" "${dest}" /y`, { stdio: 'ignore' });
+        } catch (_) {}
+      }
+      // Também salva cópia em backupDir
+      const dest2 = path.join(backupDir, item.file);
+      if (!fs.existsSync(dest2)) {
+        try {
+          execSync(`reg export "${item.key}" "${dest2}" /y`, { stdio: 'ignore' });
+        } catch (_) {}
+      }
     }
 
-    const priorityBak = path.join(backupDir, 'PriorityControl_Original.reg');
-    if (!fs.existsSync(priorityBak)) {
-      try { execSync(`reg export "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" "${priorityBak}" /y`, { stdio: 'ignore' }); } catch (_) { }
-    }
-
+    // 3. Salva cópias dos arquivos de configuração originais do BlueStacks se existirem
     const confPaths = [
       { key: 'bluestacks_msi.conf.bak', path: 'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf' },
       { key: 'bluestacks_msi5.conf.bak', path: 'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf' },
@@ -82,13 +115,27 @@ function createInitialSystemBackup() {
     ];
 
     for (const item of confPaths) {
-      const dest = path.join(backupDir, item.key);
-      if (!fs.existsSync(dest) && fs.existsSync(item.path)) {
-        try { fs.copyFileSync(item.path, dest); } catch (_) { }
+      const dest1 = path.join(originalStateDir, item.key);
+      const dest2 = path.join(backupDir, item.key);
+      if (fs.existsSync(item.path)) {
+        if (!fs.existsSync(dest1)) try { fs.copyFileSync(item.path, dest1); } catch (_) {}
+        if (!fs.existsSync(dest2)) try { fs.copyFileSync(item.path, dest2); } catch (_) {}
       }
     }
+
+    // 4. Grava o marcador para nunca sobrescrever o estado original genuíno
+    fs.writeFileSync(markerPath, JSON.stringify({
+      createdAt: new Date().toISOString(),
+      timestamp: Date.now(),
+      platform: process.platform,
+      arch: process.arch
+    }, null, 2), 'utf8');
+
+    console.log('[RESTORE-POINT] Ponto de restauração e backup original do Windows salvos com sucesso!');
+    return { success: true, created: true };
   } catch (e) {
-    console.error('Error creating initial backup:', e);
+    console.error('[RESTORE-POINT] Erro ao criar ponto de restauração inicial:', e);
+    return { success: false, error: e.message };
   }
 }
 
@@ -215,6 +262,11 @@ app.whenReady().then(() => {
   setTimeout(() => {
     startMacroNative(0.5, false).catch((e) => console.error('[Macro AutoBoot]', e));
   }, 800);
+
+  // Cria/Garante o Ponto de Restauração Oculto do Windows e Backup do Estado Original
+  setTimeout(() => {
+    ensureInitialSystemRestorePoint().catch((e) => console.error('[RestorePoint AutoBoot]', e));
+  }, 1200);
 });
 
 let macroEnabledState = false;
@@ -2166,38 +2218,53 @@ ipcMain.handle('restore-backup', async () => {
   }
 });
 
+ipcMain.handle('create-restore-point', async () => {
+  return await ensureInitialSystemRestorePoint();
+});
+
+ipcMain.handle('get-restore-point-status', async () => {
+  const markerPath = path.join(originalStateDir, 'backup_marker.json');
+  return {
+    exists: fs.existsSync(markerPath),
+    dir: originalStateDir
+  };
+});
+
 // Reversão total automática ao expirar ou ser revogado no painel (Anti-Leak Rollback)
 ipcMain.handle('revert-all-tweaks-on-revoke', async () => {
   try {
     // 1. Parar macros e cleaners em execução
     await killMacroProcess().catch(() => { });
 
-    // 2. Restaurar backups do registro (.reg) e arquivos de configuração bluestacks.conf
-    try {
-      if (fs.existsSync(backupDir)) {
-        const files = fs.readdirSync(backupDir);
-        for (const file of files) {
-          if (file.endsWith('.reg')) {
-            await runCmd(`reg import "${path.join(backupDir, file)}"`);
+    // 2. Restaurar backups do registro original (.reg) e arquivos de configuração bluestacks.conf
+    const restoreSources = [originalStateDir, backupDir];
+    for (const d of restoreSources) {
+      try {
+        if (fs.existsSync(d)) {
+          const files = fs.readdirSync(d);
+          for (const file of files) {
+            if (file.endsWith('.reg')) {
+              await runCmd(`reg import "${path.join(d, file)}"`);
+            }
+          }
+
+          const pathsToRestore = [
+            { key: 'bluestacks_msi.conf.bak', path: 'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf' },
+            { key: 'bluestacks_msi5.conf.bak', path: 'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf' },
+            { key: 'bluestacks_bgp_msi.conf.bak', path: 'C:\\ProgramData\\BlueStacks_bgp_msi\\bluestacks.conf' },
+            { key: 'bluestacks.conf.bak', path: 'C:\\ProgramData\\BlueStacks\\bluestacks.conf' },
+            { key: 'bluestacks_nxt.conf.bak', path: 'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf' },
+            { key: 'bluestacks_bgp.conf.bak', path: 'C:\\ProgramData\\BlueStacks_bgp\\bluestacks.conf' }
+          ];
+
+          for (const item of pathsToRestore) {
+            if (fs.existsSync(path.join(d, item.key)) && fs.existsSync(path.dirname(item.path))) {
+              try { fs.copyFileSync(path.join(d, item.key), item.path); } catch (_) { }
+            }
           }
         }
-
-        const pathsToRestore = [
-          { key: 'bluestacks_msi.conf.bak', path: 'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf' },
-          { key: 'bluestacks_msi5.conf.bak', path: 'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf' },
-          { key: 'bluestacks_bgp_msi.conf.bak', path: 'C:\\ProgramData\\BlueStacks_bgp_msi\\bluestacks.conf' },
-          { key: 'bluestacks.conf.bak', path: 'C:\\ProgramData\\BlueStacks\\bluestacks.conf' },
-          { key: 'bluestacks_nxt.conf.bak', path: 'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf' },
-          { key: 'bluestacks_bgp.conf.bak', path: 'C:\\ProgramData\\BlueStacks_bgp\\bluestacks.conf' }
-        ];
-
-        for (const item of pathsToRestore) {
-          if (fs.existsSync(path.join(backupDir, item.key)) && fs.existsSync(path.dirname(item.path))) {
-            try { fs.copyFileSync(path.join(backupDir, item.key), item.path); } catch (_) { }
-          }
-        }
-      }
-    } catch (_) { }
+      } catch (_) { }
+    }
 
     // 3. Reset explícito do Mouse para padrão absoluto do Windows (Sensibilidade normal 10, sem curvas customizadas)
     const mouseResetCmds = [

@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld('api', {
   getMachineUUID: () => ipcRenderer.invoke('get-uuid'),
   verifyKey: (key) => ipcRenderer.invoke('verify-key', key),
   revertAllTweaksOnRevoke: () => ipcRenderer.invoke('revert-all-tweaks-on-revoke'),
+  createRestorePoint: () => ipcRenderer.invoke('create-restore-point'),
+  getRestorePointStatus: () => ipcRenderer.invoke('get-restore-point-status'),
 
 
   // ─── Auto-Update ─────────────────────────────────────────────────
