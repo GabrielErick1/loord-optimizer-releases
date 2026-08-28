@@ -188,8 +188,8 @@ async function saveApprovals(approvals) {
 function getUserRole(user) {
   if (!user) return 'vendedor';
   const uname = (user.username || '').trim().toLowerCase();
-  if (uname === 'gabriel') return 'owner';
-  if (user.role === 'owner') return 'owner';
+  if (uname === 'gabriel') return 'worn';
+  if (user.role === 'worn' || user.role === 'owner') return 'worn';
   if (user.role === 'admin' || user.isAdmin === true) return 'admin';
   return 'vendedor';
 }
@@ -204,14 +204,14 @@ async function getOrInitUsers() {
         username: 'gabriel',
         passwordHash: masterHash,
         isAdmin: true,
-        role: 'owner',
-        createdBy: 'Master Owner',
+        role: 'worn',
+        createdBy: 'Master Worn',
         createdAt: Date.now()
       }
     ];
     await saveUsers(users);
   } else {
-    // Ensure master admin gabriel always has the updated password 168096 and role owner
+    // Ensure master admin gabriel always has the updated password 168096 and role worn
     const gIndex = users.findIndex(u => u.username.toLowerCase() === 'gabriel');
     if (gIndex !== -1) {
       let changed = false;
@@ -219,8 +219,8 @@ async function getOrInitUsers() {
         users[gIndex].passwordHash = masterHash;
         changed = true;
       }
-      if (users[gIndex].role !== 'owner' || !users[gIndex].isAdmin) {
-        users[gIndex].role = 'owner';
+      if (users[gIndex].role !== 'worn' || !users[gIndex].isAdmin) {
+        users[gIndex].role = 'worn';
         users[gIndex].isAdmin = true;
         changed = true;
       }
@@ -230,8 +230,8 @@ async function getOrInitUsers() {
         username: 'gabriel',
         passwordHash: masterHash,
         isAdmin: true,
-        role: 'owner',
-        createdBy: 'Master Owner',
+        role: 'worn',
+        createdBy: 'Master Worn',
         createdAt: Date.now()
       });
       await saveUsers(users);

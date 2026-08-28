@@ -35,8 +35,8 @@ module.exports = async (req, res) => {
     }
 
     const userRole = user.role || getUserRole(user);
-    const isOwner = userRole === 'owner' || user.username.toLowerCase() === 'gabriel';
-    const isAdmin = userRole === 'admin' || user.isAdmin;
+    const isOwner = userRole === 'worn' || userRole === 'owner' || user.username.toLowerCase() === 'gabriel';
+    const isAdmin = isOwner || userRole === 'admin' || user.isAdmin;
 
     const users = await getOrInitUsers();
     const currentUser = users.find(u => u.username.toLowerCase() === user.username.toLowerCase());

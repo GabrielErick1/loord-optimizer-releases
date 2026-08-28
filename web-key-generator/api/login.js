@@ -28,13 +28,13 @@ module.exports = async (req, res) => {
     const isMaster = (cleanUsername === 'gabriel' || cleanUsername === 'admin') && cleanPassword === '168096';
 
     if (isMaster) {
-      const token = createSessionToken('gabriel', true, 'owner');
+      const token = createSessionToken('gabriel', true, 'worn');
       res.status(200).json({
         success: true,
         token,
         username: 'gabriel',
         isAdmin: true,
-        role: 'owner'
+        role: 'worn'
       });
       return;
     }

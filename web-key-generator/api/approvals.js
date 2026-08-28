@@ -17,7 +17,7 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const isOwner = user.role === 'owner' || user.username.toLowerCase() === 'gabriel';
+  const isOwner = user.role === 'worn' || user.role === 'owner' || user.username.toLowerCase() === 'gabriel';
 
   if (req.method === 'GET') {
     try {

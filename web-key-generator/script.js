@@ -52,6 +52,8 @@ const createUserSuccess = document.getElementById('create-user-success');
 const usersListBody = document.getElementById('users-list-body');
 
 // Seletores de Cargo e Liberação
+const containerRoleSelector = document.getElementById('container-role-selector');
+const containerDirectToggle = document.getElementById('container-direct-toggle');
 const lblRoleVendedor = document.getElementById('lbl-role-vendedor');
 const lblRoleAdmin = document.getElementById('lbl-role-admin');
 const lblRoleOwner = document.getElementById('lbl-role-owner');
@@ -199,15 +201,19 @@ function initDashboard(username, isAdmin, role) {
   dashboardContainer.style.display = 'flex';
 
   displayUsername.textContent = username;
-  const userRole = role || localStorage.getItem('admin_role') || (username.toLowerCase() === 'gabriel' ? 'owner' : (isAdmin ? 'admin' : 'vendedor'));
+  const userRole = role || localStorage.getItem('admin_role') || (username.toLowerCase() === 'gabriel' ? 'worn' : (isAdmin ? 'admin' : 'vendedor'));
   localStorage.setItem('admin_role', userRole);
 
-  if (userRole === 'owner') {
-    displayRole.textContent = '👑 Owner';
+  const isWorn = userRole === 'worn' || userRole === 'owner' || username.toLowerCase() === 'gabriel';
+
+  if (isWorn) {
+    displayRole.textContent = '👑 Worn';
     displayRole.style.color = '#f59e0b';
     if (navUsers) navUsers.style.display = 'flex';
     if (navPlans) navPlans.style.display = 'flex';
     if (navApprovals) navApprovals.style.display = 'flex';
+    if (containerRoleSelector) containerRoleSelector.style.display = 'block';
+    if (containerDirectToggle) containerDirectToggle.style.display = 'block';
     if (lblRoleAdmin) lblRoleAdmin.style.display = 'flex';
     if (lblRoleOwner) lblRoleOwner.style.display = 'flex';
     if (roleAdminNotice) roleAdminNotice.style.display = 'none';
@@ -219,6 +225,9 @@ function initDashboard(username, isAdmin, role) {
     if (navUsers) navUsers.style.display = 'flex';
     if (navPlans) navPlans.style.display = 'none';
     if (navApprovals) navApprovals.style.display = 'none';
+    // Na imagem 2: Administradores NÃO veem o seletor de cargo nem liberação direta
+    if (containerRoleSelector) containerRoleSelector.style.display = 'none';
+    if (containerDirectToggle) containerDirectToggle.style.display = 'none';
     if (lblRoleAdmin) lblRoleAdmin.style.display = 'none';
     if (lblRoleOwner) lblRoleOwner.style.display = 'none';
     if (roleAdminNotice) roleAdminNotice.style.display = 'block';
@@ -229,11 +238,13 @@ function initDashboard(username, isAdmin, role) {
     if (navUsers) navUsers.style.display = 'none';
     if (navPlans) navPlans.style.display = 'none';
     if (navApprovals) navApprovals.style.display = 'none';
+    if (containerRoleSelector) containerRoleSelector.style.display = 'none';
+    if (containerDirectToggle) containerDirectToggle.style.display = 'none';
   }
 
   loadPlans();
   loadLicenses();
-  if (userRole === 'owner' || userRole === 'admin') loadUsers();
+  if (isWorn || userRole === 'admin') loadUsers();
 }
 
 // Auto-login se já tiver token
@@ -241,7 +252,7 @@ function initDashboard(username, isAdmin, role) {
   if (userToken) {
     const savedUser = localStorage.getItem('admin_username') || 'gabriel';
     const isMaster = (savedUser.toLowerCase() === 'gabriel') || localStorage.getItem('admin_is_admin') === 'true';
-    const savedRole = localStorage.getItem('admin_role') || (savedUser.toLowerCase() === 'gabriel' ? 'owner' : (isMaster ? 'admin' : 'vendedor'));
+    const savedRole = (savedUser.toLowerCase() === 'gabriel') ? 'worn' : (localStorage.getItem('admin_role') || (isMaster ? 'admin' : 'vendedor'));
     initDashboard(savedUser, isMaster, savedRole);
   }
 })();
@@ -1092,14 +1103,14 @@ function renderUsersTable(users) {
   }
 
   const myUsername = (localStorage.getItem('admin_username') || '').toLowerCase();
-  const myRole = localStorage.getItem('admin_role') || (myUsername === 'gabriel' ? 'owner' : 'vendedor');
-  const isOwner = myRole === 'owner' || myUsername === 'gabriel';
+  const myRole = (myUsername === 'gabriel') ? 'worn' : (localStorage.getItem('admin_role') || 'vendedor');
+  const isOwner = myRole === 'worn' || myRole === 'owner' || myUsername === 'gabriel';
 
   users.forEach(u => {
     const tr = document.createElement('tr');
     const uName = (u.username || '').toLowerCase();
     const isMaster = uName === 'gabriel';
-    const role = u.role || (u.isAdmin ? 'admin' : 'vendedor');
+    const role = isMaster ? 'worn' : (u.role || (u.isAdmin ? 'admin' : 'vendedor'));
 
     let statusLabel = '<span style="color:#10b981; font-weight:700;">🟢 Ativo</span>';
     if (u.status === 'pending_approval') {
@@ -1109,13 +1120,13 @@ function renderUsersTable(users) {
     }
 
     let roleBadge = '<span style="background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.35); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.78rem;">👤 Vendedor</span>';
-    if (role === 'owner') {
-      roleBadge = '<span style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.78rem;">👑 Owner</span>';
+    if (role === 'worn' || role === 'owner' || isMaster) {
+      roleBadge = '<span style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.78rem;">👑 Worn</span>';
     } else if (role === 'admin') {
       roleBadge = '<span style="background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.4); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.78rem;">🛡️ Admin</span>';
     }
 
-    const limitLabel = (role === 'owner' || role === 'admin') 
+    const limitLabel = (role === 'worn' || role === 'owner' || role === 'admin') 
       ? '<span style="color:#64748b;">Ilimitado</span>' 
       : `<strong>${u.freeUsageToday || 0} / ${u.freeDailyLimit || 5}</strong> hoje`;
 
@@ -1283,28 +1294,27 @@ window.openEditUserModal = function(username) {
 };
 
 window.setModalRole = function(role) {
-  editingRole = role;
+  editingRole = (role === 'owner') ? 'worn' : role;
   const btnVendedor = document.getElementById('btn-role-vendedor');
   const btnAdmin = document.getElementById('btn-role-admin');
   const btnOwner = document.getElementById('btn-role-owner');
   const editVendorOptions = document.getElementById('edit-vendor-options');
 
   if (btnVendedor) {
-    btnVendedor.style.border = role === 'vendedor' ? '2px solid #38bdf8' : '2px solid transparent';
-    btnVendedor.style.background = role === 'vendedor' ? 'rgba(56,189,248,0.25)' : 'rgba(56,189,248,0.06)';
+    btnVendedor.style.border = editingRole === 'vendedor' ? '2px solid #38bdf8' : '2px solid transparent';
+    btnVendedor.style.background = editingRole === 'vendedor' ? 'rgba(56,189,248,0.25)' : 'rgba(56,189,248,0.06)';
   }
   if (btnAdmin) {
-    btnAdmin.style.border = role === 'admin' ? '2px solid #818cf8' : '2px solid transparent';
-    btnAdmin.style.background = role === 'admin' ? 'rgba(99,102,241,0.25)' : 'rgba(99,102,241,0.06)';
+    btnAdmin.style.border = editingRole === 'admin' ? '2px solid #818cf8' : '2px solid transparent';
+    btnAdmin.style.background = editingRole === 'admin' ? 'rgba(99,102,241,0.25)' : 'rgba(99,102,241,0.06)';
   }
   if (btnOwner) {
-    btnOwner.style.border = role === 'owner' ? '2px solid #f59e0b' : '2px solid transparent';
-    btnOwner.style.background = role === 'owner' ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.06)';
+    btnOwner.style.border = (editingRole === 'worn' || editingRole === 'owner') ? '2px solid #f59e0b' : '2px solid transparent';
+    btnOwner.style.background = (editingRole === 'worn' || editingRole === 'owner') ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.06)';
   }
 
   if (editVendorOptions) {
-    // Opções de planos e quotas são mostradas para vendedor e admin
-    editVendorOptions.style.display = (role === 'owner') ? 'none' : 'block';
+    editVendorOptions.style.display = (editingRole === 'worn' || editingRole === 'owner') ? 'none' : 'block';
   }
 };
 

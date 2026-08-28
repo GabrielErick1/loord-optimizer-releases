@@ -18,8 +18,8 @@ module.exports = async (req, res) => {
   }
 
   const userRole = user.role || getUserRole(user);
-  const isOwner = userRole === 'owner' || user.username.toLowerCase() === 'gabriel';
-  const isAdmin = userRole === 'admin' || user.isAdmin;
+  const isOwner = userRole === 'worn' || userRole === 'owner' || user.username.toLowerCase() === 'gabriel';
+  const isAdmin = isOwner || userRole === 'admin' || user.isAdmin;
 
   // Helper to map and attach sales stats, role, and limits
   async function getEnrichedUserList() {
@@ -41,7 +41,7 @@ module.exports = async (req, res) => {
       return {
         username: u.username,
         role: uRole,
-        isAdmin: uRole === 'owner' || uRole === 'admin',
+        isAdmin: uRole === 'worn' || uRole === 'owner' || uRole === 'admin',
         status: u.status || 'active',
         createdBy: u.createdBy || 'Master Owner',
         createdAt: u.createdAt || null,
@@ -99,9 +99,9 @@ module.exports = async (req, res) => {
         }
 
         if (isOwner && usernameToUpdate.trim().toLowerCase() !== 'gabriel') {
-          if (newRole && ['owner', 'admin', 'vendedor'].includes(newRole)) {
-            target.role = newRole;
-            target.isAdmin = (newRole === 'owner' || newRole === 'admin');
+          if (newRole && ['worn', 'owner', 'admin', 'vendedor'].includes(newRole)) {
+            target.role = (newRole === 'owner') ? 'worn' : newRole;
+            target.isAdmin = (newRole === 'worn' || newRole === 'owner' || newRole === 'admin');
           } else if (newIsAdmin !== undefined) {
             target.isAdmin = !!newIsAdmin;
             target.role = target.isAdmin ? 'admin' : 'vendedor';
@@ -251,14 +251,14 @@ module.exports = async (req, res) => {
         resolvedRole = 'vendedor';
         userInitialStatus = 'pending_approval';
       } else {
-        if (newRole && ['owner', 'admin', 'vendedor'].includes(newRole)) {
-          resolvedRole = newRole;
+        if (newRole && ['worn', 'owner', 'admin', 'vendedor'].includes(newRole)) {
+          resolvedRole = (newRole === 'owner') ? 'worn' : newRole;
         } else if (newIsAdmin) {
           resolvedRole = 'admin';
         }
       }
 
-      const isResolvedAdmin = resolvedRole === 'owner' || resolvedRole === 'admin';
+      const isResolvedAdmin = resolvedRole === 'worn' || resolvedRole === 'owner' || resolvedRole === 'admin';
 
       const newUser = {
         username: newUsername.trim(),

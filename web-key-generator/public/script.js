@@ -42,7 +42,6 @@ const filterSellerSelect = document.getElementById('filter-seller');
 // Aba de Gerenciamento de Usuários
 const newUsernameInput = document.getElementById('new-username');
 const newPasswordInput = document.getElementById('new-password');
-const newIsAdminCheckbox = document.getElementById('new-is-admin');
 const newFreeLimitInput = document.getElementById('new-free-limit');
 const newVendorOptions = document.getElementById('new-vendor-options');
 const newVendorPlansList = document.getElementById('new-vendor-plans-list');
@@ -52,10 +51,31 @@ const createUserError = document.getElementById('create-user-error');
 const createUserSuccess = document.getElementById('create-user-success');
 const usersListBody = document.getElementById('users-list-body');
 
-// Aba de Planos & Preços (Admin)
+// Seletores de Cargo e Liberação
+const containerRoleSelector = document.getElementById('container-role-selector');
+const containerDirectToggle = document.getElementById('container-direct-toggle');
+const lblRoleVendedor = document.getElementById('lbl-role-vendedor');
+const lblRoleAdmin = document.getElementById('lbl-role-admin');
+const lblRoleOwner = document.getElementById('lbl-role-owner');
+const roleAdminNotice = document.getElementById('role-admin-notice');
+const newAllDirect = document.getElementById('new-all-direct');
+const editModalAllDirect = document.getElementById('edit-modal-all-direct');
+
+// Aba de Planos & Preços (Owner/Admin)
 const plansListBody = document.getElementById('plans-list-body');
 const btnSavePlans = document.getElementById('btn-save-plans');
 const plansSaveMsg = document.getElementById('plans-save-msg');
+
+// Aba de Aprovações (Owner)
+const navApprovals = document.getElementById('nav-approvals');
+const badgePendingCount = document.getElementById('badge-pending-count');
+const btnRefreshApprovals = document.getElementById('btn-refresh-approvals');
+const approvalsKeysBody = document.getElementById('approvals-keys-body');
+const approvalsUsersBody = document.getElementById('approvals-users-body');
+const statApprovalsTotal = document.getElementById('stat-approvals-total');
+const statApprovalsKeys = document.getElementById('stat-approvals-keys');
+const statApprovalsUsers = document.getElementById('stat-approvals-users');
+const statApprovalsDone = document.getElementById('stat-approvals-done');
 
 // Modal PIX Mercado Pago
 const pixPaymentModal = document.getElementById('pix-payment-modal');
@@ -69,7 +89,9 @@ let userToken = localStorage.getItem('admin_token');
 let currentLoadedLicenses = [];
 let currentLoadedUsers = [];
 let currentLoadedPlans = [];
+let currentLoadedApprovals = [];
 let activePixPollTimer = null;
+let currentNewUserRole = 'vendedor';
 
 // Helper para escapar HTML
 function escapeHtml(text) {
@@ -114,6 +136,7 @@ navItems.forEach(item => {
     if (tabName === 'users') loadUsers();
     if (tabName === 'plans') loadPlans();
     if (tabName === 'generator') loadPlans();
+    if (tabName === 'approvals') loadApprovals();
   });
 });
 
@@ -145,8 +168,9 @@ btnLogin.addEventListener('click', async () => {
       localStorage.setItem('admin_token', data.token);
       localStorage.setItem('admin_username', data.username);
       localStorage.setItem('admin_is_admin', data.isAdmin);
+      localStorage.setItem('admin_role', data.role || (data.isAdmin ? 'admin' : 'vendedor'));
 
-      initDashboard(data.username, data.isAdmin);
+      initDashboard(data.username, data.isAdmin, data.role);
     } else {
       loginError.textContent = `❌ ${data.error || 'Credenciais inválidas.'}`;
       loginError.style.display = 'block';
@@ -166,30 +190,61 @@ btnLogout.addEventListener('click', () => {
   localStorage.removeItem('admin_token');
   localStorage.removeItem('admin_username');
   localStorage.removeItem('admin_is_admin');
+  localStorage.removeItem('admin_role');
   if (activePixPollTimer) clearInterval(activePixPollTimer);
   location.reload();
 });
 
 // Inicialização do Dashboard
-function initDashboard(username, isAdmin) {
+function initDashboard(username, isAdmin, role) {
   loginContainer.style.display = 'none';
   dashboardContainer.style.display = 'flex';
 
   displayUsername.textContent = username;
-  const isMaster = (username.toLowerCase() === 'gabriel') || isAdmin;
-  displayRole.textContent = isMaster ? '👑 Administrador' : '👤 Vendedor';
+  const userRole = role || localStorage.getItem('admin_role') || (username.toLowerCase() === 'gabriel' ? 'worn' : (isAdmin ? 'admin' : 'vendedor'));
+  localStorage.setItem('admin_role', userRole);
 
-  if (isMaster) {
+  const isWorn = userRole === 'worn' || userRole === 'owner' || username.toLowerCase() === 'gabriel';
+
+  if (isWorn) {
+    displayRole.textContent = '👑 Worn';
+    displayRole.style.color = '#f59e0b';
     if (navUsers) navUsers.style.display = 'flex';
     if (navPlans) navPlans.style.display = 'flex';
+    if (navApprovals) navApprovals.style.display = 'flex';
+    if (containerRoleSelector) containerRoleSelector.style.display = 'block';
+    if (containerDirectToggle) containerDirectToggle.style.display = 'block';
+    if (lblRoleAdmin) lblRoleAdmin.style.display = 'flex';
+    if (lblRoleOwner) lblRoleOwner.style.display = 'flex';
+    if (roleAdminNotice) roleAdminNotice.style.display = 'none';
+    setNewUserRoleSelection('vendedor');
+    loadApprovals();
+  } else if (userRole === 'admin') {
+    displayRole.textContent = '🛡️ Administrador';
+    displayRole.style.color = '#818cf8';
+    if (navUsers) navUsers.style.display = 'flex';
+    if (navPlans) navPlans.style.display = 'none';
+    if (navApprovals) navApprovals.style.display = 'none';
+    // Na imagem 2: Administradores NÃO veem o seletor de cargo nem liberação direta
+    if (containerRoleSelector) containerRoleSelector.style.display = 'none';
+    if (containerDirectToggle) containerDirectToggle.style.display = 'none';
+    if (lblRoleAdmin) lblRoleAdmin.style.display = 'none';
+    if (lblRoleOwner) lblRoleOwner.style.display = 'none';
+    if (roleAdminNotice) roleAdminNotice.style.display = 'block';
+    setNewUserRoleSelection('vendedor');
   } else {
+    displayRole.textContent = '👤 Vendedor';
+    displayRole.style.color = '#38bdf8';
     if (navUsers) navUsers.style.display = 'none';
     if (navPlans) navPlans.style.display = 'none';
+    if (navApprovals) navApprovals.style.display = 'none';
+    if (containerRoleSelector) containerRoleSelector.style.display = 'none';
+    if (containerDirectToggle) containerDirectToggle.style.display = 'none';
   }
 
   loadPlans();
   loadLicenses();
-  if (isMaster) loadUsers();
+  if (isWorn || userRole === 'admin') loadUsers();
 }
 
 // Auto-login se já tiver token
@@ -197,9 +252,40 @@ function initDashboard(username, isAdmin) {
   if (userToken) {
     const savedUser = localStorage.getItem('admin_username') || 'gabriel';
     const isMaster = (savedUser.toLowerCase() === 'gabriel') || localStorage.getItem('admin_is_admin') === 'true';
-    initDashboard(savedUser, isMaster);
+    const savedRole = (savedUser.toLowerCase() === 'gabriel') ? 'worn' : (localStorage.getItem('admin_role') || (isMaster ? 'admin' : 'vendedor'));
+    initDashboard(savedUser, isMaster, savedRole);
   }
 })();
+
+// Seletor de Cargo no Formulário de Cadastro
+function setNewUserRoleSelection(role) {
+  currentNewUserRole = role;
+  const radio = document.querySelector(`input[name="new-user-role"][value="${role}"]`);
+  if (radio) radio.checked = true;
+
+  const items = [
+    { id: 'lbl-role-vendedor', active: role === 'vendedor', border: '#0284c7', bg: 'rgba(56, 189, 248, 0.15)' },
+    { id: 'lbl-role-admin', active: role === 'admin', border: '#818cf8', bg: 'rgba(99, 102, 241, 0.15)' },
+    { id: 'lbl-role-owner', active: role === 'owner', border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' }
+  ];
+
+  items.forEach(item => {
+    const el = document.getElementById(item.id);
+    if (el) {
+      el.style.border = item.active ? `2px solid ${item.border}` : '2px solid transparent';
+      el.style.background = item.active ? item.bg : 'rgba(255, 255, 255, 0.04)';
+    }
+  });
+
+  if (newAllDirect) {
+    // Owners e Admins por padrão têm liberação direta marcada, vendedores desmarcada
+    newAllDirect.checked = (role === 'owner' || role === 'admin');
+  }
+}
+
+if (lblRoleVendedor) lblRoleVendedor.addEventListener('click', () => setNewUserRoleSelection('vendedor'));
+if (lblRoleAdmin) lblRoleAdmin.addEventListener('click', () => setNewUserRoleSelection('admin'));
+if (lblRoleOwner) lblRoleOwner.addEventListener('click', () => setNewUserRoleSelection('owner'));
 
 // Carregar Planos do Servidor
 async function loadPlans() {
@@ -466,6 +552,15 @@ btnGenerate.addEventListener('click', async () => {
   const typeVal = licenseTypeSelect.value;
   const customVal = customValInput ? parseInt(customValInput.value, 10) : 0;
 
+  // Verificação prévia no cache de licenças carregadas
+  if (uuid && uuid.length >= 5 && Array.isArray(currentLoadedLicenses)) {
+    const existing = currentLoadedLicenses.find(l => l.uuid && l.uuid.toLowerCase() === uuid.toLowerCase());
+    if (existing) {
+      alert(`⚠️ UUID JÁ CADASTRADO!\n\nEste UUID (${uuid}) já pertence ao cliente "${existing.clientName || 'Cliente'}" (Chave: ${existing.key || 'Ativa'}).\n\n👉 Para estender o acesso, vá na aba "Chaves Ativas" e clique em "Renovar", ou informe outro UUID.`);
+      return;
+    }
+  }
+
   btnGenerate.disabled = true;
   btnGenerate.textContent = 'Processando...';
   resultBox.style.display = 'none';
@@ -499,11 +594,28 @@ btnGenerate.addEventListener('click', async () => {
       return;
     }
 
+    if (data.pendingApproval) {
+      keyOutput.textContent = '⏳ AGUARDANDO APROVAÇÃO';
+      keyOutput.style.color = '#f59e0b';
+      const resultTitle = resultBox.querySelector('#result-title') || resultBox.querySelector('h3');
+      if (resultTitle) resultTitle.textContent = 'Solicitação Enviada com Sucesso!';
+      resultDetails.innerHTML = `
+        <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 8px; padding: 12px; margin-top: 8px;">
+          <strong style="color: #fbbf24; font-size: 0.95rem;">⏳ Aguardando Autorização do Owner</strong>
+          <p style="margin: 6px 0 0 0; font-size: 0.84rem; color: #fde68a;">${escapeHtml(data.message)}</p>
+          <p style="margin: 6px 0 0 0; font-size: 0.78rem; color: #94a3b8;"><strong>Cliente:</strong> ${escapeHtml(data.clientName || clientName)} | <strong>Plano:</strong> ${escapeHtml(data.planName)}</p>
+        </div>
+      `;
+      resultBox.style.display = 'block';
+      loadPlans();
+      return;
+    }
+
     if (data.success) {
       renderGeneratedKeyResult(data, typeVal, customVal);
       loadPlans(); // Atualiza quota
     } else {
-      alert(`Aviso: ${data.error || 'Não foi possível gerar a chave.'}`);
+      alert(data.error || 'Não foi possível gerar a chave.');
     }
   } catch (e) {
     console.error(e);
@@ -516,6 +628,9 @@ btnGenerate.addEventListener('click', async () => {
 
 function renderGeneratedKeyResult(data, typeVal, customVal) {
   keyOutput.textContent = data.key;
+  keyOutput.style.color = '';
+  const resultTitle = resultBox.querySelector('#result-title') || resultBox.querySelector('h3');
+  if (resultTitle) resultTitle.textContent = 'Chave Gerada com Sucesso!';
   let typeLabel = data.licenseType;
   const plan = currentLoadedPlans.find(p => p.id === typeVal);
   if (plan) typeLabel = plan.name;
@@ -987,27 +1102,54 @@ function renderUsersTable(users) {
     return;
   }
 
+  const myUsername = (localStorage.getItem('admin_username') || '').toLowerCase();
+  const myRole = (myUsername === 'gabriel') ? 'worn' : (localStorage.getItem('admin_role') || 'vendedor');
+  const isOwner = myRole === 'worn' || myRole === 'owner' || myUsername === 'gabriel';
+
   users.forEach(u => {
     const tr = document.createElement('tr');
-    const isMaster = u.username.toLowerCase() === 'gabriel';
-    const statusLabel = u.status === 'inactive' ? '<span style="color:#ef4444; font-weight:700;">Inativo</span>' : '<span style="color:#10b981; font-weight:700;">🟢 Ativo</span>';
+    const uName = (u.username || '').toLowerCase();
+    const isMaster = uName === 'gabriel';
+    const role = isMaster ? 'worn' : (u.role || (u.isAdmin ? 'admin' : 'vendedor'));
 
-    const roleBadge = u.isAdmin 
-      ? '<span style="background: rgba(99,102,241,0.15); color: #818cf8; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.8rem;">👑 Admin</span>'
-      : '<span style="background: rgba(56,189,248,0.15); color: #38bdf8; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.8rem;">👤 Vendedor</span>';
+    let statusLabel = '<span style="color:#10b981; font-weight:700;">🟢 Ativo</span>';
+    if (u.status === 'pending_approval') {
+      statusLabel = '<span style="background: rgba(245, 158, 11, 0.18); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); padding: 2px 7px; border-radius: 6px; font-size: 0.72rem; font-weight: 800;">⏳ Pendente Aprovação</span>';
+    } else if (u.status === 'inactive') {
+      statusLabel = '<span style="color:#ef4444; font-weight:700;">❌ Inativo</span>';
+    }
 
-    const limitLabel = u.isAdmin ? '<span style="color:#64748b;">Ilimitado</span>' : `<strong>${u.freeUsageToday || 0} / ${u.freeDailyLimit || 5}</strong> hoje`;
+    let roleBadge = '<span style="background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.35); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.78rem;">👤 Vendedor</span>';
+    if (role === 'worn' || role === 'owner' || isMaster) {
+      roleBadge = '<span style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.78rem;">👑 Worn</span>';
+    } else if (role === 'admin') {
+      roleBadge = '<span style="background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.4); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.78rem;">🛡️ Admin</span>';
+    }
+
+    const limitLabel = (role === 'worn' || role === 'owner' || role === 'admin') 
+      ? '<span style="color:#64748b;">Ilimitado</span>' 
+      : `<strong>${u.freeUsageToday || 0} / ${u.freeDailyLimit || 5}</strong> hoje`;
+
+    const authDirectLabel = u.allPlansDirect 
+      ? '<span style="color:#38bdf8; font-size: 0.75rem; font-weight: 700; margin-left: 4px;">🔓 Direto</span>' 
+      : '<span style="color:#f59e0b; font-size: 0.75rem; font-weight: 700; margin-left: 4px;">⏳ Com Aprovação</span>';
+
+    // Ações permitidas: apenas Owner ou o próprio criador
+    const canEdit = isOwner || (!isMaster && role === 'vendedor');
 
     tr.innerHTML = `
-      <td style="font-weight: 700; color: #f8fafc;">${escapeHtml(u.username)}</td>
-      <td>${roleBadge}</td>
+      <td style="font-weight: 700; color: #f8fafc;">
+        ${escapeHtml(u.username)}
+        ${isMaster ? '<span style="font-size:0.7rem; color:#f59e0b; margin-left:4px;">(Principal)</span>' : ''}
+      </td>
+      <td>${roleBadge} ${authDirectLabel}</td>
       <td>${statusLabel}</td>
       <td style="font-size: 0.85rem; color: #e2e8f0;">${limitLabel}</td>
       <td><span style="font-weight: 700; color: #38bdf8;">${u.totalKeys || 0}</span> keys</td>
       <td style="font-size: 0.8rem; color: #64748b;">${u.createdAt ? new Date(u.createdAt).toLocaleDateString('pt-BR') : '—'}</td>
       <td>
-        <button onclick="openEditUserModal('${escapeHtml(u.username)}')" class="btn-action" title="Editar Usuário" style="color:#818cf8; margin-right:4px;">✏️</button>
-        ${!isMaster ? `
+        ${canEdit ? `<button onclick="openEditUserModal('${escapeHtml(u.username)}')" class="btn-action" title="Editar Usuário" style="color:#818cf8; margin-right:4px;">✏️</button>` : ''}
+        ${isOwner && !isMaster ? `
           <button onclick="toggleUserStatus('${escapeHtml(u.username)}')" class="btn-action" title="Ativar/Inativar" style="color:#fbbf24; margin-right:4px;">🔄</button>
           <button onclick="deleteUser('${escapeHtml(u.username)}')" class="btn-action" title="Excluir Usuário" style="color:#ef4444;">🗑️</button>
         ` : ''}
@@ -1022,8 +1164,8 @@ if (btnCreateUser) {
   btnCreateUser.addEventListener('click', async () => {
     const newUsername = newUsernameInput.value.trim();
     const newPassword = newPasswordInput.value.trim();
-    const newIsAdmin = newIsAdminCheckbox.checked;
     const freeDailyLimit = parseInt(newFreeLimitInput.value, 10) || 5;
+    const allPlansDirect = newAllDirect ? newAllDirect.checked : false;
 
     createUserError.style.display = 'none';
     createUserSuccess.style.display = 'none';
@@ -1036,7 +1178,7 @@ if (btnCreateUser) {
 
     // Coleta planos permitidos selecionados
     const allowedPlans = [];
-    if (!newIsAdmin && newVendorPlansList) {
+    if (newVendorPlansList) {
       const checkedBoxes = newVendorPlansList.querySelectorAll('input[type="checkbox"]:checked');
       checkedBoxes.forEach(cb => allowedPlans.push(cb.value));
     }
@@ -1054,7 +1196,9 @@ if (btnCreateUser) {
         body: JSON.stringify({
           newUsername,
           newPassword,
-          newIsAdmin,
+          newRole: currentNewUserRole,
+          newIsAdmin: currentNewUserRole === 'owner' || currentNewUserRole === 'admin',
+          allPlansDirect,
           allowedPlans,
           freeDailyLimit
         })
@@ -1062,13 +1206,18 @@ if (btnCreateUser) {
       const data = await res.json();
 
       if (data.success) {
-        createUserSuccess.textContent = `✔️ Usuário "${newUsername}" cadastrado com sucesso!`;
+        if (data.pendingApproval) {
+          createUserSuccess.innerHTML = `⏳ <strong>Solicitação de Cadastro Enviada!</strong><br>${escapeHtml(data.message)}`;
+          createUserSuccess.style.color = '#f59e0b';
+        } else {
+          createUserSuccess.textContent = `✔️ Usuário "${newUsername}" cadastrado com sucesso!`;
+          createUserSuccess.style.color = '#10b981';
+        }
         createUserSuccess.style.display = 'block';
         newUsernameInput.value = '';
         newPasswordInput.value = '';
-        newIsAdminCheckbox.checked = false;
-        if (newVendorOptions) newVendorOptions.style.display = 'block';
         loadUsers();
+        if (navApprovals && navApprovals.style.display !== 'none') loadApprovals();
       } else {
         createUserError.textContent = `❌ ${data.error || 'Erro ao cadastrar usuário.'}`;
         createUserError.style.display = 'block';
@@ -1085,20 +1234,23 @@ if (btnCreateUser) {
 
 // Modal de Edição de Usuário
 let editingUsername = null;
-let editingIsAdmin = false;
+let editingRole = 'vendedor';
 
 window.openEditUserModal = function(username) {
   const user = currentLoadedUsers.find(u => u.username.toLowerCase() === username.toLowerCase());
   if (!user) return;
 
   editingUsername = user.username;
-  editingIsAdmin = !!user.isAdmin;
+  editingRole = user.role || (user.isAdmin ? 'admin' : 'vendedor');
 
   document.getElementById('edit-modal-username-label').textContent = `Editando: ${user.username}`;
   document.getElementById('edit-modal-new-password').value = '';
   document.getElementById('edit-modal-msg').textContent = '';
 
-  const editVendorOptions = document.getElementById('edit-vendor-options');
+  if (editModalAllDirect) {
+    editModalAllDirect.checked = !!user.allPlansDirect;
+  }
+
   const editFreeLimitInput = document.getElementById('edit-modal-free-limit');
   const editPlansList = document.getElementById('edit-modal-plans-list');
 
@@ -1137,28 +1289,32 @@ window.openEditUserModal = function(username) {
     editPlansList.appendChild(div);
   });
 
-  setModalRole(editingIsAdmin);
+  setModalRole(editingRole);
   document.getElementById('edit-user-modal').style.display = 'flex';
 };
 
-window.setModalRole = function(isAdmin) {
-  editingIsAdmin = isAdmin;
+window.setModalRole = function(role) {
+  editingRole = (role === 'owner') ? 'worn' : role;
   const btnVendedor = document.getElementById('btn-role-vendedor');
   const btnAdmin = document.getElementById('btn-role-admin');
+  const btnOwner = document.getElementById('btn-role-owner');
   const editVendorOptions = document.getElementById('edit-vendor-options');
 
-  if (isAdmin) {
-    btnAdmin.style.border = '2px solid #818cf8';
-    btnAdmin.style.background = 'rgba(99,102,241,0.25)';
-    btnVendedor.style.border = '2px solid transparent';
-    btnVendedor.style.background = 'rgba(56,189,248,0.06)';
-    if (editVendorOptions) editVendorOptions.style.display = 'none';
-  } else {
-    btnVendedor.style.border = '2px solid #38bdf8';
-    btnVendedor.style.background = 'rgba(56,189,248,0.25)';
-    btnAdmin.style.border = '2px solid transparent';
-    btnAdmin.style.background = 'rgba(99,102,241,0.06)';
-    if (editVendorOptions) editVendorOptions.style.display = 'block';
+  if (btnVendedor) {
+    btnVendedor.style.border = editingRole === 'vendedor' ? '2px solid #38bdf8' : '2px solid transparent';
+    btnVendedor.style.background = editingRole === 'vendedor' ? 'rgba(56,189,248,0.25)' : 'rgba(56,189,248,0.06)';
+  }
+  if (btnAdmin) {
+    btnAdmin.style.border = editingRole === 'admin' ? '2px solid #818cf8' : '2px solid transparent';
+    btnAdmin.style.background = editingRole === 'admin' ? 'rgba(99,102,241,0.25)' : 'rgba(99,102,241,0.06)';
+  }
+  if (btnOwner) {
+    btnOwner.style.border = (editingRole === 'worn' || editingRole === 'owner') ? '2px solid #f59e0b' : '2px solid transparent';
+    btnOwner.style.background = (editingRole === 'worn' || editingRole === 'owner') ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.06)';
+  }
+
+  if (editVendorOptions) {
+    editVendorOptions.style.display = (editingRole === 'worn' || editingRole === 'owner') ? 'none' : 'block';
   }
 };
 
@@ -1169,6 +1325,7 @@ window.closeEditModal = function() {
 window.saveUserEdit = async function() {
   const newPassword = document.getElementById('edit-modal-new-password').value.trim();
   const freeDailyLimit = parseInt(document.getElementById('edit-modal-free-limit').value, 10) || 5;
+  const allPlansDirect = editModalAllDirect ? editModalAllDirect.checked : false;
   const msgEl = document.getElementById('edit-modal-msg');
   const saveBtn = document.getElementById('btn-save-edit');
 
@@ -1189,7 +1346,9 @@ window.saveUserEdit = async function() {
       body: JSON.stringify({
         action: 'edit-user',
         usernameToUpdate: editingUsername,
-        newIsAdmin: editingIsAdmin,
+        newRole: editingRole,
+        newIsAdmin: editingRole === 'owner' || editingRole === 'admin',
+        allPlansDirect,
         newPassword: newPassword || undefined,
         allowedPlans,
         freeDailyLimit
@@ -1253,8 +1412,253 @@ window.deleteUser = async function(username) {
   }
 };
 
+// ═══════════════════════════════════════════════════════════════════════
+//  CENTRAL DE APROVAÇÕES (OWNER)
+// ═══════════════════════════════════════════════════════════════════════
+
+async function loadApprovals() {
+  if (!userToken) return;
+
+  try {
+    const res = await fetch(`${API_URL}/api/approvals`, {
+      headers: { 'Authorization': `Bearer ${userToken}` }
+    });
+    const data = await res.json();
+
+    if (data.success && Array.isArray(data.approvals)) {
+      currentLoadedApprovals = data.approvals;
+      renderApprovalsDashboard(data);
+    }
+  } catch (e) {
+    console.error('Erro ao carregar aprovações:', e);
+  }
+}
+
+function renderApprovalsDashboard(data) {
+  const approvals = data.approvals || [];
+  const pendingKeys = approvals.filter(a => a.type === 'key' && a.status === 'pending');
+  const pendingUsers = approvals.filter(a => a.type === 'user' && a.status === 'pending');
+  const totalPending = pendingKeys.length + pendingUsers.length;
+  const approvedTotal = approvals.filter(a => a.status === 'approved').length;
+
+  if (statApprovalsTotal) statApprovalsTotal.textContent = totalPending;
+  if (statApprovalsKeys) statApprovalsKeys.textContent = pendingKeys.length;
+  if (statApprovalsUsers) statApprovalsUsers.textContent = pendingUsers.length;
+  if (statApprovalsDone) statApprovalsDone.textContent = approvedTotal;
+
+  if (badgePendingCount) {
+    if (totalPending > 0) {
+      badgePendingCount.textContent = totalPending;
+      badgePendingCount.style.display = 'inline-block';
+    } else {
+      badgePendingCount.style.display = 'none';
+    }
+  }
+
+  renderApprovalsKeysTable(approvals.filter(a => a.type === 'key'));
+  renderApprovalsUsersTable(approvals.filter(a => a.type === 'user'));
+}
+
+function renderApprovalsKeysTable(keys) {
+  if (!approvalsKeysBody) return;
+  approvalsKeysBody.innerHTML = '';
+
+  if (keys.length === 0) {
+    approvalsKeysBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 25px;">Nenhuma solicitação de chave pendente ou registrada.</td></tr>';
+    return;
+  }
+
+  keys.forEach(item => {
+    const tr = document.createElement('tr');
+    const isPending = item.status === 'pending';
+
+    let statusBadge = '<span style="background: rgba(245, 158, 11, 0.18); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.75rem;">⏳ Aguardando Owner</span>';
+    if (item.status === 'approved') {
+      statusBadge = `<span style="background: rgba(16, 185, 129, 0.18); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.75rem;">✅ Aprovada</span><br><code style="font-size:0.75rem; color:#38bdf8;">${escapeHtml(item.generatedKey || '')}</code>`;
+    } else if (item.status === 'rejected') {
+      statusBadge = '<span style="background: rgba(239, 68, 68, 0.18); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.75rem;">❌ Recusada</span>';
+    }
+
+    const requesterRoleBadge = item.requesterRole === 'admin'
+      ? '<span style="background: rgba(99,102,241,0.15); color: #818cf8; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;">🛡️ Admin</span>'
+      : '<span style="background: rgba(56,189,248,0.15); color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;">👤 Vendedor</span>';
+
+    tr.innerHTML = `
+      <td style="font-weight: 700; color: #f8fafc;">
+        ${escapeHtml(item.requestedBy || 'Admin')}<br>
+        ${requesterRoleBadge}
+      </td>
+      <td>
+        <strong style="color:#e2e8f0;">${escapeHtml(item.clientName || 'Cliente VIP')}</strong><br>
+        <span style="font-size: 0.75rem; color: #64748b;">${escapeHtml(item.uuid || 'Qualquer PC')}</span>
+      </td>
+      <td>
+        <span style="color:#a5b4fc; font-weight: 700;">${escapeHtml(item.planName || 'Licença')}</span><br>
+        <span style="font-size: 0.75rem; color: #94a3b8;">${item.durationHours ? `${item.durationHours}h` : 'Permanente'}</span>
+      </td>
+      <td style="font-size: 0.8rem; color: #64748b;">${item.createdAt ? new Date(item.createdAt).toLocaleString('pt-BR') : '—'}</td>
+      <td>${statusBadge}</td>
+      <td style="text-align: center;">
+        ${isPending ? `
+          <button onclick="approveKeyApproval('${escapeHtml(item.id)}')" class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8rem; margin-right: 6px; background: #10b981; border: none;">✅ Aprovar</button>
+          <button onclick="rejectKeyApproval('${escapeHtml(item.id)}')" class="btn btn-logout" style="padding: 6px 12px; font-size: 0.8rem; border: none;">❌ Recusar</button>
+        ` : `<span style="font-size: 0.8rem; color: #64748b;">Finalizada</span>`}
+      </td>
+    `;
+    approvalsKeysBody.appendChild(tr);
+  });
+}
+
+function renderApprovalsUsersTable(users) {
+  if (!approvalsUsersBody) return;
+  approvalsUsersBody.innerHTML = '';
+
+  if (users.length === 0) {
+    approvalsUsersBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 25px;">Nenhuma solicitação de novo usuário pendente ou registrada.</td></tr>';
+    return;
+  }
+
+  users.forEach(item => {
+    const tr = document.createElement('tr');
+    const isPending = item.status === 'pending';
+
+    let statusBadge = '<span style="background: rgba(245, 158, 11, 0.18); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.75rem;">⏳ Aguardando Owner</span>';
+    if (item.status === 'approved') {
+      statusBadge = '<span style="background: rgba(16, 185, 129, 0.18); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.75rem;">✅ Aprovado</span>';
+    } else if (item.status === 'rejected') {
+      statusBadge = '<span style="background: rgba(239, 68, 68, 0.18); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.75rem;">❌ Recusado</span>';
+    }
+
+    tr.innerHTML = `
+      <td style="font-weight: 700; color: #f8fafc;">
+        ${escapeHtml(item.username)}
+      </td>
+      <td>
+        <span style="background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.35); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.78rem;">👤 Vendedor</span>
+      </td>
+      <td style="font-size: 0.85rem; color: #e2e8f0;">
+        ${escapeHtml(item.requestedBy || 'Admin')}
+      </td>
+      <td style="font-size: 0.8rem; color: #64748b;">${item.createdAt ? new Date(item.createdAt).toLocaleString('pt-BR') : '—'}</td>
+      <td>${statusBadge}</td>
+      <td style="text-align: center;">
+        ${isPending ? `
+          <button onclick="approveUserApproval('${escapeHtml(item.id)}')" class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8rem; margin-right: 6px; background: #10b981; border: none;">✅ Aprovar Cadastro</button>
+          <button onclick="rejectUserApproval('${escapeHtml(item.id)}')" class="btn btn-logout" style="padding: 6px 12px; font-size: 0.8rem; border: none;">❌ Recusar</button>
+        ` : `<span style="font-size: 0.8rem; color: #64748b;">Finalizada</span>`}
+      </td>
+    `;
+    approvalsUsersBody.appendChild(tr);
+  });
+}
+
+// Ações de Aprovação de Chaves
+window.approveKeyApproval = async function(id) {
+  if (!confirm('Deseja realmente aprovar esta chave? A licença será gerada e liberada imediatamente!')) return;
+
+  try {
+    const res = await fetch(`${API_URL}/api/approvals`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify({ action: 'approve-key', id })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      alert(`🎉 CHAVE APROVADA COM SUCESSO!\n\nCódigo da Chave Gerada: ${data.key}`);
+      loadApprovals();
+      loadLicenses();
+    } else {
+      alert(`❌ Erro: ${data.error || 'Não foi possível aprovar a chave.'}`);
+    }
+  } catch (e) {
+    alert('❌ Erro ao processar aprovação.');
+  }
+};
+
+window.rejectKeyApproval = async function(id) {
+  const reason = prompt('Deseja informar o motivo da recusa? (Opcional):', 'Solicitação recusada pelo Owner');
+  if (reason === null) return;
+
+  try {
+    const res = await fetch(`${API_URL}/api/approvals`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify({ action: 'reject-key', id, reason })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      loadApprovals();
+    } else {
+      alert(`❌ Erro: ${data.error || 'Não foi possível recusar a solicitação.'}`);
+    }
+  } catch (e) {
+    alert('❌ Erro ao recusar solicitação.');
+  }
+};
+
+// Ações de Aprovação de Usuários
+window.approveUserApproval = async function(id) {
+  if (!confirm('Deseja aprovar o cadastro deste novo usuário? Ele poderá fazer login no painel imediatamente!')) return;
+
+  try {
+    const res = await fetch(`${API_URL}/api/approvals`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify({ action: 'approve-user', id })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      alert('✔️ Cadastro de Usuário Aprovado com Sucesso!');
+      loadApprovals();
+      loadUsers();
+    } else {
+      alert(`❌ Erro: ${data.error || 'Não foi possível aprovar o usuário.'}`);
+    }
+  } catch (e) {
+    alert('❌ Erro ao processar aprovação de usuário.');
+  }
+};
+
+window.rejectUserApproval = async function(id) {
+  if (!confirm('Deseja realmente recusar o cadastro deste usuário?')) return;
+
+  try {
+    const res = await fetch(`${API_URL}/api/approvals`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify({ action: 'reject-user', id })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      loadApprovals();
+      loadUsers();
+    } else {
+      alert(`❌ Erro: ${data.error || 'Não foi possível recusar o cadastro.'}`);
+    }
+  } catch (e) {
+    alert('❌ Erro ao recusar cadastro.');
+  }
+};
+
 // Listeners auxiliares
 if (btnRefreshLicenses) btnRefreshLicenses.addEventListener('click', loadLicenses);
 if (btnRefreshUsers) btnRefreshUsers.addEventListener('click', loadUsers);
+if (btnRefreshApprovals) btnRefreshApprovals.addEventListener('click', loadApprovals);
 if (searchLicensesInput) searchLicensesInput.addEventListener('input', () => renderLicensesTable(currentLoadedLicenses));
 if (filterSellerSelect) filterSellerSelect.addEventListener('change', () => renderLicensesTable(currentLoadedLicenses));
