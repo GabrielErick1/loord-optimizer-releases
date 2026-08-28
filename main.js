@@ -155,7 +155,17 @@ async function ensureInitialSystemRestorePoint() {
       }
     }
 
-    // 4. Grava o marcador para nunca sobrescrever o estado original genuíno
+    // 4. Salva Plano de Energia original do usuário
+    try {
+      const activeScheme = execSync('powercfg -getactivescheme', { encoding: 'utf8' });
+      const guidMatch = activeScheme.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i);
+      if (guidMatch) {
+        fs.writeFileSync(path.join(originalStateDir, 'original_power_plan.txt'), guidMatch[1].trim(), 'utf8');
+        fs.writeFileSync(path.join(backupDir, 'original_power_plan.txt'), guidMatch[1].trim(), 'utf8');
+      }
+    } catch (_) {}
+
+    // 5. Grava o marcador para nunca sobrescrever o estado original genuíno
     fs.writeFileSync(markerPath, JSON.stringify({
       createdAt: new Date().toISOString(),
       timestamp: Date.now(),
@@ -2377,8 +2387,21 @@ public class WinMouse {
     cleanHostsFileOfBluestacks();
     await runCmd('ipconfig /flushdns').catch(() => { });
 
-    // 6. Reverter Plano de Energia para o padrão Equilibrado
-    await runCmd('powercfg -setactive 381b4222-f694-41f0-9685-ff5bb260df2e').catch(() => { });
+    // 6. Reverter Plano de Energia para o padrão original ou Equilibrado
+    let restoredPlan = false;
+    try {
+      const planFile = path.join(originalStateDir, 'original_power_plan.txt');
+      if (fs.existsSync(planFile)) {
+        const origGuid = fs.readFileSync(planFile, 'utf8').trim();
+        if (origGuid) {
+          await runCmd(`powercfg -setactive ${origGuid}`);
+          restoredPlan = true;
+        }
+      }
+    } catch (_) {}
+    if (!restoredPlan) {
+      await runCmd('powercfg -setactive 381b4222-f694-41f0-9685-ff5bb260df2e').catch(() => { });
+    }
 
     // 7. Reverter Tweaks de Sistema, Memória, Svchost e Prioridades
     const resetCmds = [
@@ -3527,9 +3550,11 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
 
     // 1. Consulta estrita ao Banco de Dados Oficial
     let chkData = null;
+    let networkError = null;
     try {
       chkData = await queryOfficialDatabase('/api/client-check', { uuid: currentUuid, key: cleanKey });
     } catch (err) {
+      networkError = err;
       console.warn('Erro ao consultar /api/client-check:', err.message);
     }
 
@@ -3548,6 +3573,7 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
     try {
       actData = await queryOfficialDatabase('/api/client-activate', { uuid: currentUuid, key: cleanKey });
     } catch (err) {
+      networkError = networkError || err;
       console.warn('Erro ao consultar /api/client-activate:', err.message);
     }
 
@@ -3561,14 +3587,28 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
       };
     }
 
+    // Se houve erro de rede (offline/sem internet) e nenhuma resposta de recusa do servidor
+    if (!chkData && !actData && networkError) {
+      return {
+        valid: false,
+        isNetworkError: true,
+        error: 'Não foi possível conectar ao servidor de licenças. Verifique sua conexão com a internet.'
+      };
+    }
+
+    // Se o servidor respondeu ativamente recusando (Chave inativa, expirada, excluída ou inválida)
     isClientSessionAuthorized = false;
     authorizedSessionKey = null;
-    const serverError = chkData?.error || actData?.error || 'Chave não encontrada no banco de dados. Solicite uma chave oficial ao administrador.';
-    return { valid: false, error: serverError };
+    const serverError = chkData?.error || actData?.error || 'Chave não encontrada ou expirada no banco de dados oficial.';
+    return {
+      valid: false,
+      isRevokedOrExpired: true,
+      error: serverError
+    };
   } catch (e) {
     isClientSessionAuthorized = false;
     authorizedSessionKey = null;
-    return { valid: false, error: e.message || 'Erro ao validar chave com o banco de dados oficial.' };
+    return { valid: false, isRevokedOrExpired: false, error: e.message || 'Erro ao validar chave com o banco de dados oficial.' };
   }
 });
 

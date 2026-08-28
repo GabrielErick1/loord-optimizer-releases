@@ -3441,28 +3441,21 @@ if (btnRemovePartitionAction) {
           return;
         }
         const check = await window.api.verifyKey(currentKey);
-        if (!check || !check.valid) {
-          await forceLogoutSecurity(check?.error || 'Sua chave foi deslogada, revogada ou expirada pelo administrador.');
-        } else {
+        if (check && !check.valid) {
+          // Só desfaz otimizações se o servidor confirmou que a chave está INATIVA, EXPIRADA ou EXCLUÍDA
+          if (check.isRevokedOrExpired) {
+            console.log('[SECURITY] Chave invalidada/expirada no servidor oficial! Desfazendo todas as otimizações...');
+            await forceLogoutSecurity(check?.error || 'Sua chave foi revogada, desativada ou expirou no painel.');
+          } else if (check.isNetworkError) {
+            console.warn('[SECURITY] Falha momentânea de rede no heartbeat. Mantendo configurações.');
+          }
+        } else if (check && check.valid) {
           // Atualiza sidebar em tempo real
           const isVitalicia = check.plan && (check.plan.includes('Vitalícia') || check.plan.includes('permanent') || check.plan.includes('💎'));
           updateSidebarStatus(true, check.clientName, isVitalicia ? 'permanent' : 'temporary', check.plan);
         }
       } catch (_) {}
     }, 15000);
-  }
-
-  // ── Verificação de Mudança de Versão / Código (Auto-Logout em Updates) ──────
-  const CURRENT_SECURITY_BUILD = '3.2.2';
-  const lastAuthenticatedBuild = localStorage.getItem('loord_auth_build_ver');
-  if (lastAuthenticatedBuild && lastAuthenticatedBuild !== CURRENT_SECURITY_BUILD) {
-    console.log('[SECURITY] Nova versão ou atualização de código detectada! Deslogando sessão para validação no banco oficial...');
-    localStorage.removeItem('loord_vip_key');
-    localStorage.removeItem('activation_key');
-    localStorage.removeItem('client_name');
-    localStorage.setItem('loord_auth_build_ver', CURRENT_SECURITY_BUILD);
-  } else if (!lastAuthenticatedBuild) {
-    localStorage.setItem('loord_auth_build_ver', CURRENT_SECURITY_BUILD);
   }
 
   // 3. Verificar se já existe uma chave válida salva no computador
@@ -3482,8 +3475,16 @@ if (btnRemovePartitionAction) {
         startVipHeartbeat(savedKey);
         startSecurityWatch(savedKey);
         return;
+      } else if (check && check.isNetworkError) {
+        // Se estiver sem conexão no momento de abrir, mantém o acesso temporário sem desmanchar nada
+        console.warn('[SECURITY] Servidor offline ou sem conexão. Mantendo acesso local provisório.');
+        setAppVisualAccess(true);
+        updateSavedKeyUI(savedKey);
+        startVipHeartbeat(savedKey);
+        return;
       } else {
-        // Chave expirada ou não encontrada no banco oficial → Bloqueia, restaura Windows e remove
+        // Chave confirmada como EXPIRADA, REVOGADA ou EXCLUÍDA no banco oficial!
+        console.log('[SECURITY] Chave sem acesso no banco de dados. Revertendo configurações do Windows...');
         try {
           if (window.api && window.api.revertAllTweaksOnRevoke) {
             await window.api.revertAllTweaksOnRevoke();
@@ -3495,8 +3496,7 @@ if (btnRemovePartitionAction) {
         localStorage.removeItem('ffopt_applied_tweaks');
       }
     } catch (_) {
-      localStorage.removeItem('loord_vip_key');
-      localStorage.removeItem('activation_key');
+      console.warn('[SECURITY] Erro inesperado na validação.');
     }
   }
 
