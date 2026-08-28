@@ -3301,30 +3301,32 @@ if (btnRemovePartitionAction) {
 
   // ── Atualiza o sidebar com nome do cliente + validade ──────────────────────
   function updateSidebarStatus(isActive, clientName, licenseType, timeRemainingStr) {
+    const t = (k, def) => (window.t ? window.t(k) : def);
     if (sidebarVipLabel) {
       if (isActive) {
         if (licenseType === 'temporary' && timeRemainingStr) {
-          sidebarVipLabel.innerHTML = '⏳ VIP ATIVO';
+          sidebarVipLabel.innerHTML = t('sidebarVipExpiring', '⏳ VIP ATIVO');
           sidebarVipLabel.style.color = '#f59e0b';
         } else {
-          sidebarVipLabel.innerHTML = '💎 VERSÃO VIP';
+          sidebarVipLabel.innerHTML = t('sidebarVipActive', '💎 VERSÃO VIP');
           sidebarVipLabel.style.color = '#38bdf8';
         }
       } else {
-        sidebarVipLabel.innerHTML = '🔒 BLOQUEADO';
+        sidebarVipLabel.innerHTML = t('sidebarLocked', '🔒 BLOQUEADO');
         sidebarVipLabel.style.color = '#ef4444';
       }
     }
     if (sidebarClientName) {
       const name = clientName || localStorage.getItem('client_name') || 'VIP';
-      sidebarClientName.textContent = isActive ? `👤 ${name}` : '👤 Sem licença';
+      const noLic = t('sidebarNoLicense', '👤 Sem licença');
+      sidebarClientName.textContent = isActive ? `👤 ${name}` : noLic;
     }
     if (sidebarValidity) {
       if (isActive && timeRemainingStr) {
         sidebarValidity.textContent = `⏱ ${timeRemainingStr}`;
         sidebarValidity.style.color = licenseType === 'temporary' ? '#f59e0b' : '#10b981';
       } else if (isActive) {
-        sidebarValidity.textContent = '✅ Vitalícia';
+        sidebarValidity.textContent = t('sidebarLifetime', '✅ Vitalícia');
         sidebarValidity.style.color = '#10b981';
       } else {
         sidebarValidity.textContent = '';
@@ -3697,9 +3699,53 @@ rarefixBtns.forEach(btn => {
   });
 });
 
+// ── SISTEMA MULTILÍNGUE (i18n) - INICIALIZAÇÃO & EVENT LISTENERS ──────────
+(function setupLanguageSelector() {
+  const btnToggle = document.getElementById('btn-lang-toggle');
+  const dropdown = document.getElementById('lang-dropdown');
+  const optionBtns = document.querySelectorAll('.lang-option-btn');
 
+  if (btnToggle && dropdown) {
+    btnToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = dropdown.classList.contains('show');
+      if (isOpen) {
+        dropdown.classList.remove('show');
+        btnToggle.classList.remove('open');
+      } else {
+        dropdown.classList.add('show');
+        btnToggle.classList.add('open');
+      }
+    });
 
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#lang-selector-wrapper')) {
+        dropdown.classList.remove('show');
+        btnToggle.classList.remove('open');
+      }
+    });
 
+    optionBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const selectedLang = btn.getAttribute('data-lang');
+        if (selectedLang && window.i18n) {
+          window.i18n.setLanguage(selectedLang);
+          dropdown.classList.remove('show');
+          btnToggle.classList.remove('open');
+          
+          // Re-atualiza o status de VIP com a tradução correspondente
+          const savedKey = localStorage.getItem('loord_vip_key') || localStorage.getItem('activation_key');
+          if (typeof updateSidebarStatus === 'function') {
+            updateSidebarStatus(!!savedKey);
+          }
+        }
+      });
+    });
+  }
 
-
-
+  // Inicializa o idioma salvo ou padrão
+  if (window.i18n) {
+    window.i18n.init();
+  }
+})();

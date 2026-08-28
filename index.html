@@ -78,6 +78,33 @@
         <div class="sidebar-header">
           <div class="title-main">Loord Optimizer</div>
           <div class="title-sub">LoordOpt</div>
+
+          <!-- Seletor de Idioma (Engrenagem) -->
+          <div class="lang-selector-wrapper" id="lang-selector-wrapper">
+            <button type="button" class="btn-lang-toggle" id="btn-lang-toggle" title="Selecionar Idioma / Select Language">
+              <span class="gear-icon">⚙️</span>
+              <span id="current-lang-display">🇧🇷 Português</span>
+              <span class="dropdown-chevron">▼</span>
+            </button>
+            <div class="lang-dropdown" id="lang-dropdown">
+              <div class="lang-dropdown-header">🌐 IDIOMA / LANGUAGE</div>
+              <button type="button" class="lang-option-btn active" data-lang="pt">
+                <span class="lang-flag">🇧🇷</span>
+                <span class="lang-label">Português</span>
+                <span class="check">✓</span>
+              </button>
+              <button type="button" class="lang-option-btn" data-lang="en">
+                <span class="lang-flag">🇺🇸</span>
+                <span class="lang-label">English</span>
+                <span class="check"></span>
+              </button>
+              <button type="button" class="lang-option-btn" data-lang="es">
+                <span class="lang-flag">🇪🇸</span>
+                <span class="lang-label">Español</span>
+                <span class="check"></span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <nav class="nav-menu">
@@ -148,18 +175,18 @@
         <section id="tab-regedit-adaptativa" class="tab-content active">
           <div class="card" style="border: 2px solid #f59e0b; background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(0,0,0,0.65)); box-shadow: 0 0 25px rgba(245,158,11,0.25); border-radius: 12px; padding: 20px;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-              <h2 style="margin:0; color:#fbbf24; font-size:1.15rem; display:flex; align-items:center; gap:8px;">
+              <h2 style="margin:0; color:#fbbf24; font-size:1.15rem; display:flex; align-items:center; gap:8px;" data-i18n="adaptiveTitle">
                 ⚡ OTIMIZADOR DE MOUSE E DESEMPENHO - BLUESTACKS
               </h2>
-              <span class="badge" style="background:#f59e0b; color:#000; font-weight:900;">REGEDIT ADAPTATIVA 🔥</span>
+              <span class="badge" style="background:#f59e0b; color:#000; font-weight:900;" data-i18n="adaptiveBadge">REGEDIT ADAPTATIVA 🔥</span>
             </div>
-            <p style="color:#cbd5e1; font-size:0.84rem; margin:0 0 16px 0; line-height:1.5;">
+            <p style="color:#cbd5e1; font-size:0.84rem; margin:0 0 16px 0; line-height:1.5;" data-i18n="adaptiveDesc">
               Ajustes reais e documentados do Windows: curva de resposta e velocidade 1:1 (<code style="color:#fde68a;">HKCU\Control Panel\Mouse</code>), plano de energia em <strong>Alto Desempenho</strong> e prioridade máxima de processo para instâncias do BlueStacks (<code style="color:#fde68a;">HD-Player.exe</code>).
             </p>
 
             <!-- Escolha do Perfil -->
             <div style="margin-bottom: 20px;">
-              <label style="font-size:0.9rem; color:#fbbf24; font-weight:800; display:block; margin-bottom:12px;">
+              <label style="font-size:0.9rem; color:#fbbf24; font-weight:800; display:block; margin-bottom:12px;" data-i18n="profileSelectLabel">
                 🎯 Escolha um perfil de sensibilidade de mouse e desempenho:
               </label>
 
@@ -170,10 +197,10 @@
                   <input type="radio" name="adapt-profile-choice" value="RAPIDA" checked style="margin-top: 4px; accent-color: #ef4444;">
                   <div style="flex: 1;">
                     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
-                      <span style="color: #ff4757; font-weight: 900; font-size: 0.95rem;">[1] ⚡ RÁPIDA — Sem Aceleração &amp; Resposta 1:1 (Sensibilidade Alta: 15)</span>
-                      <span style="background: #ef4444; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;">FPS / MIRA RÁPIDA 🏆</span>
+                      <span style="color: #ff4757; font-weight: 900; font-size: 0.95rem;" data-i18n="profileFastTitle">[1] ⚡ RÁPIDA — Sem Aceleração &amp; Resposta 1:1 (Sensibilidade Alta: 15)</span>
+                      <span style="background: #ef4444; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;" data-i18n="profileFastBadge">FPS / MIRA RÁPIDA 🏆</span>
                     </div>
-                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #fecdd3; line-height: 1.4;">
+                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #fecdd3; line-height: 1.4;" data-i18n="profileFastDesc">
                       Sem aceleração (MouseSpeed 0, Thresholds 0), resposta 1:1 com sensibilidade alta 15, plano de Alto Desempenho e prioridade Alta no BlueStacks.
                     </p>
                   </div>
@@ -185,10 +212,10 @@
                   <input type="radio" name="adapt-profile-choice" value="LEVE" style="margin-top: 4px; accent-color: #38bdf8;">
                   <div style="flex: 1;">
                     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
-                      <span style="color: #38bdf8; font-weight: 900; font-size: 0.95rem;">[2] ⚖️ LEVE — Sem Aceleração &amp; Sensibilidade Neutra (Sensibilidade: 10)</span>
-                      <span style="background: #0284c7; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;">EQUILIBRADO 🎯</span>
+                      <span style="color: #38bdf8; font-weight: 900; font-size: 0.95rem;" data-i18n="profileLightTitle">[2] ⚖️ LEVE — Sem Aceleração &amp; Sensibilidade Neutra (Sensibilidade: 10)</span>
+                      <span style="background: #0284c7; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;" data-i18n="profileLightBadge">EQUILIBRADO 🎯</span>
                     </div>
-                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #bae6fd; line-height: 1.4;">
+                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #bae6fd; line-height: 1.4;" data-i18n="profileLightDesc">
                       Resposta 1:1 equilibrada sem aceleração com sensibilidade neutra padrão 10. Bom ponto de partida para qualquer DPI.
                     </p>
                   </div>
@@ -200,10 +227,10 @@
                   <input type="radio" name="adapt-profile-choice" value="SUAVE" style="margin-top: 4px; accent-color: #10b981;">
                   <div style="flex: 1;">
                     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
-                      <span style="color: #34d399; font-weight: 900; font-size: 0.95rem;">[3] 🌊 SUAVE — Movimento Controlado &amp; Menos Brusco (Sensibilidade: 8)</span>
-                      <span style="background: #059669; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;">CONTROLE TOTAL 💎</span>
+                      <span style="color: #34d399; font-weight: 900; font-size: 0.95rem;" data-i18n="profileSmoothTitle">[3] 🌊 SUAVE — Movimento Controlado &amp; Menos Brusco (Sensibilidade: 8)</span>
+                      <span style="background: #059669; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;" data-i18n="profileSmoothBadge">CONTROLE TOTAL 💎</span>
                     </div>
-                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #a7f3d0; line-height: 1.4;">
+                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #a7f3d0; line-height: 1.4;" data-i18n="profileSmoothDesc">
                       Aceleração leve mantida (MouseSpeed 1, Thresholds 6/10) com sensibilidade reduzida para 8. Movimento macio e menos brusco para travar a mira na cabeça.
                     </p>
                   </div>
@@ -215,10 +242,10 @@
                   <input type="radio" name="adapt-profile-choice" value="SO_DESEMPENHO" style="margin-top: 4px; accent-color: #f59e0b;">
                   <div style="flex: 1;">
                     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
-                      <span style="color: #fbbf24; font-weight: 800; font-size: 0.92rem;">[4] 🚀 SÓ DESEMPENHO — Plano de Energia &amp; Prioridade (Sem mexer no mouse)</span>
-                      <span style="background: #d97706; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;">DESEMPENHO PURO</span>
+                      <span style="color: #fbbf24; font-weight: 800; font-size: 0.92rem;" data-i18n="profilePerfOnlyTitle">[4] 🚀 SÓ DESEMPENHO — Plano de Energia &amp; Prioridade (Sem mexer no mouse)</span>
+                      <span style="background: #d97706; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;" data-i18n="profilePerfOnlyBadge">DESEMPENHO PURO</span>
                     </div>
-                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #fde68a; line-height: 1.4;">
+                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #fde68a; line-height: 1.4;" data-i18n="profilePerfOnlyDesc">
                       Ativa o plano de energia de Alto Desempenho no Windows e eleva a prioridade de processo do BlueStacks para Alta, sem alterar a sensibilidade do mouse.
                     </p>
                   </div>
@@ -230,14 +257,13 @@
                   <input type="radio" name="adapt-profile-choice" value="RESTAURAR" style="margin-top: 4px; accent-color: #94a3b8;">
                   <div style="flex: 1;">
                     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
-                      <span style="color: #cbd5e1; font-weight: 800; font-size: 0.92rem;">[5] 🔄 RESTAURAR PADRÃO DO WINDOWS</span>
-                      <span style="background: #475569; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;">RESET ↩️</span>
+                      <span style="color: #cbd5e1; font-weight: 800; font-size: 0.92rem;" data-i18n="profileRestoreTitle">[5] 🔄 RESTAURAR PADRÃO DO WINDOWS</span>
+                      <span style="background: #475569; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;" data-i18n="profileRestoreBadge">RESET ↩️</span>
                     </div>
-                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #94a3b8; line-height: 1.4;">
+                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #94a3b8; line-height: 1.4;" data-i18n="profileRestoreDesc">
                       Restaura a aceleração padrão do Windows (MouseSpeed 1, Thresholds 6/10, Sensi 10) e volta o plano de energia para o modo Equilibrado padrão.
                     </p>
                   </div>
-                </label>
               </div>
             </div>
 
@@ -1766,25 +1792,25 @@
 
         <!-- TAB: MINHA CONFIG -->
         <section id="tab-minha-config" class="tab-content">
-          <h2>Minha Config & Atualizações</h2>
-          <p class="subtitle">Gerencie suas configurações, restaure backups e mantenha seu app atualizado</p>
+          <h2 data-i18n="configTabTitle">Minha Config & Atualizações</h2>
+          <p class="subtitle" data-i18n="configTabSubtitle">Gerencie suas configurações, restaure backups e mantenha seu app atualizado</p>
 
           <!-- VIP License Card -->
           <div class="card" style="border: 1px solid rgba(245, 158, 11, 0.35); background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(17, 24, 39, 0.8) 100%);">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
               <div>
-                <h3 style="margin: 0 0 4px 0; color: #f59e0b;">👑 Licença & Acesso VIP</h3>
-                <p style="margin: 0; font-size: 12px; color: #94a3b8;">Status de ativação da sua chave no computador</p>
+                <h3 style="margin: 0 0 4px 0; color: #f59e0b;" data-i18n="vipLicenseCardTitle">👑 Licença & Acesso VIP</h3>
+                <p style="margin: 0; font-size: 12px; color: #94a3b8;" data-i18n="vipLicenseCardDesc">Status de ativação da sua chave no computador</p>
               </div>
               <span id="vip-status-badge" class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); font-weight: 800;">🟢 Ativo</span>
             </div>
             <div style="margin-top: 14px; background: rgba(0,0,0,0.4); border-radius: 8px; padding: 14px; border: 1px solid rgba(255,255,255,0.08);">
               <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <div>
-                  <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Chave Conectada:</div>
+                  <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;" data-i18n="connectedKeyLabel">Chave Conectada:</div>
                   <div id="display-saved-key" style="font-family: monospace; font-size: 14px; font-weight: 800; color: #00e676; margin-top: 4px;">Carregando...</div>
                 </div>
-                <button id="btn-logout-key" type="button" class="btn btn-sm" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; font-weight: 700; border-radius: 6px; padding: 8px 14px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.3)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.15)'">
+                <button id="btn-logout-key" type="button" class="btn btn-sm" data-i18n="btnLogoutKey" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; font-weight: 700; border-radius: 6px; padding: 8px 14px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.3)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.15)'">
                   🔌 Trocar Chave / Sair
                 </button>
               </div>
@@ -1796,8 +1822,8 @@
             <div
               style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
               <div>
-                <h3 style="margin: 0 0 4px 0;">🔄 Atualizações do Sistema</h3>
-                <p style="margin: 0; font-size: 12px; color: #94a3b8;">Verifique e receba novas versões e otimizações
+                <h3 style="margin: 0 0 4px 0;" data-i18n="systemUpdatesCardTitle">🔄 Atualizações do Sistema</h3>
+                <p style="margin: 0; font-size: 12px; color: #94a3b8;" data-i18n="systemUpdatesCardDesc">Verifique e receba novas versões e otimizações
                   automaticamente</p>
               </div>
               <span id="app-version-badge" class="badge badge-success">v3.2.4</span>
@@ -1814,7 +1840,7 @@
 
               <!-- Botões de Ação -->
               <div style="margin-top: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <button class="btn btn-sm" id="btn-check-update" onclick="window.handleCheckUpdatesManual(this)"
+                <button class="btn btn-sm" id="btn-check-update" onclick="window.handleCheckUpdatesManual(this)" data-i18n="btnCheckUpdates"
                   style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: #fff; font-weight: 800; border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);">
                   🔍 Verificar Agora
                 </button>
@@ -1827,8 +1853,8 @@
           </div>
 
           <div class="card">
-            <h3>Backup do Registro</h3>
-            <p>Se você encontrar qualquer instabilidade no mouse ou teclado, reverta todo o registro para o estado
+            <h3 data-i18n="registryBackupCardTitle">Backup do Registro</h3>
+            <p data-i18n="registryBackupCardDesc">Se você encontrar qualquer instabilidade no mouse ou teclado, reverta todo o registro para o estado
               padrão original.</p>
 
             <div class="restore-panel" style="margin-top: 16px;">
@@ -1837,8 +1863,8 @@
                 <strong id="restore-backup-status" class="text-error">Não Encontrado</strong>
               </div>
               <div class="btn-group">
-                <button class="btn btn-secondary" id="btn-create-backup">Criar Backup Novo</button>
-                <button class="btn btn-danger" id="btn-restore-backup" disabled>Restaurar Backup</button>
+                <button class="btn btn-secondary" id="btn-create-backup" data-i18n="btnCreateBackup">Criar Backup Novo</button>
+                <button class="btn btn-danger" id="btn-restore-backup" data-i18n="btnRestoreBackup" disabled>Restaurar Backup</button>
               </div>
             </div>
           </div>
@@ -1847,23 +1873,23 @@
             <div
               style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
               <div>
-                <h3 style="margin: 0 0 4px 0; color: #c084fc;">💾 Salvar & Carregar Meu Perfil (Backup Geral)</h3>
-                <p style="margin: 0; font-size: 12px; color: #94a3b8;">Exporte sua sensibilidade e configurações
+                <h3 style="margin: 0 0 4px 0; color: #c084fc;" data-i18n="profileCardTitle">💾 Salvar & Carregar Meu Perfil (Backup Geral)</h3>
+                <p style="margin: 0; font-size: 12px; color: #94a3b8;" data-i18n="profileCardDesc">Exporte sua sensibilidade e configurações
                   completas para um arquivo .json e restaure quando quiser.</p>
               </div>
               <span class="badge" style="background:#a855f7; color:#fff; font-weight:800;">PROFILE</span>
             </div>
 
             <div style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap;">
-              <button class="btn btn-secondary btn-sm" id="btn-export-profile">📤 Salvar Meu Perfil (.json)</button>
-              <button class="btn btn-outline btn-sm" id="btn-import-profile">📥 Carregar Perfil Salvo</button>
+              <button class="btn btn-secondary btn-sm" id="btn-export-profile" data-i18n="btnSaveProfile">📤 Salvar Meu Perfil (.json)</button>
+              <button class="btn btn-outline btn-sm" id="btn-import-profile" data-i18n="btnLoadProfile">📥 Carregar Perfil Salvo</button>
               <span class="adb-applied-badge" id="badge-profile-action"
                 style="display:none; color:#28c385; font-size:12px;">✔ Perfil Carregado!</span>
             </div>
           </div>
 
           <div class="card">
-            <h3>Status do Sistema</h3>
+            <h3 data-i18n="systemStatusTitle">Status do Sistema</h3>
             <div class="status-list">
               <div class="status-item">
                 <span>MSI App Player:</span>
@@ -2216,6 +2242,7 @@
     </div>
   </div>
 
+  <script src="i18n.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>
