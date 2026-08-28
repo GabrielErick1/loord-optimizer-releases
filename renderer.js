@@ -3250,6 +3250,53 @@ if (btnRemovePartitionAction) {
 
   if (!lockScreen) return;
 
+  const mainAppLayout = document.getElementById('main-app-layout');
+
+  function setAppVisualAccess(unlocked) {
+    window._isClientVipAuthenticated = !!unlocked;
+    if (unlocked) {
+      if (mainAppLayout) {
+        mainAppLayout.style.setProperty('display', 'flex', 'important');
+        mainAppLayout.style.setProperty('opacity', '1', 'important');
+        mainAppLayout.style.setProperty('visibility', 'visible', 'important');
+        mainAppLayout.style.setProperty('pointer-events', 'auto', 'important');
+      }
+      if (lockScreen) {
+        lockScreen.style.setProperty('display', 'none', 'important');
+      }
+    } else {
+      if (mainAppLayout) {
+        mainAppLayout.style.setProperty('display', 'none', 'important');
+        mainAppLayout.style.setProperty('opacity', '0', 'important');
+        mainAppLayout.style.setProperty('visibility', 'hidden', 'important');
+        mainAppLayout.style.setProperty('pointer-events', 'none', 'important');
+      }
+      if (lockScreen) {
+        lockScreen.style.setProperty('display', 'flex', 'important');
+      }
+    }
+  }
+
+  // Prevenir context menu (botão direito)
+  document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // Anti-Tamper: Detecta qualquer tentativa de exibir o layout sem chave autenticada
+  try {
+    const antiTamperObserver = new MutationObserver(() => {
+      if (!window._isClientVipAuthenticated) {
+        if (mainAppLayout && mainAppLayout.style.display !== 'none') {
+          console.warn('[TAMPER DETECTED] Tentativa de bypass visual detectada. Encerrando aplicativo...');
+          if (window.api && window.api.windowControl) window.api.windowControl('close');
+        }
+        if (lockScreen && (lockScreen.style.display === 'none' || !document.body.contains(lockScreen))) {
+          console.warn('[TAMPER DETECTED] Tentativa de ocultar tela de bloqueio. Encerrando aplicativo...');
+          if (window.api && window.api.windowControl) window.api.windowControl('close');
+        }
+      }
+    });
+    antiTamperObserver.observe(document.body, { childList: true, subtree: true, attributes: true });
+  } catch (_) {}
+
   let currentHardwareUuid = '';
 
   // ── Atualiza o sidebar com nome do cliente + validade ──────────────────────
@@ -3309,7 +3356,7 @@ if (btnRemovePartitionAction) {
     localStorage.removeItem('client_name');
     localStorage.removeItem('ffopt_applied_tweaks');
     updateSidebarStatus(false);
-    lockScreen.style.display = 'flex';
+    setAppVisualAccess(false);
     if (keyAuthError) {
       keyAuthError.textContent = `❌ ${reason || 'Acesso revogado pelo servidor. Configurações restauradas.'}`;
       keyAuthError.style.display = 'block';
@@ -3423,7 +3470,7 @@ if (btnRemovePartitionAction) {
       const check = await window.api.verifyKey(savedKey);
       if (check && check.valid) {
         // Chave 100% autêntica validada no banco de dados oficial!
-        lockScreen.style.display = 'none';
+        setAppVisualAccess(true);
         updateSavedKeyUI(savedKey);
         // Salva nome do cliente
         if (check.clientName) localStorage.setItem('client_name', check.clientName);
@@ -3452,7 +3499,7 @@ if (btnRemovePartitionAction) {
   }
 
   // Se não tem chave ou a chave é inválida, mantém a tela de bloqueio ativada
-  lockScreen.style.display = 'flex';
+  setAppVisualAccess(false);
   updateSavedKeyUI('');
   updateSidebarStatus(false);
 
@@ -3518,7 +3565,7 @@ if (btnRemovePartitionAction) {
           btnActivateVip.style.color = '#fff';
 
           setTimeout(() => {
-            lockScreen.style.display = 'none';
+            setAppVisualAccess(true);
           }, 600);
         } else {
           btnActivateVip.disabled = false;

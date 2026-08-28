@@ -48,6 +48,38 @@ const backupDir = path.join(app.getPath('userData'), 'Backup_Sensibilidade');
 // Diretório oculto dedicado para preservação do estado original do computador
 const originalStateDir = path.join(app.getPath('appData'), 'LoordOptimizer_OriginalState');
 
+// ─── GUARDIÃO DE SEGURANÇA MÁXIMA & ANTI-CRACKING ────────────────────────────
+let isClientSessionAuthorized = false;
+let authorizedSessionKey = null;
+
+function isLicenseAuthorized() {
+  return isClientSessionAuthorized === true && !!authorizedSessionKey;
+}
+
+const BLACKLISTED_CRACK_TOOLS = [
+  'x64dbg', 'x32dbg', 'cheatengine', 'cheat engine', 'dnspy', 'httpdebugger',
+  'fiddler', 'charles', 'wireshark', 'processhacker', 'process hacker',
+  'ida64', 'idag', 'scylla', 'ollydbg', 'ghidra'
+];
+
+function runAntiCrackProcessCheck() {
+  try {
+    exec('tasklist /fo csv /nh', { timeout: 3000 }, (err, stdout) => {
+      if (!err && stdout) {
+        const lower = stdout.toLowerCase();
+        for (const bad of BLACKLISTED_CRACK_TOOLS) {
+          if (lower.includes(bad)) {
+            console.warn(`[SECURITY] Ferramenta hostil/debugger detectada: ${bad}. Encerrando aplicação...`);
+            try { app.exit(0); } catch (_) {}
+          }
+        }
+      }
+    });
+  } catch (_) {}
+}
+
+setInterval(runAntiCrackProcessCheck, 8000);
+
 if (!fs.existsSync(backupDir)) {
   try { fs.mkdirSync(backupDir, { recursive: true }); } catch (_) { }
 }
@@ -587,6 +619,9 @@ ipcMain.handle('adb-uninstall', async (event, packages, port) => {
 });
 
 ipcMain.handle('unlock-fps-hz', async (event, hz) => {
+  if (!isLicenseAuthorized()) {
+    return { success: false, error: 'Acesso negado: Licença VIP ativa obrigatória.' };
+  }
   const targetHz = String(hz || 240);
   const files = [
     'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
@@ -902,6 +937,9 @@ ipcMain.handle('restore-default-android', async (event, port) => {
 
 // ─── TOUCH ENGINE & SENSIBILIDADE IPHONE / ANDROID REAL ─────────────────────
 ipcMain.handle('set-android-dpi', async (event, dpiValue, port) => {
+  if (!isLicenseAuthorized()) {
+    return { success: false, error: 'Acesso negado: Licença VIP ativa obrigatória.' };
+  }
   const targetDpi = parseInt(dpiValue) || 240;
   const files = [
     'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
@@ -936,6 +974,9 @@ ipcMain.handle('set-android-dpi', async (event, dpiValue, port) => {
 });
 
 ipcMain.handle('apply-touch-engine-profile', async (event, profile, port) => {
+  if (!isLicenseAuthorized()) {
+    return { success: false, error: 'Acesso negado: Licença VIP ativa obrigatória.' };
+  }
   let tweaks = [];
   let dpi = 440;
   let profileName = 'iPhone 15 Pro Max (iOS Touch Engine)';
@@ -1605,6 +1646,9 @@ function getPhysicalScriptPath(scriptName) {
 
 // RAM Cleaner - runs silently inline (app already runs as Admin)
 ipcMain.handle('clean-ram', async () => {
+  if (!isLicenseAuthorized()) {
+    return { success: false, error: 'Acesso negado: Licença VIP ativa obrigatória.' };
+  }
   try {
     const scriptPath = getPhysicalScriptPath('clean_ram.ps1');
     // Run hidden, no extra window, no double-process spawn
@@ -1617,6 +1661,9 @@ ipcMain.handle('clean-ram', async () => {
 
 // Optimize processes - runs silently inline (app already runs as Admin)
 ipcMain.handle('optimize-processes', async () => {
+  if (!isLicenseAuthorized()) {
+    return { success: false, error: 'Acesso negado: Licença VIP ativa obrigatória.' };
+  }
   try {
     const scriptPath = getPhysicalScriptPath('otimizar_processos.ps1');
     // Run hidden, no extra window, no double-process spawn
@@ -1628,6 +1675,9 @@ ipcMain.handle('optimize-processes', async () => {
 });
 
 ipcMain.handle('optimize-windows-master', async () => {
+  if (!isLicenseAuthorized()) {
+    return { success: false, error: 'Acesso negado: Licença VIP ativa obrigatória.' };
+  }
   if (!systemIsAdmin) {
     return { success: false, error: "Privilégios de Administrador requeridos." };
   }
@@ -1819,6 +1869,9 @@ function updateConfFile(confPath, dpi, maxFps, forceRog2, engine, astc) {
 }
 
 ipcMain.handle('apply-optimizations', async (event, config) => {
+  if (!isLicenseAuthorized()) {
+    return { success: false, error: 'Acesso negado: Licença VIP ativa obrigatória.' };
+  }
   if (!systemIsAdmin) {
     return { success: false, error: "Privilégios de Administrador requeridos." };
   }
@@ -2233,6 +2286,9 @@ ipcMain.handle('get-restore-point-status', async () => {
 // Reversão total automática ao expirar ou ser revogado no painel (Anti-Leak Rollback)
 ipcMain.handle('revert-all-tweaks-on-revoke', async () => {
   try {
+    isClientSessionAuthorized = false;
+    authorizedSessionKey = null;
+
     // 1. Parar macros e cleaners em execução
     await killMacroProcess().catch(() => { });
 
@@ -2522,6 +2578,9 @@ ipcMain.handle('stop-macro', async () => {
 });
 
 ipcMain.handle('apply-single-tweak', async (event, tweakId) => {
+  if (!isLicenseAuthorized()) {
+    return { success: false, error: 'Acesso negado: Licença VIP ativa obrigatória.' };
+  }
   try {
     const commands = getCommandsForTweak(tweakId);
     // Run each registry command directly and silently (app is already Admin)
@@ -3475,6 +3534,8 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
     }
 
     if (chkData && chkData.success) {
+      isClientSessionAuthorized = true;
+      authorizedSessionKey = cleanKey;
       return {
         valid: true,
         plan: chkData.timeRemainingStr || chkData.licenseType || '👑 VIP Ativo',
@@ -3491,6 +3552,8 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
     }
 
     if (actData && actData.success) {
+      isClientSessionAuthorized = true;
+      authorizedSessionKey = cleanKey;
       return {
         valid: true,
         plan: actData.timeRemainingStr || actData.licenseType || '👑 VIP Ativo',
@@ -3498,9 +3561,13 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
       };
     }
 
+    isClientSessionAuthorized = false;
+    authorizedSessionKey = null;
     const serverError = chkData?.error || actData?.error || 'Chave não encontrada no banco de dados. Solicite uma chave oficial ao administrador.';
     return { valid: false, error: serverError };
   } catch (e) {
+    isClientSessionAuthorized = false;
+    authorizedSessionKey = null;
     return { valid: false, error: e.message || 'Erro ao validar chave com o banco de dados oficial.' };
   }
 });
@@ -4218,6 +4285,9 @@ function injectLiveAdbSensitivity(sensYVal, dpiEmuVal, styleMul = 1.0) {
 
 // ── REGEDIT ADAPTATIVA - OTIMIZADOR DE MOUSE E DESEMPENHO BLUESTACKS ──────────
 ipcMain.handle('apply-adaptive-profile', async (event, profileName) => {
+  if (!isLicenseAuthorized()) {
+    return { success: false, error: 'Acesso negado: Licença VIP ativa obrigatória.' };
+  }
   try {
     let resultLog = [];
     const applyDesempenho = () => {
@@ -4324,6 +4394,9 @@ ipcMain.handle('apply-adaptive-profile', async (event, profileName) => {
 
 // ── REGEDIT FULL CAPA (RAREFIX PRECISÃO MÁXIMA 1:1) ───────────────────────────
 ipcMain.handle('apply-rarefix-profile', async (event, profileNameOrSpeed) => {
+  if (!isLicenseAuthorized()) {
+    return { success: false, error: 'Acesso negado: Licença VIP ativa obrigatória.' };
+  }
   try {
     let speed = 11;
     let isRestore = false;
@@ -4421,6 +4494,9 @@ ipcMain.handle('open-rarefix-hta', async () => {
 
 // ── REGEDIT ADAPTATIVA HANDLER (INJEÇÃO NO WINDOWS + EMULADORES EM TEMPO REAL) ────
 ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
+  if (!isLicenseAuthorized()) {
+    return { success: false, error: 'Acesso negado: Licença VIP ativa obrigatória.' };
+  }
   try {
     if (typeof config === 'string') {
       // Se for passado o nome do perfil (ex: RAPIDA, LEVE, SUAVE)
@@ -5155,10 +5231,16 @@ async function startMacroNative(speed = null, active = true) {
 }
 
 ipcMain.handle('start-macro', async (event, speed) => {
+  if (!isLicenseAuthorized()) {
+    return { success: false, error: 'Acesso negado: Licença VIP ativa obrigatória.' };
+  }
   return await startMacroNative(speed, true);
 });
 
 ipcMain.handle('set-macro-speed', async (event, speed) => {
+  if (!isLicenseAuthorized()) {
+    return { success: false, error: 'Acesso negado: Licença VIP ativa obrigatória.' };
+  }
   const num = typeof speed === 'number' ? speed : parseFloat(speed);
   if (!isNaN(num) && num > 0) {
     macroCurrentSpeed = num;
