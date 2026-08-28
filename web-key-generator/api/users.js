@@ -140,11 +140,15 @@ module.exports = async (req, res) => {
           return;
         }
 
-        // Apenas Owner pode alterar cargos ou editar outros Admins/Owners
+        // Apenas Worn pode alterar cargos ou editar outros Admins/Owners
         if (!isOwner && usernameToUpdate.trim().toLowerCase() !== user.username.toLowerCase()) {
           const targetRole = getUserRole(target);
           if (targetRole === 'owner' || targetRole === 'admin') {
-            res.status(403).json({ success: false, error: 'Apenas o Owner pode editar contas de Administrador ou Owner.' });
+            res.status(403).json({ success: false, error: 'Apenas o Worn pode editar contas de Administrador ou Worn.' });
+            return;
+          }
+          if (newRole && newRole !== 'vendedor') {
+            res.status(403).json({ success: false, error: 'Administradores não têm permissão para alterar cargos.' });
             return;
           }
         }
@@ -171,7 +175,8 @@ module.exports = async (req, res) => {
           target.directPlans = directPlans;
         }
 
-        if (allPlansDirect !== undefined) {
+        // Apenas o Worn pode conceder liberação direta de chaves sem autorização
+        if (allPlansDirect !== undefined && isOwner) {
           target.allPlansDirect = !!allPlansDirect;
         }
 

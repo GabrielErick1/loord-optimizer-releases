@@ -1338,11 +1338,44 @@ window.openEditUserModal = function(username) {
     editPlansList.appendChild(div);
   });
 
+  // Configuração de visibilidade por Cargo do usuário logado
+  const myUsername = (localStorage.getItem('admin_username') || '').toLowerCase();
+  const myRole = (myUsername === 'gabriel') ? 'worn' : (localStorage.getItem('admin_role') || 'vendedor');
+  const isWorn = myRole === 'worn' || myRole === 'owner' || myUsername === 'gabriel';
+
+  const btnAdmin = document.getElementById('btn-role-admin');
+  const btnOwner = document.getElementById('btn-role-owner');
+  const btnVendedor = document.getElementById('btn-role-vendedor');
+  const roleGrid = document.getElementById('edit-modal-role-grid');
+  const directWrapper = document.getElementById('edit-modal-direct-wrapper');
+
+  if (isWorn) {
+    if (btnAdmin) btnAdmin.style.display = 'block';
+    if (btnOwner) btnOwner.style.display = 'block';
+    if (roleGrid) roleGrid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+    if (directWrapper) directWrapper.style.display = 'block';
+  } else {
+    // Para Administrador comum: NUNCA exibir botões de mudar para Admin ou Worn!
+    if (btnAdmin) btnAdmin.style.display = 'none';
+    if (btnOwner) btnOwner.style.display = 'none';
+    if (roleGrid) roleGrid.style.gridTemplateColumns = '1fr';
+    if (directWrapper) directWrapper.style.display = 'none';
+    editingRole = 'vendedor';
+  }
+
   setModalRole(editingRole);
   document.getElementById('edit-user-modal').style.display = 'flex';
 };
 
 window.setModalRole = function(role) {
+  const myUsername = (localStorage.getItem('admin_username') || '').toLowerCase();
+  const myRole = (myUsername === 'gabriel') ? 'worn' : (localStorage.getItem('admin_role') || 'vendedor');
+  const isWorn = myRole === 'worn' || myRole === 'owner' || myUsername === 'gabriel';
+
+  if (!isWorn) {
+    role = 'vendedor';
+  }
+
   editingRole = (role === 'owner') ? 'worn' : role;
   const btnVendedor = document.getElementById('btn-role-vendedor');
   const btnAdmin = document.getElementById('btn-role-admin');
@@ -1353,11 +1386,11 @@ window.setModalRole = function(role) {
     btnVendedor.style.border = editingRole === 'vendedor' ? '2px solid #38bdf8' : '2px solid transparent';
     btnVendedor.style.background = editingRole === 'vendedor' ? 'rgba(56,189,248,0.25)' : 'rgba(56,189,248,0.06)';
   }
-  if (btnAdmin) {
+  if (btnAdmin && isWorn) {
     btnAdmin.style.border = editingRole === 'admin' ? '2px solid #818cf8' : '2px solid transparent';
     btnAdmin.style.background = editingRole === 'admin' ? 'rgba(99,102,241,0.25)' : 'rgba(99,102,241,0.06)';
   }
-  if (btnOwner) {
+  if (btnOwner && isWorn) {
     btnOwner.style.border = (editingRole === 'worn' || editingRole === 'owner') ? '2px solid #f59e0b' : '2px solid transparent';
     btnOwner.style.background = (editingRole === 'worn' || editingRole === 'owner') ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.06)';
   }
@@ -1372,6 +1405,11 @@ window.closeEditModal = function() {
 };
 
 window.saveUserEdit = async function() {
+  const myUsername = (localStorage.getItem('admin_username') || '').toLowerCase();
+  const myRole = (myUsername === 'gabriel') ? 'worn' : (localStorage.getItem('admin_role') || 'vendedor');
+  const isWorn = myRole === 'worn' || myRole === 'owner' || myUsername === 'gabriel';
+
+  const roleToSend = isWorn ? editingRole : 'vendedor';
   const newPassword = document.getElementById('edit-modal-new-password').value.trim();
   const freeDailyLimit = parseInt(document.getElementById('edit-modal-free-limit').value, 10) || 5;
   const allPlansDirect = editModalAllDirect ? editModalAllDirect.checked : false;
@@ -1395,9 +1433,9 @@ window.saveUserEdit = async function() {
       body: JSON.stringify({
         action: 'edit-user',
         usernameToUpdate: editingUsername,
-        newRole: editingRole,
-        newIsAdmin: editingRole === 'worn' || editingRole === 'owner' || editingRole === 'admin',
-        allPlansDirect,
+        newRole: roleToSend,
+        newIsAdmin: roleToSend === 'worn' || roleToSend === 'owner' || roleToSend === 'admin',
+        allPlansDirect: isWorn ? allPlansDirect : false,
         newPassword: newPassword || undefined,
         allowedPlans,
         freeDailyLimit
