@@ -242,19 +242,26 @@ module.exports = async (req, res) => {
       const parsedLimit = freeDailyLimit !== undefined ? Math.max(0, parseInt(freeDailyLimit, 10) || 0) : 5;
 
       // REGRAS DE CARGO NA CRIAÇÃO:
-      // Se quem estiver criando for ADMIN (e não Owner): só pode criar Vendedor ("criar usuario que nao seja admin e nem worn")!
-      // E o cadastro gerado pelo Admin fica pendente de aprovação do Owner!
+      // Conforme solicitado pelo Worn:
+      // "quando criar um vendedor ele nao precisa de aprovaçao pos ele ira pagar pela chave pagou liberou a chave quando e vendedor agora administrador posso aprovar ou nao ai sim administrador sim"
       let resolvedRole = 'vendedor';
       let userInitialStatus = 'active';
 
-      if (!isOwner) {
-        resolvedRole = 'vendedor';
-        userInitialStatus = 'pending_approval';
-      } else {
+      if (isOwner) {
         if (newRole && ['worn', 'owner', 'admin', 'vendedor'].includes(newRole)) {
           resolvedRole = (newRole === 'owner') ? 'worn' : newRole;
         } else if (newIsAdmin) {
           resolvedRole = 'admin';
+        }
+        userInitialStatus = 'active'; // Worn cria qualquer usuário já ativo
+      } else {
+        // Se quem está criando é Administrador comum:
+        if (newRole === 'admin' || newIsAdmin) {
+          resolvedRole = 'admin';
+          userInitialStatus = 'pending_approval'; // Criação de Administrador requer aprovação do Worn!
+        } else {
+          resolvedRole = 'vendedor';
+          userInitialStatus = 'active'; // Vendedor entra DIRETO ativo sem aprovação! Pagou, liberou!
         }
       }
 

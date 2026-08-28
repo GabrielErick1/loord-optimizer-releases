@@ -589,16 +589,7 @@ function renderNewVendorPlanCheckboxes(plans) {
   });
 }
 
-// Esconde opções de vendedor se marcar Administrador no cadastro
-if (newIsAdminCheckbox) {
-  newIsAdminCheckbox.addEventListener('change', () => {
-    if (newIsAdminCheckbox.checked) {
-      if (newVendorOptions) newVendorOptions.style.display = 'none';
-    } else {
-      if (newVendorOptions) newVendorOptions.style.display = 'block';
-    }
-  });
-}
+
 
 // ═══════════════════════════════════════════════════════════════════════
 //  GERAÇÃO DE CHAVE & CHECKOUT PIX MERCADO PAGO
@@ -1405,7 +1396,7 @@ window.saveUserEdit = async function() {
         action: 'edit-user',
         usernameToUpdate: editingUsername,
         newRole: editingRole,
-        newIsAdmin: editingRole === 'owner' || editingRole === 'admin',
+        newIsAdmin: editingRole === 'worn' || editingRole === 'owner' || editingRole === 'admin',
         allPlansDirect,
         newPassword: newPassword || undefined,
         allowedPlans,
