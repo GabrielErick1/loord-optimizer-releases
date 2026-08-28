@@ -1,4 +1,4 @@
-const { parseRequestBody, verifyAuth, generateActivationKey, getLicenses, saveLicenses, getPlans, getOrInitUsers, saveUsers } = require('./_db');
+const { parseRequestBody, verifyAuth, generateActivationKey, getLicenses, saveLicenses, getPlans, getOrInitUsers, saveUsers, getApprovals, saveApprovals, getUserRole } = require('./_db');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -34,13 +34,58 @@ module.exports = async (req, res) => {
       return;
     }
 
-    const isAdminUser = user.isAdmin || user.username.toLowerCase() === 'gabriel';
-    let currentUser = null;
+    const userRole = user.role || getUserRole(user);
+    const isOwner = userRole === 'owner' || user.username.toLowerCase() === 'gabriel';
+    const isAdmin = userRole === 'admin' || user.isAdmin;
 
-    if (!isAdminUser) {
-      const users = await getOrInitUsers();
-      currentUser = users.find(u => u.username.toLowerCase() === user.username.toLowerCase());
+    const users = await getOrInitUsers();
+    const currentUser = users.find(u => u.username.toLowerCase() === user.username.toLowerCase());
 
+    const formattedClientName = (clientName && clientName.trim()) ? clientName.trim() : 'Cliente VIP';
+    const cleanUuid = (uuid && uuid.trim().length >= 5) ? uuid.trim() : null;
+
+    let resolvedType = 'permanent-unlimited';
+    let hours = null;
+
+    if (planId === 'permanent-single') {
+      resolvedType = 'permanent-single';
+    } else if (planId === 'permanent-unlimited') {
+      resolvedType = 'permanent-unlimited';
+    } else if (planId.startsWith('temp-') || planId === 'temporary') {
+      resolvedType = 'temporary';
+      if (planId === 'temp-1h') hours = 1;
+      else if (planId === 'temp-2h') hours = 2;
+      else if (planId === 'temp-6h') hours = 6;
+      else if (planId === 'temp-12h') hours = 12;
+      else if (planId === 'temp-24h') hours = 24;
+      else if (planId === 'temp-7d') hours = 7 * 24;
+      else if (planId === 'temp-15d') hours = 15 * 24;
+      else if (planId === 'temp-30d') hours = 30 * 24;
+      else if (planId === 'temp-custom-hours') hours = Math.max(1, parseInt(customVal || durationHours, 10) || 1);
+      else if (planId === 'temp-custom-days') hours = Math.max(1, (parseInt(customVal || durationDays, 10) || 1) * 24);
+      else if (durationHours) hours = Math.max(1, parseInt(durationHours, 10));
+      else if (durationDays) hours = Math.max(1, parseInt(durationDays, 10) * 24);
+      else hours = plan.durationHours || 720;
+    } else {
+      resolvedType = 'permanent-unlimited';
+    }
+
+    // 1. CHECAGEM DE APROVAÇÃO NECESSÁRIA
+    // Se for Owner: NUNCA precisa de aprovação
+    // Se for Admin ou Vendedor: verifica se o plano está liberado direto ou se precisa de aprovação do Owner
+    let needsApproval = false;
+    if (!isOwner) {
+      const allDirect = currentUser && currentUser.allPlansDirect === true;
+      const directPlans = (currentUser && Array.isArray(currentUser.directPlans)) ? currentUser.directPlans : [];
+      const isThisPlanDirect = allDirect || directPlans.includes(plan.id);
+
+      if (!isThisPlanDirect) {
+        needsApproval = true;
+      }
+    }
+
+    // Se NÃO for Owner nem Admin (ou seja, for Vendedor)
+    if (!isOwner && !isAdmin) {
       // 1. Check if vendor has permission to generate this plan
       if (currentUser && Array.isArray(currentUser.allowedPlans) && currentUser.allowedPlans.length > 0) {
         if (!currentUser.allowedPlans.includes(plan.id)) {
@@ -104,38 +149,47 @@ module.exports = async (req, res) => {
       await saveUsers(users);
     }
 
-    // Generate the license key
+    // SE PRECISAR DE APROVAÇÃO DO OWNER:
+    if (needsApproval) {
+      let approvals = await getApprovals();
+      const approvalItem = {
+        id: 'appr_key_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+        type: 'key',
+        requestedBy: user.username,
+        requesterRole: userRole,
+        clientName: formattedClientName,
+        uuid: cleanUuid,
+        planId: plan.id,
+        planName: plan.name,
+        licenseType: resolvedType,
+        activationMode: (resolvedType === 'permanent-single') ? 'single' : 'unlimited',
+        durationHours: hours,
+        durationDays: hours ? Math.round(hours / 24) : null,
+        status: 'pending',
+        createdAt: Date.now(),
+        approvedBy: null,
+        approvedAt: null,
+        rejectedBy: null,
+        rejectedAt: null
+      };
+
+      approvals.push(approvalItem);
+      await saveApprovals(approvals);
+
+      res.status(200).json({
+        success: true,
+        pendingApproval: true,
+        approvalId: approvalItem.id,
+        planName: plan.name,
+        clientName: formattedClientName,
+        message: `⏳ Solicitação de Chave enviada para aprovação do Owner!\n\nComo o seu usuário não possui liberação direta para este plano (${plan.name}), a chave foi encaminhada para a Central de Aprovações dos Owners.`
+      });
+      return;
+    }
+
+    // Geração direta da chave (seja Owner ou liberado direto)
     const key = generateActivationKey(uuid);
     const licenses = await getLicenses();
-    const formattedClientName = (clientName && clientName.trim()) ? clientName.trim() : 'Cliente VIP';
-    
-    let resolvedType = 'permanent-unlimited';
-    let hours = null;
-
-    if (planId === 'permanent-single') {
-      resolvedType = 'permanent-single';
-    } else if (planId === 'permanent-unlimited') {
-      resolvedType = 'permanent-unlimited';
-    } else if (planId.startsWith('temp-') || planId === 'temporary') {
-      resolvedType = 'temporary';
-      if (planId === 'temp-1h') hours = 1;
-      else if (planId === 'temp-2h') hours = 2;
-      else if (planId === 'temp-6h') hours = 6;
-      else if (planId === 'temp-12h') hours = 12;
-      else if (planId === 'temp-24h') hours = 24;
-      else if (planId === 'temp-7d') hours = 7 * 24;
-      else if (planId === 'temp-15d') hours = 15 * 24;
-      else if (planId === 'temp-30d') hours = 30 * 24;
-      else if (planId === 'temp-custom-hours') hours = Math.max(1, parseInt(customVal || durationHours, 10) || 1);
-      else if (planId === 'temp-custom-days') hours = Math.max(1, (parseInt(customVal || durationDays, 10) || 1) * 24);
-      else if (durationHours) hours = Math.max(1, parseInt(durationHours, 10));
-      else if (durationDays) hours = Math.max(1, parseInt(durationDays, 10) * 24);
-      else hours = plan.durationHours || 720;
-    } else {
-      resolvedType = 'permanent-unlimited';
-    }
-    
-    const cleanUuid = (uuid && uuid.trim().length >= 5) ? uuid.trim() : null;
 
     // Verificar se o UUID já está cadastrado no sistema
     if (cleanUuid) {

@@ -1,4 +1,4 @@
-const { parseRequestBody, getOrInitUsers, hashPassword, createSessionToken } = require('./_db');
+const { parseRequestBody, getOrInitUsers, hashPassword, createSessionToken, getUserRole } = require('./_db');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -28,12 +28,13 @@ module.exports = async (req, res) => {
     const isMaster = (cleanUsername === 'gabriel' || cleanUsername === 'admin') && cleanPassword === '168096';
 
     if (isMaster) {
-      const token = createSessionToken('gabriel', true);
+      const token = createSessionToken('gabriel', true, 'owner');
       res.status(200).json({
         success: true,
         token,
         username: 'gabriel',
-        isAdmin: true
+        isAdmin: true,
+        role: 'owner'
       });
       return;
     }
@@ -54,17 +55,28 @@ module.exports = async (req, res) => {
       return;
     }
 
+    if (user.status === 'pending_approval') {
+      res.status(403).json({
+        success: false,
+        error: '⏳ Seu cadastro foi realizado por um Administrador e está aguardando APROVAÇÃO do Owner (Super Administrador). Por favor, aguarde a liberação!'
+      });
+      return;
+    }
+
     if (user.status === 'inactive') {
       res.status(403).json({ success: false, error: '❌ Seu acesso foi inativado/bloqueado pelo administrador!' });
       return;
     }
 
-    const token = createSessionToken(user.username, user.isAdmin);
+    const userRole = getUserRole(user);
+    const isAdm = userRole === 'owner' || !!user.isAdmin;
+    const token = createSessionToken(user.username, isAdm, userRole);
     res.status(200).json({
       success: true,
       token,
       username: user.username,
-      isAdmin: !!user.isAdmin
+      isAdmin: isAdm,
+      role: userRole
     });
   } catch (e) {
     console.error(e);

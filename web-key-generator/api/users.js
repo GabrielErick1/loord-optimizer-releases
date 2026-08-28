@@ -1,4 +1,4 @@
-const { parseRequestBody, verifyAuth, getOrInitUsers, saveUsers, getLicenses, hashPassword } = require('./_db');
+const { parseRequestBody, verifyAuth, getOrInitUsers, saveUsers, getLicenses, hashPassword, getApprovals, saveApprovals, getUserRole } = require('./_db');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -17,7 +17,11 @@ module.exports = async (req, res) => {
     return;
   }
 
-  // Helper to map and attach sales stats and limits
+  const userRole = user.role || getUserRole(user);
+  const isOwner = userRole === 'owner' || user.username.toLowerCase() === 'gabriel';
+  const isAdmin = userRole === 'admin' || user.isAdmin;
+
+  // Helper to map and attach sales stats, role, and limits
   async function getEnrichedUserList() {
     const users = await getOrInitUsers();
     const licenses = await getLicenses();
@@ -32,15 +36,20 @@ module.exports = async (req, res) => {
         todayUsage = u.freeUsageToday.count || 0;
       }
 
+      const uRole = getUserRole(u);
+
       return {
         username: u.username,
-        isAdmin: !!u.isAdmin,
+        role: uRole,
+        isAdmin: uRole === 'owner' || uRole === 'admin',
         status: u.status || 'active',
-        createdBy: u.createdBy || 'Master Admin',
+        createdBy: u.createdBy || 'Master Owner',
         createdAt: u.createdAt || null,
         totalKeys: userLicenses.length,
         activeKeys: activeCount,
         allowedPlans: Array.isArray(u.allowedPlans) ? u.allowedPlans : [],
+        directPlans: Array.isArray(u.directPlans) ? u.directPlans : [],
+        allPlansDirect: !!u.allPlansDirect,
         freeDailyLimit: typeof u.freeDailyLimit === 'number' ? u.freeDailyLimit : 5,
         freeUsageToday: todayUsage
       };
@@ -57,16 +66,16 @@ module.exports = async (req, res) => {
     }
   } 
   else if (req.method === 'POST') {
-    if (!user.isAdmin && user.username.toLowerCase() !== 'gabriel') {
-      res.status(403).json({ success: false, error: 'Apenas administradores podem gerenciar usuários.' });
+    if (!isOwner && !isAdmin) {
+      res.status(403).json({ success: false, error: 'Apenas Administradores e Owners podem gerenciar usuários.' });
       return;
     }
 
     try {
       const body = await parseRequestBody(req);
-      const { action, usernameToUpdate, newPassword, usernameToToggle, newUsername, newIsAdmin, allowedPlans, freeDailyLimit, syncUsers } = body;
+      const { action, usernameToUpdate, newPassword, usernameToToggle, newUsername, newRole, newIsAdmin, allowedPlans, directPlans, allPlansDirect, freeDailyLimit, syncUsers } = body;
 
-      // 0. Ação de Editar Usuário Completo (Cargo, Senha, Planos Permitidos, Limite Diário)
+      // 0. Ação de Editar Usuário Completo (Cargo, Senha, Planos Permitidos, Planos Diretos, Limite Diário)
       if (action === 'edit-user') {
         if (!usernameToUpdate) {
           res.status(400).json({ success: false, error: 'Usuário não informado.' });
@@ -80,8 +89,23 @@ module.exports = async (req, res) => {
           return;
         }
 
-        if (body.newIsAdmin !== undefined && usernameToUpdate.trim().toLowerCase() !== 'gabriel') {
-          target.isAdmin = !!body.newIsAdmin;
+        // Apenas Owner pode alterar cargos ou editar outros Admins/Owners
+        if (!isOwner && usernameToUpdate.trim().toLowerCase() !== user.username.toLowerCase()) {
+          const targetRole = getUserRole(target);
+          if (targetRole === 'owner' || targetRole === 'admin') {
+            res.status(403).json({ success: false, error: 'Apenas o Owner pode editar contas de Administrador ou Owner.' });
+            return;
+          }
+        }
+
+        if (isOwner && usernameToUpdate.trim().toLowerCase() !== 'gabriel') {
+          if (newRole && ['owner', 'admin', 'vendedor'].includes(newRole)) {
+            target.role = newRole;
+            target.isAdmin = (newRole === 'owner' || newRole === 'admin');
+          } else if (newIsAdmin !== undefined) {
+            target.isAdmin = !!newIsAdmin;
+            target.role = target.isAdmin ? 'admin' : 'vendedor';
+          }
         }
 
         if (newPassword && newPassword.trim().length >= 3) {
@@ -90,6 +114,14 @@ module.exports = async (req, res) => {
 
         if (Array.isArray(allowedPlans)) {
           target.allowedPlans = allowedPlans;
+        }
+
+        if (Array.isArray(directPlans)) {
+          target.directPlans = directPlans;
+        }
+
+        if (allPlansDirect !== undefined) {
+          target.allPlansDirect = !!allPlansDirect;
         }
 
         if (freeDailyLimit !== undefined) {
@@ -102,14 +134,18 @@ module.exports = async (req, res) => {
         return;
       }
 
-      // 1. Ação de Trocar Cargo (Vendedor <-> Administrador)
+      // 1. Ação de Trocar Cargo
       if (action === 'toggle-role') {
+        if (!isOwner) {
+          res.status(403).json({ success: false, error: 'Apenas Super Administradores (Owners) podem alterar cargos.' });
+          return;
+        }
         if (!usernameToToggle) {
           res.status(400).json({ success: false, error: 'Usuário não informado.' });
           return;
         }
         if (usernameToToggle.trim().toLowerCase() === 'gabriel') {
-          res.status(400).json({ success: false, error: 'O usuário principal (gabriel) não pode ter o cargo alterado.' });
+          res.status(400).json({ success: false, error: 'O cargo do usuário principal (gabriel) não pode ser alterado.' });
           return;
         }
         let users = await getOrInitUsers();
@@ -118,16 +154,29 @@ module.exports = async (req, res) => {
           res.status(404).json({ success: false, error: 'Usuário não encontrado.' });
           return;
         }
-        target.isAdmin = !target.isAdmin;
+
+        const currentRole = getUserRole(target);
+        let nextRole = 'admin';
+        if (currentRole === 'vendedor') nextRole = 'admin';
+        else if (currentRole === 'admin') nextRole = 'owner';
+        else nextRole = 'vendedor';
+
+        target.role = nextRole;
+        target.isAdmin = (nextRole === 'owner' || nextRole === 'admin');
+
         await saveUsers(users);
-        const newRole = target.isAdmin ? 'Administrador' : 'Vendedor';
+        const roleLabels = { owner: '👑 Owner (Super Admin)', admin: '🛡️ Administrador', vendedor: '👤 Vendedor' };
         const userList = await getEnrichedUserList();
-        res.status(200).json({ success: true, message: `Cargo do usuário "${target.username}" alterado para ${newRole}!`, users: userList });
+        res.status(200).json({ success: true, message: `Cargo do usuário "${target.username}" alterado para ${roleLabels[nextRole]}!`, users: userList });
         return;
       }
 
       // 2. Ação de Inativar / Ativar Usuário
       if (action === 'toggle-status') {
+        if (!isOwner) {
+          res.status(403).json({ success: false, error: 'Apenas Super Administradores (Owners) podem inativar ou ativar usuários.' });
+          return;
+        }
         if (!usernameToToggle) {
           res.status(400).json({ success: false, error: 'Usuário não informado.' });
           return;
@@ -192,20 +241,71 @@ module.exports = async (req, res) => {
 
       const parsedLimit = freeDailyLimit !== undefined ? Math.max(0, parseInt(freeDailyLimit, 10) || 0) : 5;
 
+      // REGRAS DE CARGO NA CRIAÇÃO:
+      // Se quem estiver criando for ADMIN (e não Owner): só pode criar Vendedor ("criar usuario que nao seja admin e nem worn")!
+      // E o cadastro gerado pelo Admin fica pendente de aprovação do Owner!
+      let resolvedRole = 'vendedor';
+      let userInitialStatus = 'active';
+
+      if (!isOwner) {
+        resolvedRole = 'vendedor';
+        userInitialStatus = 'pending_approval';
+      } else {
+        if (newRole && ['owner', 'admin', 'vendedor'].includes(newRole)) {
+          resolvedRole = newRole;
+        } else if (newIsAdmin) {
+          resolvedRole = 'admin';
+        }
+      }
+
+      const isResolvedAdmin = resolvedRole === 'owner' || resolvedRole === 'admin';
+
       const newUser = {
         username: newUsername.trim(),
         passwordHash: hashPassword(newPassword.trim()),
-        isAdmin: !!newIsAdmin,
-        status: 'active',
+        role: resolvedRole,
+        isAdmin: isResolvedAdmin,
+        status: userInitialStatus,
         createdBy: user.username,
         createdAt: Date.now(),
         allowedPlans: Array.isArray(allowedPlans) ? allowedPlans : [],
+        directPlans: Array.isArray(directPlans) ? directPlans : (isResolvedAdmin ? ['all'] : []),
+        allPlansDirect: isOwner ? (allPlansDirect !== undefined ? !!allPlansDirect : isResolvedAdmin) : false,
         freeDailyLimit: parsedLimit,
         freeUsageToday: { date: new Date().toISOString().slice(0, 10), count: 0 }
       };
 
       users.push(newUser);
       await saveUsers(users);
+
+      // Se foi criado por um Admin, envia para a fila de aprovação dos Owners!
+      if (userInitialStatus === 'pending_approval') {
+        let approvals = await getApprovals();
+        approvals.push({
+          id: 'appr_usr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          type: 'user',
+          requestedBy: user.username,
+          requesterRole: userRole,
+          username: newUser.username,
+          role: resolvedRole,
+          status: 'pending',
+          createdAt: Date.now(),
+          approvedBy: null,
+          approvedAt: null,
+          rejectedBy: null,
+          rejectedAt: null
+        });
+        await saveApprovals(approvals);
+
+        const userList = await getEnrichedUserList();
+        res.status(200).json({
+          success: true,
+          pendingApproval: true,
+          message: `⏳ Solicitação de cadastro do usuário "${newUser.username}" enviada com sucesso aos Owners! O cadastro ficará ativo assim que for aprovado na Central de Aprovações.`,
+          users: userList
+        });
+        return;
+      }
 
       const userList = await getEnrichedUserList();
       res.status(200).json({ success: true, message: `Usuário "${newUser.username}" cadastrado com sucesso!`, users: userList });
@@ -215,8 +315,8 @@ module.exports = async (req, res) => {
     }
   } 
   else if (req.method === 'DELETE') {
-    if (!user.isAdmin && user.username.toLowerCase() !== 'gabriel') {
-      res.status(403).json({ success: false, error: 'Apenas administradores podem excluir usuários.' });
+    if (!isOwner) {
+      res.status(403).json({ success: false, error: 'Apenas Super Administradores (Owners) podem excluir usuários.' });
       return;
     }
 

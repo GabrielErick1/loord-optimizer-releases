@@ -155,6 +155,45 @@ async function saveLicenses(licenses) {
   }
 }
 
+const localApprovalsPath = path.join(os.tmpdir(), 'ffopt_approvals.json');
+
+async function getApprovals() {
+  const kvData = await kvGet('approvals');
+  if (Array.isArray(kvData)) {
+    return kvData;
+  }
+
+  if (fs.existsSync(localApprovalsPath)) {
+    try {
+      return JSON.parse(fs.readFileSync(localApprovalsPath, 'utf8'));
+    } catch (e) {
+      console.error('Error reading local approvals file:', e);
+    }
+  }
+
+  return [];
+}
+
+async function saveApprovals(approvals) {
+  await kvSet('approvals', approvals);
+  try {
+    fs.writeFileSync(localApprovalsPath, JSON.stringify(approvals, null, 2), 'utf8');
+    return true;
+  } catch (e) {
+    console.error('Error writing local approvals file:', e);
+    return false;
+  }
+}
+
+function getUserRole(user) {
+  if (!user) return 'vendedor';
+  const uname = (user.username || '').trim().toLowerCase();
+  if (uname === 'gabriel') return 'owner';
+  if (user.role === 'owner') return 'owner';
+  if (user.role === 'admin' || user.isAdmin === true) return 'admin';
+  return 'vendedor';
+}
+
 async function getOrInitUsers() {
   let users = await getUsers();
   const masterHash = crypto.pbkdf2Sync('168096', defaultSalt, 1000, 64, 'sha512').toString('hex');
@@ -165,26 +204,34 @@ async function getOrInitUsers() {
         username: 'gabriel',
         passwordHash: masterHash,
         isAdmin: true,
-        createdBy: 'Master Admin',
+        role: 'owner',
+        createdBy: 'Master Owner',
         createdAt: Date.now()
       }
     ];
     await saveUsers(users);
   } else {
-    // Ensure master admin gabriel always has the updated password 168096
+    // Ensure master admin gabriel always has the updated password 168096 and role owner
     const gIndex = users.findIndex(u => u.username.toLowerCase() === 'gabriel');
     if (gIndex !== -1) {
+      let changed = false;
       if (users[gIndex].passwordHash !== masterHash) {
         users[gIndex].passwordHash = masterHash;
-        users[gIndex].isAdmin = true;
-        await saveUsers(users);
+        changed = true;
       }
+      if (users[gIndex].role !== 'owner' || !users[gIndex].isAdmin) {
+        users[gIndex].role = 'owner';
+        users[gIndex].isAdmin = true;
+        changed = true;
+      }
+      if (changed) await saveUsers(users);
     } else {
       users.unshift({
         username: 'gabriel',
         passwordHash: masterHash,
         isAdmin: true,
-        createdBy: 'Master Admin',
+        role: 'owner',
+        createdBy: 'Master Owner',
         createdAt: Date.now()
       });
       await saveUsers(users);
@@ -197,9 +244,10 @@ function hashPassword(password) {
   return crypto.pbkdf2Sync(password, defaultSalt, 1000, 64, 'sha512').toString('hex');
 }
 
-function createSessionToken(username, isAdmin) {
+function createSessionToken(username, isAdmin, role) {
+  const resolvedRole = role || (username.toLowerCase() === 'gabriel' ? 'owner' : (isAdmin ? 'admin' : 'vendedor'));
   const expiry = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
-  const payload = JSON.stringify({ username, isAdmin: !!isAdmin, expiry });
+  const payload = JSON.stringify({ username, isAdmin: resolvedRole === 'owner' || !!isAdmin, role: resolvedRole, expiry });
   const signature = crypto.createHmac('sha256', sessionSecret).update(payload).digest('hex');
   return Buffer.from(JSON.stringify({ payload, signature })).toString('base64');
 }
@@ -210,10 +258,11 @@ function verifySessionToken(token) {
     const expectedSignature = crypto.createHmac('sha256', sessionSecret).update(payload).digest('hex');
     if (signature !== expectedSignature) return null;
     
-    const { username, isAdmin, expiry } = JSON.parse(payload);
+    const { username, isAdmin, role, expiry } = JSON.parse(payload);
     if (Date.now() > expiry) return null;
     
-    return { username, isAdmin: !!isAdmin };
+    const resolvedRole = role || (username.toLowerCase() === 'gabriel' ? 'owner' : (isAdmin ? 'admin' : 'vendedor'));
+    return { username, isAdmin: resolvedRole === 'owner' || !!isAdmin, role: resolvedRole };
   } catch (e) {
     return null;
   }
@@ -314,6 +363,9 @@ module.exports = {
   saveUsers,
   getLicenses,
   saveLicenses,
+  getApprovals,
+  saveApprovals,
+  getUserRole,
   getPlans,
   savePlans,
   getPayment,

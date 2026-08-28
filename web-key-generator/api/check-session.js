@@ -17,7 +17,8 @@ module.exports = async (req, res) => {
       res.status(200).json({
         success: true,
         username: user.username,
-        isAdmin: !!user.isAdmin
+        isAdmin: !!user.isAdmin,
+        role: user.role || (user.isAdmin ? 'admin' : 'vendedor')
       });
     } else {
       res.status(401).json({ success: false, error: 'Sessão inválida ou expirada.' });
