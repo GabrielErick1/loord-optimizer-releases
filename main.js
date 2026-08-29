@@ -3929,14 +3929,40 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
     `;
     runPowerShellScript(bcdPs);
 
-    // 8. Oculta a unidade no Windows Explorer para o usuário não acessar e não copiar os arquivos (Blindagem Anti-Cópia)
-    // Drive L = bit 11 = 2048
+    // 8. Blindagem Anti-Cópia: Oculta a unidade completamente e remove a letra para que o usuário não veja nem copie os arquivos
     try {
+      // 8.1 Remove o ponto de montagem da unidade L: imediatamente
+      try {
+        execSync(`mountvol ${driveLetter}: /D`, { windowsHide: true });
+      } catch (_) { }
+
+      // 8.2 No Diskpart: remove a letra e aplica atributos GPT de Partição Oculta e Protegida (Hidden + NoDefaultDriveLetter + ReadOnly/OEM)
+      const dpBlindFile = path.join(os.tmpdir(), 'loord_dp_blind.txt');
+      const dpBlindScript = [
+        `select volume ${driveLetter}`,
+        `remove letter=${driveLetter}`,
+        'gpt attributes=0xC000000000000001',
+        'exit'
+      ].join('\r\n');
+      fs.writeFileSync(dpBlindFile, dpBlindScript, 'ascii');
+      try {
+        execSync(`diskpart.exe /s "${dpBlindFile}"`, { windowsHide: true });
+      } catch (_) { }
+      try { fs.unlinkSync(dpBlindFile); } catch (_) { }
+
+      // 8.3 Políticas do Windows Explorer para esconder e bloquear visualização (Drive L = bit 11 = 2048)
       execSync('reg add "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDrives /t REG_DWORD /d 2048 /f', { windowsHide: true });
       execSync('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDrives /t REG_DWORD /d 2048 /f', { windowsHide: true });
+      execSync('reg add "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoViewOnDrive /t REG_DWORD /d 2048 /f', { windowsHide: true });
+      execSync('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoViewOnDrive /t REG_DWORD /d 2048 /f', { windowsHide: true });
+
+      // 8.4 Força atualização do Windows Explorer para a unidade sumir instantaneamente da tela
+      try {
+        execSync('powershell -NoProfile -Command "(New-Object -ComObject Shell.Application).Windows() | ForEach-Object { $_.Refresh() }"', { windowsHide: true });
+      } catch (_) { }
     } catch (_) { }
 
-    sendProgress(100, 'Computador preparado com sucesso! Partição de boot blindada e oculta.');
+    sendProgress(100, 'Computador preparado com sucesso! Partição de boot blindada e 100% invisível.');
 
     return {
       success: true,
@@ -3951,10 +3977,12 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
 
 ipcMain.handle('remove-loord-partition', async () => {
   try {
-    // 1. Remove restrição de visibilidade NoDrives
+    // 1. Remove restrição de visibilidade NoDrives e NoViewOnDrive
     try {
       execSync('reg delete "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDrives /f', { windowsHide: true });
       execSync('reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDrives /f', { windowsHide: true });
+      execSync('reg delete "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoViewOnDrive /f', { windowsHide: true });
+      execSync('reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoViewOnDrive /f', { windowsHide: true });
     } catch (_) { }
 
     // 2. Remove entradas antigas do BCD
