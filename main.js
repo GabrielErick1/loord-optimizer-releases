@@ -3724,6 +3724,24 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
       execSync('vssadmin delete shadows /for=c: /all /quiet', { windowsHide: true });
     } catch (_) {}
 
+    // Limpa fragmentos ou partições residuais com letra L antes de iniciar
+    try {
+      const cleanOldPs = `
+        $l = Get-Partition -DriveLetter L -ErrorAction SilentlyContinue;
+        if ($l) {
+          $v = $l | Get-Volume -ErrorAction SilentlyContinue;
+          if (-not $v -or $v.FileSystemLabel -ne "LOORD_SETUP" -or $l.Size -lt (100 * 1024 * 1024)) {
+            Remove-Partition -DiskNumber $l.DiskNumber -PartitionNumber $l.PartitionNumber -Confirm:$false -ErrorAction SilentlyContinue | Out-Null;
+          }
+        }
+        $p4 = Get-Partition -DiskNumber 1 -PartitionNumber 4 -ErrorAction SilentlyContinue;
+        if ($p4 -and $p4.Size -lt (100 * 1024 * 1024)) {
+          Remove-Partition -DiskNumber 1 -PartitionNumber 4 -Confirm:$false -ErrorAction SilentlyContinue | Out-Null;
+        }
+      `;
+      runPowerShellScript(cleanOldPs);
+    } catch (_) {}
+
     sendProgress(25, 'Criando partição de instalação FAT32 de 8 GB no disco...');
 
     // 2. Verifica se a partição LOORD_SETUP já existe
