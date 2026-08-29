@@ -1014,42 +1014,6 @@ async function initApp() {
   updateFpsEstimate();
   setInterval(checkStatus, 3000);
 
-  // Verificação de licença única ao abrir o app (não roda no fundo para não pesar no PC)
-  // Roda 8 segundos após abrir, quando o app já carregou completamente
-  if (isActivated) {
-    setTimeout(async () => {
-      const savedKey = localStorage.getItem('activation_key');
-      if (!savedKey) return;
-      try {
-        const uuid = await window.api.getMachineUUID();
-        const response = await fetch('https://web-key-generator.vercel.app/api/client-check', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ uuid, key: savedKey })
-        });
-        const data = await response.json();
-        if (!data.success) {
-          localStorage.removeItem('activation_key');
-          localStorage.removeItem('client_name');
-          localStorage.removeItem('ffopt_applied_tweaks');
-
-          // Reverter 100% de todas as otimizações e registros automaticamente
-          try {
-            await window.api.revertAllTweaksOnRevoke();
-          } catch (_) { }
-
-          const reason = data.error || 'Sua licença foi encerrada.';
-          alert(`🔒 Acesso encerrado!\n\n${reason}\n\nTodas as otimizações e registros aplicados foram restaurados ao padrão original do seu computador.`);
-          window.location.reload();
-        } else {
-          updateLicenseBadge(true, data.clientName, data.licenseType, data.daysRemaining);
-        }
-      } catch (e) {
-        // Se offline, não forçar logout — só uma verificação, sem custo contínuo
-        console.warn('[License] Servidor offline, mantendo acesso local.');
-      }
-    }, 8000);
-  }
 }
 
 initApp();
