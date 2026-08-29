@@ -3732,20 +3732,57 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
 
     if (!volExists) {
       const dpFile = path.join(os.tmpdir(), 'loord_dp_create.txt');
+      const dpLogFile = path.join(os.tmpdir(), 'loord_dp_create_log.txt');
       const dpScript = [
         'select volume C',
-        'shrink desired=8000 minimum=4500',
+        'shrink desired=8000 minimum=3600',
         'create partition primary',
-        'format fs=fat32 quick label="LOORD_SETUP"',
+        'format fs=fat32 quick label=LOORD_SETUP',
         'assign letter=L',
         'exit'
       ].join('\r\n');
       fs.writeFileSync(dpFile, dpScript, 'ascii');
 
+      let created = false;
       try {
-        execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true });
-      } catch (dpErr) {
-        throw new Error('Falha ao criar partição de 8 GB: ' + dpErr.message);
+        execSync(`cmd.exe /c "diskpart.exe /s \\"${dpFile}\\" > \\"${dpLogFile}\\" 2>&1"`, { windowsHide: true });
+        const chk = runPowerShellScript(`(Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue) -ne $null`);
+        if (chk.trim().toLowerCase().includes('true')) {
+          created = true;
+        }
+      } catch (_) {}
+
+      // Fallback nativo do PowerShell caso o diskpart tenha encontrado restrição temporária
+      if (!created) {
+        const psCreate = `
+          $c = Get-Partition -DriveLetter C -ErrorAction SilentlyContinue;
+          if ($c) {
+            $supported = Get-PartitionSupportedSize -DriveLetter C -ErrorAction SilentlyContinue;
+            $shrinkBytes = 8000 * 1024 * 1024;
+            if ($supported -and ($c.Size - $supported.SizeMin) -lt $shrinkBytes) {
+              $shrinkBytes = [math]::Max(3600 * 1024 * 1024, ($c.Size - $supported.SizeMin));
+            }
+            $newSize = $c.Size - $shrinkBytes;
+            Resize-Partition -DiskNumber $c.DiskNumber -PartitionNumber $c.PartitionNumber -Size $newSize -ErrorAction SilentlyContinue | Out-Null;
+            $newPart = New-Partition -DiskNumber $c.DiskNumber -UseMaximumSize -DriveLetter L -ErrorAction SilentlyContinue;
+            if ($newPart) {
+              Format-Volume -DriveLetter L -FileSystem FAT32 -NewFileSystemLabel "LOORD_SETUP" -Confirm:$false -ErrorAction SilentlyContinue | Out-Null;
+            }
+          }
+          (Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue) -ne $null
+        `;
+        const out = runPowerShellScript(psCreate).trim().toLowerCase();
+        if (out.includes('true')) {
+          created = true;
+        }
+      }
+
+      if (!created) {
+        let dpLog = '';
+        try {
+          if (fs.existsSync(dpLogFile)) dpLog = fs.readFileSync(dpLogFile, 'utf8');
+        } catch (_) {}
+        throw new Error('Falha ao criar partição de instalação no disco. ' + (dpLog ? 'Detalhes: ' + dpLog.trim() : 'Espaço contíguo insuficiente no disco C.'));
       }
     }
 
@@ -3911,32 +3948,18 @@ ipcMain.handle('remove-loord-partition', async () => {
     runPowerShellScript(cleanBcdPs);
 
     // 2. Remove a partição LOORD_SETUP e estende o volume C:
-    const dpCleanFile = path.join(os.tmpdir(), 'loord_dp_remove.txt');
-    const dpCleanScript = [
-      'select volume L',
-      'delete partition override',
-      'select volume C',
-      'extend',
-      'exit'
-    ].join('\r\n');
-    fs.writeFileSync(dpCleanFile, dpCleanScript, 'ascii');
-
-    try {
-      execSync(`diskpart.exe /s "${dpCleanFile}"`, { windowsHide: true });
-    } catch (_) {
-      const psFallback = `
-        $v = Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue;
-        if ($v) {
-          $p = $v | Get-Partition -ErrorAction SilentlyContinue;
-          if ($p) {
-            Remove-Partition -DiskNumber $p.DiskNumber -PartitionNumber $p.PartitionNumber -Confirm:$false | Out-Null;
-          }
+    const cleanPartPs = `
+      $v = Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue;
+      if ($v) {
+        $p = $v | Get-Partition -ErrorAction SilentlyContinue;
+        if ($p) {
+          Remove-Partition -DiskNumber $p.DiskNumber -PartitionNumber $p.PartitionNumber -Confirm:$false -ErrorAction SilentlyContinue | Out-Null;
         }
-        $max = (Get-PartitionSupportedSize -DriveLetter C -ErrorAction SilentlyContinue).SizeMax;
-        if ($max) { Resize-Partition -DriveLetter C -Size $max -ErrorAction SilentlyContinue | Out-Null; }
-      `;
-      runPowerShellScript(psFallback);
-    }
+      }
+      $max = (Get-PartitionSupportedSize -DriveLetter C -ErrorAction SilentlyContinue).SizeMax;
+      if ($max) { Resize-Partition -DriveLetter C -Size $max -ErrorAction SilentlyContinue | Out-Null; }
+    `;
+    runPowerShellScript(cleanPartPs);
 
     return { success: true, message: 'Partição de formatação excluída com sucesso e espaço do disco C: restaurado ao normal!' };
   } catch (e) {
