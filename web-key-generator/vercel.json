@@ -1,5 +1,13 @@
 {
-  "cleanUrls": true
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/api/iso-plans", "destination": "/api/iso?action=plans" },
+    { "source": "/api/iso-keys", "destination": "/api/iso?action=keys" },
+    { "source": "/api/iso-consume", "destination": "/api/iso?action=consume" },
+    { "source": "/api/check-payment", "destination": "/api/payment?action=check" },
+    { "source": "/api/create-payment", "destination": "/api/payment?action=create" },
+    { "source": "/api/login", "destination": "/api/auth?action=login" },
+    { "source": "/api/check-session", "destination": "/api/auth?action=check-session" },
+    { "source": "/api/bot-generate", "destination": "/api/bot-api?action=generate" }
+  ]
 }
-
-

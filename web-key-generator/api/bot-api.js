@@ -11,6 +11,12 @@ module.exports = async (req, res) => {
     return;
   }
 
+  // Suporte a compatibilidade com a rota antiga /api/bot-generate
+  if (req.headers['x-bot-api-key'] || (req.url && req.url.includes('bot-generate')) || (req.query && req.query.action === 'generate')) {
+    const botGen = require('./_botGenerate');
+    return botGen(req, res);
+  }
+
   let body = {};
   if (req.method === 'POST') {
     try {
