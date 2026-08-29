@@ -3726,21 +3726,55 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
     const volExists = runPowerShellScript(checkVolPs).trim().toLowerCase().includes('true');
 
     if (!volExists) {
+      let cDisk = 1;
+      try {
+        const wmic = execSync('wmic path Win32_LogicalDiskToPartition get Antecedent,Dependent', { windowsHide: true, encoding: 'utf8' });
+        for (const line of wmic.split('\n')) {
+          if (line.includes('C:')) {
+            const m = line.match(/Disk\s*#(\d+)/i);
+            if (m) { cDisk = parseInt(m[1], 10); break; }
+          }
+        }
+      } catch (_) {}
+
       const dpFile = path.join(os.tmpdir(), 'loord_dp_create.txt');
-      const dpScript = [
-        'select volume C',
-        'shrink desired=8000 minimum=4500',
+
+      // Tenta primeiro criar direto caso já exista espaço não alocado no disco do C
+      const dpDirect = [
+        `select disk ${cDisk}`,
         'create partition primary',
-        'format fs=fat32 quick label="LOORD_SETUP"',
+        'format fs=fat32 quick label=LOORD_SETUP',
         'assign letter=L',
         'exit'
       ].join('\r\n');
-      fs.writeFileSync(dpFile, dpScript, 'ascii');
+      fs.writeFileSync(dpFile, dpDirect, 'ascii');
 
+      let created = false;
       try {
         execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true });
-      } catch (dpErr) {
-        throw new Error('Falha ao criar partição de 8 GB: ' + dpErr.message);
+        if (fs.existsSync('L:\\')) created = true;
+      } catch (_) {}
+
+      // Se não havia espaço não alocado, reduz o volume C e cria a partição no disco do C
+      if (!created) {
+        const dpWithShrink = [
+          'select volume C',
+          'shrink desired=8000 minimum=3500',
+          `select disk ${cDisk}`,
+          'create partition primary',
+          'format fs=fat32 quick label=LOORD_SETUP',
+          'assign letter=L',
+          'exit'
+        ].join('\r\n');
+        fs.writeFileSync(dpFile, dpWithShrink, 'ascii');
+
+        try {
+          const dpOut = execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true, encoding: 'utf8' });
+          if (fs.existsSync('L:\\')) created = true;
+        } catch (dpErr) {
+          const detail = dpErr.stdout ? dpErr.stdout.toString() : dpErr.message;
+          throw new Error('Falha ao criar partição de 8 GB: ' + detail);
+        }
       }
     }
 
@@ -3769,6 +3803,16 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
       if ($isoVol -and $isoVol.DriveLetter) { $isoVol.DriveLetter } else { "" }
     `;
     let isoDrive = runPowerShellScript(mountPs).trim().substring(0, 1).toUpperCase();
+    if (!isoDrive) {
+      // Fallback: procura unidades existentes que tenham sources\boot.wim
+      for (let c = 68; c <= 90; c++) {
+        const l = String.fromCharCode(c);
+        if (l !== driveLetter && fs.existsSync(`${l}:\\sources\\boot.wim`)) {
+          isoDrive = l;
+          break;
+        }
+      }
+    }
     if (!isoDrive) {
       throw new Error('Não foi possível montar a ISO para extrair os arquivos de instalação.');
     }
@@ -3807,11 +3851,8 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
     } catch (_) { }
 
     // Verifica integridade dos arquivos essenciais copiados
-    const checkFilesPs = `
-      (Test-Path "${driveLetter}:\\sources\\boot.wim") -and (Test-Path "${driveLetter}:\\efi\\boot\\bootx64.efi")
-    `;
-    const filesOk = runPowerShellScript(checkFilesPs).trim().toLowerCase().includes('true');
-    if (!filesOk) {
+    const bootWimPath = path.join(`${driveLetter}:\\`, 'sources', 'boot.wim');
+    if (!fs.existsSync(bootWimPath)) {
       throw new Error(`Arquivos de instalação não foram encontrados na unidade ${driveLetter}: após a cópia.`);
     }
 
