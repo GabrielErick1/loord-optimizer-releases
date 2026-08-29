@@ -302,7 +302,7 @@ app.whenReady().then(() => {
 
   // Inicia o motor nativo da macro em background (em modo pausado/desativado) logo na abertura
   setTimeout(() => {
-    startMacroNative(0.5, false).catch((e) => console.error('[Macro AutoBoot]', e));
+    startMacroNative(0.1, false).catch((e) => console.error('[Macro AutoBoot]', e));
   }, 800);
 
   // Cria/Garante o Ponto de Restauração Oculto do Windows e Backup do Estado Original
@@ -312,16 +312,11 @@ app.whenReady().then(() => {
 });
 
 let macroEnabledState = false;
-let macroCurrentSpeed = 0.5;
+let macroCurrentSpeed = 0.1;
 
 async function toggleMacroGlobalState() {
   macroEnabledState = !macroEnabledState;
-  const configActivePath = path.join(os.tmpdir(), 'loord_macro_active.txt');
-  const configSpeedPath = path.join(os.tmpdir(), 'loord_macro_speed.txt');
-  try {
-    fs.writeFileSync(configActivePath, macroEnabledState ? 'true' : 'false', 'utf8');
-    fs.writeFileSync(configSpeedPath, String(macroCurrentSpeed), 'utf8');
-  } catch (_) {}
+  syncMacroFiles(macroCurrentSpeed, macroEnabledState);
 
   try {
     shell.beep();
@@ -5056,6 +5051,21 @@ del "${targetPathWin}" >nul 2>&1
 }
 
 // ─── MOTOR DA MACRO DE RECOIL & DESCIDA Y (F7, F8, F2, F3, F6) ─────────────
+function syncMacroFiles(speed, active) {
+  const dirs = [
+    os.tmpdir(),
+    'C:\\ProgramData\\LoordOptimizer',
+    'C:\\Windows\\Temp'
+  ];
+  for (const d of dirs) {
+    try {
+      if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
+      fs.writeFileSync(path.join(d, 'loord_macro_speed.txt'), String(speed), 'utf8');
+      fs.writeFileSync(path.join(d, 'loord_macro_active.txt'), active ? 'true' : 'false', 'utf8');
+    } catch (_) {}
+  }
+}
+
 async function killMacroProcess() {
   if (macroProcess) {
     try {
@@ -5063,6 +5073,9 @@ async function killMacroProcess() {
     } catch (_) {}
     macroProcess = null;
   }
+  try {
+    execSync('powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \\"Name = \'LoordRecoilEngine.exe\'\\" | ForEach-Object { Invoke-CimMethod -InputObject $_ -MethodName Terminate }"', { stdio: 'ignore' });
+  } catch (_) {}
   try {
     execSync('taskkill /F /IM LoordRecoilEngine.exe >nul 2>&1', { stdio: 'ignore' });
   } catch (_) {}
@@ -5118,6 +5131,7 @@ function getRecoilEngineExe() {
   try {
     const csSource = `
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -5130,78 +5144,119 @@ public class Program {
     private const int MOUSEEVENTF_MOVE = 0x0001;
     private const int VK_LBUTTON = 0x01;
 
+    private static readonly string[] SpeedPaths = new string[] {
+        @"C:\\ProgramData\\LoordOptimizer\\loord_macro_speed.txt",
+        Path.Combine(Path.GetTempPath(), "loord_macro_speed.txt"),
+        @"C:\\Windows\\Temp\\loord_macro_speed.txt"
+    };
+
+    private static readonly string[] ActivePaths = new string[] {
+        @"C:\\ProgramData\\LoordOptimizer\\loord_macro_active.txt",
+        Path.Combine(Path.GetTempPath(), "loord_macro_active.txt"),
+        @"C:\\Windows\\Temp\\loord_macro_active.txt"
+    };
+
     public static void Main(string[] args) {
         try { timeBeginPeriod(1); } catch {}
-        double speed = 0.5;
-        if (args.Length > 0) {
+        double speed = 0.1;
+        if (args != null && args.Length > 0) {
             double parsed;
             if (double.TryParse(args[0].Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out parsed)) {
-                if (parsed > 0.0) speed = parsed;
+                if (parsed >= 0.05 && parsed <= 50.0) speed = parsed;
             }
         }
-        if (speed < 0.05) speed = 0.1;
-        if (speed > 50.0) speed = 50.0;
 
         bool macroAtiva = false;
-        double accumY = 0.0;
-        string configSpeedPath = Path.Combine(Path.GetTempPath(), "loord_macro_speed.txt");
-        string configActivePath = Path.Combine(Path.GetTempPath(), "loord_macro_active.txt");
+        Stopwatch sw = Stopwatch.StartNew();
+        long lastMoveTime = 0;
         int loopCounter = 0;
 
         while (true) {
             loopCounter++;
-            if (loopCounter % 3 == 0) {
-                string actText = SafeReadAllText(configActivePath);
-                if (!string.IsNullOrEmpty(actText)) {
-                    string act = actText.Trim().ToLower();
-                    if (act == "true" || act == "1") macroAtiva = true;
-                    else if (act == "false" || act == "0") macroAtiva = false;
+            if (loopCounter % 5 == 0) {
+                foreach (string ap in ActivePaths) {
+                    string actText = SafeReadAllText(ap);
+                    if (!string.IsNullOrEmpty(actText)) {
+                        string act = actText.Trim().ToLower();
+                        if (act == "true" || act == "1") macroAtiva = true;
+                        else if (act == "false" || act == "0") macroAtiva = false;
+                        break;
+                    }
                 }
 
-                string spdText = SafeReadAllText(configSpeedPath);
-                if (!string.IsNullOrEmpty(spdText)) {
-                    string cfg = spdText.Trim().Replace(',', '.');
-                    double newSpd;
-                    if (double.TryParse(cfg, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out newSpd)) {
-                        if (newSpd >= 0.05 && newSpd <= 50.0) speed = newSpd;
+                foreach (string sp in SpeedPaths) {
+                    string spdText = SafeReadAllText(sp);
+                    if (!string.IsNullOrEmpty(spdText)) {
+                        string cfg = spdText.Trim().Replace(',', '.');
+                        double newSpd;
+                        if (double.TryParse(cfg, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out newSpd)) {
+                            if (newSpd >= 0.05 && newSpd <= 50.0) speed = newSpd;
+                        }
+                        break;
                     }
                 }
             }
 
             if (macroAtiva) {
-                bool shooting = (GetAsyncKeyState(VK_LBUTTON) < 0);
-                if (shooting) {
-                    accumY += (speed * 0.035);
-                    if (accumY >= 1.0) {
-                        int stepY = (int)Math.Floor(accumY);
-                        mouse_event(MOUSEEVENTF_MOVE, 0, stepY, 0, 0);
-                        accumY -= stepY;
+                bool isShooting = (GetAsyncKeyState(VK_LBUTTON) < 0);
+                if (isShooting) {
+                    int intervalMs;
+                    int stepPixels;
+
+                    if (speed <= 0.15) {
+                        intervalMs = 400;
+                        stepPixels = 1;
+                    } else if (speed <= 0.3) {
+                        intervalMs = 250;
+                        stepPixels = 1;
+                    } else if (speed <= 0.7) {
+                        intervalMs = (int)(250.0 - ((speed - 0.3) / 0.4) * 110.0);
+                        if (intervalMs < 130) intervalMs = 130;
+                        stepPixels = 1;
+                    } else if (speed <= 1.5) {
+                        intervalMs = (int)(130.0 - ((speed - 0.7) / 0.8) * 65.0);
+                        if (intervalMs < 55) intervalMs = 55;
+                        stepPixels = 1;
+                    } else if (speed <= 3.5) {
+                        intervalMs = 40;
+                        stepPixels = 2;
+                    } else if (speed <= 7.0) {
+                        intervalMs = 30;
+                        stepPixels = 3;
+                    } else {
+                        intervalMs = 20;
+                        stepPixels = (int)Math.Max(4, Math.Round(speed * 0.5));
                     }
-                    Thread.Sleep(10);
+
+                    long now = sw.ElapsedMilliseconds;
+                    if (lastMoveTime == 0) {
+                        lastMoveTime = now;
+                    } else if (now - lastMoveTime >= intervalMs) {
+                        mouse_event(MOUSEEVENTF_MOVE, 0, stepPixels, 0, 0);
+                        lastMoveTime = now;
+                    }
+                    Thread.Sleep(5);
                 } else {
-                    accumY = 0.0;
+                    lastMoveTime = 0;
                     Thread.Sleep(10);
                 }
             } else {
-                accumY = 0.0;
+                lastMoveTime = 0;
                 Thread.Sleep(20);
             }
         }
     }
 
     private static string SafeReadAllText(string path) {
-        if (!File.Exists(path)) return null;
-        for (int i = 0; i < 3; i++) {
-            try {
-                using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
-                using (var reader = new StreamReader(fs)) {
-                    return reader.ReadToEnd();
-                }
-            } catch {
-                Thread.Sleep(2);
+        try {
+            if (!File.Exists(path)) return null;
+            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+            using (var reader = new StreamReader(fs)) {
+                return reader.ReadToEnd();
             }
+        } catch {
+            return null;
         }
-        return null;
     }
 }
 `;
@@ -5230,16 +5285,13 @@ async function startMacroNative(speed = null, active = true) {
       }
     }
     const numSpeed = macroCurrentSpeed;
-    const configSpeedPath = path.join(os.tmpdir(), 'loord_macro_speed.txt');
-    const configActivePath = path.join(os.tmpdir(), 'loord_macro_active.txt');
-    fs.writeFileSync(configSpeedPath, String(numSpeed), 'utf8');
-    fs.writeFileSync(configActivePath, macroEnabledState ? 'true' : 'false', 'utf8');
+    syncMacroFiles(numSpeed, macroEnabledState);
 
-    // Se já estiver rodando, apenas atualiza arquivos
+    // Se já estiver rodando, apenas sincroniza arquivos
     try {
       const checkRunning = execSync('powershell -NoProfile -Command "Get-Process -Name LoordRecoilEngine -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id"', { encoding: 'utf8' }).trim();
       if (checkRunning) {
-        console.log(`[MACRO] LoordRecoilEngine ativo (PID: ${checkRunning}). Velocidade: ${numSpeed}`);
+        console.log(`[MACRO] LoordRecoilEngine ativo (PID: ${checkRunning}). Velocidade sincronizada: ${numSpeed}`);
         return { success: true, updated: true };
       }
     } catch (_) {}
@@ -5285,10 +5337,7 @@ ipcMain.handle('set-macro-speed', async (event, speed) => {
   const num = typeof speed === 'number' ? speed : parseFloat(speed);
   if (!isNaN(num) && num > 0) {
     macroCurrentSpeed = num;
-    const configSpeedPath = path.join(os.tmpdir(), 'loord_macro_speed.txt');
-    try {
-      fs.writeFileSync(configSpeedPath, String(macroCurrentSpeed), 'utf8');
-    } catch (_) {}
+    syncMacroFiles(macroCurrentSpeed, macroEnabledState);
   }
   return { success: true, speed: macroCurrentSpeed };
 });
@@ -5296,10 +5345,7 @@ ipcMain.handle('set-macro-speed', async (event, speed) => {
 ipcMain.handle('stop-macro', async () => {
   try {
     macroEnabledState = false;
-    const configActivePath = path.join(os.tmpdir(), 'loord_macro_active.txt');
-    try {
-      fs.writeFileSync(configActivePath, 'false', 'utf8');
-    } catch (_) {}
+    syncMacroFiles(macroCurrentSpeed, false);
     console.log('[MACRO] Pausada em standby com sucesso!');
     return { success: true };
   } catch (e) {

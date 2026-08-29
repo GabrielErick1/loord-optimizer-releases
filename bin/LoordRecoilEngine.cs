@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -17,100 +18,157 @@ namespace LoordOptimizer
         public static extern uint timeBeginPeriod(uint uMilliseconds);
 
         private const int MOUSEEVENTF_MOVE = 0x0001;
-        private const int VK_LBUTTON = 0x01; // Botao Esquerdo (Atirar / Disparo)
+        private const int VK_LBUTTON = 0x01; // Botao Esquerdo do Mouse
+
+        private static readonly string[] SpeedPaths = new string[]
+        {
+            @"C:\ProgramData\LoordOptimizer\loord_macro_speed.txt",
+            Path.Combine(Path.GetTempPath(), "loord_macro_speed.txt"),
+            @"C:\Windows\Temp\loord_macro_speed.txt"
+        };
+
+        private static readonly string[] ActivePaths = new string[]
+        {
+            @"C:\ProgramData\LoordOptimizer\loord_macro_active.txt",
+            Path.Combine(Path.GetTempPath(), "loord_macro_active.txt"),
+            @"C:\Windows\Temp\loord_macro_active.txt"
+        };
 
         [STAThread]
         public static void Main(string[] args)
         {
-            try
-            {
-                timeBeginPeriod(1);
-            }
-            catch { }
+            try { timeBeginPeriod(1); } catch { }
 
-            double speed = 0.5;
+            // Padrao solicitado: Iniciar sempre com 0.1 (Ultra lenta, quase parando)
+            double speed = 0.1;
             if (args != null && args.Length > 0)
             {
                 double parsed;
                 if (double.TryParse(args[0].Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out parsed))
                 {
-                    if (parsed > 0.0) speed = parsed;
+                    if (parsed >= 0.05 && parsed <= 50.0) speed = parsed;
                 }
             }
 
-            if (speed < 0.1) speed = 0.1;
-            if (speed > 50.0) speed = 50.0;
-
             bool macroAtiva = false;
-            double accumY = 0.0;
-            string configSpeedPath = Path.Combine(Path.GetTempPath(), "loord_macro_speed.txt");
-            string configActivePath = Path.Combine(Path.GetTempPath(), "loord_macro_active.txt");
+            Stopwatch sw = Stopwatch.StartNew();
+            long lastMoveTime = 0;
             int loopCounter = 0;
 
             while (true)
             {
                 loopCounter++;
 
-                // Sincroniza estado e velocidade com o painel a cada ~30ms
-                if (loopCounter % 3 == 0)
+                // Sincroniza estado e velocidade com o painel a cada ~25ms
+                if (loopCounter % 5 == 0)
                 {
-                    string actText = SafeReadAllText(configActivePath);
-                    if (!string.IsNullOrEmpty(actText))
+                    foreach (string ap in ActivePaths)
                     {
-                        string act = actText.Trim().ToLower();
-                        if (act == "true" || act == "1") macroAtiva = true;
-                        else if (act == "false" || act == "0") macroAtiva = false;
+                        string actText = SafeReadAllText(ap);
+                        if (!string.IsNullOrEmpty(actText))
+                        {
+                            string act = actText.Trim().ToLower();
+                            if (act == "true" || act == "1") macroAtiva = true;
+                            else if (act == "false" || act == "0") macroAtiva = false;
+                            break;
+                        }
                     }
 
-                    string spdText = SafeReadAllText(configSpeedPath);
-                    if (!string.IsNullOrEmpty(spdText))
+                    foreach (string sp in SpeedPaths)
                     {
-                        string cfg = spdText.Trim().Replace(',', '.');
-                        double newSpd;
-                        if (double.TryParse(cfg, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out newSpd))
+                        string spdText = SafeReadAllText(sp);
+                        if (!string.IsNullOrEmpty(spdText))
                         {
-                            if (newSpd >= 0.05 && newSpd <= 50.0)
+                            string cfg = spdText.Trim().Replace(',', '.');
+                            double newSpd;
+                            if (double.TryParse(cfg, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out newSpd))
                             {
-                                speed = newSpd;
+                                if (newSpd >= 0.05 && newSpd <= 50.0)
+                                {
+                                    speed = newSpd;
+                                }
                             }
+                            break;
                         }
                     }
                 }
 
                 if (macroAtiva)
                 {
-                    // Verifica se o botao esquerdo do mouse esta pressionado
                     bool isShooting = (GetAsyncKeyState(VK_LBUTTON) < 0);
                     if (isShooting)
                     {
-                        // Calibragem precisa para emulador e Free Fire:
-                        // 0.1: ~0.35 px/s (Ultra lenta, micro-puxada quase imperceptivel para firmar mira)
-                        // 0.2: ~0.70 px/s (Bem lenta)
-                        // 0.5: ~1.75 px/s (Suave e constante)
-                        // 1.0: ~3.50 px/s (Recomendada/Equilibrada)
-                        // 2.5: ~8.75 px/s (Media)
-                        // 5.0: ~17.5 px/s (Forte)
-                        // 10.0: ~35.0 px/s (Rapida/Maxima)
-                        accumY += (speed * 0.035);
+                        // Calculo dinamico de intervalo e forca calibrado por milissegundos:
+                        // 0.1: 400ms por 1 pixel (~2.5 px/s -> Bem devagar, descida quase parando!)
+                        // 0.2: 250ms por 1 pixel (~4.0 px/s)
+                        // 0.5: 140ms por 1 pixel (~7.1 px/s -> Suave)
+                        // 1.0: 65ms por 1 pixel (~15.4 px/s -> Recomendado/Equilibrado)
+                        // 2.5: 40ms por 2 pixels (~50.0 px/s -> Media)
+                        // 5.0: 30ms por 3 pixels (~100.0 px/s -> Forte)
+                        // 10.0: 20ms por 5 pixels (~250.0 px/s -> Maxima)
+                        int intervalMs;
+                        int stepPixels;
 
-                        if (accumY >= 1.0)
+                        if (speed <= 0.15)
                         {
-                            int stepY = (int)Math.Floor(accumY);
-                            mouse_event(MOUSEEVENTF_MOVE, 0, stepY, 0, 0);
-                            accumY -= stepY;
+                            intervalMs = 400; // Ultra lenta, quase parando
+                            stepPixels = 1;
+                        }
+                        else if (speed <= 0.3)
+                        {
+                            intervalMs = 250;
+                            stepPixels = 1;
+                        }
+                        else if (speed <= 0.7)
+                        {
+                            intervalMs = (int)(250.0 - ((speed - 0.3) / 0.4) * 110.0);
+                            if (intervalMs < 130) intervalMs = 130;
+                            stepPixels = 1;
+                        }
+                        else if (speed <= 1.5)
+                        {
+                            intervalMs = (int)(130.0 - ((speed - 0.7) / 0.8) * 65.0);
+                            if (intervalMs < 55) intervalMs = 55;
+                            stepPixels = 1;
+                        }
+                        else if (speed <= 3.5)
+                        {
+                            intervalMs = 40;
+                            stepPixels = 2;
+                        }
+                        else if (speed <= 7.0)
+                        {
+                            intervalMs = 30;
+                            stepPixels = 3;
+                        }
+                        else
+                        {
+                            intervalMs = 20;
+                            stepPixels = (int)Math.Max(4, Math.Round(speed * 0.5));
                         }
 
-                        Thread.Sleep(10);
+                        long now = sw.ElapsedMilliseconds;
+                        if (lastMoveTime == 0)
+                        {
+                            lastMoveTime = now;
+                        }
+                        else if (now - lastMoveTime >= intervalMs)
+                        {
+                            mouse_event(MOUSEEVENTF_MOVE, 0, stepPixels, 0, 0);
+                            lastMoveTime = now;
+                        }
+
+                        Thread.Sleep(5);
                     }
                     else
                     {
-                        accumY = 0.0;
+                        lastMoveTime = 0;
                         Thread.Sleep(10);
                     }
                 }
                 else
                 {
-                    accumY = 0.0;
+                    lastMoveTime = 0;
                     Thread.Sleep(20);
                 }
             }
@@ -118,23 +176,19 @@ namespace LoordOptimizer
 
         private static string SafeReadAllText(string path)
         {
-            if (!File.Exists(path)) return null;
-            for (int i = 0; i < 3; i++)
+            try
             {
-                try
+                if (!File.Exists(path)) return null;
+                using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                using (var reader = new StreamReader(fs))
                 {
-                    using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
-                    using (var reader = new StreamReader(fs))
-                    {
-                        return reader.ReadToEnd();
-                    }
-                }
-                catch
-                {
-                    Thread.Sleep(2);
+                    return reader.ReadToEnd();
                 }
             }
-            return null;
+            catch
+            {
+                return null;
+            }
         }
     }
 }

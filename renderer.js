@@ -620,7 +620,7 @@ function getMacroCurrentSpeed() {
   if (macroForceSlider && macroForceSlider.value !== '') {
     return parseMacroSpeed(macroForceSlider.value);
   }
-  return 0.5;
+  return 0.1;
 }
 
 function updateMacroSpeedUI(val, origin = null) {
@@ -725,7 +725,7 @@ if (toggleMacro) {
   toggleMacro.checked = false;
   if (macroForceContainer) macroForceContainer.style.display = 'block';
   
-  const savedSpeed = localStorage.getItem('loord_macro_speed') || '0.5';
+  const savedSpeed = localStorage.getItem('loord_macro_speed') || '0.1';
   updateMacroSpeedUI(savedSpeed);
 
   function playMacroBeepAudio(enabled) {
@@ -856,6 +856,7 @@ const settingsFields = [
   { id: 'select-astc', type: 'value', key: 'selectAstc' },
   { id: 'toggle-macro', type: 'checked', key: 'toggleMacro' },
   { id: 'macro-force', type: 'value', key: 'macroForce' },
+  { id: 'macro-speed-input', type: 'value', key: 'macroSpeedInput' },
   { id: 'toggle-auto-ram', type: 'checked', key: 'toggleAutoRam' }
 ];
 
@@ -909,7 +910,7 @@ async function loadAllSettings() {
 
     // Restore Macro Recoil / Descida Y speed and state
     if (macroForceSlider) {
-      updateMacroSpeedUI(macroForceSlider.value || 0.5);
+      updateMacroSpeedUI(macroForceSlider.value || '0.1');
     }
     if (toggleMacro && macroForceContainer) {
       macroForceContainer.style.display = toggleMacro.checked ? 'block' : 'none';
