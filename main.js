@@ -3770,9 +3770,9 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
         if (fs.existsSync('L:\\')) created = true;
       } catch (_) {}
 
-      // Se não havia espaço não alocado, reduz C (sem parâmetro minimum para evitar erro de Parâmetro Incorreto) e cria no disco do C
+      // Se não havia espaço não alocado, reduz C e cria no disco do C
       if (!created) {
-        const dpWithShrink = [
+        const dpWithShrinkC = [
           'select volume C',
           'shrink desired=8000',
           `select disk ${cDisk}`,
@@ -3781,31 +3781,53 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
           'assign letter=L',
           'exit'
         ].join('\r\n');
-        fs.writeFileSync(dpFile, dpWithShrink, 'ascii');
+        fs.writeFileSync(dpFile, dpWithShrinkC, 'ascii');
 
         try {
-          execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true, encoding: 'utf8' });
+          execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true });
           if (fs.existsSync('L:\\')) created = true;
-        } catch (dpErr) {
-          const detail = dpErr.stdout ? dpErr.stdout.toString() : dpErr.message;
-          throw new Error('Falha ao criar partição de 8 GB: ' + detail);
-        }
+        } catch (_) {}
+      }
+
+      // Se o disco C estiver bloqueado pelo pagefile.sys, tenta no disco secundário (D:) que tem centenas de GB livres e nenhum arquivo travado
+      if (!created && fs.existsSync('D:\\')) {
+        sendProgress(26, 'Disco C protegido pelo sistema. Criando partição no Disco D (500+ GB livres)...');
+        const dpWithShrinkD = [
+          'select volume D',
+          'shrink desired=8000',
+          'create partition primary',
+          'format fs=fat32 quick label=LOORD_SETUP',
+          'assign letter=L',
+          'exit'
+        ].join('\r\n');
+        fs.writeFileSync(dpFile, dpWithShrinkD, 'ascii');
+
+        try {
+          execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true });
+          if (fs.existsSync('L:\\')) created = true;
+        } catch (_) {}
+      }
+
+      if (!created) {
+        throw new Error('Falha ao criar partição de instalação. O Windows bloqueou a redução dos discos. Execute o aplicativo como Administrador ou feche programas pesados e tente novamente.');
       }
     }
 
-    // Garante que a partição LOORD_SETUP tenha letra de unidade
-    const assignLetterPs = `
-      $v = Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue;
-      if ($v -and -not $v.DriveLetter) {
-        $p = $v | Get-Partition -ErrorAction SilentlyContinue;
-        if ($p) {
-          Set-Partition -DiskNumber $p.DiskNumber -PartitionNumber $p.PartitionNumber -NewDriveLetter L -ErrorAction SilentlyContinue;
-        }
+    // Garante que a partição LOORD_SETUP tenha letra de unidade (padrão L:)
+    let driveLetter = 'L';
+    if (!fs.existsSync('L:\\')) {
+      for (let c = 69; c <= 90; c++) {
+        const l = String.fromCharCode(c);
+        if (l === 'C' || l === 'D') continue;
+        try {
+          const vol = execSync(`cmd.exe /c vol ${l}:`, { windowsHide: true, encoding: 'utf8' });
+          if (vol.toLowerCase().includes('loord_setup')) {
+            driveLetter = l;
+            break;
+          }
+        } catch (_) {}
       }
-      $v = Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue;
-      if ($v -and $v.DriveLetter) { $v.DriveLetter } else { "L" }
-    `;
-    const driveLetter = runPowerShellScript(assignLetterPs).trim().substring(0, 1).toUpperCase() || 'L';
+    }
 
     sendProgress(45, `Montando ISO oficial e preparando unidade ${driveLetter}:...`);
 
