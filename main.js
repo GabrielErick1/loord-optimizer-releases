@@ -3621,8 +3621,13 @@ ipcMain.handle('check-loord-iso-status', async () => {
     if (hasPart) {
       const psCheck = `
         $v = Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue;
-        if ($v -and $v.DriveLetter) {
-          Test-Path ($v.DriveLetter + ":\\sources\\boot.wim")
+        if ($v) {
+          if ($v.DriveLetter) {
+            Test-Path ($v.DriveLetter + ":\\sources\\boot.wim")
+          } else {
+            $p = [System.IO.Path]::Combine($v.UniqueId, "sources", "boot.wim");
+            [System.IO.File]::Exists($p)
+          }
         } else {
           $false
         }
@@ -3851,14 +3856,22 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
     `;
     runPowerShellScript(bcdPs);
 
-    // 8. Oculta a unidade no Windows Explorer para o usuário não acessar e não copiar os arquivos (Blindagem Anti-Cópia)
-    // Drive L = bit 11 = 2048
+    // 8. Oculta a unidade no Windows Explorer para o usuário não acessar e não copiar os arquivos (Blindagem Anti-Cópia Total)
+    // Remove a letra de unidade e define o atributo GPT 0x8000000000000000 (No Drive Letter)
     try {
-      execSync('reg add "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDrives /t REG_DWORD /d 2048 /f', { windowsHide: true });
-      execSync('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDrives /t REG_DWORD /d 2048 /f', { windowsHide: true });
+      const dpHideFile = path.join(os.tmpdir(), 'loord_dp_hide.txt');
+      const dpHideScript = [
+        `select volume ${driveLetter}`,
+        `remove letter=${driveLetter}`,
+        'gpt attributes=0x8000000000000000',
+        'exit'
+      ].join('\r\n');
+      fs.writeFileSync(dpHideFile, dpHideScript, 'ascii');
+      execSync(`diskpart.exe /s "${dpHideFile}"`, { windowsHide: true });
+      try { fs.unlinkSync(dpHideFile); } catch (_) {}
     } catch (_) {}
 
-    sendProgress(100, 'Computador preparado com sucesso! Partição de boot blindada e oculta.');
+    sendProgress(100, 'Computador preparado com sucesso! Partição de boot blindada e 100% oculta.');
 
     return {
       success: true,
