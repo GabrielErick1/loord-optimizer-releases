@@ -3775,17 +3775,38 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
 
     sendProgress(60, `Copiando arquivos da ISO para a partição ${driveLetter}:...`);
 
-    // 4. Robocopy sem barra invertida no final do argumento
+    // 4. Robocopy com parâmetros corretos (/NDL em vez de /NDO) e tratamento de exit codes (0-7 = sucesso)
     try {
-      execSync(`robocopy ${isoDrive}: ${driveLetter}: /E /R:1 /W:1 /MT:8 /NP /NFL /NDO /NJH /NJS`, { windowsHide: true });
+      execSync(`robocopy ${isoDrive}: ${driveLetter}: /E /R:1 /W:1 /MT:8 /NP /NFL /NDL /NJH /NJS`, { windowsHide: true });
+    } catch (robocopyErr) {
+      if (robocopyErr.status && robocopyErr.status >= 8) {
+        throw new Error(`Falha na cópia dos arquivos da ISO (código ${robocopyErr.status}).`);
+      }
+    } finally {
+      // Garante que a ISO virtual seja sempre desmontada e não fique presa no sistema
+      dismountAllVirtualIsos();
+    }
+
+    // 5. Injeta script oficial de Auto-Destruição pós-instalação (SetupComplete.cmd)
+    // O Windows Setup executa este script automaticamente ao terminar a formatação e instalação
+    try {
+      const oemDir = path.join(`${driveLetter}:\\sources`, '$OEM$', '$$', 'Setup', 'Scripts');
+      if (!fs.existsSync(oemDir)) {
+        fs.mkdirSync(oemDir, { recursive: true });
+      }
+      const setupCompleteScript = [
+        '@echo off',
+        'rem Script Oficial de Auto-Destruicao Loord Optimizer',
+        'powershell -NoProfile -ExecutionPolicy Bypass -Command "$v = Get-Volume -FileSystemLabel \'LOORD_SETUP\' -ErrorAction SilentlyContinue; if ($v) { $p = $v | Get-Partition -ErrorAction SilentlyContinue; if ($p) { Remove-Partition -DiskNumber $p.DiskNumber -PartitionNumber $p.PartitionNumber -Confirm:$false -ErrorAction SilentlyContinue | Out-Null; } } try { $max = (Get-PartitionSupportedSize -DriveLetter C -ErrorAction SilentlyContinue).SizeMax; if ($max) { Resize-Partition -DriveLetter C -Size $max -ErrorAction SilentlyContinue | Out-Null; } } catch {}"',
+        'reg delete "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDrives /f >nul 2>&1',
+        'reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDrives /f >nul 2>&1',
+        'del /f /q "%~f0" >nul 2>&1',
+        'exit /b 0'
+      ].join('\r\n');
+      fs.writeFileSync(path.join(oemDir, 'SetupComplete.cmd'), setupCompleteScript, 'ascii');
     } catch (_) {}
 
-    // Desmonta a ISO
-    try {
-      runPowerShellScript(`Dismount-DiskImage -ImagePath "${targetIso.replace(/\\/g, '\\\\')}" -ErrorAction SilentlyContinue | Out-Null;`);
-    } catch (_) {}
-
-    // Verifica integridade dos arquivos essenciais
+    // Verifica integridade dos arquivos essenciais copiados
     const checkFilesPs = `
       (Test-Path "${driveLetter}:\\sources\\boot.wim") -and (Test-Path "${driveLetter}:\\efi\\boot\\bootx64.efi")
     `;
@@ -3796,12 +3817,12 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
 
     sendProgress(80, 'Registrando inicialização no Gerenciador de Boot do Windows (BCD)...');
 
-    // 5. Configura bootsect para compatibilidade
+    // 6. Configura bootsect para compatibilidade
     try {
       execSync(`"${driveLetter}:\\boot\\bootsect.exe" /nt60 ${driveLetter}: /force /mbr`, { windowsHide: true });
     } catch (_) {}
 
-    // 6. Registra a entrada oficial no BCD do Windows
+    // 7. Registra a entrada oficial no BCD do Windows
     const bcdPs = `
       & bcdedit /create '{ramdiskoptions}' /d "Loord Ramdisk" 2>&1 | Out-Null;
       & bcdedit /set '{ramdiskoptions}' ramdisksdidevice partition=${driveLetter}: 2>&1 | Out-Null;
@@ -3830,11 +3851,18 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
     `;
     runPowerShellScript(bcdPs);
 
-    sendProgress(100, 'Computador preparado com sucesso! Partição de boot e menu configurados.');
+    // 8. Oculta a unidade no Windows Explorer para o usuário não acessar e não copiar os arquivos (Blindagem Anti-Cópia)
+    // Drive L = bit 11 = 2048
+    try {
+      execSync('reg add "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDrives /t REG_DWORD /d 2048 /f', { windowsHide: true });
+      execSync('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDrives /t REG_DWORD /d 2048 /f', { windowsHide: true });
+    } catch (_) {}
+
+    sendProgress(100, 'Computador preparado com sucesso! Partição de boot blindada e oculta.');
 
     return {
       success: true,
-      message: 'Computador preparado com sucesso! A partição de boot foi criada e a opção de formatação já está registrada no menu de boot e na BIOS.'
+      message: 'Computador preparado com sucesso! A partição de boot foi criada, blindada contra cópias e a opção de formatação está ativa no menu de boot e na BIOS.'
     };
   } catch (e) {
     console.error('Erro ao preparar partição:', e);
@@ -3845,7 +3873,13 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
 
 ipcMain.handle('remove-loord-partition', async () => {
   try {
-    // 1. Remove entradas antigas do BCD
+    // 1. Remove restrição de visibilidade NoDrives
+    try {
+      execSync('reg delete "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDrives /f', { windowsHide: true });
+      execSync('reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDrives /f', { windowsHide: true });
+    } catch (_) {}
+
+    // 2. Remove entradas antigas do BCD
     const cleanBcdPs = `
       $entries = bcdedit /enum osloader | Select-String -Pattern "Instalar.*Loord|Formatar.*Loord" -Context 3,0;
       foreach ($line in $entries) {
