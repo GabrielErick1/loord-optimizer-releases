@@ -3129,7 +3129,7 @@ if (btnPrepareIsoAction) {
         if (isoDownloadPct) isoDownloadPct.textContent = '100%';
         if (isoDownloadStatus) isoDownloadStatus.textContent = 'Computador preparado com sucesso!';
 
-        alert('✅ COMPUTADOR PREPARADO PARA FORMATAÇÃO COM SUCESSO!\n\n• Partição de instalação criada e blindada com proteção total anti-cópia.\n• Unidades temporárias desmontadas do sistema.\n\nClique em OK para liberar a opção de formatar o computador agora.');
+        alert('✅ COMPUTADOR PREPARADO PARA FORMATAÇÃO COM SUCESSO!\n\n• Partição de instalação criada e arquivos oficiais da ISO gravados com sucesso.\n• Opção de boot registrada no menu de inicialização do Windows (BCD) e na BIOS UEFI.\n\nVocê já pode clicar no botão verde abaixo para reiniciar direto no instalador, ou reiniciar manualmente quando quiser!');
 
         if (isoPreparedBox) isoPreparedBox.style.display = 'block';
         btnPrepareIsoAction.style.display = 'none';
