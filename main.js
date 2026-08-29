@@ -3701,6 +3701,51 @@ ipcMain.handle('download-loord-iso', async (event) => {
   }
 });
 
+function getCDiskNumber() {
+  try {
+    const wmic = execSync('wmic path Win32_LogicalDiskToPartition get Antecedent,Dependent', { windowsHide: true, encoding: 'utf8' });
+    for (const line of wmic.split('\n')) {
+      if (line.includes('C:')) {
+        const m = line.match(/Disk\s*#(\d+)/i);
+        if (m) return parseInt(m[1], 10);
+      }
+    }
+  } catch (_) {}
+  return 1;
+}
+
+function getSystemDriveLetters() {
+  const letters = [];
+  for (let c = 65; c <= 90; c++) {
+    const l = String.fromCharCode(c);
+    try {
+      if (fs.existsSync(l + ':\\')) letters.push(l);
+    } catch (_) {}
+  }
+  return letters;
+}
+
+function findLoordSetupDrive() {
+  if (fs.existsSync('L:\\')) {
+    try {
+      const vol = execSync('cmd.exe /c vol L:', { windowsHide: true, encoding: 'utf8' });
+      if (vol.toLowerCase().includes('loord_setup')) return 'L';
+    } catch (_) {}
+    if (fs.existsSync('L:\\sources\\boot.wim')) return 'L';
+    return 'L';
+  }
+  const drives = getSystemDriveLetters();
+  for (const d of drives) {
+    if (d === 'C' || d === 'D') continue;
+    try {
+      const vol = execSync(`cmd.exe /c vol ${d}:`, { windowsHide: true, encoding: 'utf8' });
+      if (vol.toLowerCase().includes('loord_setup')) return d;
+    } catch (_) {}
+    if (fs.existsSync(`${d}:\\sources\\boot.wim`)) return d;
+  }
+  return null;
+}
+
 ipcMain.handle('prepare-loord-partition', async (event) => {
   try {
     const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
@@ -3718,74 +3763,108 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
     sendProgress(10, 'Preparando espaço e limpando unidades virtuais...');
     dismountAllVirtualIsos();
 
+    const cDisk = getCDiskNumber();
     sendProgress(20, 'Limpando fragmentos de partição residuais...');
+
     // Libera espaço desbloqueando arquivos que bloqueiam redução de volume
     try {
       execSync('powercfg /h off', { windowsHide: true });
       execSync('vssadmin delete shadows /for=c: /all /quiet', { windowsHide: true });
     } catch (_) {}
-    // Limpa stubs via diskpart puro (não usa CIM)
-    const dpDir = process.env.TEMP || os.tmpdir();
-    const dpClean1 = path.join(dpDir, 'ld_c1.txt');
-    const dpClean2 = path.join(dpDir, 'ld_c2.txt');
-    fs.writeFileSync(dpClean1, 'select volume L\r\ndelete partition override\r\nexit', 'ascii');
-    try { execSync(`diskpart.exe /s "${dpClean1}"`, { windowsHide: true }); } catch (_) {}
-    try { fs.unlinkSync(dpClean1); } catch (_) {}
-    fs.writeFileSync(dpClean2, 'select disk 1\r\nselect partition 4\r\ndelete partition override\r\nexit', 'ascii');
-    try { execSync(`diskpart.exe /s "${dpClean2}"`, { windowsHide: true }); } catch (_) {}
-    try { fs.unlinkSync(dpClean2); } catch (_) {}
 
-    sendProgress(25, 'Criando partição de instalação FAT32 de 8 GB no disco...');
+    // Limpa stubs/partições residuais no disco do C ou na letra L via diskpart puro
+    const dpDir = process.env.TEMP || os.tmpdir();
+    const dpCleanFile = path.join(dpDir, 'ld_clean.txt');
+    try {
+      fs.writeFileSync(dpCleanFile, [
+        'select volume L',
+        'delete partition override',
+        `select disk ${cDisk}`,
+        'select partition 4',
+        'delete partition override',
+        'exit'
+      ].join('\r\n'), 'ascii');
+      execSync(`diskpart.exe /s "${dpCleanFile}"`, { windowsHide: true });
+    } catch (_) {}
+    try { fs.unlinkSync(dpCleanFile); } catch (_) {}
+
+    sendProgress(25, 'Criando partição de instalação FAT32 no disco...');
 
     // 2. Verifica se a partição LOORD_SETUP já existe
-    const checkVolPs = `(Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue) -ne $null`;
-    const volExists = runPowerShellScript(checkVolPs).trim().toLowerCase().includes('true');
+    let driveLetter = findLoordSetupDrive();
 
-    if (!volExists) {
+    if (!driveLetter) {
       const dpFile = path.join(dpDir, 'ld_create.txt');
-      // Tenta 8 GB primeiro, depois 4.5 GB se falhar
-      const dpAttempts = [
-        'select volume C\r\nshrink desired=8000 minimum=3500\r\ncreate partition primary\r\nformat fs=fat32 quick label=LOORD_SETUP\r\nassign letter=L\r\nexit',
-        'select volume C\r\nshrink desired=4500 minimum=3500\r\ncreate partition primary\r\nformat fs=fat32 quick label=LOORD_SETUP\r\nassign letter=L\r\nexit'
-      ];
-      let created = false;
-      for (const dpScript of dpAttempts) {
-        if (created) break;
-        fs.writeFileSync(dpFile, dpScript, 'ascii');
-        try { execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true }); } catch (_) {}
-        try { fs.unlinkSync(dpFile); } catch (_) {}
-        created = runPowerShellScript(`(Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue) -ne $null`).trim().toLowerCase().includes('true');
+
+      // TENTATIVA 1: Já existe espaço não-alocado no disco do C? (Cria direto sem precisar de shrink)
+      fs.writeFileSync(dpFile, [
+        `select disk ${cDisk}`,
+        'create partition primary',
+        'format fs=fat32 quick label=LOORD_SETUP',
+        'assign letter=L',
+        'exit'
+      ].join('\r\n'), 'ascii');
+      try { execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true }); } catch (_) {}
+      try { fs.unlinkSync(dpFile); } catch (_) {}
+
+      driveLetter = findLoordSetupDrive();
+
+      // TENTATIVA 2: Se ainda não existia, reduz C e cria a partição no disco do C (cDisk)
+      if (!driveLetter) {
+        const shrinkAttempts = [
+          { shrink: 8000, min: 3500 },
+          { shrink: 4500, min: 3500 },
+          { shrink: 3600, min: 3400 }
+        ];
+
+        for (const att of shrinkAttempts) {
+          if (driveLetter) break;
+          fs.writeFileSync(dpFile, [
+            'select volume C',
+            `shrink desired=${att.shrink} minimum=${att.min}`,
+            `select disk ${cDisk}`,
+            'create partition primary',
+            'format fs=fat32 quick label=LOORD_SETUP',
+            'assign letter=L',
+            'exit'
+          ].join('\r\n'), 'ascii');
+          try { execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true }); } catch (_) {}
+          try { fs.unlinkSync(dpFile); } catch (_) {}
+          driveLetter = findLoordSetupDrive();
+        }
       }
-      if (!created) {
-        throw new Error('Falha ao criar partição de instalação. Certifique-se de que o disco C possui ao menos 4 GB de espaço livre contíguo e tente novamente.');
+
+      if (!driveLetter) {
+        throw new Error('Falha ao criar partição de instalação no disco. Verifique se o aplicativo foi executado como Administrador e tente novamente.');
       }
     }
 
-    // Garante que a partição LOORD_SETUP tenha letra de unidade
-    const assignLetterPs = `
-      $v = Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue;
-      if ($v -and -not $v.DriveLetter) {
-        $p = $v | Get-Partition -ErrorAction SilentlyContinue;
-        if ($p) {
-          Set-Partition -DiskNumber $p.DiskNumber -PartitionNumber $p.PartitionNumber -NewDriveLetter L -ErrorAction SilentlyContinue;
-        }
-      }
-      $v = Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue;
-      if ($v -and $v.DriveLetter) { $v.DriveLetter } else { "L" }
-    `;
-    const driveLetter = runPowerShellScript(assignLetterPs).trim().substring(0, 1).toUpperCase() || 'L';
-
     sendProgress(45, `Montando ISO oficial e preparando unidade ${driveLetter}:...`);
+    const drivesBefore = getSystemDriveLetters();
 
-    // 3. Monta a ISO e descobre a letra da unidade virtual
+    // 3. Monta a ISO e descobre a unidade virtual
     const mountPs = `
       $iso = "${targetIso.replace(/\\/g, '\\\\')}";
-      $m = Mount-DiskImage -ImagePath $iso -PassThru -ErrorAction SilentlyContinue;
+      Mount-DiskImage -ImagePath $iso -PassThru -ErrorAction SilentlyContinue | Out-Null;
       Start-Sleep -Seconds 2;
-      $isoVol = Get-DiskImage -ImagePath $iso | Get-Volume -ErrorAction SilentlyContinue;
-      if ($isoVol -and $isoVol.DriveLetter) { $isoVol.DriveLetter } else { "" }
     `;
-    let isoDrive = runPowerShellScript(mountPs).trim().substring(0, 1).toUpperCase();
+    runPowerShellScript(mountPs);
+
+    // Identifica qual letra nova apareceu
+    const drivesAfter = getSystemDriveLetters();
+    let isoDrive = drivesAfter.find(d => !drivesBefore.includes(d) && d !== driveLetter);
+
+    // Fallback: procura qual unidade possui sources\boot.wim
+    if (!isoDrive) {
+      for (const d of drivesAfter) {
+        if (d === driveLetter || d === 'C' || d === 'D') continue;
+        if (fs.existsSync(`${d}:\\sources\\boot.wim`)) {
+          isoDrive = d;
+          break;
+        }
+      }
+    }
+
     if (!isoDrive) {
       throw new Error('Não foi possível montar a ISO para extrair os arquivos de instalação.');
     }
@@ -3824,11 +3903,8 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
     } catch (_) {}
 
     // Verifica integridade dos arquivos essenciais copiados
-    const checkFilesPs = `
-      (Test-Path "${driveLetter}:\\sources\\boot.wim") -and (Test-Path "${driveLetter}:\\efi\\boot\\bootx64.efi")
-    `;
-    const filesOk = runPowerShellScript(checkFilesPs).trim().toLowerCase().includes('true');
-    if (!filesOk) {
+    const bootWimPath = path.join(`${driveLetter}:\\`, 'sources', 'boot.wim');
+    if (!fs.existsSync(bootWimPath)) {
       throw new Error(`Arquivos de instalação não foram encontrados na unidade ${driveLetter}: após a cópia.`);
     }
 
@@ -3922,19 +3998,23 @@ ipcMain.handle('remove-loord-partition', async () => {
     `;
     runPowerShellScript(cleanBcdPs);
 
-    // 2. Remove a partição LOORD_SETUP e estende o volume C:
-    const cleanPartPs = `
-      $v = Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue;
-      if ($v) {
-        $p = $v | Get-Partition -ErrorAction SilentlyContinue;
-        if ($p) {
-          Remove-Partition -DiskNumber $p.DiskNumber -PartitionNumber $p.PartitionNumber -Confirm:$false -ErrorAction SilentlyContinue | Out-Null;
-        }
-      }
-      $max = (Get-PartitionSupportedSize -DriveLetter C -ErrorAction SilentlyContinue).SizeMax;
-      if ($max) { Resize-Partition -DriveLetter C -Size $max -ErrorAction SilentlyContinue | Out-Null; }
-    `;
-    runPowerShellScript(cleanPartPs);
+    // 3. Remove a partição LOORD_SETUP e estende o volume C: via diskpart puro (sem CIM)
+    const cDisk = getCDiskNumber();
+    const dpCleanFile = path.join(os.tmpdir(), 'ld_remove.txt');
+    try {
+      fs.writeFileSync(dpCleanFile, [
+        'select volume L',
+        'delete partition override',
+        `select disk ${cDisk}`,
+        'select partition 4',
+        'delete partition override',
+        'select volume C',
+        'extend',
+        'exit'
+      ].join('\r\n'), 'ascii');
+      execSync(`diskpart.exe /s "${dpCleanFile}"`, { windowsHide: true });
+    } catch (_) {}
+    try { fs.unlinkSync(dpCleanFile); } catch (_) {}
 
     return { success: true, message: 'Partição de formatação excluída com sucesso e espaço do disco C: restaurado ao normal!' };
   } catch (e) {
