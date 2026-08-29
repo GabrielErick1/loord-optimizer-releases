@@ -59,6 +59,38 @@ module.exports = async (req, res) => {
       return;
     }
 
+    // 3.1 Tratamento de Chave de ISO
+    if (license.isIsoKey || license.keyType === 'iso') {
+      const remaining = typeof license.isoUsesRemaining === 'number' ? license.isoUsesRemaining : (parseInt(license.isoUsesTotal, 10) || 1);
+      if (remaining <= 0 || license.status === 'used_up') {
+        res.status(403).json({
+          success: false,
+          error: 'Esta chave de formatação já esgotou todos os usos disponíveis.'
+        });
+        return;
+      }
+
+      if (license.status === 'pending') {
+        license.status = 'activated';
+        license.uuid = cleanUuid;
+        license.activatedAt = Date.now();
+        license.activatedIp = cleanIp;
+        await saveLicenses(licenses);
+      }
+
+      res.status(200).json({
+        success: true,
+        clientName: license.clientName || 'Cliente ISO',
+        licenseType: 'iso',
+        isIsoKey: true,
+        keyType: 'iso',
+        isoUsesRemaining: remaining,
+        isoUsesTotal: license.isoUsesTotal || remaining,
+        timeRemainingStr: remaining === 1 ? '1 Formatação Restante' : `${remaining} Formatações Restantes`
+      });
+      return;
+    }
+
     // 4. Verificação de expiração para licenças temporárias
     if (license.licenseType === 'temporary') {
       if (license.expiresAt && Date.now() > license.expiresAt) {
@@ -105,6 +137,7 @@ module.exports = async (req, res) => {
       success: true,
       clientName: license.clientName || 'Cliente VIP',
       licenseType: license.licenseType || 'permanent',
+      isIsoKey: false,
       expiresAt: license.expiresAt,
       remainingHours,
       daysRemaining: remainingDays,

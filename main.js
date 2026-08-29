@@ -51,6 +51,9 @@ const originalStateDir = path.join(app.getPath('appData'), 'LoordOptimizer_Origi
 // ─── GUARDIÃO DE SEGURANÇA MÁXIMA & ANTI-CRACKING ────────────────────────────
 let isClientSessionAuthorized = false;
 let authorizedSessionKey = null;
+let authorizedSessionIsIsoKey = false;
+let authorizedSessionIsoUses = 0;
+let activatedIsoKey = null;
 
 function isLicenseAuthorized() {
   return isClientSessionAuthorized === true && !!authorizedSessionKey;
@@ -3556,10 +3559,15 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
     if (chkData && chkData.success) {
       isClientSessionAuthorized = true;
       authorizedSessionKey = cleanKey;
+      authorizedSessionIsIsoKey = !!chkData.isIsoKey || chkData.licenseType === 'iso';
+      authorizedSessionIsoUses = chkData.isoUsesRemaining || 0;
       return {
         valid: true,
         plan: chkData.timeRemainingStr || chkData.licenseType || '👑 VIP Ativo',
-        clientName: chkData.clientName || 'Cliente VIP'
+        clientName: chkData.clientName || 'Cliente VIP',
+        isIsoKey: authorizedSessionIsIsoKey,
+        isoUsesRemaining: authorizedSessionIsoUses,
+        isoUsesTotal: chkData.isoUsesTotal || authorizedSessionIsoUses
       };
     }
 
@@ -3575,10 +3583,15 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
     if (actData && actData.success) {
       isClientSessionAuthorized = true;
       authorizedSessionKey = cleanKey;
+      authorizedSessionIsIsoKey = !!actData.isIsoKey || actData.licenseType === 'iso';
+      authorizedSessionIsoUses = actData.isoUsesRemaining || 0;
       return {
         valid: true,
         plan: actData.timeRemainingStr || actData.licenseType || '👑 VIP Ativo',
-        clientName: actData.clientName || 'Cliente VIP'
+        clientName: actData.clientName || 'Cliente VIP',
+        isIsoKey: authorizedSessionIsIsoKey,
+        isoUsesRemaining: authorizedSessionIsoUses,
+        isoUsesTotal: actData.isoUsesTotal || authorizedSessionIsoUses
       };
     }
 
@@ -3604,6 +3617,57 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
     isClientSessionAuthorized = false;
     authorizedSessionKey = null;
     return { valid: false, isRevokedOrExpired: false, error: e.message || 'Erro ao validar chave com o banco de dados oficial.' };
+  }
+});
+
+ipcMain.handle('get-iso-plans-public', async () => {
+  try {
+    return new Promise((resolve) => {
+      const https = require('https');
+      const req = https.get('https://web-key-generator.vercel.app/api/iso-plans', { timeout: 8000 }, (res) => {
+        let body = '';
+        res.on('data', c => body += c);
+        res.on('end', () => {
+          try {
+            resolve(JSON.parse(body));
+          } catch (_) {
+            resolve({ success: true, isFree: false, plans: [] });
+          }
+        });
+      });
+      req.on('error', () => resolve({ success: true, isFree: false, plans: [] }));
+      req.on('timeout', () => { req.destroy(); resolve({ success: true, isFree: false, plans: [] }); });
+    });
+  } catch (e) {
+    return { success: true, isFree: false, plans: [] };
+  }
+});
+
+ipcMain.handle('activate-iso-key', async (_e, inputKey) => {
+  try {
+    if (!inputKey || typeof inputKey !== 'string') {
+      return { success: false, error: 'Chave não informada.' };
+    }
+    const cleanKey = inputKey.trim().toUpperCase();
+    const currentUuid = getMachineHardwareUUID();
+    const chkData = await queryOfficialDatabase('/api/client-check', { uuid: currentUuid, key: cleanKey });
+    if (chkData && chkData.success && (chkData.isIsoKey || chkData.licenseType === 'iso')) {
+      activatedIsoKey = cleanKey;
+      authorizedSessionIsIsoKey = true;
+      authorizedSessionIsoUses = chkData.isoUsesRemaining || 1;
+      return {
+        success: true,
+        remaining: chkData.isoUsesRemaining,
+        total: chkData.isoUsesTotal,
+        message: `Chave de Formatação ativada com sucesso! (${chkData.timeRemainingStr})`
+      };
+    }
+    return {
+      success: false,
+      error: chkData?.error || 'Chave de formatação inválida, já vinculada ou esgotada.'
+    };
+  } catch (e) {
+    return { success: false, error: e.message || 'Erro ao ativar chave de formatação.' };
   }
 });
 
@@ -3964,9 +4028,29 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
 
     sendProgress(100, 'Computador preparado com sucesso! Partição de boot blindada e 100% invisível.');
 
+    // 9. Consome uso da Chave de ISO e atualiza saldo
+    let consumeResult = null;
+    try {
+      const activeKey = activatedIsoKey || authorizedSessionKey;
+      if (activeKey) {
+        consumeResult = await queryOfficialDatabase('/api/iso-consume', {
+          uuid: getMachineHardwareUUID(),
+          key: activeKey
+        });
+      }
+    } catch (_) { }
+
+    const shouldLogout = !!consumeResult?.shouldLogout;
+    if (shouldLogout) {
+      isClientSessionAuthorized = false;
+      authorizedSessionKey = null;
+    }
+
     return {
       success: true,
-      message: 'Computador preparado com sucesso! A partição de boot foi criada, blindada contra cópias e a opção de formatação está ativa no menu de boot e na BIOS.'
+      shouldLogout,
+      remaining: consumeResult?.remaining,
+      message: consumeResult?.message || 'Computador preparado com sucesso! A partição de boot foi criada, blindada contra cópias e a opção de formatação está ativa no menu de boot e na BIOS.'
     };
   } catch (e) {
     console.error('Erro ao preparar partição:', e);

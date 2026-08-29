@@ -3129,7 +3129,25 @@ if (btnPrepareIsoAction) {
         if (isoDownloadPct) isoDownloadPct.textContent = '100%';
         if (isoDownloadStatus) isoDownloadStatus.textContent = 'Computador preparado com sucesso!';
 
-        alert('✅ COMPUTADOR PREPARADO PARA FORMATAÇÃO COM SUCESSO!\n\n• Partição de instalação criada e arquivos oficiais da ISO gravados com sucesso.\n• Opção de boot registrada no menu de inicialização do Windows (BCD) e na BIOS UEFI.\n\nVocê já pode clicar no botão verde abaixo para reiniciar direto no instalador, ou reiniciar manualmente quando quiser!');
+        if (res.shouldLogout) {
+          alert('✅ COMPUTADOR PREPARADO PARA FORMATAÇÃO COM SUCESSO!\n\n• Partição de instalação criada e blindada contra cópias.\n• O uso da sua chave de formatação foi concluído.\n\nO aplicativo será encerrado para garantir a segurança. Reinicie seu computador para iniciar a instalação limpa da ISO Loord v10.6!');
+          if (window._forceLogoutSecurityFn) {
+            await window._forceLogoutSecurityFn('Chave de formatação consumida com sucesso.');
+          } else {
+            localStorage.removeItem('loord_vip_key');
+            localStorage.removeItem('activation_key');
+            location.reload();
+          }
+          return;
+        }
+
+        if (res.remaining !== undefined) {
+          alert(`✅ COMPUTADOR PREPARADO PARA FORMATAÇÃO COM SUCESSO!\n\n• Partição de instalação criada e arquivos gravados com sucesso.\n• Restam ainda ${res.remaining} formatações disponíveis nesta chave.\n\nVocê já pode clicar no botão verde abaixo para reiniciar direto no instalador, ou reiniciar manualmente quando quiser!`);
+          const isoUsesBadge = document.getElementById('iso-session-uses-badge');
+          if (isoUsesBadge) isoUsesBadge.textContent = `${res.remaining} Formatação(ões) Restante(s)`;
+        } else {
+          alert('✅ COMPUTADOR PREPARADO PARA FORMATAÇÃO COM SUCESSO!\n\n• Partição de instalação criada e arquivos oficiais da ISO gravados com sucesso.\n• Opção de boot registrada no menu de inicialização do Windows (BCD) e na BIOS UEFI.\n\nVocê já pode clicar no botão verde abaixo para reiniciar direto no instalador, ou reiniciar manualmente quando quiser!');
+        }
 
         if (isoPreparedBox) isoPreparedBox.style.display = 'block';
         btnPrepareIsoAction.style.display = 'none';
@@ -3234,8 +3252,40 @@ if (btnRemovePartitionAction) {
 
   const mainAppLayout = document.getElementById('main-app-layout');
 
-  function setAppVisualAccess(unlocked) {
+  async function checkIsoPaymentGate() {
+    try {
+      if (!window.api || !window.api.getIsoPlansPublic) return;
+      const plansRes = await window.api.getIsoPlansPublic();
+      const buyBanner = document.getElementById('banner-iso-buy-required');
+      const actionsAllowed = document.getElementById('actions-iso-allowed');
+      const badgeTag = document.getElementById('badge-iso-status-tag');
+
+      if (plansRes && plansRes.success) {
+        if (plansRes.isFree) {
+          // Modo Grátis ativado pelo Administrador!
+          if (buyBanner) buyBanner.style.display = 'none';
+          if (actionsAllowed) actionsAllowed.style.display = 'flex';
+          if (badgeTag) {
+            badgeTag.textContent = 'GRÁTIS NESTA VERSÃO';
+            badgeTag.style.background = '#10b981';
+          }
+        } else {
+          // Modo Pago com Key exigida se ainda não tiver chave ativada
+          if (buyBanner) buyBanner.style.display = 'block';
+          if (actionsAllowed) actionsAllowed.style.display = 'none';
+          if (badgeTag) {
+            badgeTag.textContent = 'REQUER CHAVE DE ISO';
+            badgeTag.style.background = '#f59e0b';
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  function setAppVisualAccess(unlocked, isIsoKey, isoUsesRemaining) {
     window._isClientVipAuthenticated = !!unlocked;
+    window._isIsoKeySession = !!isIsoKey;
+
     if (unlocked) {
       if (mainAppLayout) {
         mainAppLayout.style.setProperty('display', 'flex', 'important');
@@ -3245,6 +3295,62 @@ if (btnRemovePartitionAction) {
       }
       if (lockScreen) {
         lockScreen.style.setProperty('display', 'none', 'important');
+      }
+
+      // Regra de Isolamento: Se logou com Chave de ISO, bloqueia todas as outras ferramentas do painel
+      const navItemsList = document.querySelectorAll('.nav-item');
+      const isoBanner = document.getElementById('iso-session-banner');
+      const isoUsesBadge = document.getElementById('iso-session-uses-badge');
+
+      if (isIsoKey) {
+        // Oculta todas as outras opções de abas do painel
+        navItemsList.forEach(nav => {
+          const tab = nav.getAttribute('data-tab');
+          if (tab !== 'pc-fraco') {
+            nav.style.setProperty('display', 'none', 'important');
+          } else {
+            nav.style.removeProperty('display');
+            nav.classList.add('active');
+          }
+        });
+
+        // Mostra aba pc-fraco imediatamente focada na ISO
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        const tabPcFraco = document.getElementById('tab-pc-fraco');
+        if (tabPcFraco) {
+          tabPcFraco.classList.add('active');
+          setTimeout(() => {
+            const cardIso = document.getElementById('card-iso-format-main');
+            if (cardIso) cardIso.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 300);
+        }
+
+        // Mostra banner de sessão exclusiva de ISO
+        if (isoBanner) isoBanner.style.display = 'block';
+        if (isoUsesBadge) isoUsesBadge.textContent = `${isoUsesRemaining || 1} Formatação(ões) Restante(s)`;
+
+        // Como a chave já é de ISO, libera os controles de formatação
+        const buyBanner = document.getElementById('banner-iso-buy-required');
+        if (buyBanner) buyBanner.style.display = 'none';
+        const actionsAllowed = document.getElementById('actions-iso-allowed');
+        if (actionsAllowed) actionsAllowed.style.display = 'flex';
+
+        // Atualiza Sidebar
+        if (sidebarVipLabel) {
+          sidebarVipLabel.innerHTML = '💿 CHAVE ISO LOORD';
+          sidebarVipLabel.style.color = '#38bdf8';
+        }
+        if (sidebarValidity) {
+          sidebarValidity.textContent = `⏱ ${isoUsesRemaining || 1} uso(s) restante(s)`;
+          sidebarValidity.style.color = '#10b981';
+        }
+      } else {
+        // Usuário VIP Normal: libera todas as abas normalmente
+        navItemsList.forEach(nav => nav.style.removeProperty('display'));
+        if (isoBanner) isoBanner.style.display = 'none';
+
+        // Verifica se a ISO está em modo grátis ou requer chave adicional
+        checkIsoPaymentGate();
       }
     } else {
       if (mainAppLayout) {
@@ -3349,6 +3455,114 @@ if (btnRemovePartitionAction) {
     console.warn('[SECURITY] Force logout e restauração concluídos:', reason);
   }
 
+  window._forceLogoutSecurityFn = forceLogoutSecurity;
+
+  // ── Interação com o Modal de Aquisição e Ativação de Chave da ISO ───────────
+  const btnOpenBuyIsoModal = document.getElementById('btn-open-buy-iso-modal');
+  const btnOpenActivateIsoInput = document.getElementById('btn-open-activate-iso-input');
+  const buyIsoKeyModal = document.getElementById('buy-iso-key-modal');
+  const btnActivateIsoKey = document.getElementById('btn-activate-iso-key');
+  const inputIsoKey = document.getElementById('input-iso-key');
+  const isoKeyActivationMsg = document.getElementById('iso-key-activation-msg');
+  const isoPlansCardsContainer = document.getElementById('iso-plans-cards-container');
+
+  async function loadIsoPlansInModal() {
+    if (!isoPlansCardsContainer) return;
+    try {
+      if (!window.api || !window.api.getIsoPlansPublic) return;
+      const res = await window.api.getIsoPlansPublic();
+      if (res && res.success && Array.isArray(res.plans)) {
+        isoPlansCardsContainer.innerHTML = res.plans.map(p => {
+          const isPop = p.uses === 2;
+          return `
+            <div style="background: rgba(255,255,255,0.04); border: 1px solid ${isPop ? '#38bdf8' : 'rgba(56,189,248,0.2)'}; border-radius: 10px; padding: 12px 8px; text-align: center; position: relative;">
+              ${isPop ? '<span style="position: absolute; top: -8px; right: 6px; background: #38bdf8; color: #000; font-size: 0.62rem; font-weight: 900; padding: 1px 6px; border-radius: 999px;">MAIS POPULAR</span>' : ''}
+              <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 700;">${p.name || `${p.uses} Uso(s)`}</div>
+              <div style="font-size: 1.25rem; font-weight: 900; color: #00e676; margin: 4px 0;">R$ ${Number(p.price || 0).toFixed(2).replace('.', ',')}</div>
+              <div style="font-size: 0.72rem; color: #64748b;">${p.uses} Formatação(ões)</div>
+            </div>
+          `;
+        }).join('');
+      }
+    } catch (_) {}
+  }
+
+  if (btnOpenBuyIsoModal) {
+    btnOpenBuyIsoModal.addEventListener('click', () => {
+      if (buyIsoKeyModal) buyIsoKeyModal.style.display = 'flex';
+      loadIsoPlansInModal();
+    });
+  }
+
+  if (btnOpenActivateIsoInput) {
+    btnOpenActivateIsoInput.addEventListener('click', () => {
+      if (buyIsoKeyModal) buyIsoKeyModal.style.display = 'flex';
+      loadIsoPlansInModal();
+      if (inputIsoKey) {
+        setTimeout(() => inputIsoKey.focus(), 150);
+      }
+    });
+  }
+
+  if (btnActivateIsoKey) {
+    btnActivateIsoKey.addEventListener('click', async () => {
+      const keyVal = inputIsoKey ? inputIsoKey.value.trim().toUpperCase() : '';
+      if (!keyVal || keyVal.length < 4) {
+        if (isoKeyActivationMsg) {
+          isoKeyActivationMsg.style.display = 'block';
+          isoKeyActivationMsg.style.color = '#ef4444';
+          isoKeyActivationMsg.textContent = '❌ Por favor, digite a sua chave de ativação da ISO.';
+        }
+        return;
+      }
+
+      btnActivateIsoKey.disabled = true;
+      btnActivateIsoKey.textContent = '⏳ Ativando...';
+      if (isoKeyActivationMsg) isoKeyActivationMsg.style.display = 'none';
+
+      try {
+        const res = await window.api.activateIsoKey(keyVal);
+        if (res && res.success) {
+          if (isoKeyActivationMsg) {
+            isoKeyActivationMsg.style.display = 'block';
+            isoKeyActivationMsg.style.color = '#10b981';
+            isoKeyActivationMsg.textContent = `✅ Chave de Formatação ativada! (${res.remaining || 1} uso(s) restante(s)). Liberando formatação...`;
+          }
+
+          const buyBanner = document.getElementById('banner-iso-buy-required');
+          if (buyBanner) buyBanner.style.display = 'none';
+          const actionsAllowed = document.getElementById('actions-iso-allowed');
+          if (actionsAllowed) actionsAllowed.style.display = 'flex';
+          const badgeTag = document.getElementById('badge-iso-status-tag');
+          if (badgeTag) {
+            badgeTag.textContent = `CHAVE ATIVA (${res.remaining || 1} USOS)`;
+            badgeTag.style.background = '#10b981';
+          }
+
+          setTimeout(() => {
+            if (buyIsoKeyModal) buyIsoKeyModal.style.display = 'none';
+          }, 1200);
+        } else {
+          btnActivateIsoKey.disabled = false;
+          btnActivateIsoKey.textContent = '⚡ Ativar Chave';
+          if (isoKeyActivationMsg) {
+            isoKeyActivationMsg.style.display = 'block';
+            isoKeyActivationMsg.style.color = '#ef4444';
+            isoKeyActivationMsg.textContent = '❌ ' + (res?.error || 'Chave da ISO inválida ou esgotada!');
+          }
+        }
+      } catch (e) {
+        btnActivateIsoKey.disabled = false;
+        btnActivateIsoKey.textContent = '⚡ Ativar Chave';
+        if (isoKeyActivationMsg) {
+          isoKeyActivationMsg.style.display = 'block';
+          isoKeyActivationMsg.style.color = '#ef4444';
+          isoKeyActivationMsg.textContent = '❌ Erro ao ativar chave: ' + e.message;
+        }
+      }
+    });
+  }
+
   // ── Verifica segurança periodicamente (anti-bypass / anti-crack) ───────────
   function startSecurityWatch(key) {
     if (window._vipSecurityTimer) clearInterval(window._vipSecurityTimer);
@@ -3447,13 +3661,17 @@ if (btnRemovePartitionAction) {
       const check = await window.api.verifyKey(savedKey);
       if (check && check.valid) {
         // Chave 100% autêntica validada no banco de dados oficial!
-        setAppVisualAccess(true);
+        setAppVisualAccess(true, check.isIsoKey, check.isoUsesRemaining);
         updateSavedKeyUI(savedKey);
         // Salva nome do cliente
         if (check.clientName) localStorage.setItem('client_name', check.clientName);
         // Atualiza sidebar
         const isVitalicia = check.plan && (check.plan.includes('Vitalícia') || check.plan.includes('permanent') || check.plan.includes('💎'));
-        updateSidebarStatus(true, check.clientName, isVitalicia ? 'permanent' : 'temporary', check.plan);
+        if (check.isIsoKey) {
+          updateSidebarStatus(true, check.clientName, 'temporary', `${check.isoUsesRemaining || 1} uso(s) restante(s)`);
+        } else {
+          updateSidebarStatus(true, check.clientName, isVitalicia ? 'permanent' : 'temporary', check.plan);
+        }
         startVipHeartbeat(savedKey);
         startSecurityWatch(savedKey);
         return;
@@ -3539,7 +3757,11 @@ if (btnRemovePartitionAction) {
 
           // Atualiza sidebar com nome e validade
           const isVitalicia = verifyRes.plan && (verifyRes.plan.includes('Vitalícia') || verifyRes.plan.includes('permanent') || verifyRes.plan.includes('💎'));
-          updateSidebarStatus(true, verifyRes.clientName, isVitalicia ? 'permanent' : 'temporary', verifyRes.plan);
+          if (verifyRes.isIsoKey) {
+            updateSidebarStatus(true, verifyRes.clientName, 'temporary', `${verifyRes.isoUsesRemaining || 1} uso(s) restante(s)`);
+          } else {
+            updateSidebarStatus(true, verifyRes.clientName, isVitalicia ? 'permanent' : 'temporary', verifyRes.plan);
+          }
 
           startVipHeartbeat(keyVal);
           startSecurityWatch(keyVal);
@@ -3549,7 +3771,7 @@ if (btnRemovePartitionAction) {
           btnActivateVip.style.color = '#fff';
 
           setTimeout(() => {
-            setAppVisualAccess(true);
+            setAppVisualAccess(true, verifyRes.isIsoKey, verifyRes.isoUsesRemaining);
           }, 600);
         } else {
           btnActivateVip.disabled = false;

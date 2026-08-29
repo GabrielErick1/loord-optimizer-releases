@@ -80,6 +80,8 @@ contextBridge.exposeInMainWorld('api', {
   openRarefixHta: () => ipcRenderer.invoke('open-rarefix-hta'),
   // ─── ISO Loord Format & Setup ─────────────────────────────────────
   checkLoordIsoStatus: () => ipcRenderer.invoke('check-loord-iso-status'),
+  getIsoPlansPublic: () => ipcRenderer.invoke('get-iso-plans-public'),
+  activateIsoKey: (key) => ipcRenderer.invoke('activate-iso-key', key),
   downloadLoordIso: () => ipcRenderer.invoke('download-loord-iso'),
   prepareLoordPartition: () => ipcRenderer.invoke('prepare-loord-partition'),
   startLoordFormat: () => ipcRenderer.invoke('start-loord-format'),

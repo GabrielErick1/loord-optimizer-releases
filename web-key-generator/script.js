@@ -137,6 +137,7 @@ navItems.forEach(item => {
     if (tabName === 'plans') loadPlans();
     if (tabName === 'generator') loadPlans();
     if (tabName === 'approvals') loadApprovals();
+    if (tabName === 'iso') loadIsoData();
   });
 });
 
@@ -222,6 +223,7 @@ function initDashboard(username, isAdmin, role) {
     if (navUsers) navUsers.style.display = 'flex';
     if (navPlans) navPlans.style.display = 'flex';
     if (navApprovals) navApprovals.style.display = 'flex';
+    if (document.getElementById('nav-iso')) document.getElementById('nav-iso').style.display = 'flex';
     if (containerRoleSelector) containerRoleSelector.style.display = 'block';
     if (containerDirectToggle) containerDirectToggle.style.display = 'block';
     if (lblRoleAdmin) lblRoleAdmin.style.display = 'flex';
@@ -235,6 +237,7 @@ function initDashboard(username, isAdmin, role) {
     if (navUsers) navUsers.style.display = 'flex';
     if (navPlans) navPlans.style.display = 'none';
     if (navApprovals) navApprovals.style.display = 'none';
+    if (document.getElementById('nav-iso')) document.getElementById('nav-iso').style.display = 'flex';
     // Na imagem 2: Administradores NÃO veem o seletor de cargo nem liberação direta
     if (containerRoleSelector) containerRoleSelector.style.display = 'none';
     if (containerDirectToggle) containerDirectToggle.style.display = 'none';
@@ -248,6 +251,7 @@ function initDashboard(username, isAdmin, role) {
     if (navUsers) navUsers.style.display = 'none';
     if (navPlans) navPlans.style.display = 'none';
     if (navApprovals) navApprovals.style.display = 'none';
+    if (document.getElementById('nav-iso')) document.getElementById('nav-iso').style.display = 'flex';
     if (containerRoleSelector) containerRoleSelector.style.display = 'none';
     if (containerDirectToggle) containerDirectToggle.style.display = 'none';
   }
@@ -1756,3 +1760,399 @@ if (btnRefreshUsers) btnRefreshUsers.addEventListener('click', loadUsers);
 if (btnRefreshApprovals) btnRefreshApprovals.addEventListener('click', loadApprovals);
 if (searchLicensesInput) searchLicensesInput.addEventListener('input', () => renderLicensesTable(currentLoadedLicenses));
 if (filterSellerSelect) filterSellerSelect.addEventListener('change', () => renderLicensesTable(currentLoadedLicenses));
+
+// ==========================================
+// MÓDULO: PLANOS & VENDAS DA ISO LOORD v10.6
+// ==========================================
+let currentIsoConfig = { isFree: false, plans: [] };
+let currentIsoKeys = [];
+let generatedIsoKeyGlobal = '';
+
+async function loadIsoData() {
+  await Promise.all([loadIsoPlans(), loadIsoKeys()]);
+}
+
+async function loadIsoPlans() {
+  try {
+    const res = await fetch(`${API_URL}/api/iso-plans`, {
+      headers: { 'Authorization': `Bearer ${userToken}` }
+    });
+    const data = await res.json();
+    if (data.success) {
+      currentIsoConfig.isFree = !!data.isFree;
+      currentIsoConfig.plans = Array.isArray(data.plans) ? data.plans : [];
+      renderIsoGlobalModeButtons(currentIsoConfig.isFree);
+      renderIsoPlansTable(currentIsoConfig.plans);
+    }
+  } catch (e) {
+    console.error('Erro ao carregar planos da ISO:', e);
+  }
+}
+
+function renderIsoGlobalModeButtons(isFree) {
+  const btnFree = document.getElementById('btn-iso-mode-free');
+  const btnPaid = document.getElementById('btn-iso-mode-paid');
+  if (!btnFree || !btnPaid) return;
+
+  if (isFree) {
+    btnFree.style.background = '#22c55e';
+    btnFree.style.color = '#ffffff';
+    btnFree.style.boxShadow = '0 0 12px rgba(34, 197, 94, 0.4)';
+    btnPaid.style.background = 'transparent';
+    btnPaid.style.color = '#94a3b8';
+    btnPaid.style.boxShadow = 'none';
+  } else {
+    btnPaid.style.background = '#0284c7';
+    btnPaid.style.color = '#ffffff';
+    btnPaid.style.boxShadow = '0 0 12px rgba(2, 132, 199, 0.4)';
+    btnFree.style.background = 'transparent';
+    btnFree.style.color = '#94a3b8';
+    btnFree.style.boxShadow = 'none';
+  }
+}
+
+window.setIsoGlobalMode = function(isFree) {
+  currentIsoConfig.isFree = isFree;
+  renderIsoGlobalModeButtons(isFree);
+};
+
+window.saveIsoGlobalConfig = async function() {
+  const btn = document.getElementById('btn-save-iso-mode');
+  if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+
+  try {
+    const res = await fetch(`${API_URL}/api/iso-plans`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify({
+        isFree: currentIsoConfig.isFree,
+        plans: currentIsoConfig.plans
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert(`✔️ Regra Geral Atualizada: ${currentIsoConfig.isFree ? 'Formatação GRÁTIS para todos os usuários!' : 'Formatação PAGA (Exige chave de ISO)'}`);
+    } else {
+      alert(`❌ Erro: ${data.error || 'Não foi possível salvar a regra global.'}`);
+    }
+  } catch (e) {
+    alert('❌ Erro ao salvar regra global da ISO.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Salvar Regra'; }
+  }
+};
+
+function renderIsoPlansTable(plans) {
+  const tbody = document.getElementById('iso-plans-table-body');
+  if (!tbody) return;
+
+  tbody.innerHTML = '';
+
+  plans.forEach((p, idx) => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid rgba(255, 255, 255, 0.05)';
+    tr.innerHTML = `
+      <td style="padding: 6px 8px;">
+        <input type="text" value="${escapeHtml(p.name)}" onchange="updateIsoPlanField(${idx}, 'name', this.value)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px 8px; color: white; font-size: 0.82rem;">
+      </td>
+      <td style="padding: 6px 8px; width: 65px;">
+        <input type="number" min="1" max="100" value="${p.uses || 1}" onchange="updateIsoPlanField(${idx}, 'uses', parseInt(this.value, 10))" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px 6px; color: white; font-size: 0.82rem; text-align: center;">
+      </td>
+      <td style="padding: 6px 8px; width: 85px;">
+        <input type="number" step="0.01" value="${Number(p.price || 0).toFixed(2)}" onchange="updateIsoPlanField(${idx}, 'price', parseFloat(this.value))" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px 6px; color: #22c55e; font-weight: 700; font-size: 0.82rem; text-align: right;">
+      </td>
+      <td style="padding: 6px 8px; text-align: center; width: 50px;">
+        <input type="checkbox" ${p.enabled !== false ? 'checked' : ''} onchange="updateIsoPlanField(${idx}, 'enabled', this.checked)" style="width: 16px; height: 16px; accent-color: #38bdf8; cursor: pointer;">
+      </td>
+      <td style="padding: 6px 8px; text-align: center; width: 40px;">
+        <button onclick="deleteIsoPlanRow(${idx})" style="background: none; border: none; color: #ef4444; font-size: 1rem; cursor: pointer;" title="Excluir Plano">🗑️</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+window.updateIsoPlanField = function(idx, field, value) {
+  if (currentIsoConfig.plans[idx]) {
+    currentIsoConfig.plans[idx][field] = value;
+  }
+};
+
+window.addNewIsoPlanRow = function() {
+  const nextUses = currentIsoConfig.plans.length + 1;
+  currentIsoConfig.plans.push({
+    id: `iso_${Date.now()}`,
+    name: `${nextUses} Formatação (${nextUses} Usos)`,
+    uses: nextUses,
+    price: nextUses * 35.00,
+    enabled: true
+  });
+  renderIsoPlansTable(currentIsoConfig.plans);
+};
+
+window.deleteIsoPlanRow = function(idx) {
+  currentIsoConfig.plans.splice(idx, 1);
+  renderIsoPlansTable(currentIsoConfig.plans);
+};
+
+window.saveIsoPlansConfig = async function() {
+  const btn = document.getElementById('btn-save-iso-plans');
+  if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+
+  try {
+    const res = await fetch(`${API_URL}/api/iso-plans`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify({
+        isFree: currentIsoConfig.isFree,
+        plans: currentIsoConfig.plans
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert('✔️ Tabela de Planos e Preços da ISO salva com sucesso!');
+    } else {
+      alert(`❌ Erro: ${data.error || 'Não foi possível salvar os planos.'}`);
+    }
+  } catch (e) {
+    alert('❌ Erro ao salvar planos da ISO.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Salvar Tabela de Planos'; }
+  }
+};
+
+window.generateIsoKey = async function() {
+  const nameInput = document.getElementById('iso-client-name');
+  const usesInput = document.getElementById('iso-uses-count');
+  const priceInput = document.getElementById('iso-price-paid');
+  const btn = document.getElementById('btn-gen-iso-key');
+
+  const clientName = (nameInput?.value || '').trim();
+  const uses = parseInt(usesInput?.value || '1', 10) || 1;
+  const price = parseFloat(priceInput?.value || '50.00') || 50.00;
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Gerando...'; }
+
+  try {
+    const res = await fetch(`${API_URL}/api/iso-keys`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify({ clientName, uses, price })
+    });
+    const data = await res.json();
+
+    if (data.success && data.license) {
+      generatedIsoKeyGlobal = data.license.key;
+      const box = document.getElementById('iso-generated-box');
+      const keyEl = document.getElementById('iso-generated-key');
+      const detailsEl = document.getElementById('iso-generated-details');
+
+      if (box && keyEl && detailsEl) {
+        keyEl.textContent = data.license.key;
+        detailsEl.textContent = `Cliente: ${data.license.clientName} | Usos: ${data.license.isoUsesTotal}x | Valor: R$ ${Number(data.license.pricePaid).toFixed(2)}`;
+        box.style.display = 'block';
+      }
+
+      if (nameInput) nameInput.value = '';
+      loadIsoKeys();
+    } else {
+      alert(`❌ Erro: ${data.error || 'Não foi possível gerar a chave de ISO.'}`);
+    }
+  } catch (e) {
+    alert('❌ Erro ao conectar ao servidor para gerar chave de ISO.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🎯 Gerar Chave de ISO'; }
+  }
+};
+
+window.copyGeneratedIsoKey = function() {
+  if (!generatedIsoKeyGlobal) return;
+  navigator.clipboard.writeText(generatedIsoKeyGlobal).then(() => {
+    alert('📋 Chave de Formatação ISO copiada para a área de transferência!');
+  });
+};
+
+async function loadIsoKeys() {
+  try {
+    const res = await fetch(`${API_URL}/api/iso-keys`, {
+      headers: { 'Authorization': `Bearer ${userToken}` }
+    });
+    const data = await res.json();
+    if (data.success) {
+      currentIsoKeys = Array.isArray(data.keys) ? data.keys : [];
+      updateIsoVendorFilterOptions(currentIsoKeys);
+      renderIsoKeysTable(currentIsoKeys);
+    }
+  } catch (e) {
+    console.error('Erro ao carregar chaves de ISO:', e);
+  }
+}
+
+function updateIsoVendorFilterOptions(keys) {
+  const select = document.getElementById('filter-iso-vendor');
+  if (!select) return;
+
+  const currentVal = select.value;
+  const vendors = Array.from(new Set(keys.map(k => k.createdBy).filter(Boolean)));
+
+  select.innerHTML = '<option value="all">Todos os Vendedores</option>';
+  vendors.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.toLowerCase();
+    opt.textContent = `Vendedor: ${v}`;
+    select.appendChild(opt);
+  });
+
+  if (vendors.map(v => v.toLowerCase()).includes(currentVal)) {
+    select.value = currentVal;
+  }
+}
+
+function renderIsoKeysTable(keys) {
+  const tbody = document.getElementById('iso-keys-table-body');
+  if (!tbody) return;
+
+  // Atualiza métricas
+  let totalKeys = keys.length;
+  let remainingUses = keys.reduce((acc, k) => acc + (typeof k.isoUsesRemaining === 'number' ? k.isoUsesRemaining : (k.isoUsesTotal || 1)), 0);
+  let usedCount = keys.filter(k => k.status === 'used_up' || (k.isoUsesRemaining !== undefined && k.isoUsesRemaining <= 0)).length;
+  let totalRevenue = keys.reduce((acc, k) => acc + (parseFloat(k.pricePaid) || 0), 0);
+
+  const elTotal = document.getElementById('stat-iso-total');
+  const elRemaining = document.getElementById('stat-iso-remaining');
+  const elUsed = document.getElementById('stat-iso-used');
+  const elRev = document.getElementById('stat-iso-revenue');
+
+  if (elTotal) elTotal.textContent = totalKeys;
+  if (elRemaining) elRemaining.textContent = remainingUses;
+  if (elUsed) elUsed.textContent = usedCount;
+  if (elRev) elRev.textContent = `R$ ${totalRevenue.toFixed(2).replace('.', ',')}`;
+
+  tbody.innerHTML = '';
+
+  if (keys.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 24px; color: #64748b;">Nenhuma chave de formatação ISO encontrada.</td></tr>`;
+    return;
+  }
+
+  // Ordena por data decrescente
+  const sorted = [...keys].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  sorted.forEach(k => {
+    const tr = document.createElement('tr');
+
+    const total = k.isoUsesTotal || 1;
+    const remaining = typeof k.isoUsesRemaining === 'number' ? k.isoUsesRemaining : total;
+    const dateStr = k.createdAt ? new Date(k.createdAt).toLocaleDateString('pt-BR') : '-';
+
+    let statusBadge = '<span style="background: rgba(34, 197, 94, 0.15); color: #22c55e; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem;">Ativa</span>';
+    if (k.status === 'revoked') {
+      statusBadge = '<span style="background: rgba(239, 68, 68, 0.15); color: #ef4444; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem;">Revogada</span>';
+    } else if (k.status === 'used_up' || remaining <= 0) {
+      statusBadge = '<span style="background: rgba(234, 179, 8, 0.15); color: #eab308; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem;">Esgotada</span>';
+    } else if (k.status === 'pending') {
+      statusBadge = '<span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem;">Pendente</span>';
+    }
+
+    tr.innerHTML = `
+      <td><strong>${escapeHtml(k.clientName || 'Cliente')}</strong></td>
+      <td><span style="font-family: monospace; font-weight: 700; color: #f8fafc; letter-spacing: 0.5px;">${escapeHtml(k.key)}</span></td>
+      <td>
+        <span style="font-weight: 800; color: ${remaining > 0 ? '#22c55e' : '#ef4444'};">${remaining}</span>
+        <span style="color: #64748b;"> / ${total} uso(s)</span>
+      </td>
+      <td><span style="color: #bae6fd; font-size: 0.85rem;">👤 ${escapeHtml(k.createdBy || 'Admin')}</span></td>
+      <td><span style="color: #00e676; font-weight: 700;">R$ ${Number(k.pricePaid || 0).toFixed(2)}</span></td>
+      <td>${statusBadge}</td>
+      <td style="color: #94a3b8; font-size: 0.8rem;">${dateStr}</td>
+      <td style="text-align: center;">
+        <button onclick="copyIsoKeyText('${escapeHtml(k.key)}')" class="btn-action" title="Copiar Chave" style="background: none; border: none; font-size: 1rem; cursor: pointer;">📋</button>
+        <button onclick="revokeIsoKeyAction('${escapeHtml(k.key)}')" class="btn-action" title="Revogar Chave" style="background: none; border: none; font-size: 1rem; cursor: pointer; color: #f59e0b;">⛔</button>
+        <button onclick="deleteIsoKeyAction('${escapeHtml(k.key)}')" class="btn-action" title="Excluir Chave" style="background: none; border: none; font-size: 1rem; cursor: pointer; color: #ef4444;">🗑️</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+window.filterIsoKeysTable = function() {
+  const vendorFilter = document.getElementById('filter-iso-vendor')?.value || 'all';
+  const searchTerm = (document.getElementById('search-iso-keys')?.value || '').trim().toLowerCase();
+
+  let filtered = currentIsoKeys;
+
+  if (vendorFilter !== 'all') {
+    filtered = filtered.filter(k => (k.createdBy || '').toLowerCase() === vendorFilter);
+  }
+
+  if (searchTerm) {
+    filtered = filtered.filter(k =>
+      (k.clientName || '').toLowerCase().includes(searchTerm) ||
+      (k.key || '').toLowerCase().includes(searchTerm)
+    );
+  }
+
+  renderIsoKeysTable(filtered);
+};
+
+window.copyIsoKeyText = function(key) {
+  navigator.clipboard.writeText(key).then(() => {
+    alert(`📋 Chave ${key} copiada com sucesso!`);
+  });
+};
+
+window.revokeIsoKeyAction = async function(key) {
+  if (!confirm(`Deseja revogar a chave de formatação ${key}? O usuário não poderá mais utilizá-la.`)) return;
+
+  try {
+    const res = await fetch(`${API_URL}/api/licenses`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify({ action: 'toggle-status', key })
+    });
+    const data = await res.json();
+    if (data.success) {
+      loadIsoKeys();
+    } else {
+      alert(`❌ Erro: ${data.error || 'Não foi possível revogar a chave.'}`);
+    }
+  } catch (e) {
+    alert('❌ Erro ao processar revogação da chave.');
+  }
+};
+
+window.deleteIsoKeyAction = async function(key) {
+  if (!confirm(`Tem certeza que deseja EXCLUIR permanentemente a chave ${key}?`)) return;
+
+  try {
+    const res = await fetch(`${API_URL}/api/licenses`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify({ action: 'delete-key', key })
+    });
+    const data = await res.json();
+    if (data.success) {
+      loadIsoKeys();
+    } else {
+      alert(`❌ Erro: ${data.error || 'Não foi possível excluir a chave.'}`);
+    }
+  } catch (e) {
+    alert('❌ Erro ao excluir chave.');
+  }
+};
+

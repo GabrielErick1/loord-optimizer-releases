@@ -390,6 +390,43 @@ async function savePayment(paymentId, data) {
   return await kvSet(`payment_${paymentId}`, data);
 }
 
+const defaultIsoConfig = {
+  isFree: false,
+  plans: [
+    { id: 'iso_1', name: '1 Formatação (1 Uso)', uses: 1, price: 50.00, enabled: true },
+    { id: 'iso_2', name: '2 Formatações (2 Usos)', uses: 2, price: 70.00, enabled: true },
+    { id: 'iso_3', name: '3 Formatações (3 Usos)', uses: 3, price: 100.00, enabled: true }
+  ]
+};
+const localIsoConfigPath = path.join(os.tmpdir(), 'ffopt_iso_config.json');
+
+async function getIsoConfig() {
+  const kvData = await kvGet('iso_config');
+  if (kvData && typeof kvData === 'object') {
+    return {
+      isFree: !!kvData.isFree,
+      plans: Array.isArray(kvData.plans) && kvData.plans.length > 0 ? kvData.plans : defaultIsoConfig.plans
+    };
+  }
+  if (fs.existsSync(localIsoConfigPath)) {
+    try {
+      const fileData = JSON.parse(fs.readFileSync(localIsoConfigPath, 'utf8'));
+      if (fileData && typeof fileData === 'object') return fileData;
+    } catch (e) {}
+  }
+  return defaultIsoConfig;
+}
+
+async function saveIsoConfig(config) {
+  await kvSet('iso_config', config);
+  try {
+    fs.writeFileSync(localIsoConfigPath, JSON.stringify(config, null, 2), 'utf8');
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 module.exports = {
   parseRequestBody,
   getOrInitUsers,
@@ -404,6 +441,9 @@ module.exports = {
   getPayment,
   savePayment,
   defaultPlans,
+  getIsoConfig,
+  saveIsoConfig,
+  defaultIsoConfig,
   MP_ACCESS_TOKEN,
   MP_PUBLIC_KEY,
   hashPassword,
