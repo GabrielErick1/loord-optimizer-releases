@@ -3739,6 +3739,21 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
 
       const dpFile = path.join(os.tmpdir(), 'loord_dp_create.txt');
 
+      // Limpa stubs residuais (como partição residual 3 e 4) antes de criar
+      const dpClean = [
+        'select volume L',
+        'delete partition override',
+        `select disk ${cDisk}`,
+        'select partition 4',
+        'delete partition override',
+        `select disk ${cDisk}`,
+        'select partition 3',
+        'delete partition override',
+        'exit'
+      ].join('\r\n');
+      fs.writeFileSync(dpFile, dpClean, 'ascii');
+      try { execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true }); } catch (_) {}
+
       // Tenta primeiro criar direto caso já exista espaço não alocado no disco do C
       const dpDirect = [
         `select disk ${cDisk}`,
@@ -3755,11 +3770,11 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
         if (fs.existsSync('L:\\')) created = true;
       } catch (_) {}
 
-      // Se não havia espaço não alocado, reduz o volume C e cria a partição no disco do C
+      // Se não havia espaço não alocado, reduz C (sem parâmetro minimum para evitar erro de Parâmetro Incorreto) e cria no disco do C
       if (!created) {
         const dpWithShrink = [
           'select volume C',
-          'shrink desired=8000 minimum=3500',
+          'shrink desired=8000',
           `select disk ${cDisk}`,
           'create partition primary',
           'format fs=fat32 quick label=LOORD_SETUP',
@@ -3769,7 +3784,7 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
         fs.writeFileSync(dpFile, dpWithShrink, 'ascii');
 
         try {
-          const dpOut = execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true, encoding: 'utf8' });
+          execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true, encoding: 'utf8' });
           if (fs.existsSync('L:\\')) created = true;
         } catch (dpErr) {
           const detail = dpErr.stdout ? dpErr.stdout.toString() : dpErr.message;
