@@ -3718,29 +3718,22 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
     sendProgress(10, 'Preparando espaço e limpando unidades virtuais...');
     dismountAllVirtualIsos();
 
-    // 1. Libera espaço desbloqueando arquivos que bloqueiam redução de volume
+    sendProgress(20, 'Limpando fragmentos de partição residuais...');
+    // Libera espaço desbloqueando arquivos que bloqueiam redução de volume
     try {
       execSync('powercfg /h off', { windowsHide: true });
       execSync('vssadmin delete shadows /for=c: /all /quiet', { windowsHide: true });
     } catch (_) {}
-
-    // Limpa fragmentos ou partições residuais com letra L antes de iniciar
-    try {
-      const cleanOldPs = `
-        $l = Get-Partition -DriveLetter L -ErrorAction SilentlyContinue;
-        if ($l) {
-          $v = $l | Get-Volume -ErrorAction SilentlyContinue;
-          if (-not $v -or $v.FileSystemLabel -ne "LOORD_SETUP" -or $l.Size -lt (100 * 1024 * 1024)) {
-            Remove-Partition -DiskNumber $l.DiskNumber -PartitionNumber $l.PartitionNumber -Confirm:$false -ErrorAction SilentlyContinue | Out-Null;
-          }
-        }
-        $p4 = Get-Partition -DiskNumber 1 -PartitionNumber 4 -ErrorAction SilentlyContinue;
-        if ($p4 -and $p4.Size -lt (100 * 1024 * 1024)) {
-          Remove-Partition -DiskNumber 1 -PartitionNumber 4 -Confirm:$false -ErrorAction SilentlyContinue | Out-Null;
-        }
-      `;
-      runPowerShellScript(cleanOldPs);
-    } catch (_) {}
+    // Limpa stubs via diskpart puro (não usa CIM)
+    const dpDir = process.env.TEMP || os.tmpdir();
+    const dpClean1 = path.join(dpDir, 'ld_c1.txt');
+    const dpClean2 = path.join(dpDir, 'ld_c2.txt');
+    fs.writeFileSync(dpClean1, 'select volume L\r\ndelete partition override\r\nexit', 'ascii');
+    try { execSync(`diskpart.exe /s "${dpClean1}"`, { windowsHide: true }); } catch (_) {}
+    try { fs.unlinkSync(dpClean1); } catch (_) {}
+    fs.writeFileSync(dpClean2, 'select disk 1\r\nselect partition 4\r\ndelete partition override\r\nexit', 'ascii');
+    try { execSync(`diskpart.exe /s "${dpClean2}"`, { windowsHide: true }); } catch (_) {}
+    try { fs.unlinkSync(dpClean2); } catch (_) {}
 
     sendProgress(25, 'Criando partição de instalação FAT32 de 8 GB no disco...');
 
@@ -3749,58 +3742,22 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
     const volExists = runPowerShellScript(checkVolPs).trim().toLowerCase().includes('true');
 
     if (!volExists) {
-      const dpFile = path.join(os.tmpdir(), 'loord_dp_create.txt');
-      const dpLogFile = path.join(os.tmpdir(), 'loord_dp_create_log.txt');
-      const dpScript = [
-        'select volume C',
-        'shrink desired=8000 minimum=3600',
-        'create partition primary',
-        'format fs=fat32 quick label=LOORD_SETUP',
-        'assign letter=L',
-        'exit'
-      ].join('\r\n');
-      fs.writeFileSync(dpFile, dpScript, 'ascii');
-
+      const dpFile = path.join(dpDir, 'ld_create.txt');
+      // Tenta 8 GB primeiro, depois 4.5 GB se falhar
+      const dpAttempts = [
+        'select volume C\r\nshrink desired=8000 minimum=3500\r\ncreate partition primary\r\nformat fs=fat32 quick label=LOORD_SETUP\r\nassign letter=L\r\nexit',
+        'select volume C\r\nshrink desired=4500 minimum=3500\r\ncreate partition primary\r\nformat fs=fat32 quick label=LOORD_SETUP\r\nassign letter=L\r\nexit'
+      ];
       let created = false;
-      try {
-        execSync(`cmd.exe /c "diskpart.exe /s \\"${dpFile}\\" > \\"${dpLogFile}\\" 2>&1"`, { windowsHide: true });
-        const chk = runPowerShellScript(`(Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue) -ne $null`);
-        if (chk.trim().toLowerCase().includes('true')) {
-          created = true;
-        }
-      } catch (_) {}
-
-      // Fallback nativo do PowerShell caso o diskpart tenha encontrado restrição temporária
-      if (!created) {
-        const psCreate = `
-          $c = Get-Partition -DriveLetter C -ErrorAction SilentlyContinue;
-          if ($c) {
-            $supported = Get-PartitionSupportedSize -DriveLetter C -ErrorAction SilentlyContinue;
-            $shrinkBytes = 8000 * 1024 * 1024;
-            if ($supported -and ($c.Size - $supported.SizeMin) -lt $shrinkBytes) {
-              $shrinkBytes = [math]::Max(3600 * 1024 * 1024, ($c.Size - $supported.SizeMin));
-            }
-            $newSize = $c.Size - $shrinkBytes;
-            Resize-Partition -DiskNumber $c.DiskNumber -PartitionNumber $c.PartitionNumber -Size $newSize -ErrorAction SilentlyContinue | Out-Null;
-            $newPart = New-Partition -DiskNumber $c.DiskNumber -UseMaximumSize -DriveLetter L -ErrorAction SilentlyContinue;
-            if ($newPart) {
-              Format-Volume -DriveLetter L -FileSystem FAT32 -NewFileSystemLabel "LOORD_SETUP" -Confirm:$false -ErrorAction SilentlyContinue | Out-Null;
-            }
-          }
-          (Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue) -ne $null
-        `;
-        const out = runPowerShellScript(psCreate).trim().toLowerCase();
-        if (out.includes('true')) {
-          created = true;
-        }
+      for (const dpScript of dpAttempts) {
+        if (created) break;
+        fs.writeFileSync(dpFile, dpScript, 'ascii');
+        try { execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true }); } catch (_) {}
+        try { fs.unlinkSync(dpFile); } catch (_) {}
+        created = runPowerShellScript(`(Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue) -ne $null`).trim().toLowerCase().includes('true');
       }
-
       if (!created) {
-        let dpLog = '';
-        try {
-          if (fs.existsSync(dpLogFile)) dpLog = fs.readFileSync(dpLogFile, 'utf8');
-        } catch (_) {}
-        throw new Error('Falha ao criar partição de instalação no disco. ' + (dpLog ? 'Detalhes: ' + dpLog.trim() : 'Espaço contíguo insuficiente no disco C.'));
+        throw new Error('Falha ao criar partição de instalação. Certifique-se de que o disco C possui ao menos 4 GB de espaço livre contíguo e tente novamente.');
       }
     }
 
