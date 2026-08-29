@@ -51,41 +51,30 @@ namespace LoordOptimizer
             {
                 loopCounter++;
 
-                // Sincroniza estado e velocidade com o painel a cada ~50ms
-                if (loopCounter % 5 == 0)
+                // Sincroniza estado e velocidade com o painel a cada ~30ms
+                if (loopCounter % 3 == 0)
                 {
-                    try
+                    string actText = SafeReadAllText(configActivePath);
+                    if (!string.IsNullOrEmpty(actText))
                     {
-                        if (File.Exists(configActivePath))
-                        {
-                            using (var fs = new FileStream(configActivePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                            using (var reader = new StreamReader(fs))
-                            {
-                                string act = reader.ReadToEnd().Trim().ToLower();
-                                if (act == "true" || act == "1") macroAtiva = true;
-                                else if (act == "false" || act == "0") macroAtiva = false;
-                            }
-                        }
+                        string act = actText.Trim().ToLower();
+                        if (act == "true" || act == "1") macroAtiva = true;
+                        else if (act == "false" || act == "0") macroAtiva = false;
                     }
-                    catch { }
 
-                    try
+                    string spdText = SafeReadAllText(configSpeedPath);
+                    if (!string.IsNullOrEmpty(spdText))
                     {
-                        if (File.Exists(configSpeedPath))
+                        string cfg = spdText.Trim().Replace(',', '.');
+                        double newSpd;
+                        if (double.TryParse(cfg, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out newSpd))
                         {
-                            using (var fs = new FileStream(configSpeedPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                            using (var reader = new StreamReader(fs))
+                            if (newSpd >= 0.05 && newSpd <= 50.0)
                             {
-                                string cfg = reader.ReadToEnd().Trim().Replace(',', '.');
-                                double newSpd;
-                                if (double.TryParse(cfg, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out newSpd))
-                                {
-                                    if (newSpd > 0.0) speed = newSpd;
-                                }
+                                speed = newSpd;
                             }
                         }
                     }
-                    catch { }
                 }
 
                 if (macroAtiva)
@@ -94,15 +83,15 @@ namespace LoordOptimizer
                     bool isShooting = (GetAsyncKeyState(VK_LBUTTON) < 0);
                     if (isShooting)
                     {
-                        // Escala proporcional calibrada com precisao:
-                        // 0.1: accumula 0.018 por tick (~550ms por pixel -> devagar quase parando)
-                        // 0.2: accumula 0.036 por tick (~270ms por pixel -> um pouquinho mais rapido)
-                        // 0.5: accumula 0.090 por tick (~110ms por pixel)
-                        // 1.0: accumula 0.180 por tick (~55ms por pixel)
-                        // 2.5: accumula 0.450 por tick (~22ms por pixel)
-                        // 5.0: accumula 0.900 por tick (~11ms por pixel)
-                        // 10.0: descida forte e rapida
-                        accumY += (speed * 0.18);
+                        // Calibragem precisa para emulador e Free Fire:
+                        // 0.1: ~0.35 px/s (Ultra lenta, micro-puxada quase imperceptivel para firmar mira)
+                        // 0.2: ~0.70 px/s (Bem lenta)
+                        // 0.5: ~1.75 px/s (Suave e constante)
+                        // 1.0: ~3.50 px/s (Recomendada/Equilibrada)
+                        // 2.5: ~8.75 px/s (Media)
+                        // 5.0: ~17.5 px/s (Forte)
+                        // 10.0: ~35.0 px/s (Rapida/Maxima)
+                        accumY += (speed * 0.035);
 
                         if (accumY >= 1.0)
                         {
@@ -125,6 +114,27 @@ namespace LoordOptimizer
                     Thread.Sleep(20);
                 }
             }
+        }
+
+        private static string SafeReadAllText(string path)
+        {
+            if (!File.Exists(path)) return null;
+            for (int i = 0; i < 3; i++)
+            {
+                try
+                {
+                    using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                    using (var reader = new StreamReader(fs))
+                    {
+                        return reader.ReadToEnd();
+                    }
+                }
+                catch
+                {
+                    Thread.Sleep(2);
+                }
+            }
+            return null;
         }
     }
 }

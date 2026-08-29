@@ -603,28 +603,39 @@ const macroForceSlider = document.getElementById('macro-force');
 const macroSpeedInput = document.getElementById('macro-speed-input');
 const presetMacroBtns = document.querySelectorAll('.preset-macro-btn');
 
+function parseMacroSpeed(val) {
+  if (val === null || val === undefined) return 0.5;
+  const str = String(val).replace(',', '.').trim();
+  const num = parseFloat(str);
+  if (isNaN(num)) return 0.5;
+  if (num < 0.05) return 0.1;
+  if (num > 20.0) return 20.0;
+  return num;
+}
+
 function getMacroCurrentSpeed() {
-  if (macroSpeedInput) {
-    const val = parseFloat(macroSpeedInput.value);
-    if (!isNaN(val) && val > 0) return val;
+  if (macroSpeedInput && macroSpeedInput.value !== '') {
+    return parseMacroSpeed(macroSpeedInput.value);
   }
-  if (macroForceSlider) {
-    const val = parseFloat(macroForceSlider.value);
-    if (!isNaN(val) && val > 0) return val;
+  if (macroForceSlider && macroForceSlider.value !== '') {
+    return parseMacroSpeed(macroForceSlider.value);
   }
   return 0.5;
 }
 
-function updateMacroSpeedUI(val) {
-  const num = parseFloat(val);
-  if (isNaN(num) || num < 0.1) return;
+function updateMacroSpeedUI(val, origin = null) {
+  const num = parseMacroSpeed(val);
   const formatted = num.toFixed(1);
 
-  if (macroForceSlider) macroForceSlider.value = formatted;
-  if (macroSpeedInput) macroSpeedInput.value = formatted;
+  if (macroForceSlider && origin !== 'slider') {
+    macroForceSlider.value = formatted;
+  }
+  if (macroSpeedInput && origin !== 'input') {
+    macroSpeedInput.value = formatted;
+  }
 
   presetMacroBtns.forEach(btn => {
-    const bSpeed = parseFloat(btn.getAttribute('data-speed')).toFixed(1);
+    const bSpeed = parseMacroSpeed(btn.getAttribute('data-speed')).toFixed(1);
     if (bSpeed === formatted) {
       btn.style.background = 'rgba(14, 165, 233, 0.25)';
       btn.style.borderColor = '#0284c7';
@@ -640,21 +651,27 @@ function updateMacroSpeedUI(val) {
 
   // Sincroniza sempre com o backend nativo em tempo real
   if (window.api && window.api.setMacroSpeed) {
-    window.api.setMacroSpeed(parseFloat(formatted)).catch(() => {});
+    window.api.setMacroSpeed(num).catch(() => {});
   }
   if (toggleMacro && toggleMacro.checked && window.api && window.api.startMacro) {
-    window.api.startMacro(parseFloat(formatted)).catch(() => {});
+    window.api.startMacro(num).catch(() => {});
   }
 }
 
 if (macroForceSlider) {
   macroForceSlider.addEventListener('input', (e) => {
+    updateMacroSpeedUI(e.target.value, 'slider');
+  });
+  macroForceSlider.addEventListener('change', (e) => {
     updateMacroSpeedUI(e.target.value);
   });
 }
 
 if (macroSpeedInput) {
   macroSpeedInput.addEventListener('input', (e) => {
+    updateMacroSpeedUI(e.target.value, 'input');
+  });
+  macroSpeedInput.addEventListener('change', (e) => {
     updateMacroSpeedUI(e.target.value);
   });
 }
