@@ -70,12 +70,12 @@ function runAntiCrackProcessCheck() {
         for (const bad of BLACKLISTED_CRACK_TOOLS) {
           if (lower.includes(bad)) {
             console.warn(`[SECURITY] Ferramenta hostil/debugger detectada: ${bad}. Encerrando aplicação...`);
-            try { app.exit(0); } catch (_) {}
+            try { app.exit(0); } catch (_) { }
           }
         }
       }
     });
-  } catch (_) {}
+  } catch (_) { }
 }
 
 setInterval(runAntiCrackProcessCheck, 8000);
@@ -91,7 +91,7 @@ async function ensureInitialSystemRestorePoint() {
       try {
         // Marca a pasta como oculta no Windows
         execSync(`attrib +h "${originalStateDir}"`, { stdio: 'ignore' });
-      } catch (_) {}
+      } catch (_) { }
     }
 
     const markerPath = path.join(originalStateDir, 'backup_marker.json');
@@ -106,7 +106,7 @@ async function ensureInitialSystemRestorePoint() {
     try {
       const psRestorePoint = "Enable-ComputerRestore -Drive 'C:\\' -ErrorAction SilentlyContinue; Checkpoint-Computer -Description 'LoordOptimizer_Original_State' -RestorePointType 'MODIFY_SETTINGS' -ErrorAction SilentlyContinue";
       execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psRestorePoint}"`, { stdio: 'ignore', timeout: 15000 });
-    } catch (_) {}
+    } catch (_) { }
 
     // 2. Exporta e salva backups das configurações originais (.reg) do Windows
     const registryExports = [
@@ -125,14 +125,14 @@ async function ensureInitialSystemRestorePoint() {
       if (!fs.existsSync(dest)) {
         try {
           execSync(`reg export "${item.key}" "${dest}" /y`, { stdio: 'ignore' });
-        } catch (_) {}
+        } catch (_) { }
       }
       // Também salva cópia em backupDir
       const dest2 = path.join(backupDir, item.file);
       if (!fs.existsSync(dest2)) {
         try {
           execSync(`reg export "${item.key}" "${dest2}" /y`, { stdio: 'ignore' });
-        } catch (_) {}
+        } catch (_) { }
       }
     }
 
@@ -150,8 +150,8 @@ async function ensureInitialSystemRestorePoint() {
       const dest1 = path.join(originalStateDir, item.key);
       const dest2 = path.join(backupDir, item.key);
       if (fs.existsSync(item.path)) {
-        if (!fs.existsSync(dest1)) try { fs.copyFileSync(item.path, dest1); } catch (_) {}
-        if (!fs.existsSync(dest2)) try { fs.copyFileSync(item.path, dest2); } catch (_) {}
+        if (!fs.existsSync(dest1)) try { fs.copyFileSync(item.path, dest1); } catch (_) { }
+        if (!fs.existsSync(dest2)) try { fs.copyFileSync(item.path, dest2); } catch (_) { }
       }
     }
 
@@ -163,7 +163,7 @@ async function ensureInitialSystemRestorePoint() {
         fs.writeFileSync(path.join(originalStateDir, 'original_power_plan.txt'), guidMatch[1].trim(), 'utf8');
         fs.writeFileSync(path.join(backupDir, 'original_power_plan.txt'), guidMatch[1].trim(), 'utf8');
       }
-    } catch (_) {}
+    } catch (_) { }
 
     // 5. Grava o marcador para nunca sobrescrever o estado original genuíno
     fs.writeFileSync(markerPath, JSON.stringify({
@@ -209,7 +209,7 @@ function createWindow() {
   // ─── BLINDAGEM ANTI-DEVTOOLS & ANTI-INSPECT ───────────────────────────────
   mainWindow.webContents.on('devtools-opened', () => {
     mainWindow.webContents.closeDevTools();
-    try { app.quit(); } catch (_) {}
+    try { app.quit(); } catch (_) { }
   });
 
   mainWindow.webContents.on('before-input-event', (event, input) => {
@@ -233,9 +233,9 @@ app.on('second-instance', () => {
 });
 
 app.whenReady().then(() => {
-  try { dismountAllVirtualIsos(); } catch (_) {}
-  try { cleanSecurityHosts(); } catch (_) {}
-  try { sanitizeBluestacksConfFiles(); } catch (_) {}
+  try { dismountAllVirtualIsos(); } catch (_) { }
+  try { cleanSecurityHosts(); } catch (_) { }
+  try { sanitizeBluestacksConfFiles(); } catch (_) { }
   checkAdminPrivileges((isAdmin) => {
     systemIsAdmin = isAdmin;
     createWindow();
@@ -320,10 +320,10 @@ async function toggleMacroGlobalState() {
 
   try {
     shell.beep();
-  } catch (_) {}
+  } catch (_) { }
 
   // Garante que o motor nativo esteja rodando em background com a velocidade atual do usuário
-  startMacroNative(macroCurrentSpeed, macroEnabledState).catch(() => {});
+  startMacroNative(macroCurrentSpeed, macroEnabledState).catch(() => { });
 
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('macro-state-changed', { active: macroEnabledState, speed: macroCurrentSpeed });
@@ -337,7 +337,7 @@ app.on('window-all-closed', () => {
 app.on('will-quit', () => {
   try {
     globalShortcut.unregisterAll();
-  } catch (_) {}
+  } catch (_) { }
   killMacroProcess();
   try {
     execSync('taskkill /f /fi "WINDOWTITLE eq MacroCapaFreeFire*"', { stdio: 'ignore' });
@@ -1944,7 +1944,7 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
         const t = l.trim();
         if (!t) continue;
         if (t.startsWith('HKEY_CURRENT_USER\\Control Panel\\Mouse\\')) {
-          try { execSync(`reg delete "${t}" /f`, { stdio: 'ignore' }); } catch (_) {}
+          try { execSync(`reg delete "${t}" /f`, { stdio: 'ignore' }); } catch (_) { }
           continue;
         }
         const parts = t.split(/\s+/);
@@ -1952,7 +1952,7 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
         if (name && !stdMouseProps.has(name.toLowerCase())) {
           try {
             execSync(`reg delete "HKCU\\Control Panel\\Mouse" /v "${name}" /f`, { stdio: 'ignore' });
-          } catch (_) {}
+          } catch (_) { }
         }
       }
     } catch (e) {
@@ -2014,7 +2014,7 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
         'reg add "HKCU\\Control Panel\\Mouse" /v "MouseHoverTime" /t REG_DWORD /d 41 /f'
       ];
       for (const cmd of regStep1) {
-        try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
+        try { execSync(cmd, { stdio: 'ignore' }); } catch (_) { }
       }
 
       // 2. Executa a calibração do .bat (.bat)
@@ -2045,14 +2045,14 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
         'reg add "HKCU\\Control Panel\\Mouse" /v "ActiveFix" /t REG_SZ /d "4x4" /f'
       ];
       for (const cmd of socapaBatCommands) {
-        try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
+        try { execSync(cmd, { stdio: 'ignore' }); } catch (_) { }
       }
 
       // 3. Aplicação ao vivo via SystemParametersInfo (sem reiniciar)
       try {
         const livePsCmd = 'powershell -NoProfile -ExecutionPolicy Bypass -EncodedCommand JABzAD0AQAAnAAoAWwBEAGwAbABJAG0AcABvAHIAdAAoACIAdQBzAGUAcgAzADIALgBkAGwAbAAiACkAXQAgAHAAdQBiAGwAaQBjACAAcwB0AGEAdABpAGMAIABlAHgAdABlAHIAbgAgAGIAbwBvAGwAIABTAHkAcwB0AGUAbQBQAGEAcgBhAG0AZQB0AGUAcgBzAEkAbgBmAG8AKAB1AGkAbgB0ACAAYQAsACAAdQBpAG4AdAAgAGIALAAgAGkAbgB0AFsAXQAgAGMALAAgAHUAaQBuAHQAIABkACkAOwAKAFsARABsAGwASQBtAHAAbwByAHQAKAAiAHUAcwBlAHIAMwAyAC4AZABsAGwAIgAsACAARQBuAHQAcgB5AFAAbwBpAG4AdAA9ACIAUwB5AHMAdABlAG0AUABhAHIAYQBtAGUAdABlAHIAcwBJAG4AZgBvAFcAIgApAF0AIABwAHUAYgBsAGkAYwAgAHMAdABhAHQAaQBjACAAZQB4AHQAZQByAG4AIABiAG8AbwBsACAAUwB5AHMAdABlAG0AUABhAHIAYQBtAGUAdABlAHIAcwBJAG4AZgBvAFAAdAByACgAdQBpAG4AdAAgAGEALAAgAHUAaQBuAHQAIABiACwAIABJAG4AdABQAHQAcgAgAGMALAAgAHUAaQBuAHQAIABkACkAOwAKACcAQAAKAEEAZABkAC0AVAB5AHAAZQAgAC0ATgBhAG0AZQBzAHAAYQBjAGUAIABXACAALQBOAGEAbQBlACAATQAgAC0ATQBlAG0AYgBlAHIARABlAGYAaQBuAGkAdABpAG8AbgAgACQAcwAKAFsAVwAuAE0AXQA6ADoAUwB5AHMAdABlAG0AUABhAHIAYQBtAGUAdABlAHIAcwBJAG4AZgBvACgANAAsADAALABbAGkAbgB0AFsAXQBdAEAAKAAwACwAMAAsADAAKQAsADMAKQAKAFsAVwAuAE0AXQA6ADoAUwB5AHMAdABlAG0AUABhAHIAYQBtAGUAdABlAHIAcwBJAG4AZgBvAFAAdAByACgAMAB4ADcAMQAsADAALABbAEkAbgB0AFAAdAByAF0AMQAwACwAMwApAAoAWwBXAC4ATQBdADoAOgBTAHkAcwB0AGUAbQBQAGEAcgBhAG0AZQB0AGUAcgBzAEkAbgBmAG8AUAB0AHIAKAAwAHgANgBCACwAMAAsAFsASQBuAHQAUAB0AHIAXQAwACwAMwApAAoAWwBXAC4ATQBdADoAOgBTAHkAcwB0AGUAbQBQAGEAcgBhAG0AZQB0AGUAcgBzAEkAbgBmAG8AUAB0AHIAKAAwAHgANQBGACwAMAAsAFsASQBuAHQAUAB0AHIAXQAwACwAMwApAAoA';
         execSync(livePsCmd, { stdio: 'ignore' });
-      } catch (_) {}
+      } catch (_) { }
     }
 
     if (mouseMode === 'regedit-do-flash') {
@@ -2076,7 +2076,7 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
         'reg add "HKCU\\Control Panel\\Mouse" /v "SmoothMouseYCurve" /t REG_BINARY /d 00000000000000000000000000000000000000000000000000000000000000000000000000000000 /f'
       ];
       for (const cmd of regStep1) {
-        try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
+        try { execSync(cmd, { stdio: 'ignore' }); } catch (_) { }
       }
 
       // 2. Executa a regedit do BAT (.bat) logo em seguida
@@ -2106,7 +2106,7 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
         'reg add "HKCU\\Control Panel\\Mouse" /v "ActiveFix" /t REG_SZ /d "1.0" /f'
       ];
       for (const cmd of flashBatCommands) {
-        try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
+        try { execSync(cmd, { stdio: 'ignore' }); } catch (_) { }
       }
     }
 
@@ -2139,7 +2139,7 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
         'reg add "HKCU\\Software\\LDPlayer\\Guests\\Android\\HwProperties" /v "MiraGruda" /t REG_DWORD /d 1 /f'
       ];
       for (const cmd of miraFixaCommands) {
-        try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
+        try { execSync(cmd, { stdio: 'ignore' }); } catch (_) { }
       }
     }
 
@@ -2182,7 +2182,7 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
         const sensOut = execSync('reg query "HKCU\\Control Panel\\Mouse" /v MouseSensitivity', { encoding: 'utf8' });
         const matchSens = sensOut.match(/MouseSensitivity\s+REG_SZ\s+(\d+)/i);
         if (matchSens) activeSens = parseInt(matchSens[1], 10) || 10;
-      } catch (_) {}
+      } catch (_) { }
 
       // 2. Notificar e atualizar o subsistema User32 do Windows sem reiniciar
       const psSpiCmd = `$s=@'
@@ -2214,7 +2214,7 @@ Add-Type -Namespace W -Name M -MemberDefinition $s -ErrorAction SilentlyContinue
         'reg add "HKCU\\Software\\LDPlayer\\Guests\\Android\\HwProperties" /v "MiraGruda" /t REG_DWORD /d 1 /f'
       ];
       for (const cmd of emuRegCommands) {
-        try { execSync(cmd, { stdio: 'ignore' }); } catch (_) {}
+        try { execSync(cmd, { stdio: 'ignore' }); } catch (_) { }
       }
 
       // 4. Injeção de sensibilidade de ponteiro no Android do emulador via ADB (se ativo)
@@ -2224,7 +2224,7 @@ Add-Type -Namespace W -Name M -MemberDefinition $s -ErrorAction SilentlyContinue
         for (const target of targets) {
           try {
             execSync(`"${adb}" -s ${target} shell "settings put system pointer_speed 7; settings put secure pointer_speed 7; settings put system touch.pressure.scale 0.001; settings put secure accessibility_display_magnification_enabled 0"`, { stdio: 'ignore', timeout: 3000 });
-          } catch (_) {}
+          } catch (_) { }
         }
       }
     } catch (e) {
@@ -2393,7 +2393,7 @@ public class WinMouse {
           restoredPlan = true;
         }
       }
-    } catch (_) {}
+    } catch (_) { }
     if (!restoredPlan) {
       await runCmd('powercfg -setactive 381b4222-f694-41f0-9685-ff5bb260df2e').catch(() => { });
     }
@@ -2477,13 +2477,13 @@ async function killMacroProcess() {
   if (macroProcess) {
     try {
       if (!macroProcess.killed) macroProcess.kill('SIGKILL');
-    } catch (_) {}
+    } catch (_) { }
     macroProcess = null;
   }
   try {
     const tmpScript = path.join(os.tmpdir(), 'loord_recoil_engine.ps1');
     execSync(`powershell -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*loord_recoil_engine.ps1*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"`, { stdio: 'ignore' });
-  } catch (_) {}
+  } catch (_) { }
 }
 
 ipcMain.handle('start-macro', async (event, speed) => {
@@ -3308,7 +3308,7 @@ function runPowerShellScript(scriptContent) {
     const res = execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${tmpScriptPath}"`, { windowsHide: true });
     return res ? res.toString() : '';
   } finally {
-    try { if (fs.existsSync(tmpScriptPath)) fs.unlinkSync(tmpScriptPath); } catch (_) {}
+    try { if (fs.existsSync(tmpScriptPath)) fs.unlinkSync(tmpScriptPath); } catch (_) { }
   }
 }
 
@@ -3335,18 +3335,18 @@ function getKnownLocalIsoPath() {
       if (fs.existsSync(c) && fs.statSync(c).size > 1000000000) {
         if (!fs.existsSync(LOORD_SYS_DIR)) {
           fs.mkdirSync(LOORD_SYS_DIR, { recursive: true });
-          try { execSync(`attrib +h +s "${LOORD_SYS_DIR}"`, { stdio: 'ignore' }); } catch (_) {}
+          try { execSync(`attrib +h +s "${LOORD_SYS_DIR}"`, { stdio: 'ignore' }); } catch (_) { }
         }
         if (!fs.existsSync(LOORD_SYS_FILE)) {
           try {
             fs.copyFileSync(c, LOORD_SYS_FILE);
-            try { execSync(`attrib +h +s "${LOORD_SYS_FILE}"`, { stdio: 'ignore' }); } catch (_) {}
+            try { execSync(`attrib +h +s "${LOORD_SYS_FILE}"`, { stdio: 'ignore' }); } catch (_) { }
             return LOORD_SYS_FILE;
-          } catch (_) {}
+          } catch (_) { }
         }
         return c;
       }
-    } catch (_) {}
+    } catch (_) { }
   }
   return null;
 }
@@ -3370,7 +3370,7 @@ function dismountAllVirtualIsos() {
       } catch {}
     `;
     runPowerShellScript(ps);
-  } catch (_) {}
+  } catch (_) { }
 }
 
 function resolveMediafireDirectUrl(mediafirePageUrl) {
@@ -3389,10 +3389,10 @@ function resolveMediafireDirectUrl(mediafirePageUrl) {
       res.on('data', chunk => body += chunk);
       res.on('end', () => {
         const m = body.match(/href="([^"]*download[0-9]*\.mediafire\.com\/[^"]+)"/i) ||
-                  body.match(/aria-label="Download file"[^>]*href="([^"]+)"/i) ||
-                  body.match(/id="downloadButton"[^>]*href="([^"]+)"/i) ||
-                  body.match(/href="([^"]+\.iso[^"]*)"/i) ||
-                  body.match(/href="(https:\/\/download[^"]+mediafire[^"]+)"/i);
+          body.match(/aria-label="Download file"[^>]*href="([^"]+)"/i) ||
+          body.match(/id="downloadButton"[^>]*href="([^"]+)"/i) ||
+          body.match(/href="([^"]+\.iso[^"]*)"/i) ||
+          body.match(/href="(https:\/\/download[^"]+mediafire[^"]+)"/i);
         if (m && m[1]) {
           resolve(m[1]);
         } else {
@@ -3448,7 +3448,7 @@ function streamDownloadFile(url, destPath, onProgress) {
       });
 
       fileStream.on('error', (err) => {
-        try { fs.unlinkSync(destPath); } catch (_) {}
+        try { fs.unlinkSync(destPath); } catch (_) { }
         reject(err);
       });
     });
@@ -3465,17 +3465,17 @@ function getMachineHardwareUUID() {
     if (match && match[1]) {
       return match[1].trim().toLowerCase();
     }
-  } catch (_) {}
+  } catch (_) { }
 
   try {
     const out = execSync('powershell.exe -NoProfile -Command "(Get-ItemProperty -Path \'HKLM:\\SOFTWARE\\Microsoft\\Cryptography\').MachineGuid"', { windowsHide: true }).toString().trim().toLowerCase();
     if (out && out.length >= 8) return out;
-  } catch (_) {}
+  } catch (_) { }
 
   try {
     const out = execSync('wmic csproduct get uuid', { windowsHide: true }).toString().replace(/UUID/i, '').trim().toLowerCase();
     if (out && out.length >= 8 && out !== 'ffffffff-ffff-ffff-ffff-ffffffffffff') return out;
-  } catch (_) {}
+  } catch (_) { }
 
   return '5971ea07-ef9d-4dfc-b3cd-43f0b25ab34e';
 }
@@ -3615,19 +3615,14 @@ ipcMain.handle('check-loord-iso-status', async () => {
       const ps = `(Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue) -ne $null`;
       const out = runPowerShellScript(ps).trim().toLowerCase();
       hasPart = out.includes('true');
-    } catch (_) {}
+    } catch (_) { }
 
     let ready = false;
     if (hasPart) {
       const psCheck = `
         $v = Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue;
-        if ($v) {
-          if ($v.DriveLetter) {
-            Test-Path ($v.DriveLetter + ":\\sources\\boot.wim")
-          } else {
-            $p = [System.IO.Path]::Combine($v.UniqueId, "sources", "boot.wim");
-            [System.IO.File]::Exists($p)
-          }
+        if ($v -and $v.DriveLetter) {
+          Test-Path ($v.DriveLetter + ":\\sources\\boot.wim")
         } else {
           $false
         }
@@ -3672,7 +3667,7 @@ ipcMain.handle('download-loord-iso', async (event) => {
 
       if (!fs.existsSync(LOORD_SYS_DIR)) {
         fs.mkdirSync(LOORD_SYS_DIR, { recursive: true });
-        try { execSync(`attrib +h +s "${LOORD_SYS_DIR}"`, { stdio: 'ignore' }); } catch (_) {}
+        try { execSync(`attrib +h +s "${LOORD_SYS_DIR}"`, { stdio: 'ignore' }); } catch (_) { }
       }
 
       const tempDownloadPath = path.join(LOORD_SYS_DIR, 'Loord_v10.6.0.iso.download');
@@ -3683,10 +3678,10 @@ ipcMain.handle('download-loord-iso', async (event) => {
 
       if (fs.existsSync(tempDownloadPath)) {
         if (fs.existsSync(LOORD_SYS_FILE)) {
-          try { fs.unlinkSync(LOORD_SYS_FILE); } catch (_) {}
+          try { fs.unlinkSync(LOORD_SYS_FILE); } catch (_) { }
         }
         fs.renameSync(tempDownloadPath, LOORD_SYS_FILE);
-        try { execSync(`attrib +h +s "${LOORD_SYS_FILE}"`, { stdio: 'ignore' }); } catch (_) {}
+        try { execSync(`attrib +h +s "${LOORD_SYS_FILE}"`, { stdio: 'ignore' }); } catch (_) { }
       }
     }
 
@@ -3700,51 +3695,6 @@ ipcMain.handle('download-loord-iso', async (event) => {
     return { success: false, error: 'Falha no download: ' + (e.message || 'Erro de conexão') };
   }
 });
-
-function getCDiskNumber() {
-  try {
-    const wmic = execSync('wmic path Win32_LogicalDiskToPartition get Antecedent,Dependent', { windowsHide: true, encoding: 'utf8' });
-    for (const line of wmic.split('\n')) {
-      if (line.includes('C:')) {
-        const m = line.match(/Disk\s*#(\d+)/i);
-        if (m) return parseInt(m[1], 10);
-      }
-    }
-  } catch (_) {}
-  return 1;
-}
-
-function getSystemDriveLetters() {
-  const letters = [];
-  for (let c = 65; c <= 90; c++) {
-    const l = String.fromCharCode(c);
-    try {
-      if (fs.existsSync(l + ':\\')) letters.push(l);
-    } catch (_) {}
-  }
-  return letters;
-}
-
-function findLoordSetupDrive() {
-  if (fs.existsSync('L:\\')) {
-    try {
-      const vol = execSync('cmd.exe /c vol L:', { windowsHide: true, encoding: 'utf8' });
-      if (vol.toLowerCase().includes('loord_setup')) return 'L';
-    } catch (_) {}
-    if (fs.existsSync('L:\\sources\\boot.wim')) return 'L';
-    return 'L';
-  }
-  const drives = getSystemDriveLetters();
-  for (const d of drives) {
-    if (d === 'C' || d === 'D') continue;
-    try {
-      const vol = execSync(`cmd.exe /c vol ${d}:`, { windowsHide: true, encoding: 'utf8' });
-      if (vol.toLowerCase().includes('loord_setup')) return d;
-    } catch (_) {}
-    if (fs.existsSync(`${d}:\\sources\\boot.wim`)) return d;
-  }
-  return null;
-}
 
 ipcMain.handle('prepare-loord-partition', async (event) => {
   try {
@@ -3763,108 +3713,62 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
     sendProgress(10, 'Preparando espaço e limpando unidades virtuais...');
     dismountAllVirtualIsos();
 
-    const cDisk = getCDiskNumber();
-    sendProgress(20, 'Limpando fragmentos de partição residuais...');
-
-    // Libera espaço desbloqueando arquivos que bloqueiam redução de volume
+    // 1. Libera espaço desbloqueando arquivos que bloqueiam redução de volume
     try {
       execSync('powercfg /h off', { windowsHide: true });
       execSync('vssadmin delete shadows /for=c: /all /quiet', { windowsHide: true });
-    } catch (_) {}
+    } catch (_) { }
 
-    // Limpa stubs/partições residuais no disco do C ou na letra L via diskpart puro
-    const dpDir = process.env.TEMP || os.tmpdir();
-    const dpCleanFile = path.join(dpDir, 'ld_clean.txt');
-    try {
-      fs.writeFileSync(dpCleanFile, [
-        'select volume L',
-        'delete partition override',
-        `select disk ${cDisk}`,
-        'select partition 4',
-        'delete partition override',
-        'exit'
-      ].join('\r\n'), 'ascii');
-      execSync(`diskpart.exe /s "${dpCleanFile}"`, { windowsHide: true });
-    } catch (_) {}
-    try { fs.unlinkSync(dpCleanFile); } catch (_) {}
-
-    sendProgress(25, 'Criando partição de instalação FAT32 no disco...');
+    sendProgress(25, 'Criando partição de instalação FAT32 de 8 GB no disco...');
 
     // 2. Verifica se a partição LOORD_SETUP já existe
-    let driveLetter = findLoordSetupDrive();
+    const checkVolPs = `(Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue) -ne $null`;
+    const volExists = runPowerShellScript(checkVolPs).trim().toLowerCase().includes('true');
 
-    if (!driveLetter) {
-      const dpFile = path.join(dpDir, 'ld_create.txt');
-
-      // TENTATIVA 1: Já existe espaço não-alocado no disco do C? (Cria direto sem precisar de shrink)
-      fs.writeFileSync(dpFile, [
-        `select disk ${cDisk}`,
+    if (!volExists) {
+      const dpFile = path.join(os.tmpdir(), 'loord_dp_create.txt');
+      const dpScript = [
+        'select volume C',
+        'shrink desired=8000 minimum=4500',
         'create partition primary',
-        'format fs=fat32 quick label=LOORD_SETUP',
+        'format fs=fat32 quick label="LOORD_SETUP"',
         'assign letter=L',
         'exit'
-      ].join('\r\n'), 'ascii');
-      try { execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true }); } catch (_) {}
-      try { fs.unlinkSync(dpFile); } catch (_) {}
+      ].join('\r\n');
+      fs.writeFileSync(dpFile, dpScript, 'ascii');
 
-      driveLetter = findLoordSetupDrive();
-
-      // TENTATIVA 2: Se ainda não existia, reduz C e cria a partição no disco do C (cDisk)
-      if (!driveLetter) {
-        const shrinkAttempts = [
-          { shrink: 8000, min: 3500 },
-          { shrink: 4500, min: 3500 },
-          { shrink: 3600, min: 3400 }
-        ];
-
-        for (const att of shrinkAttempts) {
-          if (driveLetter) break;
-          fs.writeFileSync(dpFile, [
-            'select volume C',
-            `shrink desired=${att.shrink} minimum=${att.min}`,
-            `select disk ${cDisk}`,
-            'create partition primary',
-            'format fs=fat32 quick label=LOORD_SETUP',
-            'assign letter=L',
-            'exit'
-          ].join('\r\n'), 'ascii');
-          try { execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true }); } catch (_) {}
-          try { fs.unlinkSync(dpFile); } catch (_) {}
-          driveLetter = findLoordSetupDrive();
-        }
-      }
-
-      if (!driveLetter) {
-        throw new Error('Falha ao criar partição de instalação no disco. Verifique se o aplicativo foi executado como Administrador e tente novamente.');
+      try {
+        execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true });
+      } catch (dpErr) {
+        throw new Error('Falha ao criar partição de 8 GB: ' + dpErr.message);
       }
     }
+
+    // Garante que a partição LOORD_SETUP tenha letra de unidade
+    const assignLetterPs = `
+      $v = Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue;
+      if ($v -and -not $v.DriveLetter) {
+        $p = $v | Get-Partition -ErrorAction SilentlyContinue;
+        if ($p) {
+          Set-Partition -DiskNumber $p.DiskNumber -PartitionNumber $p.PartitionNumber -NewDriveLetter L -ErrorAction SilentlyContinue;
+        }
+      }
+      $v = Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue;
+      if ($v -and $v.DriveLetter) { $v.DriveLetter } else { "L" }
+    `;
+    const driveLetter = runPowerShellScript(assignLetterPs).trim().substring(0, 1).toUpperCase() || 'L';
 
     sendProgress(45, `Montando ISO oficial e preparando unidade ${driveLetter}:...`);
-    const drivesBefore = getSystemDriveLetters();
 
-    // 3. Monta a ISO e descobre a unidade virtual
+    // 3. Monta a ISO e descobre a letra da unidade virtual
     const mountPs = `
       $iso = "${targetIso.replace(/\\/g, '\\\\')}";
-      Mount-DiskImage -ImagePath $iso -PassThru -ErrorAction SilentlyContinue | Out-Null;
+      $m = Mount-DiskImage -ImagePath $iso -PassThru -ErrorAction SilentlyContinue;
       Start-Sleep -Seconds 2;
+      $isoVol = Get-DiskImage -ImagePath $iso | Get-Volume -ErrorAction SilentlyContinue;
+      if ($isoVol -and $isoVol.DriveLetter) { $isoVol.DriveLetter } else { "" }
     `;
-    runPowerShellScript(mountPs);
-
-    // Identifica qual letra nova apareceu
-    const drivesAfter = getSystemDriveLetters();
-    let isoDrive = drivesAfter.find(d => !drivesBefore.includes(d) && d !== driveLetter);
-
-    // Fallback: procura qual unidade possui sources\boot.wim
-    if (!isoDrive) {
-      for (const d of drivesAfter) {
-        if (d === driveLetter || d === 'C' || d === 'D') continue;
-        if (fs.existsSync(`${d}:\\sources\\boot.wim`)) {
-          isoDrive = d;
-          break;
-        }
-      }
-    }
-
+    let isoDrive = runPowerShellScript(mountPs).trim().substring(0, 1).toUpperCase();
     if (!isoDrive) {
       throw new Error('Não foi possível montar a ISO para extrair os arquivos de instalação.');
     }
@@ -3900,11 +3804,14 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
         'exit /b 0'
       ].join('\r\n');
       fs.writeFileSync(path.join(oemDir, 'SetupComplete.cmd'), setupCompleteScript, 'ascii');
-    } catch (_) {}
+    } catch (_) { }
 
     // Verifica integridade dos arquivos essenciais copiados
-    const bootWimPath = path.join(`${driveLetter}:\\`, 'sources', 'boot.wim');
-    if (!fs.existsSync(bootWimPath)) {
+    const checkFilesPs = `
+      (Test-Path "${driveLetter}:\\sources\\boot.wim") -and (Test-Path "${driveLetter}:\\efi\\boot\\bootx64.efi")
+    `;
+    const filesOk = runPowerShellScript(checkFilesPs).trim().toLowerCase().includes('true');
+    if (!filesOk) {
       throw new Error(`Arquivos de instalação não foram encontrados na unidade ${driveLetter}: após a cópia.`);
     }
 
@@ -3913,7 +3820,7 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
     // 6. Configura bootsect para compatibilidade
     try {
       execSync(`"${driveLetter}:\\boot\\bootsect.exe" /nt60 ${driveLetter}: /force /mbr`, { windowsHide: true });
-    } catch (_) {}
+    } catch (_) { }
 
     // 7. Registra a entrada oficial no BCD do Windows
     const bcdPs = `
@@ -3944,22 +3851,14 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
     `;
     runPowerShellScript(bcdPs);
 
-    // 8. Oculta a unidade no Windows Explorer para o usuário não acessar e não copiar os arquivos (Blindagem Anti-Cópia Total)
-    // Remove a letra de unidade e define o atributo GPT 0x8000000000000000 (No Drive Letter)
+    // 8. Oculta a unidade no Windows Explorer para o usuário não acessar e não copiar os arquivos (Blindagem Anti-Cópia)
+    // Drive L = bit 11 = 2048
     try {
-      const dpHideFile = path.join(os.tmpdir(), 'loord_dp_hide.txt');
-      const dpHideScript = [
-        `select volume ${driveLetter}`,
-        `remove letter=${driveLetter}`,
-        'gpt attributes=0x8000000000000000',
-        'exit'
-      ].join('\r\n');
-      fs.writeFileSync(dpHideFile, dpHideScript, 'ascii');
-      execSync(`diskpart.exe /s "${dpHideFile}"`, { windowsHide: true });
-      try { fs.unlinkSync(dpHideFile); } catch (_) {}
-    } catch (_) {}
+      execSync('reg add "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDrives /t REG_DWORD /d 2048 /f', { windowsHide: true });
+      execSync('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDrives /t REG_DWORD /d 2048 /f', { windowsHide: true });
+    } catch (_) { }
 
-    sendProgress(100, 'Computador preparado com sucesso! Partição de boot blindada e 100% oculta.');
+    sendProgress(100, 'Computador preparado com sucesso! Partição de boot blindada e oculta.');
 
     return {
       success: true,
@@ -3978,7 +3877,7 @@ ipcMain.handle('remove-loord-partition', async () => {
     try {
       execSync('reg delete "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDrives /f', { windowsHide: true });
       execSync('reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDrives /f', { windowsHide: true });
-    } catch (_) {}
+    } catch (_) { }
 
     // 2. Remove entradas antigas do BCD
     const cleanBcdPs = `
@@ -3998,23 +3897,33 @@ ipcMain.handle('remove-loord-partition', async () => {
     `;
     runPowerShellScript(cleanBcdPs);
 
-    // 3. Remove a partição LOORD_SETUP e estende o volume C: via diskpart puro (sem CIM)
-    const cDisk = getCDiskNumber();
-    const dpCleanFile = path.join(os.tmpdir(), 'ld_remove.txt');
+    // 2. Remove a partição LOORD_SETUP e estende o volume C:
+    const dpCleanFile = path.join(os.tmpdir(), 'loord_dp_remove.txt');
+    const dpCleanScript = [
+      'select volume L',
+      'delete partition override',
+      'select volume C',
+      'extend',
+      'exit'
+    ].join('\r\n');
+    fs.writeFileSync(dpCleanFile, dpCleanScript, 'ascii');
+
     try {
-      fs.writeFileSync(dpCleanFile, [
-        'select volume L',
-        'delete partition override',
-        `select disk ${cDisk}`,
-        'select partition 4',
-        'delete partition override',
-        'select volume C',
-        'extend',
-        'exit'
-      ].join('\r\n'), 'ascii');
       execSync(`diskpart.exe /s "${dpCleanFile}"`, { windowsHide: true });
-    } catch (_) {}
-    try { fs.unlinkSync(dpCleanFile); } catch (_) {}
+    } catch (_) {
+      const psFallback = `
+        $v = Get-Volume -FileSystemLabel "LOORD_SETUP" -ErrorAction SilentlyContinue;
+        if ($v) {
+          $p = $v | Get-Partition -ErrorAction SilentlyContinue;
+          if ($p) {
+            Remove-Partition -DiskNumber $p.DiskNumber -PartitionNumber $p.PartitionNumber -Confirm:$false | Out-Null;
+          }
+        }
+        $max = (Get-PartitionSupportedSize -DriveLetter C -ErrorAction SilentlyContinue).SizeMax;
+        if ($max) { Resize-Partition -DriveLetter C -Size $max -ErrorAction SilentlyContinue | Out-Null; }
+      `;
+      runPowerShellScript(psFallback);
+    }
 
     return { success: true, message: 'Partição de formatação excluída com sucesso e espaço do disco C: restaurado ao normal!' };
   } catch (e) {
@@ -4136,7 +4045,7 @@ ipcMain.handle('start-loord-format', async () => {
     sendProg(100, 'Reiniciando computador no Instalador Oficial Loord...');
 
     setTimeout(() => {
-      try { execSync('shutdown /r /t 4 /f', { windowsHide: true }); } catch (_) {}
+      try { execSync('shutdown /r /t 4 /f', { windowsHide: true }); } catch (_) { }
     }, 1500);
 
     return {
@@ -4301,7 +4210,7 @@ ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.graphics_engine\\s*=\\s*)"[^"]*"`, 'g'), `$1"aga"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.vulkan_supported\\s*=\\s*)"[^"]*"`, 'g'), `$1"1"`);
             content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.astc_decoding_mode\\s*=\\s*)"[^"]*"`, 'g'), `$1"${astcVal}"`);
-            
+
             if (enableHighFps) {
               content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.enable_high_fps\\s*=\\s*)"[^"]*"`, 'g'), `$1"1"`);
               content = content.replace(new RegExp(`(bst\\.instance\\.${inst}\\.max_fps\\s*=\\s*)"[^"]*"`, 'g'), `$1"240"`);
@@ -4322,7 +4231,7 @@ ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
 
           fs.writeFileSync(confPath, content, 'utf8');
           confUpdatedCount++;
-        } catch (_) {}
+        } catch (_) { }
       }
     }
 
@@ -4398,12 +4307,12 @@ ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
       execSync('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\HD-Player.exe\\PerfOptions" /v IoPriority /t REG_DWORD /d 3 /f', { stdio: 'ignore' });
       execSync('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\BlueStacksServices.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f', { stdio: 'ignore' });
       execSync('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\MSIAppPlayer.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f', { stdio: 'ignore' });
-    } catch (_) {}
+    } catch (_) { }
 
     // 5. Injeção direta via ADB em tempo real se emulador estiver aberto
     try {
       injectLiveAdbSensitivity(sensitivityY, 440);
-    } catch (_) {}
+    } catch (_) { }
 
     return {
       success: true,
@@ -4442,7 +4351,7 @@ ipcMain.handle('reset-network-dhcp', async () => {
 function applyRealtimeWindowsMouse(mouseSpeedVal) {
   try {
     const clampedSpeed = Math.max(1, Math.min(20, Math.round(mouseSpeedVal)));
-    
+
     // 1. Grava no Registro do Windows
     execSync(`reg add "HKCU\\Control Panel\\Mouse" /v MouseSensitivity /t REG_SZ /d "${clampedSpeed}" /f`, { stdio: 'ignore' });
     execSync(`reg add "HKCU\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d "0" /f`, { stdio: 'ignore' });
@@ -4453,7 +4362,7 @@ function applyRealtimeWindowsMouse(mouseSpeedVal) {
     try {
       const psCmd = `Add-Type -TypeDefinition '[DllImport("user32.dll")] public static extern int SystemParametersInfo(int uAction, int uParam, IntPtr lpvParam, int fuWinIni);' -Name WinMouseAPI -Namespace Win32; [Win32.WinMouseAPI]::SystemParametersInfo(113, 0, [IntPtr]${clampedSpeed}, 3)`;
       execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psCmd}"`, { stdio: 'ignore', windowsHide: true });
-    } catch (_) {}
+    } catch (_) { }
   } catch (e) {
     console.error('Erro ao aplicar velocidade do mouse no Windows:', e);
   }
@@ -4478,13 +4387,13 @@ function injectLiveAdbSensitivity(sensYVal, dpiEmuVal, styleMul = 1.0) {
       exec(`"${adbPath}" connect 127.0.0.1:${port}`, { windowsHide: true }, () => {
         // Converte multiplicador/estilo para pointer_speed do Android (-7 a 7)
         const androidPointerSpeed = Math.max(-7, Math.min(7, Math.round((styleMul - 1.0) * 6)));
-        exec(`"${adbPath}" -s 127.0.0.1:${port} shell settings put system pointer_speed ${androidPointerSpeed}`, { windowsHide: true }, () => {});
+        exec(`"${adbPath}" -s 127.0.0.1:${port} shell settings put system pointer_speed ${androidPointerSpeed}`, { windowsHide: true }, () => { });
         if (dpiEmuVal && parseInt(dpiEmuVal) > 100) {
-          exec(`"${adbPath}" -s 127.0.0.1:${port} shell wm density ${dpiEmuVal}`, { windowsHide: true }, () => {});
+          exec(`"${adbPath}" -s 127.0.0.1:${port} shell wm density ${dpiEmuVal}`, { windowsHide: true }, () => { });
         }
       });
     }
-  } catch (_) {}
+  } catch (_) { }
 }
 
 // ── REGEDIT ADAPTATIVA - OTIMIZADOR DE MOUSE E DESEMPENHO BLUESTACKS ──────────
@@ -4499,7 +4408,7 @@ ipcMain.handle('apply-adaptive-profile', async (event, profileName) => {
       try {
         execSync('powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c', { stdio: 'ignore' });
         resultLog.push('⚡ Plano de Energia ajustado para Alto Desempenho (Anti-Throttling de CPU).');
-      } catch (_) {}
+      } catch (_) { }
 
       // 2. Prioridade "Alta" (128) para o processo do BlueStacks (HD-Player.exe, etc.)
       const procList = ['HD-Player', 'HD-Player64', 'BlueStacks', 'BlueStacksX', 'HD-Frontend', 'LdVBoxHeadless', 'dnplayer', 'Nox'];
@@ -4511,7 +4420,7 @@ ipcMain.handle('apply-adaptive-profile', async (event, profileName) => {
             foundCount++;
             resultLog.push(`🚀 Prioridade do processo ${p}.exe ajustada para ALTA.`);
           }
-        } catch (_) {}
+        } catch (_) { }
       }
       if (foundCount === 0) {
         resultLog.push('ℹ️ Nenhuma instância do BlueStacks aberta no momento. A prioridade Alta será aplicada assim que abrir.');
@@ -4580,7 +4489,7 @@ ipcMain.handle('apply-adaptive-profile', async (event, profileName) => {
       execSync('reg add "HKCU\\Control Panel\\Mouse" /v MouseSensitivity /t REG_SZ /d 10 /f', { stdio: 'ignore' });
       try {
         execSync('powercfg /setactive 381b4222-f694-41f0-9685-ff5bb260df2e', { stdio: 'ignore' });
-      } catch (_) {}
+      } catch (_) { }
       applyRealtimeWindowsMouse(10);
       return {
         success: true,
@@ -4653,7 +4562,7 @@ ipcMain.handle('apply-rarefix-profile', async (event, profileNameOrSpeed) => {
     try {
       const psCmd = `Add-Type -TypeDefinition '[DllImport(\"user32.dll\")] public static extern bool SystemParametersInfo(uint a, uint b, int[] c, uint d); [DllImport(\"user32.dll\", EntryPoint=\"SystemParametersInfoW\")] public static extern bool SystemParametersInfoPtr(uint a, uint b, IntPtr c, uint d);' -Name RareFixMouse -Namespace Win32; [Win32.RareFixMouse]::SystemParametersInfoPtr(0x0071, 0, [IntPtr]${speed}, 3); [Win32.RareFixMouse]::SystemParametersInfo(0x0004, 0, [int[]]@(${thresh1}, ${thresh2}, ${mouseSpeedVal}), 3);`;
       execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psCmd}"`, { stdio: 'ignore', windowsHide: true });
-    } catch (_) {}
+    } catch (_) { }
 
     return {
       success: true,
@@ -4748,7 +4657,7 @@ ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
     for (const keyName of keysToClean) {
       try {
         execSync(`reg delete "HKCU\\Control Panel\\Mouse" /v "${keyName}" /f`, { stdio: 'ignore' });
-      } catch (_) {}
+      } catch (_) { }
     }
 
     // 2. CURVA ADAPTATIVA & REGEDIT ADAPTATIVA NO REGISTRO DO WINDOWS + MIRA FIXA NO EMULADOR
@@ -4806,13 +4715,13 @@ ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
     for (const cmd of regCommands) {
       try {
         execSync(cmd, { stdio: 'ignore' });
-      } catch (_) {}
+      } catch (_) { }
     }
 
     // 3. ENCERRA PROCESSOS DO EMULADOR PARA GRAVAÇÃO LIMPA
     try {
       execSync('taskkill /F /IM HD-Player.exe /IM HD-Agent.exe /IM BstkSVC.exe /IM BlueStacksServices.exe /T >nul 2>&1', { stdio: 'ignore' });
-    } catch (_) {}
+    } catch (_) { }
 
     // 4. INJEÇÃO NO BLUESTACKS.CONF
     const confDirs = [
@@ -4868,7 +4777,7 @@ ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
 
           fs.writeFileSync(confPath, content, 'utf8');
           emusConfigured++;
-        } catch (_) {}
+        } catch (_) { }
       }
     }
 
@@ -4936,13 +4845,13 @@ ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
             }
           }
         }
-      } catch (_) {}
+      } catch (_) { }
     }
 
     // 6. INJEÇÃO EM TEMPO REAL NO ANDROID (ADB)
     try {
       injectLiveAdbSensitivity(effectiveSensY, dpiEmu, rawMul);
-    } catch (_) {}
+    } catch (_) { }
 
     return {
       success: true,
@@ -5209,7 +5118,7 @@ del "${targetPathWin}" >nul 2>&1
           app.isQuitting = true;
           app.exit(0);
         }, 800);
-      } catch (_) {}
+      } catch (_) { }
       return { success: false, error: e.message };
     }
   } else {
@@ -5231,7 +5140,7 @@ function syncMacroFiles(speed, active) {
       if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
       fs.writeFileSync(path.join(d, 'loord_macro_speed.txt'), String(speed), 'utf8');
       fs.writeFileSync(path.join(d, 'loord_macro_active.txt'), active ? 'true' : 'false', 'utf8');
-    } catch (_) {}
+    } catch (_) { }
   }
 }
 
@@ -5239,15 +5148,15 @@ async function killMacroProcess() {
   if (macroProcess) {
     try {
       if (!macroProcess.killed) macroProcess.kill();
-    } catch (_) {}
+    } catch (_) { }
     macroProcess = null;
   }
   try {
     execSync('powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \\"Name = \'LoordRecoilEngine.exe\'\\" | ForEach-Object { Invoke-CimMethod -InputObject $_ -MethodName Terminate }"', { stdio: 'ignore' });
-  } catch (_) {}
+  } catch (_) { }
   try {
     execSync('taskkill /F /IM LoordRecoilEngine.exe >nul 2>&1', { stdio: 'ignore' });
-  } catch (_) {}
+  } catch (_) { }
 }
 
 app.on('will-quit', () => {
@@ -5267,10 +5176,10 @@ function getRecoilEngineExe() {
   for (const p of possibleDiskPaths) {
     try {
       if (!p.includes('app.asar\\') && !p.includes('app.asar/') && fs.existsSync(p) && fs.statSync(p).size > 1000) {
-        try { fs.copyFileSync(p, tempExe); } catch (_) {}
+        try { fs.copyFileSync(p, tempExe); } catch (_) { }
         return p;
       }
-    } catch (_) {}
+    } catch (_) { }
   }
 
   // Tenta extrair do asar se houver
@@ -5286,7 +5195,7 @@ function getRecoilEngineExe() {
         fs.writeFileSync(tempExe, buf);
         if (fs.existsSync(tempExe)) return tempExe;
       }
-    } catch (_) {}
+    } catch (_) { }
   }
 
   // Se já existe no temp e é válido, usa ele
@@ -5294,7 +5203,7 @@ function getRecoilEngineExe() {
     if (fs.existsSync(tempExe) && fs.statSync(tempExe).size > 1000) {
       return tempExe;
     }
-  } catch (_) {}
+  } catch (_) { }
 
   // 2) Se não existir, compila na hora via csc.exe do .NET Framework 4.0 (nativo do Windows)
   try {
@@ -5463,7 +5372,7 @@ async function startMacroNative(speed = null, active = true) {
         console.log(`[MACRO] LoordRecoilEngine ativo (PID: ${checkRunning}). Velocidade sincronizada: ${numSpeed}`);
         return { success: true, updated: true };
       }
-    } catch (_) {}
+    } catch (_) { }
 
     await killMacroProcess();
 
