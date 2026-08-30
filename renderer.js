@@ -1611,7 +1611,7 @@ if (document.readyState === 'loading') {
 
   const DEVICE_PROFILES = {
     'asus_rog_8': { brand: 'asus', manufacturer: 'asus', model: 'ASUS_AI2401_D', carrier: 'se_72405' },
-    'xiaomi_redmi_note_9': { brand: 'Xiaomi', manufacturer: 'Xiaomi', model: 'M2003J15SG', carrier: 'se_72405' },
+    'xiaomi_redmi_note_9': { brand: 'Redmi Note 9', manufacturer: 'Xiaomi', model: 'M2003J15SG', carrier: 'se_72405' },
     'asus_rog_6': { brand: 'asus', manufacturer: 'asus', model: 'ASUS_AI2201', carrier: 'se_72405' },
     'asus_rog_5': { brand: 'asus', manufacturer: 'asus', model: 'ASUS_I005D', carrier: 'se_72405' },
     'samsung_s24': { brand: 'samsung', manufacturer: 'samsung', model: 'SM-S928B', carrier: 'se_72405' },
