@@ -196,7 +196,48 @@ module.exports = async (req, res) => {
   } else if (req.method === 'POST') {
     try {
       const body = await parseRequestBody(req);
-      const { clientName, uses, price, buyerInfo, uuid } = body;
+      const { clientName, uses, price, buyerInfo, uuid, action, key } = body;
+
+      // Se for ação de revogação ou exclusão via POST
+      if (action === 'toggle-status' || action === 'revoke' || action === 'delete' || action === 'delete-key') {
+        const cleanKey = (key || '').trim().toUpperCase();
+        let licenses = await getLicenses();
+        const index = licenses.findIndex(l => l.key && l.key.toUpperCase() === cleanKey);
+        if (index === -1) {
+          res.status(404).json({ success: false, error: 'Chave não encontrada.' });
+          return;
+        }
+
+        const lic = licenses[index];
+        const isWorn = user.role === 'worn' || user.role === 'owner' || user.username.toLowerCase() === 'gabriel';
+
+        if (action === 'delete' || action === 'delete-key') {
+          if (!isWorn) {
+            res.status(403).json({ success: false, error: 'Apenas Worn / Dono pode excluir chaves permanentemente.' });
+            return;
+          }
+          licenses.splice(index, 1);
+          await saveLicenses(licenses);
+          res.status(200).json({ success: true, message: 'Chave excluída permanentemente.' });
+          return;
+        }
+
+        // Toggle / Revoke
+        if (action === 'toggle-status') {
+          if (lic.status === 'revoked') {
+            const rem = typeof lic.isoUsesRemaining === 'number' ? lic.isoUsesRemaining : (lic.isoUsesTotal || 1);
+            lic.status = rem > 0 ? 'activated' : 'used_up';
+          } else {
+            lic.status = 'revoked';
+          }
+        } else {
+          lic.status = 'revoked';
+        }
+
+        await saveLicenses(licenses);
+        res.status(200).json({ success: true, message: `Status alterado para ${lic.status}.`, status: lic.status });
+        return;
+      }
 
       const cleanClientName = (clientName && clientName.trim()) ? clientName.trim() : 'Cliente ISO';
       const cleanUuid = (uuid && uuid.trim()) ? uuid.trim().toLowerCase() : null;
@@ -205,12 +246,12 @@ module.exports = async (req, res) => {
 
       const rawUuid = cleanUuid || `iso_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
       const baseKey = generateActivationKey(rawUuid);
-      const key = `ISO-${baseKey.substring(0, 14)}`;
+      const newKey = `ISO-${baseKey.substring(0, 14)}`;
 
       const licenses = await getLicenses();
 
       const newLicense = {
-        key,
+        key: newKey,
         uuid: cleanUuid,
         clientName: cleanClientName,
         isIsoKey: true,
@@ -239,6 +280,40 @@ module.exports = async (req, res) => {
     } catch (e) {
       console.error(e);
       res.status(500).json({ success: false, error: 'Erro ao gerar chave de ISO.' });
+    }
+  } else if (req.method === 'DELETE') {
+    try {
+      const body = await parseRequestBody(req);
+      const { key, action } = body;
+      const cleanKey = (key || '').trim().toUpperCase();
+
+      let licenses = await getLicenses();
+      const index = licenses.findIndex(l => l.key && l.key.toUpperCase() === cleanKey);
+      if (index === -1) {
+        res.status(404).json({ success: false, error: 'Chave não encontrada.' });
+        return;
+      }
+
+      const lic = licenses[index];
+      const isWorn = user.role === 'worn' || user.role === 'owner' || user.username.toLowerCase() === 'gabriel';
+
+      if (action === 'delete') {
+        if (!isWorn) {
+          res.status(403).json({ success: false, error: 'Apenas Worn / Dono pode excluir chaves permanentemente.' });
+          return;
+        }
+        licenses.splice(index, 1);
+        await saveLicenses(licenses);
+        res.status(200).json({ success: true, message: 'Chave excluída permanentemente.' });
+        return;
+      }
+
+      lic.status = 'revoked';
+      await saveLicenses(licenses);
+      res.status(200).json({ success: true, message: 'Chave revogada com sucesso.', status: 'revoked' });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ success: false, error: 'Erro ao processar exclusão/revogação da chave.' });
     }
   } else {
     res.status(405).json({ success: false, error: 'Method Not Allowed' });

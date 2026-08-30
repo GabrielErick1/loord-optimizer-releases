@@ -7,28 +7,22 @@ const backupDir = path.join(rootDir, '.dev_source_backup');
 
 const obfuscatorOptionsNode = {
   compact: true,
-  controlFlowFlattening: true,
-  controlFlowFlatteningThreshold: 0.9,
-  deadCodeInjection: true,
-  deadCodeInjectionThreshold: 0.4,
-  numbersToExpressions: true,
+  controlFlowFlattening: false,
+  deadCodeInjection: false,
+  numbersToExpressions: false,
   simplify: true,
   stringArray: true,
   stringArrayCallsTransform: true,
-  stringArrayCallsTransformThreshold: 0.9,
-  stringArrayEncoding: ['base64', 'rc4'],
+  stringArrayCallsTransformThreshold: 0.5,
+  stringArrayEncoding: ['base64'],
   stringArrayIndexShift: true,
   stringArrayRotate: true,
   stringArrayShuffle: true,
-  stringArrayWrappersCount: 3,
-  stringArrayWrappersChainedCalls: true,
-  stringArrayWrappersParametersMaxCount: 5,
-  stringArrayWrappersType: 'function',
-  stringArrayThreshold: 0.9,
-  splitStrings: true,
-  splitStringsChunkLength: 5,
-  transformObjectKeys: true,
-  selfDefending: true,
+  stringArrayWrappersCount: 1,
+  stringArrayThreshold: 0.75,
+  splitStrings: false,
+  transformObjectKeys: false,
+  selfDefending: false,
   disableConsoleOutput: false,
   target: 'node'
 };
@@ -44,6 +38,10 @@ const filesToProtect = [
   { file: 'renderer.js', opts: obfuscatorOptionsBrowser },
   { file: 'regis/encrypted_reg_data.js', opts: obfuscatorOptionsNode }
 ];
+
+function isAlreadyObfuscated(code) {
+  return code.startsWith('(function(') || (code.length > 500000 && code.includes('_0x'));
+}
 
 const action = process.argv[2] || 'obfuscate';
 
@@ -61,12 +59,12 @@ if (action === 'backup-and-obfuscate') {
     const code = fs.readFileSync(srcPath, 'utf8');
     
     // Só faz backup se o código for legível (não ofuscado)
-    if (!code.startsWith('(function(')) {
+    if (!isAlreadyObfuscated(code)) {
       fs.writeFileSync(backupPath, code, 'utf8');
     }
 
     console.log(`🔒 Ofuscando e criptografando: ${item.file}...`);
-    const codeToObfuscate = (!code.startsWith('(function(')) ? code : fs.readFileSync(backupPath, 'utf8');
+    const codeToObfuscate = (!isAlreadyObfuscated(code)) ? code : fs.readFileSync(backupPath, 'utf8');
     const obfuscated = JavaScriptObfuscator.obfuscate(codeToObfuscate, item.opts).getObfuscatedCode();
     fs.writeFileSync(srcPath, obfuscated, 'utf8');
   }

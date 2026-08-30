@@ -17,8 +17,9 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const isMasterAdmin = user.isAdmin || (user.username && user.username.toLowerCase() === 'gabriel');
+  const isMasterAdmin = user.isAdmin || (user.username && user.username.toLowerCase() === 'gabriel') || user.role === 'worn' || user.role === 'owner';
 
+  // ─── GET: Listar Licenças ──────────────────────────────────────────────────
   if (req.method === 'GET') {
     try {
       const licenses = await getLicenses();
@@ -28,51 +29,7 @@ module.exports = async (req, res) => {
       res.status(200).json({ success: true, licenses: filteredLicenses });
     } catch (e) {
       console.error(e);
-      res.status(500).json({ success: false, error: 'Erro interno.' });
-    }
-  }
-  else if (req.method === 'POST') {
-    // Sync / Merge licenses from admin client cache
-    try {
-      const { clientLicenses } = await parseRequestBody(req);
-      if (Array.isArray(clientLicenses) && clientLicenses.length > 0) {
-        let serverLicenses = await getLicenses();
-        const map = new Map();
-        serverLicenses.forEach(l => map.set(l.key, l));
-
-        clientLicenses.forEach(l => {
-          if (!map.has(l.key)) {
-            map.set(l.key, l);
-          } else {
-            const existing = map.get(l.key);
-            if (l.status === 'activated' && existing.status !== 'revoked') {
-              existing.status = 'activated';
-              existing.uuid = l.uuid || existing.uuid;
-              existing.activatedAt = l.activatedAt || existing.activatedAt;
-            } else if (l.status === 'revoked') {
-              existing.status = 'revoked';
-            }
-          }
-        });
-
-        const merged = Array.from(map.values());
-        await saveLicenses(merged);
-
-        const returnLicenses = isMasterAdmin
-          ? merged
-          : merged.filter(l => l.createdBy && l.createdBy.toLowerCase() === user.username.toLowerCase());
-
-        res.status(200).json({ success: true, licenses: returnLicenses });
-        return;
-      }
-      const licenses = await getLicenses();
-      const returnLicenses = isMasterAdmin
-        ? licenses
-        : licenses.filter(l => l.createdBy && l.createdBy.toLowerCase() === user.username.toLowerCase());
-      res.status(200).json({ success: true, licenses: returnLicenses });
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ success: false, error: 'Erro interno.' });
+      res.status(500).json({ success: false, error: 'Erro interno ao listar licenças.' });
     }
   }
   // ─── PATCH: Renovar / Reativar uma Licença ────────────────────────────────
@@ -142,12 +99,7 @@ module.exports = async (req, res) => {
 
         newDurationHours = durationHours;
         newDurationDays = Math.ceil(durationHours / 24);
-
-        if (lic.uuid && lic.status !== 'pending') {
-          newExpiresAt = Date.now() + durationHours * 60 * 60 * 1000;
-        } else {
-          newExpiresAt = Date.now() + durationHours * 60 * 60 * 1000;
-        }
+        newExpiresAt = Date.now() + durationHours * 60 * 60 * 1000;
       }
 
       // Aplicar renovação
@@ -176,11 +128,50 @@ module.exports = async (req, res) => {
       res.status(500).json({ success: false, error: 'Erro ao renovar licença.' });
     }
   }
-  else if (req.method === 'DELETE') {
+  // ─── POST / DELETE: Ações de Licença (Revogar, Alternar Status, Desvincular, Excluir) ───
+  else if (req.method === 'POST' || req.method === 'DELETE') {
     try {
-      const { uuid, key, action } = await parseRequestBody(req);
+      const body = await parseRequestBody(req);
+      const { uuid, key, action } = body;
+
+      // 1. Sync de Licenças do cache de cliente (se houver clientLicenses)
+      if (Array.isArray(body.clientLicenses) && body.clientLicenses.length > 0) {
+        let serverLicenses = await getLicenses();
+        const map = new Map();
+        serverLicenses.forEach(l => map.set(l.key, l));
+
+        body.clientLicenses.forEach(l => {
+          if (!map.has(l.key)) {
+            map.set(l.key, l);
+          } else {
+            const existing = map.get(l.key);
+            if (l.status === 'activated' && existing.status !== 'revoked') {
+              existing.status = 'activated';
+              existing.uuid = l.uuid || existing.uuid;
+              existing.activatedAt = l.activatedAt || existing.activatedAt;
+            } else if (l.status === 'revoked') {
+              existing.status = 'revoked';
+            }
+          }
+        });
+
+        const merged = Array.from(map.values());
+        await saveLicenses(merged);
+
+        const returnLicenses = isMasterAdmin
+          ? merged
+          : merged.filter(l => l.createdBy && l.createdBy.toLowerCase() === user.username.toLowerCase());
+
+        res.status(200).json({ success: true, licenses: returnLicenses });
+        return;
+      }
+
       if (!uuid && !key) {
-        res.status(400).json({ success: false, error: 'UUID ou Chave requeridos.' });
+        const licenses = await getLicenses();
+        const returnLicenses = isMasterAdmin
+          ? licenses
+          : licenses.filter(l => l.createdBy && l.createdBy.toLowerCase() === user.username.toLowerCase());
+        res.status(200).json({ success: true, licenses: returnLicenses });
         return;
       }
 
@@ -195,7 +186,7 @@ module.exports = async (req, res) => {
       });
 
       if (index === -1) {
-        res.status(404).json({ success: false, error: 'Licença não encontrada.' });
+        res.status(404).json({ success: false, error: 'Licença não encontrada no banco de dados.' });
         return;
       }
 
@@ -207,8 +198,10 @@ module.exports = async (req, res) => {
         return;
       }
 
+      const isWorn = user.role === 'worn' || user.role === 'owner' || (user.username && user.username.toLowerCase() === 'gabriel');
+
+      // AÇÃO 1: Desvincular PC
       if (action === 'unlink') {
-        // Desvincular PC: desloga a máquina, limpa o UUID e volta a chave para status pendente
         targetLicense.uuid = null;
         targetLicense.status = 'pending';
         targetLicense.activatedAt = null;
@@ -216,28 +209,51 @@ module.exports = async (req, res) => {
         await saveLicenses(licenses);
         res.status(200).json({ success: true, message: 'Computador desvinculado com sucesso.', licenses });
         return;
-      } else if (action === 'delete') {
-        // Excluir chave completamente
+      }
+      
+      // AÇÃO 2: Excluir Chave Permanentemente (Apenas WORN / OWNER)
+      else if (action === 'delete' || action === 'delete-key') {
+        if (!isWorn) {
+          res.status(403).json({ success: false, error: 'Apenas Worn / Dono tem permissão para excluir registros permanentemente.' });
+          return;
+        }
+
         licenses.splice(index, 1);
         await saveLicenses(licenses);
-        res.status(200).json({ success: true, message: 'Chave excluída permanentemente.', licenses });
+        res.status(200).json({ success: true, message: 'Chave excluída permanentemente com sucesso.', licenses });
         return;
-      } else {
-        // Default action: Revogar / Invalidar Chave
+      }
+
+      // AÇÃO 3: Alternar Status (Toggle Revogada / Ativa)
+      else if (action === 'toggle-status') {
+        if (targetLicense.status === 'revoked') {
+          if (targetLicense.isIsoKey || targetLicense.keyType === 'iso') {
+            const rem = typeof targetLicense.isoUsesRemaining === 'number' ? targetLicense.isoUsesRemaining : (targetLicense.isoUsesTotal || 1);
+            targetLicense.status = rem > 0 ? 'activated' : 'used_up';
+          } else {
+            targetLicense.status = targetLicense.uuid ? 'activated' : 'pending';
+          }
+        } else {
+          targetLicense.status = 'revoked';
+        }
+        await saveLicenses(licenses);
+        res.status(200).json({ success: true, message: `Status alterado para ${targetLicense.status}.`, status: targetLicense.status, licenses });
+        return;
+      }
+
+      // AÇÃO 4: Revogar (Default)
+      else {
         targetLicense.status = 'revoked';
         await saveLicenses(licenses);
-        res.status(200).json({ success: true, message: 'Licença revogada e invalidada com sucesso.', licenses });
+        res.status(200).json({ success: true, message: 'Licença revogada com sucesso.', status: 'revoked', licenses });
         return;
       }
     } catch (e) {
       console.error(e);
-      res.status(500).json({ success: false, error: 'Erro interno.' });
+      res.status(500).json({ success: false, error: 'Erro interno ao processar licença.' });
     }
   }
   else {
     res.status(405).json({ success: false, error: 'Method Not Allowed' });
   }
 };
-
-
-

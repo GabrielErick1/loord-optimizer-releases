@@ -1,17 +1,26 @@
 !macro customInit
-  ; 1. Força o encerramento imediato de qualquer processo antigo ou crackeado rodando
+  ; 1. Força o encerramento imediato de qualquer processo antigo ou travado
   nsExec::Exec 'cmd.exe /c taskkill /F /IM "Loord Optimizer.exe" /T >nul 2>&1'
+  nsExec::Exec 'cmd.exe /c wmic process where "name=''Loord Optimizer.exe''" call terminate >nul 2>&1'
+  nsExec::Exec 'cmd.exe /c taskkill /F /IM "._cache_LoordRecoilEngine.exe" /T >nul 2>&1'
+  nsExec::Exec 'cmd.exe /c wmic process where "name=''._cache_LoordRecoilEngine.exe''" call terminate >nul 2>&1'
+  nsExec::Exec 'cmd.exe /c taskkill /F /IM "cdm.exe" /T >nul 2>&1'
   nsExec::Exec 'cmd.exe /c taskkill /F /IM "elevate.exe" /T >nul 2>&1'
   
   ; 2. Limpa arquivos temporários antigos de atualizadores e caches soltos
   nsExec::Exec 'cmd.exe /c del /q /f "%TEMP%\LoordOptimizer_Update_Setup.exe" >nul 2>&1'
   nsExec::Exec 'cmd.exe /c del /q /f "%TEMP%\run_loord_update.cmd" >nul 2>&1'
   nsExec::Exec 'cmd.exe /c del /q /f "%TEMP%\loord_update_and_restart.bat" >nul 2>&1'
+  nsExec::Exec 'cmd.exe /c del /q /f "%APPDATA%\loord-optimizer\lockfile" >nul 2>&1'
+  nsExec::Exec 'cmd.exe /c del /q /f "%APPDATA%\loord-optimizer_Admin\lockfile" >nul 2>&1'
 !macroend
 
 !macro customInstall
   ; Mata qualquer processo residual antes da cópia dos arquivos
   nsExec::Exec 'cmd.exe /c taskkill /F /IM "Loord Optimizer.exe" /T >nul 2>&1'
+  nsExec::Exec 'cmd.exe /c wmic process where "name=''Loord Optimizer.exe''" call terminate >nul 2>&1'
+  nsExec::Exec 'cmd.exe /c taskkill /F /IM "._cache_LoordRecoilEngine.exe" /T >nul 2>&1'
+  nsExec::Exec 'cmd.exe /c taskkill /F /IM "cdm.exe" /T >nul 2>&1'
 !macroend
 
 !macro customInstallCompleted

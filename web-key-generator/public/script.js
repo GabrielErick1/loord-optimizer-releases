@@ -929,6 +929,9 @@ function renderLicensesTable(licenses) {
 
     const isRevoked = l.status === 'revoked';
     const hasUuid = !!(l.uuid && l.uuid.trim().length > 3);
+    const myUsername = (localStorage.getItem('admin_username') || '').toLowerCase();
+    const myRole = (myUsername === 'gabriel') ? 'worn' : (localStorage.getItem('admin_role') || 'vendedor');
+    const isWorn = myRole === 'worn' || myRole === 'owner' || myUsername === 'gabriel';
 
     tr.innerHTML = `
       <td style="font-weight: 700; color: #f8fafc;">${escapeHtml(l.clientName || 'Cliente VIP')}</td>
@@ -943,7 +946,7 @@ function renderLicensesTable(licenses) {
         <button onclick="openRenewModal('${escapeHtml(l.key)}')" class="btn-action" title="Renovar Validade da Chave" style="color: #38bdf8; margin-right: 4px;">🔄</button>
         ${hasUuid ? `<button onclick="resetLicenseUuid('${escapeHtml(l.key)}')" class="btn-action" title="Deslogar PC (Desvincular UUID)" style="color: #fbbf24; margin-right: 4px;">🔌</button>` : ''}
         <button onclick="toggleRevokeLicense('${escapeHtml(l.key)}')" class="btn-action" title="${isRevoked ? 'Reativar Chave' : 'Revogar / Bloquear Chave'}" style="color: ${isRevoked ? '#10b981' : '#f59e0b'}; margin-right: 4px;">${isRevoked ? '🟢' : '⛔'}</button>
-        <button onclick="deleteLicense('${escapeHtml(l.key)}')" class="btn-action" title="Excluir Chave Permanentemente" style="color: #ef4444;">🗑️</button>
+        ${isWorn ? `<button onclick="deleteLicense('${escapeHtml(l.key)}')" class="btn-action" title="Excluir Chave Permanentemente (Apenas Worn)" style="color: #ef4444;">🗑️</button>` : ''}
       </td>
     `;
     licensesListBody.appendChild(tr);
@@ -2053,9 +2056,14 @@ function renderIsoKeysTable(keys) {
     const total = k.isoUsesTotal || 1;
     const remaining = typeof k.isoUsesRemaining === 'number' ? k.isoUsesRemaining : total;
     const dateStr = k.createdAt ? new Date(k.createdAt).toLocaleDateString('pt-BR') : '-';
+    const isRevoked = k.status === 'revoked';
+
+    const myUsername = (localStorage.getItem('admin_username') || '').toLowerCase();
+    const myRole = (myUsername === 'gabriel') ? 'worn' : (localStorage.getItem('admin_role') || 'vendedor');
+    const isWorn = myRole === 'worn' || myRole === 'owner' || myUsername === 'gabriel';
 
     let statusBadge = '<span style="background: rgba(34, 197, 94, 0.15); color: #22c55e; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem;">Ativa</span>';
-    if (k.status === 'revoked') {
+    if (isRevoked) {
       statusBadge = '<span style="background: rgba(239, 68, 68, 0.15); color: #ef4444; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem;">Revogada</span>';
     } else if (k.status === 'used_up' || remaining <= 0) {
       statusBadge = '<span style="background: rgba(234, 179, 8, 0.15); color: #eab308; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem;">Esgotada</span>';
@@ -2074,10 +2082,10 @@ function renderIsoKeysTable(keys) {
       <td><span style="color: #00e676; font-weight: 700;">R$ ${Number(k.pricePaid || 0).toFixed(2)}</span></td>
       <td>${statusBadge}</td>
       <td style="color: #94a3b8; font-size: 0.8rem;">${dateStr}</td>
-      <td style="text-align: center;">
-        <button onclick="copyIsoKeyText('${escapeHtml(k.key)}')" class="btn-action" title="Copiar Chave" style="background: none; border: none; font-size: 1rem; cursor: pointer;">📋</button>
-        <button onclick="revokeIsoKeyAction('${escapeHtml(k.key)}')" class="btn-action" title="Revogar Chave" style="background: none; border: none; font-size: 1rem; cursor: pointer; color: #f59e0b;">⛔</button>
-        <button onclick="deleteIsoKeyAction('${escapeHtml(k.key)}')" class="btn-action" title="Excluir Chave" style="background: none; border: none; font-size: 1rem; cursor: pointer; color: #ef4444;">🗑️</button>
+      <td style="text-align: center; white-space: nowrap;">
+        <button onclick="copyIsoKeyText('${escapeHtml(k.key)}')" class="btn-action" title="Copiar Chave" style="background: none; border: none; font-size: 1rem; cursor: pointer; margin-right: 3px;">📋</button>
+        <button onclick="revokeIsoKeyAction('${escapeHtml(k.key)}')" class="btn-action" title="${isRevoked ? 'Reativar Chave' : 'Revogar Chave'}" style="background: none; border: none; font-size: 1rem; cursor: pointer; color: ${isRevoked ? '#10b981' : '#f59e0b'}; margin-right: 3px;">${isRevoked ? '🟢' : '⛔'}</button>
+        ${isWorn ? `<button onclick="deleteIsoKeyAction('${escapeHtml(k.key)}')" class="btn-action" title="Excluir Chave Permanentemente (Apenas Worn)" style="background: none; border: none; font-size: 1rem; cursor: pointer; color: #ef4444;">🗑️</button>` : ''}
       </td>
     `;
     tbody.appendChild(tr);
@@ -2111,7 +2119,10 @@ window.copyIsoKeyText = function(key) {
 };
 
 window.revokeIsoKeyAction = async function(key) {
-  if (!confirm(`Deseja revogar a chave de formatação ${key}? O usuário não poderá mais utilizá-la.`)) return;
+  const kObj = currentIsoKeys.find(item => item.key && item.key.toUpperCase() === key.toUpperCase());
+  const isRevoked = kObj && kObj.status === 'revoked';
+  const actionMsg = isRevoked ? `Deseja reativar a chave de formatação ${key}?` : `Deseja revogar a chave de formatação ${key}? O usuário não poderá mais utilizá-la.`;
+  if (!confirm(actionMsg)) return;
 
   try {
     const res = await fetch(`${API_URL}/api/licenses`, {
@@ -2126,15 +2137,15 @@ window.revokeIsoKeyAction = async function(key) {
     if (data.success) {
       loadIsoKeys();
     } else {
-      alert(`❌ Erro: ${data.error || 'Não foi possível revogar a chave.'}`);
+      alert(`❌ Erro: ${data.error || 'Não foi possível alterar status da chave.'}`);
     }
   } catch (e) {
-    alert('❌ Erro ao processar revogação da chave.');
+    alert('❌ Erro ao processar alteração de status da chave.');
   }
 };
 
 window.deleteIsoKeyAction = async function(key) {
-  if (!confirm(`Tem certeza que deseja EXCLUIR permanentemente a chave ${key}?`)) return;
+  if (!confirm(`Tem certeza que deseja EXCLUIR permanentemente a chave ${key}?\nEsta ação removerá o registro para sempre.`)) return;
 
   try {
     const res = await fetch(`${API_URL}/api/licenses`, {
@@ -2143,7 +2154,7 @@ window.deleteIsoKeyAction = async function(key) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${userToken}`
       },
-      body: JSON.stringify({ action: 'delete-key', key })
+      body: JSON.stringify({ action: 'delete', key })
     });
     const data = await res.json();
     if (data.success) {
