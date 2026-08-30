@@ -3457,25 +3457,120 @@ if (btnRemovePartitionAction) {
 
   window._forceLogoutSecurityFn = forceLogoutSecurity;
 
-  // ── Interação com o Modal de Aquisição e Ativação de Chave da ISO ───────────
-  const btnOpenBuyIsoModal = document.getElementById('btn-open-buy-iso-modal');
-  const btnOpenActivateIsoInput = document.getElementById('btn-open-activate-iso-input');
+  // ── Interação com o Modal de Compra (Pix) e Ativação de Chave da ISO ───────
+
+  // Referências dos novos modais separados
   const buyIsoKeyModal = document.getElementById('buy-iso-key-modal');
-  const btnActivateIsoKey = document.getElementById('btn-activate-iso-key');
-  const inputIsoKey = document.getElementById('input-iso-key');
-  const isoKeyActivationMsg = document.getElementById('iso-key-activation-msg');
+  const activateIsoKeyModal = document.getElementById('activate-iso-key-modal');
   const isoPlansCardsContainer = document.getElementById('iso-plans-cards-container');
 
+  // Variáveis de estado do fluxo Pix
+  let _isoSelectedPlan = null;
+  let _isoPixPaymentId = null;
+  let _isoPixPollTimer = null;
+
+  // Função utilitária para parar o polling de Pix
+  function stopIsoPixPolling() {
+    if (_isoPixPollTimer) {
+      clearInterval(_isoPixPollTimer);
+      _isoPixPollTimer = null;
+    }
+  }
+
+  // ── Funções de controle de passos dentro do modal de compra ──────────────
+  function showIsoBuyStep(step) {
+    const stepSelect = document.getElementById('iso-step-select-plan');
+    const stepPix = document.getElementById('iso-step-pix-payment');
+    const stepSuccess = document.getElementById('iso-step-pix-success');
+    if (stepSelect) stepSelect.style.display = step === 'select' ? '' : 'none';
+    if (stepPix) stepPix.style.display = step === 'pix' ? '' : 'none';
+    if (stepSuccess) stepSuccess.style.display = step === 'success' ? '' : 'none';
+  }
+
+  // ── Abrir modal de COMPRA (Pix) ──────────────────────────────────────────
+  async function openBuyIsoModal() {
+    if (!buyIsoKeyModal) return;
+    stopIsoPixPolling();
+    _isoSelectedPlan = null;
+    _isoPixPaymentId = null;
+    showIsoBuyStep('select');
+    buyIsoKeyModal.style.display = 'flex';
+    await loadIsoPlansInModal();
+  }
+
+  // Botão da aba ISO para abrir o modal de compra
+  const btnOpenBuyIsoModal = document.getElementById('btn-open-buy-iso-modal');
+  if (btnOpenBuyIsoModal) {
+    btnOpenBuyIsoModal.addEventListener('click', openBuyIsoModal);
+  }
+
+  // Botão para abrir modal de ATIVAÇÃO DE CHAVE JÁ EXISTENTE
+  const btnOpenActivateIsoInput = document.getElementById('btn-open-activate-iso-input');
+  if (btnOpenActivateIsoInput) {
+    btnOpenActivateIsoInput.addEventListener('click', () => {
+      if (activateIsoKeyModal) activateIsoKeyModal.style.display = 'flex';
+      const inp = document.getElementById('input-iso-key-dedicated');
+      if (inp) setTimeout(() => inp.focus(), 150);
+    });
+  }
+
+  // ── Fechar Modal de Compra ───────────────────────────────────────────────
+  ['btn-close-buy-iso-modal', 'btn-close-buy-iso-modal-footer'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.addEventListener('click', () => {
+        stopIsoPixPolling();
+        if (buyIsoKeyModal) buyIsoKeyModal.style.display = 'none';
+      });
+    }
+  });
+
+  // ── Fechar Modal de Ativação Dedicado ───────────────────────────────────
+  ['btn-close-activate-iso-modal', 'btn-close-activate-iso-modal-footer'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.addEventListener('click', () => {
+        if (activateIsoKeyModal) activateIsoKeyModal.style.display = 'none';
+      });
+    }
+  });
+
+  // ── Voltar para seleção de planos ───────────────────────────────────────
+  const btnBackToPlans = document.getElementById('btn-back-to-plans');
+  if (btnBackToPlans) {
+    btnBackToPlans.addEventListener('click', () => {
+      stopIsoPixPolling();
+      _isoSelectedPlan = null;
+      _isoPixPaymentId = null;
+      showIsoBuyStep('select');
+    });
+  }
+
+  // ── Carregar planos no modal com cards clicáveis ─────────────────────────
   async function loadIsoPlansInModal() {
     if (!isoPlansCardsContainer) return;
+    const loadingMsg = document.getElementById('iso-plans-loading-msg');
+    if (loadingMsg) loadingMsg.style.display = 'block';
     try {
       if (!window.api || !window.api.getIsoPlansPublic) return;
       const res = await window.api.getIsoPlansPublic();
-      if (res && res.success && Array.isArray(res.plans)) {
-        isoPlansCardsContainer.innerHTML = res.plans.map(p => {
+      if (res && res.success && Array.isArray(res.plans) && res.plans.length > 0) {
+        // Seleciona o primeiro plano como padrão
+        _isoSelectedPlan = res.plans[0];
+        const btnGenPix = document.getElementById('btn-generate-iso-pix');
+
+        isoPlansCardsContainer.innerHTML = res.plans.map((p, i) => {
           const isPop = p.uses === 2;
           return `
-            <div style="background: rgba(255,255,255,0.04); border: 1px solid ${isPop ? '#38bdf8' : 'rgba(56,189,248,0.2)'}; border-radius: 10px; padding: 12px 8px; text-align: center; position: relative;">
+            <div
+              id="iso-plan-card-${i}"
+              data-plan-index="${i}"
+              data-plan-id="${p.id}"
+              data-plan-name="${p.name || p.uses + ' Uso(s)'}"
+              data-plan-price="${p.price}"
+              data-plan-uses="${p.uses}"
+              onclick="window._selectIsoPlanCard(${i})"
+              style="background: ${i === 0 ? 'rgba(56,189,248,0.12)' : 'rgba(255,255,255,0.04)'}; border: 2px solid ${i === 0 ? '#38bdf8' : 'rgba(56,189,248,0.2)'}; border-radius: 10px; padding: 12px 8px; text-align: center; position: relative; cursor: pointer; transition: all 0.2s;">
               ${isPop ? '<span style="position: absolute; top: -8px; right: 6px; background: #38bdf8; color: #000; font-size: 0.62rem; font-weight: 900; padding: 1px 6px; border-radius: 999px;">MAIS POPULAR</span>' : ''}
               <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 700;">${p.name || `${p.uses} Uso(s)`}</div>
               <div style="font-size: 1.25rem; font-weight: 900; color: #00e676; margin: 4px 0;">R$ ${Number(p.price || 0).toFixed(2).replace('.', ',')}</div>
@@ -3483,83 +3578,256 @@ if (btnRemovePartitionAction) {
             </div>
           `;
         }).join('');
+
+        // Atualiza botão com preço do plano padrão
+        if (btnGenPix && _isoSelectedPlan) {
+          btnGenPix.textContent = `🟢 PAGAR VIA PIX (R$ ${Number(_isoSelectedPlan.price || 0).toFixed(2).replace('.', ',')})`;
+        }
+
+        // Expõe função de seleção de plano globalmente para os cards
+        window._isoPlansData = res.plans;
       }
     } catch (_) {}
+    if (loadingMsg) loadingMsg.style.display = 'none';
   }
 
-  if (btnOpenBuyIsoModal) {
-    btnOpenBuyIsoModal.addEventListener('click', () => {
-      if (buyIsoKeyModal) buyIsoKeyModal.style.display = 'flex';
-      loadIsoPlansInModal();
+  // Seleção de plano via clique no card
+  window._selectIsoPlanCard = function(index) {
+    const plans = window._isoPlansData || [];
+    if (!plans[index]) return;
+    _isoSelectedPlan = plans[index];
+
+    // Atualiza visual dos cards
+    plans.forEach((_, i) => {
+      const card = document.getElementById(`iso-plan-card-${i}`);
+      if (!card) return;
+      if (i === index) {
+        card.style.border = '2px solid #38bdf8';
+        card.style.background = 'rgba(56,189,248,0.12)';
+      } else {
+        card.style.border = '2px solid rgba(56,189,248,0.2)';
+        card.style.background = 'rgba(255,255,255,0.04)';
+      }
+    });
+
+    // Atualiza texto do botão de gerar Pix
+    const btnGenPix = document.getElementById('btn-generate-iso-pix');
+    if (btnGenPix) {
+      btnGenPix.textContent = `🟢 PAGAR VIA PIX (R$ ${Number(_isoSelectedPlan.price || 0).toFixed(2).replace('.', ',')})`;
+    }
+  };
+
+  // ── Gerar Pix para o plano selecionado ──────────────────────────────────
+  const btnGenerateIsoPix = document.getElementById('btn-generate-iso-pix');
+  if (btnGenerateIsoPix) {
+    btnGenerateIsoPix.addEventListener('click', async () => {
+      if (!_isoSelectedPlan) {
+        alert('❌ Selecione um plano antes de continuar.');
+        return;
+      }
+      btnGenerateIsoPix.disabled = true;
+      btnGenerateIsoPix.textContent = '⏳ Gerando Pix...';
+
+      try {
+        const clientName = localStorage.getItem('client_name') || 'Cliente ISO';
+        const res = await window.api.createIsoPixPayment(_isoSelectedPlan.id, clientName);
+
+        if (res && res.success && res.paymentId) {
+          _isoPixPaymentId = res.paymentId;
+
+          // Preenche QR Code e copia e cola
+          const qrImg = document.getElementById('iso-pix-qrcode-img');
+          const copiaColaInput = document.getElementById('iso-pix-copia-cola-input');
+          const planLabel = document.getElementById('iso-pix-summary-plan');
+          const priceLabel = document.getElementById('iso-pix-summary-price');
+
+          if (qrImg && res.qrCodeBase64) {
+            qrImg.src = `data:image/png;base64,${res.qrCodeBase64}`;
+          }
+          if (copiaColaInput) copiaColaInput.value = res.pixCopiaECola || '';
+          if (planLabel) planLabel.textContent = `Plano: ${_isoSelectedPlan.name || _isoSelectedPlan.uses + ' Uso(s)'}`;
+          if (priceLabel) priceLabel.textContent = `R$ ${Number(_isoSelectedPlan.price || 0).toFixed(2).replace('.', ',')}`;
+
+          showIsoBuyStep('pix');
+          startIsoPixPolling();
+        } else {
+          alert('❌ Erro ao gerar Pix: ' + (res?.error || 'Tente novamente.'));
+        }
+      } catch (e) {
+        alert('❌ Erro ao gerar Pix: ' + e.message);
+      }
+
+      btnGenerateIsoPix.disabled = false;
+      btnGenerateIsoPix.textContent = `🟢 PAGAR VIA PIX (R$ ${Number(_isoSelectedPlan?.price || 0).toFixed(2).replace('.', ',')})`;
     });
   }
 
-  if (btnOpenActivateIsoInput) {
-    btnOpenActivateIsoInput.addEventListener('click', () => {
-      if (buyIsoKeyModal) buyIsoKeyModal.style.display = 'flex';
-      loadIsoPlansInModal();
-      if (inputIsoKey) {
-        setTimeout(() => inputIsoKey.focus(), 150);
+  // ── Copiar Pix Copia e Cola ──────────────────────────────────────────────
+  const btnCopyIsoPix = document.getElementById('btn-copy-iso-pix');
+  if (btnCopyIsoPix) {
+    btnCopyIsoPix.addEventListener('click', () => {
+      const inp = document.getElementById('iso-pix-copia-cola-input');
+      if (inp && inp.value) {
+        navigator.clipboard.writeText(inp.value);
+        const orig = btnCopyIsoPix.textContent;
+        btnCopyIsoPix.textContent = '✅ Copiado!';
+        btnCopyIsoPix.style.background = '#059669';
+        setTimeout(() => {
+          btnCopyIsoPix.textContent = orig;
+          btnCopyIsoPix.style.background = '#10b981';
+        }, 2000);
       }
     });
   }
 
-  if (btnActivateIsoKey) {
-    btnActivateIsoKey.addEventListener('click', async () => {
-      const keyVal = inputIsoKey ? inputIsoKey.value.trim().toUpperCase() : '';
+  // ── Polling automático de verificação de pagamento Pix ───────────────────
+  function startIsoPixPolling() {
+    stopIsoPixPolling();
+    if (!_isoPixPaymentId) return;
+
+    _isoPixPollTimer = setInterval(async () => {
+      try {
+        if (!_isoPixPaymentId) { stopIsoPixPolling(); return; }
+        const res = await window.api.checkIsoPixPayment(_isoPixPaymentId);
+
+        if (res && res.paid && res.key) {
+          stopIsoPixPolling();
+          // Exibe etapa de sucesso com a key gerada
+          const keyDisplay = document.getElementById('iso-generated-key-display');
+          if (keyDisplay) keyDisplay.value = res.key;
+          showIsoBuyStep('success');
+        }
+      } catch (_) {}
+    }, 4000); // Verifica a cada 4 segundos
+  }
+
+  // ── Copiar key gerada após pagamento ─────────────────────────────────────
+  const btnCopyGeneratedKey = document.getElementById('btn-copy-generated-key');
+  if (btnCopyGeneratedKey) {
+    btnCopyGeneratedKey.addEventListener('click', () => {
+      const inp = document.getElementById('iso-generated-key-display');
+      if (inp && inp.value) {
+        navigator.clipboard.writeText(inp.value);
+        const orig = btnCopyGeneratedKey.textContent;
+        btnCopyGeneratedKey.textContent = '✅ Copiada!';
+        setTimeout(() => { btnCopyGeneratedKey.textContent = orig; }, 2000);
+      }
+    });
+  }
+
+  // ── Ativar key gerada imediatamente após pagamento ───────────────────────
+  const btnActivateGeneratedKeyNow = document.getElementById('btn-activate-generated-key-now');
+  if (btnActivateGeneratedKeyNow) {
+    btnActivateGeneratedKeyNow.addEventListener('click', async () => {
+      const keyDisplay = document.getElementById('iso-generated-key-display');
+      const keyVal = keyDisplay ? keyDisplay.value.trim().toUpperCase() : '';
       if (!keyVal || keyVal.length < 4) {
-        if (isoKeyActivationMsg) {
-          isoKeyActivationMsg.style.display = 'block';
-          isoKeyActivationMsg.style.color = '#ef4444';
-          isoKeyActivationMsg.textContent = '❌ Por favor, digite a sua chave de ativação da ISO.';
+        alert('❌ Chave não encontrada. Copie a chave e entre novamente na tela de login.');
+        return;
+      }
+
+      btnActivateGeneratedKeyNow.disabled = true;
+      btnActivateGeneratedKeyNow.textContent = '⏳ Ativando e carregando painel...';
+
+      try {
+        const verifyRes = await window.api.verifyKey(keyVal);
+        if (verifyRes && verifyRes.valid) {
+          localStorage.setItem('loord_vip_key', keyVal);
+          localStorage.setItem('activation_key', keyVal);
+          if (verifyRes.clientName) localStorage.setItem('client_name', verifyRes.clientName);
+          updateSavedKeyUI(keyVal);
+          updateSidebarStatus(true, verifyRes.clientName, 'temporary', `${verifyRes.isoUsesRemaining || 1} uso(s) restante(s)`);
+          startVipHeartbeat(keyVal);
+          startSecurityWatch(keyVal);
+
+          if (buyIsoKeyModal) buyIsoKeyModal.style.display = 'none';
+          setTimeout(() => {
+            setAppVisualAccess(true, verifyRes.isIsoKey, verifyRes.isoUsesRemaining);
+          }, 500);
+        } else {
+          btnActivateGeneratedKeyNow.disabled = false;
+          btnActivateGeneratedKeyNow.textContent = '⚡ ATIVAR CHAVE AGORA & LIBERAR FORMATAÇÃO';
+          alert('❌ Erro ao validar chave: ' + (verifyRes?.error || 'Tente inserir a chave manualmente na tela de login.'));
+        }
+      } catch (e) {
+        btnActivateGeneratedKeyNow.disabled = false;
+        btnActivateGeneratedKeyNow.textContent = '⚡ ATIVAR CHAVE AGORA & LIBERAR FORMATAÇÃO';
+        alert('❌ Erro: ' + e.message);
+      }
+    });
+  }
+
+  // ── Modal dedicado de ativação de chave ISO (para quem já tem key) ────────
+  const btnSubmitIsoKeyDedicated = document.getElementById('btn-submit-iso-key-dedicated');
+  if (btnSubmitIsoKeyDedicated) {
+    btnSubmitIsoKeyDedicated.addEventListener('click', async () => {
+      const inp = document.getElementById('input-iso-key-dedicated');
+      const statusDiv = document.getElementById('dedicated-iso-key-status');
+      const keyVal = inp ? inp.value.trim().toUpperCase() : '';
+
+      if (!keyVal || keyVal.length < 4) {
+        if (statusDiv) {
+          statusDiv.style.display = 'block';
+          statusDiv.style.color = '#ef4444';
+          statusDiv.textContent = '❌ Digite a chave de formatação antes de continuar.';
         }
         return;
       }
 
-      btnActivateIsoKey.disabled = true;
-      btnActivateIsoKey.textContent = '⏳ Ativando...';
-      if (isoKeyActivationMsg) isoKeyActivationMsg.style.display = 'none';
+      btnSubmitIsoKeyDedicated.disabled = true;
+      btnSubmitIsoKeyDedicated.textContent = '⏳ Verificando...';
+      if (statusDiv) statusDiv.style.display = 'none';
 
       try {
-        const res = await window.api.activateIsoKey(keyVal);
-        if (res && res.success) {
-          if (isoKeyActivationMsg) {
-            isoKeyActivationMsg.style.display = 'block';
-            isoKeyActivationMsg.style.color = '#10b981';
-            isoKeyActivationMsg.textContent = `✅ Chave de Formatação ativada! (${res.remaining || 1} uso(s) restante(s)). Liberando formatação...`;
+        const verifyRes = await window.api.verifyKey(keyVal);
+        if (verifyRes && verifyRes.valid) {
+          if (statusDiv) {
+            statusDiv.style.display = 'block';
+            statusDiv.style.color = '#10b981';
+            statusDiv.textContent = `✅ Chave válida! (${verifyRes.isoUsesRemaining || 1} uso(s) restante(s)). Carregando painel...`;
           }
 
-          const buyBanner = document.getElementById('banner-iso-buy-required');
-          if (buyBanner) buyBanner.style.display = 'none';
-          const actionsAllowed = document.getElementById('actions-iso-allowed');
-          if (actionsAllowed) actionsAllowed.style.display = 'flex';
-          const badgeTag = document.getElementById('badge-iso-status-tag');
-          if (badgeTag) {
-            badgeTag.textContent = `CHAVE ATIVA (${res.remaining || 1} USOS)`;
-            badgeTag.style.background = '#10b981';
-          }
+          localStorage.setItem('loord_vip_key', keyVal);
+          localStorage.setItem('activation_key', keyVal);
+          if (verifyRes.clientName) localStorage.setItem('client_name', verifyRes.clientName);
+          updateSavedKeyUI(keyVal);
+          updateSidebarStatus(true, verifyRes.clientName, 'temporary', `${verifyRes.isoUsesRemaining || 1} uso(s) restante(s)`);
+          startVipHeartbeat(keyVal);
+          startSecurityWatch(keyVal);
 
           setTimeout(() => {
-            if (buyIsoKeyModal) buyIsoKeyModal.style.display = 'none';
-          }, 1200);
+            if (activateIsoKeyModal) activateIsoKeyModal.style.display = 'none';
+            setAppVisualAccess(true, verifyRes.isIsoKey, verifyRes.isoUsesRemaining);
+          }, 800);
         } else {
-          btnActivateIsoKey.disabled = false;
-          btnActivateIsoKey.textContent = '⚡ Ativar Chave';
-          if (isoKeyActivationMsg) {
-            isoKeyActivationMsg.style.display = 'block';
-            isoKeyActivationMsg.style.color = '#ef4444';
-            isoKeyActivationMsg.textContent = '❌ ' + (res?.error || 'Chave da ISO inválida ou esgotada!');
+          btnSubmitIsoKeyDedicated.disabled = false;
+          btnSubmitIsoKeyDedicated.textContent = '⚡ ATIVAR CHAVE AGORA';
+          if (statusDiv) {
+            statusDiv.style.display = 'block';
+            statusDiv.style.color = '#ef4444';
+            statusDiv.textContent = '❌ ' + (verifyRes?.error || 'Chave inválida, esgotada ou não pertence a este computador!');
           }
         }
       } catch (e) {
-        btnActivateIsoKey.disabled = false;
-        btnActivateIsoKey.textContent = '⚡ Ativar Chave';
-        if (isoKeyActivationMsg) {
-          isoKeyActivationMsg.style.display = 'block';
-          isoKeyActivationMsg.style.color = '#ef4444';
-          isoKeyActivationMsg.textContent = '❌ Erro ao ativar chave: ' + e.message;
+        btnSubmitIsoKeyDedicated.disabled = false;
+        btnSubmitIsoKeyDedicated.textContent = '⚡ ATIVAR CHAVE AGORA';
+        if (statusDiv) {
+          statusDiv.style.display = 'block';
+          statusDiv.style.color = '#ef4444';
+          statusDiv.textContent = '❌ Erro: ' + e.message;
         }
       }
+    });
+  }
+
+  // Input da chave dedicada: Enter ativa
+  const inputIsoDedicated = document.getElementById('input-iso-key-dedicated');
+  if (inputIsoDedicated) {
+    inputIsoDedicated.addEventListener('input', (e) => {
+      e.target.value = e.target.value.toUpperCase();
+    });
+    inputIsoDedicated.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && btnSubmitIsoKeyDedicated) btnSubmitIsoKeyDedicated.click();
     });
   }
 
@@ -3637,8 +3905,9 @@ if (btnRemovePartitionAction) {
           return;
         }
         const check = await window.api.verifyKey(currentKey);
+
         if (check && !check.valid) {
-          // Só desfaz otimizações se o servidor confirmou que a chave está INATIVA, EXPIRADA ou EXCLUÍDA
+          // Servidor confirmou chave INATIVA, EXPIRADA, EXCLUÍDA ou ESGOTADA → LOGOUT SEGURO
           if (check.isRevokedOrExpired) {
             console.log('[SECURITY] Chave invalidada/expirada no servidor oficial! Desfazendo todas as otimizações...');
             await forceLogoutSecurity(check?.error || 'Sua chave foi revogada, desativada ou expirou no painel.');
@@ -3646,9 +3915,28 @@ if (btnRemovePartitionAction) {
             console.warn('[SECURITY] Falha momentânea de rede no heartbeat. Mantendo configurações.');
           }
         } else if (check && check.valid) {
-          // Atualiza sidebar em tempo real
-          const isVitalicia = check.plan && (check.plan.includes('Vitalícia') || check.plan.includes('permanent') || check.plan.includes('💎'));
-          updateSidebarStatus(true, check.clientName, isVitalicia ? 'permanent' : 'temporary', check.plan);
+          // ── Detecção especial para ISO Key esgotada ────────────────────────
+          if (check.isIsoKey) {
+            const remaining = typeof check.isoUsesRemaining === 'number' ? check.isoUsesRemaining : 1;
+
+            // Atualiza badge de usos restantes na ISO em tempo real
+            const isoUsesBadge = document.getElementById('iso-session-uses-badge');
+            if (isoUsesBadge) isoUsesBadge.textContent = `${remaining} Formatação(ões) Restante(s)`;
+
+            // Atualiza sidebar
+            updateSidebarStatus(true, check.clientName, 'temporary', `${remaining} uso(s) restante(s)`);
+
+            // ISO Key zerou usos → logout imediato e seguro
+            if (remaining <= 0) {
+              console.log('[SECURITY] ISO Key esgotada! Executando logout seguro com reversão de configurações...');
+              await forceLogoutSecurity('Todos os usos da sua Chave de Formatação foram utilizados. Sessão encerrada com segurança.');
+              return;
+            }
+          } else {
+            // Chave VIP normal: atualiza sidebar normalmente
+            const isVitalicia = check.plan && (check.plan.includes('Vitalícia') || check.plan.includes('permanent') || check.plan.includes('💎'));
+            updateSidebarStatus(true, check.clientName, isVitalicia ? 'permanent' : 'temporary', check.plan);
+          }
         }
       } catch (_) {}
     }, 15000);

@@ -3621,6 +3621,12 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
 });
 
 ipcMain.handle('get-iso-plans-public', async () => {
+  const defaultIsoPlans = [
+    { id: 'iso_1', name: '1 Formatação (1 Uso)', uses: 1, price: 50, enabled: true },
+    { id: 'iso_2', name: '2 Formatações (2 Usos)', uses: 2, price: 70, enabled: true },
+    { id: 'iso_3', name: '3 Formatações (3 Usos)', uses: 3, price: 100, enabled: true }
+  ];
+
   try {
     return new Promise((resolve) => {
       const https = require('https');
@@ -3629,17 +3635,84 @@ ipcMain.handle('get-iso-plans-public', async () => {
         res.on('data', c => body += c);
         res.on('end', () => {
           try {
-            resolve(JSON.parse(body));
+            const data = JSON.parse(body);
+            if (data && Array.isArray(data.plans) && data.plans.length > 0) {
+              resolve(data);
+            } else {
+              resolve({ success: true, isFree: !!data?.isFree, plans: defaultIsoPlans });
+            }
           } catch (_) {
-            resolve({ success: true, isFree: false, plans: [] });
+            resolve({ success: true, isFree: false, plans: defaultIsoPlans });
           }
         });
       });
-      req.on('error', () => resolve({ success: true, isFree: false, plans: [] }));
-      req.on('timeout', () => { req.destroy(); resolve({ success: true, isFree: false, plans: [] }); });
+      req.on('error', () => resolve({ success: true, isFree: false, plans: defaultIsoPlans }));
+      req.on('timeout', () => { req.destroy(); resolve({ success: true, isFree: false, plans: defaultIsoPlans }); });
     });
   } catch (e) {
-    return { success: true, isFree: false, plans: [] };
+    return { success: true, isFree: false, plans: defaultIsoPlans };
+  }
+});
+
+ipcMain.handle('create-iso-pix-payment', async (_e, planId, clientName) => {
+  try {
+    const https = require('https');
+    return new Promise((resolve) => {
+      const payload = JSON.stringify({
+        isIsoPayment: true,
+        planId: planId || 'iso_1',
+        clientName: clientName || 'Cliente ISO'
+      });
+      const req = https.request('https://web-key-generator.vercel.app/api/payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload)
+        },
+        timeout: 10000
+      }, (res) => {
+        let body = '';
+        res.on('data', c => body += c);
+        res.on('end', () => {
+          try {
+            resolve(JSON.parse(body));
+          } catch (_) {
+            resolve({ success: false, error: 'Resposta inválida do servidor.' });
+          }
+        });
+      });
+      req.on('error', (err) => resolve({ success: false, error: 'Erro de conexão: ' + err.message }));
+      req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Tempo limite ao gerar PIX.' }); });
+      req.write(payload);
+      req.end();
+    });
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('check-iso-pix-payment', async (_e, paymentId) => {
+  try {
+    const https = require('https');
+    return new Promise((resolve) => {
+      const req = https.get(`https://web-key-generator.vercel.app/api/payment?action=check&paymentId=${encodeURIComponent(paymentId)}`, {
+        timeout: 8000
+      }, (res) => {
+        let body = '';
+        res.on('data', c => body += c);
+        res.on('end', () => {
+          try {
+            resolve(JSON.parse(body));
+          } catch (_) {
+            resolve({ success: false, error: 'Resposta inválida.' });
+          }
+        });
+      });
+      req.on('error', (err) => resolve({ success: false, error: err.message }));
+      req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Tempo limite.' }); });
+    });
+  } catch (e) {
+    return { success: false, error: e.message };
   }
 });
 

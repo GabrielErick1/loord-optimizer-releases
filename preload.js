@@ -81,6 +81,8 @@ contextBridge.exposeInMainWorld('api', {
   // ─── ISO Loord Format & Setup ─────────────────────────────────────
   checkLoordIsoStatus: () => ipcRenderer.invoke('check-loord-iso-status'),
   getIsoPlansPublic: () => ipcRenderer.invoke('get-iso-plans-public'),
+  createIsoPixPayment: (planId, clientName) => ipcRenderer.invoke('create-iso-pix-payment', planId, clientName),
+  checkIsoPixPayment: (paymentId) => ipcRenderer.invoke('check-iso-pix-payment', paymentId),
   activateIsoKey: (key) => ipcRenderer.invoke('activate-iso-key', key),
   downloadLoordIso: () => ipcRenderer.invoke('download-loord-iso'),
   prepareLoordPartition: () => ipcRenderer.invoke('prepare-loord-partition'),

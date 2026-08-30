@@ -17,6 +17,99 @@ module.exports = async (req, res) => {
     return;
   }
 
+  let body = {};
+  try {
+    body = await parseRequestBody(req);
+  } catch (_) {}
+
+  const { planId, clientName, buyerName, isIsoPayment, uuid, customVal, durationHours, durationDays } = body;
+
+  // ── PAGAMENTO PIX PÚBLICO PARA CHAVE DA ISO (DO APLICATIVO DESKTOP) ──
+  if (isIsoPayment || (planId && String(planId).startsWith('iso_'))) {
+    const { getIsoConfig } = require('./_db');
+    const isoConfig = await getIsoConfig();
+    const plans = isoConfig.plans || [];
+    const plan = plans.find(p => p.id === planId) || plans.find(p => p.uses === Number(planId));
+
+    if (!plan) {
+      res.status(404).json({ success: false, error: 'Plano de formatação ISO não encontrado.' });
+      return;
+    }
+
+    const price = Number(plan.price) || 50.00;
+    const clientClean = (clientName || buyerName || 'Cliente ISO').trim();
+    const idempotencyKey = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString('hex');
+
+    const mpPayload = {
+      transaction_amount: Number(price.toFixed(2)),
+      description: `Loord ISO v10.6 - ${plan.name} (${plan.uses} uso(s))`,
+      payment_method_id: 'pix',
+      payer: {
+        email: 'pagamento_iso@loordoptimizer.com',
+        first_name: clientClean.substring(0, 30) || 'Cliente',
+        last_name: 'ISO'
+      },
+      metadata: {
+        is_iso: true,
+        plan_id: plan.id,
+        plan_name: plan.name,
+        uses: plan.uses,
+        price: price,
+        client_name: clientClean,
+        uuid: (uuid || '').trim().toLowerCase() || null
+      }
+    };
+
+    const mpRes = await fetch('https://api.mercadopago.com/v1/payments', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${MP_ACCESS_TOKEN}`,
+        'Content-Type': 'application/json',
+        'X-Idempotency-Key': idempotencyKey
+      },
+      body: JSON.stringify(mpPayload)
+    });
+
+    const mpData = await mpRes.json();
+    if (!mpRes.ok || !mpData || !mpData.id) {
+      console.error('Mercado Pago ISO Error:', mpData);
+      const errMsg = mpData && mpData.message ? mpData.message : 'Erro ao gerar PIX no Mercado Pago.';
+      res.status(500).json({ success: false, error: errMsg });
+      return;
+    }
+
+    const paymentId = String(mpData.id);
+    const txData = mpData.point_of_interaction && mpData.point_of_interaction.transaction_data;
+    const qrCode = txData ? txData.qr_code : null;
+    const qrCodeBase64 = txData ? txData.qr_code_base64 : null;
+
+    await savePayment(paymentId, {
+      paymentId,
+      status: 'pending',
+      isIsoPayment: true,
+      planId: plan.id,
+      planName: plan.name,
+      uses: plan.uses,
+      price: price,
+      clientName: clientClean,
+      uuid: (uuid || '').trim().toLowerCase() || null,
+      createdAt: Date.now(),
+      fulfilled: false
+    });
+
+    res.status(200).json({
+      success: true,
+      paymentId,
+      status: mpData.status,
+      price: price,
+      planName: plan.name,
+      uses: plan.uses,
+      qrCode,
+      qrCodeBase64
+    });
+    return;
+  }
+
   const user = await verifyAuth(req);
   if (!user) {
     res.status(401).json({ success: false, error: 'Não autorizado.' });
@@ -24,7 +117,6 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { planId, clientName, uuid, customVal, durationHours, durationDays } = await parseRequestBody(req);
 
     if (!planId) {
       res.status(400).json({ success: false, error: 'Plano não informado.' });

@@ -16,17 +16,13 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const user = await verifyAuth(req);
-  if (!user) {
-    res.status(401).json({ success: false, error: 'Não autorizado.' });
-    return;
-  }
-
   const paymentId = req.query ? req.query.paymentId : null;
   if (!paymentId) {
     res.status(400).json({ success: false, error: 'paymentId não informado.' });
     return;
   }
+
+  const user = await verifyAuth(req);
 
   try {
     const paymentRecord = await getPayment(paymentId);
@@ -35,13 +31,21 @@ module.exports = async (req, res) => {
       return;
     }
 
-    // If already fulfilled previously, return the existing key
+    // Se NÃO for pagamento de ISO público e não tiver usuário logado, barra
+    if (!paymentRecord.isIsoPayment && !user) {
+      res.status(401).json({ success: false, error: 'Não autorizado.' });
+      return;
+    }
+
+    // Se já foi finalizado anteriormente, retorna a chave existente
     if (paymentRecord.fulfilled && paymentRecord.generatedKey) {
       res.status(200).json({
         success: true,
         approved: true,
         status: 'approved',
         key: paymentRecord.generatedKey,
+        isIsoKey: !!paymentRecord.isIsoPayment,
+        uses: paymentRecord.uses,
         clientName: paymentRecord.clientName,
         planName: paymentRecord.planName
       });
@@ -60,7 +64,53 @@ module.exports = async (req, res) => {
     const status = mpData.status || 'pending';
 
     if (status === 'approved') {
-      // Payment confirmed! Generate the license key
+      // ── SE FOR PAGAMENTO DE CHAVE ISO ──
+      if (paymentRecord.isIsoPayment) {
+        const rawUuid = paymentRecord.uuid || `iso_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+        const baseKey = generateActivationKey(rawUuid);
+        const key = `ISO-${baseKey.substring(0, 14)}`;
+        const licenses = await getLicenses();
+
+        const newLicense = {
+          key,
+          uuid: paymentRecord.uuid || null,
+          clientName: paymentRecord.clientName || 'Cliente ISO',
+          isIsoKey: true,
+          keyType: 'iso',
+          licenseType: 'iso',
+          activationMode: 'single',
+          isoUsesTotal: paymentRecord.uses || 1,
+          isoUsesRemaining: paymentRecord.uses || 1,
+          pricePaid: paymentRecord.price,
+          buyerInfo: paymentRecord.clientName || 'Cliente ISO',
+          createdBy: 'mercadopago_pix',
+          createdAt: Date.now(),
+          status: 'pending',
+          activatedAt: null,
+          lastUsedAt: null
+        };
+
+        licenses.push(newLicense);
+        await saveLicenses(licenses);
+
+        paymentRecord.fulfilled = true;
+        paymentRecord.generatedKey = key;
+        await savePayment(paymentId, paymentRecord);
+
+        res.status(200).json({
+          success: true,
+          approved: true,
+          status: 'approved',
+          key,
+          isIsoKey: true,
+          uses: paymentRecord.uses,
+          clientName: paymentRecord.clientName,
+          planName: paymentRecord.planName
+        });
+        return;
+      }
+
+      // Payment confirmed! Generate the license key for normal VIP
       const { planId, clientName, uuid, customVal, username } = paymentRecord;
       const allPlans = await getPlans();
       const plan = allPlans.find(p => p.id === planId) || { id: planId, type: 'temporary', durationHours: 720, name: 'Licença' };
