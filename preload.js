@@ -103,6 +103,8 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.removeAllListeners('macro-state-changed');
     ipcRenderer.on('macro-state-changed', (event, data) => callback(data));
   },
+  // ─── Loord IA Gamer (Grok AI) ────────────────────────────────────
+  askIaGrok: (question) => ipcRenderer.invoke('ask-ia-gamer', question),
   // ─────────────────────────────────────────────────────────────────
 });
 

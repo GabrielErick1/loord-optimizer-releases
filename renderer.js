@@ -4267,3 +4267,153 @@ rarefixBtns.forEach(btn => {
     window.i18n.init();
   }
 })();
+
+// ─── LOORD IA GAMER (GROK AI ASSISTANT) ───────────────────────────────────────
+(() => {
+  const chatBox = document.getElementById('ia-chat-box');
+  const inputMsg = document.getElementById('ia-user-input');
+  const btnSend = document.getElementById('btn-ia-send');
+  const btnClear = document.getElementById('btn-ia-clear');
+  const chips = document.querySelectorAll('.ia-prompt-chip');
+
+  if (!chatBox || !inputMsg || !btnSend) return;
+
+  function appendUserMessage(text) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'ia-message ia-user';
+    msgDiv.innerHTML = `<div class="ia-bubble">${escapeHtml(text)}</div>`;
+    chatBox.appendChild(msgDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  function appendBotMessage(text) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'ia-message ia-bot';
+    msgDiv.style.cssText = 'display: flex; gap: 10px; align-items: flex-start; max-width: 90%;';
+
+    const formattedHtml = formatBotResponse(text);
+
+    msgDiv.innerHTML = `
+      <div style="width: 32px; height: 32px; border-radius: 50%; background: #1e3a8a; border: 1.5px solid #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
+        🤖
+      </div>
+      <div class="ia-bubble" style="background: rgba(13, 23, 44, 0.9); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 14px 16px; color: #f8fafc; font-size: 0.86rem; line-height: 1.6; box-shadow: 0 4px 15px rgba(0,0,0,0.3); flex: 1;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <div style="font-weight: 800; color: #38bdf8; font-size: 0.8rem;">LOORD IA GAMER (GROK)</div>
+          <button type="button" class="btn-copy-ia-res" style="background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); color: #38bdf8; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; cursor: pointer;">📋 Copiar</button>
+        </div>
+        <div>${formattedHtml}</div>
+      </div>
+    `;
+
+    const copyBtn = msgDiv.querySelector('.btn-copy-ia-res');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(text);
+        copyBtn.textContent = '✔ Copiado!';
+        setTimeout(() => copyBtn.textContent = '📋 Copiar', 2000);
+      });
+    }
+
+    chatBox.appendChild(msgDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  function appendTypingIndicator() {
+    const id = 'ia-typing-' + Date.now();
+    const indDiv = document.createElement('div');
+    indDiv.id = id;
+    indDiv.className = 'ia-message ia-bot';
+    indDiv.style.cssText = 'display: flex; gap: 10px; align-items: center; max-width: 80%;';
+    indDiv.innerHTML = `
+      <div style="width: 28px; height: 28px; border-radius: 50%; background: #1e3a8a; border: 1px solid #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">
+        🤖
+      </div>
+      <div style="background: rgba(13, 23, 44, 0.8); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 12px; padding: 8px 14px; font-size: 0.8rem; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+        <span>Loord IA está analisando sua pergunta...</span>
+        <span class="ia-typing-dots"><span></span><span></span><span></span></span>
+      </div>
+    `;
+    chatBox.appendChild(indDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    return id;
+  }
+
+  function removeTypingIndicator(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+  }
+
+  function escapeHtml(str) {
+    return (str || '').replace(/[&<>"']/g, m => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[m]);
+  }
+
+  function formatBotResponse(text) {
+    let s = escapeHtml(text);
+    s = s.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/`([^`]+)`/g, '<code style="background: rgba(0,0,0,0.4); color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.88em; font-weight: 700;">$1</code>');
+    s = s.replace(/\n/g, '<br>');
+    return s;
+  }
+
+  async function handleSend(question) {
+    const q = (question || inputMsg.value || '').trim();
+    if (!q) return;
+
+    inputMsg.value = '';
+    appendUserMessage(q);
+
+    btnSend.disabled = true;
+    const typingId = appendTypingIndicator();
+
+    try {
+      const res = await window.api.askIaGrok(q);
+      removeTypingIndicator(typingId);
+      btnSend.disabled = false;
+
+      if (res && res.success) {
+        appendBotMessage(res.answer);
+      } else {
+        appendBotMessage(res?.error || 'Não consegui obter a resposta agora. Verifique sua conexão e tente novamente.');
+      }
+    } catch (e) {
+      removeTypingIndicator(typingId);
+      btnSend.disabled = false;
+      appendBotMessage('Ocorreu um erro ao consultar a IA. Tente novamente em instantes.');
+    }
+  }
+
+  btnSend.addEventListener('click', () => handleSend());
+
+  inputMsg.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSend();
+    }
+  });
+
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      const q = chip.getAttribute('data-question');
+      if (q) handleSend(q);
+    });
+  });
+
+  if (btnClear) {
+    btnClear.addEventListener('click', () => {
+      chatBox.innerHTML = `
+        <div class="ia-message ia-bot" style="display: flex; gap: 10px; align-items: flex-start; max-width: 90%;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: #1e3a8a; border: 1.5px solid #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
+            🤖
+          </div>
+          <div style="background: rgba(13, 23, 44, 0.9); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 12px 16px; color: #f8fafc; font-size: 0.86rem; line-height: 1.55; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+            <div style="font-weight: 800; color: #38bdf8; margin-bottom: 4px; font-size: 0.8rem;">LOORD IA GAMER</div>
+            Conversa reiniciada! Como posso te ajudar a calibrar sua mira ou aumentar o FPS do seu emulador hoje? 🚀
+          </div>
+        </div>
+      `;
+    });
+  }
+})();

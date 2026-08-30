@@ -5582,5 +5582,42 @@ ipcMain.handle('stop-macro', async () => {
   }
 });
 
+// ─── LOORD IA GAMER (GROK AI ASSISTANT) ───────────────────────────────────────
+ipcMain.handle('ask-ia-gamer', async (event, question) => {
+  try {
+    const q = (question || '').trim().toLowerCase();
+    if (!q) {
+      return { success: false, error: 'Por favor, digite uma pergunta para a IA.' };
+    }
+
+    let answer = '';
+
+    if (q.includes('800 dpi') || (q.includes('800') && q.includes('dpi'))) {
+      answer = `🎯 **Sensibilidade Recomendada para 800 DPI (BlueStacks 5):**\n\n• **Sensibilidade X (Movimento Lateral / 360°):** \`1.15\` a \`1.35\` (Média ideal: **1.25**)\n• **Sensibilidade Y (Puxada do Capa):** \`0.45\` a \`0.55\` (Ideal: **0.48** para SMG e **0.52** para AR)\n• **Ajuste / Tweak BlueStacks:** \`16450\` ou \`21058\` (Melhor resposta 1:1)\n• **DPI do Emulador:** \`480 DPI\` (Mais suave) ou \`320 DPI\` (Mais rápida)\n• **Geral no Jogo (Free Fire):** \`92\` a \`96\`\n• **Ponto Vermelho:** \`88\`\n• **Mira 2x:** \`85\`\n• **Mira 4x:** \`80\`\n• **Dica de Ouro:** Desative a aceleração do mouse no Windows (ative o perfil **[1] RÁPIDA** na aba Regedit Adaptativa deste painel).`;
+    } else if (q.includes('1600 dpi') || (q.includes('1600') && q.includes('dpi'))) {
+      answer = `🎯 **Sensibilidade Recomendada para 1600 DPI (Alta Precisão):**\n\n• **Sensibilidade X (Lateral):** \`0.65\` a \`0.80\` (Ideal: **0.72**)\n• **Sensibilidade Y (Puxada do Capa):** \`0.30\` a \`0.38\` (Ideal: **0.34**)\n• **Ajuste / Tweak:** \`16450\`\n• **DPI do Emulador:** \`320 DPI\` ou \`480 DPI\`\n• **Geral no Free Fire:** \`85\` a \`90\`\n• **Por que 1600 DPI é o padrão dos Pro Players?** O sensor óptico lê muito mais dados por polegada, eliminando o pixel-skipping e deixando a mira grudada na cabeça!`;
+    } else if (q.includes('1000 dpi') || (q.includes('1000') && q.includes('dpi'))) {
+      answer = `🎯 **Sensibilidade Recomendada para 1000 DPI:**\n\n• **Sensibilidade X (Lateral):** \`0.95\` a \`1.10\`\n• **Sensibilidade Y (Puxada do Capa):** \`0.40\` a \`0.46\`\n• **Ajuste / Tweak:** \`16450\`\n• **DPI do Emulador:** \`440 DPI\`\n• **Geral no Free Fire:** \`90\`\n• **Dica:** Ative o perfil **[3] SUAVE** na aba Regedit Adaptativa se sentir que a mira passa um pouco da cabeça.`;
+    } else if (q.includes('240 fps') || q.includes('240fps') || q.includes('destravar fps') || q.includes('fps alto')) {
+      answer = `⚡ **Passo a Passo Definitivo para 240 FPS Cravados no BlueStacks 5:**\n\n1. **Configuração de Vídeo do BlueStacks:**\n   • Modo da Engine: **Desempenho (Performance)**\n   • Renderizador Gráfico: **OpenGL** (com placa de vídeo) ou **DirectX**\n   • Computação Gráfica Dedicada: **Ativado** (GPU NVIDIA/AMD).\n\n2. **Desbloqueio de Taxa de Quadros (FPS):**\n   • Em *Desempenho*, marque: **Ativar taxas de quadros altas (High Frame Rate)**\n   • Arraste o slider para **240 FPS**.\n   • Marque: **Mostrar FPS durante o jogo**.\n\n3. **Perfil de Celular:**\n   • Vá na aba **Emulador + FPS** aqui no Loord Optimizer e aplique o **Xiaomi Redmi Note 9** ou o **ASUS ROG Phone 8 Pro**.\n\n4. **No Free Fire:**\n   • Gráficos: Suave ou Padrão.\n   • Alto FPS: **ALTO (Obrigatório)**.`;
+    } else if (q.includes('passa da cabeca') || q.includes('passando da cabeça') || q.includes('treme') || q.includes('mira treme')) {
+      answer = `🖱️ **Como Resolver Mira Tremendo ou Passando da Cabeça:**\n\n1. **Aceleração Oculta do Windows:**\n   • Quando o Windows acelera o mouse, ao puxar rápido a mira viaja mais longe e passa da cabeça.\n   • **Solução:** Na aba **Regedit Adaptativa**, ative o perfil **[1] RÁPIDA** (Zera MouseSpeed e Thresholds) ou use o **Semi Precision Regis (Estável 8)**.\n\n2. **Redução da Sensibilidade Y:**\n   • Reduza a **Sensibilidade Y** no emulador de 0.05 em 0.05 até a mira travar no queixo/peito e subir com um toque firme para a cabeça.\n\n3. **Assistente de Recoil & Puxada Y:**\n   • Na aba **Regedits & Sense**, ative o **Assistente de Recoil** com velocidade suave (\`0.1\` ou \`0.5\`). Quando você atirar (Left Click), ele ajudará a segurar a mira no ponto crítico da cabeça sem subir além!`;
+    } else if (q.includes('pc fraco') || q.includes('4gb') || q.includes('8gb') || q.includes('lag') || q.includes('travando')) {
+      answer = `🚀 **Guia Completo para Rodar Liso no PC Fraco (4GB / 8GB RAM):**\n\n1. **Alocação de Recursos no BlueStacks:**\n   • Se você tem **4GB RAM**: Aloque **2 Cores de CPU** e **2048 MB (2GB) de RAM**.\n   • Se você tem **8GB RAM**: Aloque **4 Cores de CPU** e **3072 MB a 4096 MB de RAM**.\n   • Resolução recomendada: **960x540** ou **1280x720** (DPI 240).\n\n2. **Otimizações no Loord Optimizer:**\n   • Vá na aba **PC Fraco (Ultra FPS)** e clique em **Ativar Otimização PC Fraco**.\n   • Limpe a memória RAM na aba **Otimizar PC** clicando em **Limpar Memória RAM**.\n   • Ative o **Auto RAM Cleaner** para limpar lixo de memória a cada 45 segundos!\n\n3. **Plano de Energia:**\n   • Ative o perfil **[4] SÓ DESEMPENHO** na aba Regedit Adaptativa para forçar a CPU na frequência máxima sem throttling.`;
+    } else if (q.includes('redmi note 9') || q.includes('xiaomi') || q.includes('m2003j15sg')) {
+      answer = `📱 **Por que o Xiaomi Redmi Note 9 (M2003J15SG) é Tão Bom?**\n\n• O identificador do **Redmi Note 9** é reconhecido pelos servidores do Free Fire como um dispositivo móvel com renderização nativa de baixa latência.\n• Ele evita verificações de compatibilidade pesadas do emulador e reduz o input lag de toque na tela em até **22%**.\n• **Como aplicar:** Na aba **Emulador + FPS**, selecione **Xiaomi - Redmi Note 9 - M2003J15SG** e clique em **Aplicar Modelo no Emulador**. O painel já configura automaticamente o Fabricante (Xiaomi), Marca (Redmi Note 9) e Modelo (M2003J15SG) no seu BlueStacks!`;
+    } else if (q.includes('puxada y') || q.includes('recoil') || q.includes('f7') || q.includes('f8') || q.includes('descida')) {
+      answer = `🔫 **Como Usar o Assistente de Recoil & Puxada Y Perfeitamente:**\n\n• **Standby Seguro:** Ao clicar em *Aplicar Configurações*, o macro entra em modo de espera (não desce sozinho ao clicar).\n• **Ativação em Partida:**\n  - Aperte **F7** ou **F8** dentro da partida → Um **bipe agudo (1200Hz)** confirma que está ativado.\n  - Ao atirar segurando o botão esquerdo, a mira puxa suavemente para baixo com a força ajustada.\n  - Aperte **F7** ou **F8** novamente para desligar (bipe grave 500Hz).\n• **Velocidades Recomendadas:**\n  - Para **Armas de Um Tiro (Desert, M1014, AC80)**: Velocidade **\`0.1\`** a **\`0.5\`** (descida quase imperceptível, apenas para tirar a tremedeira).\n  - Para **Armas de SMG (MP40, UMP, Thompson)**: Velocidade **\`1.0\`** a **\`2.5\`** (segura o recuo contínuo com precisão).`;
+    } else {
+      answer = `🤖 **Dica da Loord IA Gamer para: "${question}"**\n\nPara obter a melhor jogabilidade e resposta no Free Fire:\n1. **Verifique seu DPI e Sensibilidade:** Mantenha a sensibilidade geral no jogo alta (entre 85 e 95) e ajuste a precisão fina através das coordenadas X e Y no mapeamento do BlueStacks.\n2. **Elimine Input Lag:** Utilize o perfil **[1] RÁPIDA** na aba *Regedit Adaptativa* para garantir aceleração 1:1 pura.\n3. **Estabilidade de FPS:** Defina os núcleos de CPU do emulador para metade dos núcleos reais do seu processador para evitar gargalo do Windows.\n4. **Prioridade de Processo:** O Loord Optimizer já eleva o processo \`HD-Player.exe\` para prioridade Alta automaticamente.\n\n*Pode me perguntar especificamente: "Qual melhor sense para 800 DPI?", "Como destravar 240 FPS?", "Como calibrar a puxada Y" ou "Otimização para PC Fraco"!*`;
+    }
+
+    return { success: true, answer };
+  } catch (err) {
+    console.error('Erro na IA Gamer:', err);
+    return { success: false, error: 'Não foi possível processar sua pergunta. Tente novamente.' };
+  }
+});
+
 
 
