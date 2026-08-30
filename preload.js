@@ -58,7 +58,8 @@ contextBridge.exposeInMainWorld('api', {
   setGamerDns: (dnsType) => ipcRenderer.invoke('set-gamer-dns', dnsType),
   resetNetworkDhcp: () => ipcRenderer.invoke('reset-network-dhcp'),
   // ─── Macro de Controle de Recoil & Puxada Y ─────────────────────
-  startMacro: (speed) => ipcRenderer.invoke('start-macro', speed),
+  startMacro: (speed, active) => ipcRenderer.invoke('start-macro', speed, active),
+  prepareMacro: (speed) => ipcRenderer.invoke('prepare-macro', speed),
   setMacroSpeed: (speed) => ipcRenderer.invoke('set-macro-speed', speed),
   stopMacro: () => ipcRenderer.invoke('stop-macro'),
   // ─── Game Booster Turbo ──────────────────────────────────────────

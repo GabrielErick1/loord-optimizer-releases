@@ -5377,9 +5377,6 @@ public class Program {
 
     private const int MOUSEEVENTF_MOVE = 0x0001;
     private const int VK_LBUTTON = 0x01;
-    private const int VK_F2      = 0x71;
-    private const int VK_F3      = 0x72;
-    private const int VK_F6      = 0x75;
     private const int VK_F7      = 0x76;
     private const int VK_F8      = 0x77;
 
@@ -5412,19 +5409,17 @@ public class Program {
         while (true) {
             loopCounter++;
 
-            bool f2 = (GetAsyncKeyState(VK_F2) & 0x8000) != 0;
-            bool f3 = (GetAsyncKeyState(VK_F3) & 0x8000) != 0;
-            bool f6 = (GetAsyncKeyState(VK_F6) & 0x8000) != 0;
+            // Atalhos oficiais exclusivos no jogo: F7 ou F8 (Liga / Desliga com bip)
             bool f7 = (GetAsyncKeyState(VK_F7) & 0x8000) != 0;
             bool f8 = (GetAsyncKeyState(VK_F8) & 0x8000) != 0;
 
-            if (f2 || f3 || f6 || f7 || f8) {
+            if (f7 || f8) {
                 macroAtiva = !macroAtiva;
                 try { Console.Beep(macroAtiva ? 1200 : 500, 100); } catch {}
                 foreach (string ap in ActivePaths) {
                     try { File.WriteAllText(ap, macroAtiva ? "true" : "false"); } catch {}
                 }
-                Thread.Sleep(250);
+                Thread.Sleep(300);
             }
 
             if (loopCounter % 3 == 0) {
@@ -5548,11 +5543,20 @@ async function startMacroNative(speed = null, active = true) {
   }
 }
 
-ipcMain.handle('start-macro', async (event, speed) => {
+ipcMain.handle('start-macro', async (event, speed, active = true) => {
   if (!isLicenseAuthorized()) {
     return { success: false, error: 'Acesso negado: Licença VIP ativa obrigatória.' };
   }
-  return await startMacroNative(speed, true);
+  return await startMacroNative(speed, active);
+});
+
+ipcMain.handle('prepare-macro', async (event, speed) => {
+  if (!isLicenseAuthorized()) {
+    return { success: false, error: 'Acesso negado: Licença VIP ativa obrigatória.' };
+  }
+  // Mantém o motor configurado mas em STANDBY (active = false).
+  // Só desce quando o usuário clicar em F7 ou F8!
+  return await startMacroNative(speed, false);
 });
 
 ipcMain.handle('set-macro-speed', async (event, speed) => {

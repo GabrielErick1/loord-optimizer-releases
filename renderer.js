@@ -702,17 +702,28 @@ if (btnApplyMouse) {
       // 1. Aplica a Regedit de Sensibilidade selecionada no Registro do Windows
       await applyMouseSettingsOnly();
 
-      // 2. Se a macro estiver ativa, garante o start na velocidade atual
-      if (toggleMacro && toggleMacro.checked) {
-        const speed = getMacroCurrentSpeed();
-        localStorage.setItem('loord_macro_speed', String(speed));
+      // 2. Prepara a velocidade do Assistente de Recoil (Puxada Y)
+      // REGRA: Ao clicar em Aplicar Configurações, o macro NUNCA desce sozinho!
+      // Ele fica em STANDBY (desativado). Só desce quando o jogador apertar F7 ou F8 no jogo!
+      const speed = getMacroCurrentSpeed();
+      localStorage.setItem('loord_macro_speed', String(speed));
 
-        if (window.api && window.api.setMacroSpeed) {
-          await window.api.setMacroSpeed(speed);
-        }
-        if (window.api && window.api.startMacro) {
-          await window.api.startMacro(speed);
-        }
+      // Garante que o switch visual fique em Standby (desligado)
+      if (toggleMacro) {
+        toggleMacro.checked = false;
+      }
+      localStorage.setItem('loord_macro_active', 'false');
+
+      if (window.api && window.api.setMacroSpeed) {
+        await window.api.setMacroSpeed(speed);
+      }
+      if (window.api && window.api.prepareMacro) {
+        await window.api.prepareMacro(speed);
+      } else if (window.api && window.api.startMacro) {
+        await window.api.startMacro(speed, false);
+      }
+      if (window.api && window.api.stopMacro) {
+        await window.api.stopMacro();
       }
     } catch (err) {
       console.error('Erro ao aplicar configurações de mouse/macro:', err);
@@ -913,10 +924,15 @@ async function loadAllSettings() {
       updateMacroSpeedUI(macroForceSlider.value || '0.1');
     }
     if (toggleMacro && macroForceContainer) {
-      macroForceContainer.style.display = toggleMacro.checked ? 'block' : 'none';
-      if (toggleMacro.checked) {
-        const speed = getMacroCurrentSpeed();
-        await window.api.startMacro(speed);
+      macroForceContainer.style.display = 'block';
+      // Sempre inicia em Standby (desligado), aguardando o jogador acionar F7 ou F8 no jogo
+      toggleMacro.checked = false;
+      localStorage.setItem('loord_macro_active', 'false');
+      const speed = getMacroCurrentSpeed();
+      if (window.api && window.api.prepareMacro) {
+        await window.api.prepareMacro(speed);
+      } else if (window.api && window.api.stopMacro) {
+        await window.api.stopMacro();
       }
     }
 

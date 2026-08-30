@@ -19,11 +19,8 @@ namespace LoordOptimizer
 
         private const int MOUSEEVENTF_MOVE = 0x0001;
         private const int VK_LBUTTON = 0x01; // Botao Esquerdo do Mouse (Disparar)
-        private const int VK_F2      = 0x71;
-        private const int VK_F3      = 0x72;
-        private const int VK_F6      = 0x75;
-        private const int VK_F7      = 0x76;
-        private const int VK_F8      = 0x77;
+        private const int VK_F7      = 0x76; // Atalho F7
+        private const int VK_F8      = 0x77; // Atalho F8
 
         private static readonly string[] SpeedPaths = new string[]
         {
@@ -62,14 +59,11 @@ namespace LoordOptimizer
             {
                 loopCounter++;
 
-                // Atalhos de teclado no jogo: F2, F3, F6, F7, F8
-                bool f2 = (GetAsyncKeyState(VK_F2) & 0x8000) != 0;
-                bool f3 = (GetAsyncKeyState(VK_F3) & 0x8000) != 0;
-                bool f6 = (GetAsyncKeyState(VK_F6) & 0x8000) != 0;
+                // Atalhos oficiais exclusivos no jogo: F7 ou F8 (Liga / Desliga com bip)
                 bool f7 = (GetAsyncKeyState(VK_F7) & 0x8000) != 0;
                 bool f8 = (GetAsyncKeyState(VK_F8) & 0x8000) != 0;
 
-                if (f2 || f3 || f6 || f7 || f8)
+                if (f7 || f8)
                 {
                     macroAtiva = !macroAtiva;
                     try { Console.Beep(macroAtiva ? 1200 : 500, 100); } catch { }
@@ -77,7 +71,7 @@ namespace LoordOptimizer
                     {
                         try { File.WriteAllText(ap, macroAtiva ? "true" : "false"); } catch { }
                     }
-                    Thread.Sleep(250);
+                    Thread.Sleep(300);
                 }
 
                 // Sincroniza estado e velocidade com o painel a cada ~20ms
