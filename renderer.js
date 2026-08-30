@@ -651,10 +651,10 @@ function updateMacroSpeedUI(val, origin = null) {
 
   // Sincroniza sempre com o backend nativo em tempo real
   if (window.api && window.api.setMacroSpeed) {
-    window.api.setMacroSpeed(num).catch(() => {});
+    window.api.setMacroSpeed(num).catch(() => { });
   }
   if (toggleMacro && toggleMacro.checked && window.api && window.api.startMacro) {
-    window.api.startMacro(num).catch(() => {});
+    window.api.startMacro(num).catch(() => { });
   }
 }
 
@@ -735,7 +735,7 @@ if (toggleMacro) {
   // Inicia sempre DESATIVADO por padrão ao abrir o painel
   toggleMacro.checked = false;
   if (macroForceContainer) macroForceContainer.style.display = 'block';
-  
+
   const savedSpeed = localStorage.getItem('loord_macro_speed') || '0.1';
   updateMacroSpeedUI(savedSpeed);
 
@@ -752,7 +752,7 @@ if (toggleMacro) {
       gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
       osc.start();
       osc.stop(audioCtx.currentTime + 0.15);
-    } catch (_) {}
+    } catch (_) { }
   }
 
   // Ouve alteração de estado dos atalhos globais F7/F8
@@ -792,7 +792,7 @@ if (toggleMacro) {
       const speed = getMacroCurrentSpeed();
       localStorage.setItem('loord_macro_speed', String(speed));
       if (window.api && window.api.setMacroSpeed) {
-        window.api.setMacroSpeed(speed).catch(() => {});
+        window.api.setMacroSpeed(speed).catch(() => { });
       }
       if (window.api && window.api.startMacro) {
         await window.api.startMacro(speed);
@@ -1040,7 +1040,7 @@ initApp();
 // ═══════════════════════════════════════════════════════════════════════
 let handleCheckUpdatesGlobal = null;
 
-window.handleCheckUpdatesManual = function(btn) {
+window.handleCheckUpdatesManual = function (btn) {
   if (typeof handleCheckUpdatesGlobal === 'function') {
     handleCheckUpdatesGlobal(true);
   } else {
@@ -2668,7 +2668,7 @@ function resetRemada() {
 window.resetRemada = resetRemada;
 
 // ── Handler de Injeção da Regedit Adaptativa ──────────────────────────────────
-window.handleApplyAdaptiveRegedit = async function(btn) {
+window.handleApplyAdaptiveRegedit = async function (btn) {
   const targetBtn = btn || document.getElementById('btn-apply-adaptive-reg');
   const inpDpiMouse = document.getElementById('adapt-dpi-mouse');
   const inpDpiEmu = document.getElementById('adapt-dpi-emu');
@@ -2680,7 +2680,7 @@ window.handleApplyAdaptiveRegedit = async function(btn) {
   const errorMsg = document.getElementById('adaptive-reg-error-msg');
 
   if (resultBox) resultBox.style.display = 'none';
-  if (errorBox)  errorBox.style.display = 'none';
+  if (errorBox) errorBox.style.display = 'none';
 
   const dpiMouse = parsePtBrFloat(inpDpiMouse?.value, 1600);
   const dpiEmu = parsePtBrFloat(inpDpiEmu?.value, 480);
@@ -2818,7 +2818,7 @@ async function loadHardwareSpecsForEmulator() {
         optCpuRamAuto.textContent = `⚡ Automático (Seu PC: ${info.totalCores}C / ${info.totalRamGB}GB RAM -> Alocar: ${info.recommendedCores}C / ${info.recommendedRamMB / 1024}GB)`;
       }
     }
-  } catch (_) {}
+  } catch (_) { }
 }
 loadHardwareSpecsForEmulator();
 
@@ -2888,34 +2888,34 @@ function syncSensInputs() {
 document.addEventListener('DOMContentLoaded', syncSensInputs);
 syncSensInputs();
 
-window.handleApplyCompTweak = async function(btn) {
+window.handleApplyCompTweak = async function (btn) {
   const isEmuTab = btn && btn.id === 'btn-apply-emu-comp-tweak';
   const targetBtn = btn || document.getElementById(isEmuTab ? 'btn-apply-emu-comp-tweak' : 'btn-apply-comp-tweak');
-  
-  const panSpeed = document.getElementById(isEmuTab ? 'emu-comp-pan-speed' : 'comp-pan-speed')?.value 
+
+  const panSpeed = document.getElementById(isEmuTab ? 'emu-comp-pan-speed' : 'comp-pan-speed')?.value
     || document.getElementById('comp-pan-speed')?.value || '25.0';
-    
-  const tweaks = document.getElementById(isEmuTab ? 'emu-comp-tweaks' : 'comp-tweaks')?.value 
+
+  const tweaks = document.getElementById(isEmuTab ? 'emu-comp-tweaks' : 'comp-tweaks')?.value
     || document.getElementById('comp-tweaks')?.value || '16450';
-    
+
   const sensX = parseSensValue(
     document.getElementById(isEmuTab ? 'emu-comp-sens-x' : 'comp-sens-x')?.value
-    || document.getElementById('comp-sens-x')?.value, 
+    || document.getElementById('comp-sens-x')?.value,
     1.69
   );
-  
+
   const sensY = parseSensValue(
     document.getElementById(isEmuTab ? 'emu-comp-sens-y' : 'comp-sens-y')?.value
-    || document.getElementById('comp-sens-y')?.value, 
+    || document.getElementById('comp-sens-y')?.value,
     1.1
   );
-  
-  const renderer = document.getElementById(isEmuTab ? 'emu-comp-graphics-renderer' : 'comp-graphics-renderer')?.value 
+
+  const renderer = document.getElementById(isEmuTab ? 'emu-comp-graphics-renderer' : 'comp-graphics-renderer')?.value
     || document.getElementById('comp-graphics-renderer')?.value || 'gl';
-    
-  const cpuRamVal = document.getElementById(isEmuTab ? 'emu-comp-cpu-ram' : 'comp-cpu-ram')?.value 
+
+  const cpuRamVal = document.getElementById(isEmuTab ? 'emu-comp-cpu-ram' : 'comp-cpu-ram')?.value
     || document.getElementById('comp-cpu-ram')?.value || 'auto';
-    
+
   const statusComp = document.getElementById(isEmuTab ? 'status-emu-comp-tweak' : 'status-comp-tweak')
     || document.getElementById('status-comp-tweak');
 
@@ -3021,7 +3021,7 @@ async function refreshUsbList() {
   try {
     const res = await window.api.getConnectedUsbs();
     if (res && res.usbs && res.usbs.length > 0) {
-      selectUsbDrive.innerHTML = res.usbs.map(u => 
+      selectUsbDrive.innerHTML = res.usbs.map(u =>
         `<option value="${u.letter}">${u.letter} - ${u.label} (${u.sizeGb} GB)</option>`
       ).join('');
       if (usbDetectBox) usbDetectBox.style.display = 'block';
@@ -3029,13 +3029,13 @@ async function refreshUsbList() {
       selectUsbDrive.innerHTML = '<option value="">Nenhum pen drive detectado (conecte um USB)</option>';
       if (usbDetectBox) usbDetectBox.style.display = 'none';
     }
-  } catch (_) {}
+  } catch (_) { }
 }
 
 if (btnOpenFormatModal && formatIsoModal) {
   btnOpenFormatModal.addEventListener('click', async () => {
     formatIsoModal.style.display = 'flex';
-    
+
     // Reseta visualização inicial
     if (btnDownloadIsoAction) {
       btnDownloadIsoAction.style.display = 'block';
@@ -3065,7 +3065,7 @@ if (btnOpenFormatModal && formatIsoModal) {
           }
         }
       }
-    } catch (_) {}
+    } catch (_) { }
   });
 }
 
@@ -3107,9 +3107,9 @@ if (btnDownloadIsoAction) {
         if (isoDownloadBar) isoDownloadBar.style.width = '100%';
         if (isoDownloadPct) isoDownloadPct.textContent = '100%';
         if (isoDownloadStatus) isoDownloadStatus.textContent = 'Download concluído com sucesso!';
-        
+
         alert('✅ ISO OFICIAL LOORD BAIXADA COM SUCESSO!\n\nOs arquivos foram salvos de forma protegida e blindada no sistema.\n\nClique no botão "2. PREPARAR COMPUTADOR PARA FORMATAR" para configurar a partição de boot segura.');
-        
+
         btnDownloadIsoAction.style.display = 'none';
         if (btnPrepareIsoAction) {
           btnPrepareIsoAction.style.display = 'block';
@@ -3295,7 +3295,7 @@ if (btnRemovePartitionAction) {
           }
         }
       }
-    } catch (_) {}
+    } catch (_) { }
   }
 
   function setAppVisualAccess(unlocked, isIsoKey, isoUsesRemaining) {
@@ -3399,7 +3399,7 @@ if (btnRemovePartitionAction) {
       }
     });
     antiTamperObserver.observe(document.body, { childList: true, subtree: true, attributes: true });
-  } catch (_) {}
+  } catch (_) { }
 
   let currentHardwareUuid = '';
 
@@ -3603,12 +3603,12 @@ if (btnRemovePartitionAction) {
         // Expõe função de seleção de plano globalmente para os cards
         window._isoPlansData = res.plans;
       }
-    } catch (_) {}
+    } catch (_) { }
     if (loadingMsg) loadingMsg.style.display = 'none';
   }
 
   // Seleção de plano via clique no card
-  window._selectIsoPlanCard = function(index) {
+  window._selectIsoPlanCard = function (index) {
     const plans = window._isoPlansData || [];
     if (!plans[index]) return;
     _isoSelectedPlan = plans[index];
@@ -3713,7 +3713,7 @@ if (btnRemovePartitionAction) {
           if (keyDisplay) keyDisplay.value = res.key;
           showIsoBuyStep('success');
         }
-      } catch (_) {}
+      } catch (_) { }
     }, 4000); // Verifica a cada 4 segundos
   }
 
@@ -3868,7 +3868,7 @@ if (btnRemovePartitionAction) {
           // Atualiza sidebar com dados frescos do servidor
           updateSidebarStatus(true, check.clientName, check.plan?.includes('Vitalícia') ? 'permanent' : 'temporary', check.plan);
         }
-      } catch (_) {}
+      } catch (_) { }
     }, 20000); // Checa a cada 20 segundos
   }
 
@@ -3954,7 +3954,7 @@ if (btnRemovePartitionAction) {
             updateSidebarStatus(true, check.clientName, isVitalicia ? 'permanent' : 'temporary', check.plan);
           }
         }
-      } catch (_) {}
+      } catch (_) { }
     }, 15000);
   }
 
@@ -3993,7 +3993,7 @@ if (btnRemovePartitionAction) {
           if (window.api && window.api.revertAllTweaksOnRevoke) {
             await window.api.revertAllTweaksOnRevoke();
           }
-        } catch (_) {}
+        } catch (_) { }
         localStorage.removeItem('loord_vip_key');
         localStorage.removeItem('activation_key');
         localStorage.removeItem('client_name');
@@ -4171,7 +4171,7 @@ rarefixBtns.forEach(btn => {
   btn.addEventListener('click', async () => {
     const speed = btn.getAttribute('data-speed');
     const allCards = document.querySelectorAll('.rarefix-card');
-    
+
     try {
       if (rarefixStatusMsg) {
         rarefixStatusMsg.style.color = '#fde047';
@@ -4193,7 +4193,7 @@ rarefixBtns.forEach(btn => {
       } else {
         const sensVal = parseInt(speed) || 11;
         const res = await window.api.applyRarefixProfile(sensVal);
-        
+
         allCards.forEach(c => c.classList.remove('active-profile'));
         const targetCard = document.getElementById(`card-rarefix-${sensVal}`);
         if (targetCard) targetCard.classList.add('active-profile');
@@ -4251,7 +4251,7 @@ rarefixBtns.forEach(btn => {
           window.i18n.setLanguage(selectedLang);
           dropdown.classList.remove('show');
           btnToggle.classList.remove('open');
-          
+
           // Re-atualiza o status de VIP com a tradução correspondente
           const savedKey = localStorage.getItem('loord_vip_key') || localStorage.getItem('activation_key');
           if (typeof updateSidebarStatus === 'function') {
@@ -4268,7 +4268,7 @@ rarefixBtns.forEach(btn => {
   }
 })();
 
-// ─── LOORD IA GAMER (GROK AI ASSISTANT) ───────────────────────────────────────
+// ─── LOORD IA GAMER (AI ASSISTANT) ───────────────────────────────────────────
 (() => {
   const chatBox = document.getElementById('ia-chat-box');
   const inputMsg = document.getElementById('ia-user-input');
@@ -4369,7 +4369,7 @@ rarefixBtns.forEach(btn => {
     const typingId = appendTypingIndicator();
 
     try {
-      const res = await window.api.askIaGrok(q);
+      const res = await window.api.askIa(q);
       removeTypingIndicator(typingId);
       btnSend.disabled = false;
 

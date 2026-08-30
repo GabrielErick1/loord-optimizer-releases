@@ -3765,7 +3765,7 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
             if (m) { cDisk = parseInt(m[1], 10); break; }
           }
         }
-      } catch (_) {}
+      } catch (_) { }
 
       const dpFile = path.join(os.tmpdir(), 'loord_dp_create.txt');
 
@@ -3782,7 +3782,7 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
         'exit'
       ].join('\r\n');
       fs.writeFileSync(dpFile, dpClean, 'ascii');
-      try { execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true }); } catch (_) {}
+      try { execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true }); } catch (_) { }
 
       // Tenta primeiro criar direto caso já exista espaço não alocado no disco do C
       const dpDirect = [
@@ -3798,7 +3798,7 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
       try {
         execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true });
         if (fs.existsSync('L:\\')) created = true;
-      } catch (_) {}
+      } catch (_) { }
 
       // Se não havia espaço não alocado, reduz C e cria no disco do C
       if (!created) {
@@ -3816,7 +3816,7 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
         try {
           execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true });
           if (fs.existsSync('L:\\')) created = true;
-        } catch (_) {}
+        } catch (_) { }
       }
 
       // Se o disco C estiver bloqueado pelo pagefile.sys, tenta no disco secundário (D:) que tem centenas de GB livres e nenhum arquivo travado
@@ -3835,7 +3835,7 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
         try {
           execSync(`diskpart.exe /s "${dpFile}"`, { windowsHide: true });
           if (fs.existsSync('L:\\')) created = true;
-        } catch (_) {}
+        } catch (_) { }
       }
 
       if (!created) {
@@ -3855,7 +3855,7 @@ ipcMain.handle('prepare-loord-partition', async (event) => {
             driveLetter = l;
             break;
           }
-        } catch (_) {}
+        } catch (_) { }
       }
     }
 
@@ -5582,7 +5582,7 @@ ipcMain.handle('stop-macro', async () => {
   }
 });
 
-// ─── LOORD IA GAMER (GROK AI ASSISTANT) ───────────────────────────────────────
+// ─── LOORD IA GAMER (AI ASSISTANT) ───────────────────────────────────────────
 ipcMain.handle('ask-ia-gamer', async (event, question) => {
   try {
     const q = (question || '').trim().toLowerCase();
@@ -5604,7 +5604,7 @@ ipcMain.handle('ask-ia-gamer', async (event, question) => {
    • Sistema inteligente de curvas de mouse e energia.
    • Possui 5 perfis: **[1] RÁPIDA** (Zera aceleração), **[2] LEVE** (Micro-ajustes), **[3] SUAVE** (Controle total), **[4] SÓ DESEMPENHO** (Energia máxima e prioridade de processo) e **[5] RESTAURAR**.
 
-3. 🤖 **Loord IA (Grok):**
+3. 🤖 **Loord IA:**
    • Sua assistente inteligente gamer. Tira qualquer dúvida sobre o painel, sensibilidade X/Y, DPI, 240 FPS e solução de travamentos.
 
 4. 🎯 **Calculadora Sense:**

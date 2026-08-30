@@ -1346,13 +1346,29 @@ select:focus {
 }
 
 @keyframes slideDownAlert {
-  from { opacity: 0; transform: translateY(-12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes pulseUpdate {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.08); opacity: 0.88; }
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.08);
+    opacity: 0.88;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1674,7 +1690,7 @@ select:focus {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   LOORD IA GAMER (GROK AI) CHAT STYLES — PRETO E AZUL MARINHO
+   LOORD IA GAMER CHAT STYLES — PRETO E AZUL MARINHO
    ═══════════════════════════════════════════════════════════════ */
 .ia-prompt-chip {
   background: rgba(37, 99, 235, 0.12);
@@ -1752,4 +1768,4 @@ select:focus {
   background: #38bdf8;
   border-radius: 50%;
   animation: pulseUpdate 1.2s infinite ease-in-out;
-}
+}
