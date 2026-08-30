@@ -18,7 +18,12 @@ namespace LoordOptimizer
         public static extern uint timeBeginPeriod(uint uMilliseconds);
 
         private const int MOUSEEVENTF_MOVE = 0x0001;
-        private const int VK_LBUTTON = 0x01; // Botao Esquerdo do Mouse
+        private const int VK_LBUTTON = 0x01; // Botao Esquerdo do Mouse (Disparar)
+        private const int VK_F2      = 0x71;
+        private const int VK_F3      = 0x72;
+        private const int VK_F6      = 0x75;
+        private const int VK_F7      = 0x76;
+        private const int VK_F8      = 0x77;
 
         private static readonly string[] SpeedPaths = new string[]
         {
@@ -39,7 +44,6 @@ namespace LoordOptimizer
         {
             try { timeBeginPeriod(1); } catch { }
 
-            // Padrao solicitado: Iniciar sempre com 0.1 (Ultra lenta, quase parando)
             double speed = 0.1;
             if (args != null && args.Length > 0)
             {
@@ -51,16 +55,33 @@ namespace LoordOptimizer
             }
 
             bool macroAtiva = false;
-            Stopwatch sw = Stopwatch.StartNew();
-            long lastMoveTime = 0;
+            double accumY = 0.0;
             int loopCounter = 0;
 
             while (true)
             {
                 loopCounter++;
 
-                // Sincroniza estado e velocidade com o painel a cada ~25ms
-                if (loopCounter % 5 == 0)
+                // Atalhos de teclado no jogo: F2, F3, F6, F7, F8
+                bool f2 = (GetAsyncKeyState(VK_F2) & 0x8000) != 0;
+                bool f3 = (GetAsyncKeyState(VK_F3) & 0x8000) != 0;
+                bool f6 = (GetAsyncKeyState(VK_F6) & 0x8000) != 0;
+                bool f7 = (GetAsyncKeyState(VK_F7) & 0x8000) != 0;
+                bool f8 = (GetAsyncKeyState(VK_F8) & 0x8000) != 0;
+
+                if (f2 || f3 || f6 || f7 || f8)
+                {
+                    macroAtiva = !macroAtiva;
+                    try { Console.Beep(macroAtiva ? 1200 : 500, 100); } catch { }
+                    foreach (string ap in ActivePaths)
+                    {
+                        try { File.WriteAllText(ap, macroAtiva ? "true" : "false"); } catch { }
+                    }
+                    Thread.Sleep(250);
+                }
+
+                // Sincroniza estado e velocidade com o painel a cada ~20ms
+                if (loopCounter % 3 == 0)
                 {
                     foreach (string ap in ActivePaths)
                     {
@@ -98,77 +119,28 @@ namespace LoordOptimizer
                     bool isShooting = (GetAsyncKeyState(VK_LBUTTON) < 0);
                     if (isShooting)
                     {
-                        // Calculo dinamico de intervalo e forca calibrado por milissegundos:
-                        // 0.1: 400ms por 1 pixel (~2.5 px/s -> Bem devagar, descida quase parando!)
-                        // 0.2: 250ms por 1 pixel (~4.0 px/s)
-                        // 0.5: 140ms por 1 pixel (~7.1 px/s -> Suave)
-                        // 1.0: 65ms por 1 pixel (~15.4 px/s -> Recomendado/Equilibrado)
-                        // 2.5: 40ms por 2 pixels (~50.0 px/s -> Media)
-                        // 5.0: 30ms por 3 pixels (~100.0 px/s -> Forte)
-                        // 10.0: 20ms por 5 pixels (~250.0 px/s -> Maxima)
-                        int intervalMs;
-                        int stepPixels;
-
-                        if (speed <= 0.15)
+                        // Acumulador fracionado dinâmico de alta precisão:
+                        // Cada aumento de velocidade (0.1 -> 0.5 -> 1.0 -> 2.5 -> 5.0 -> 10.0)
+                        // resulta em uma descida proporcionalmente MUITO mais rápida!
+                        accumY += speed;
+                        if (accumY >= 1.0)
                         {
-                            intervalMs = 400; // Ultra lenta, quase parando
-                            stepPixels = 1;
-                        }
-                        else if (speed <= 0.3)
-                        {
-                            intervalMs = 250;
-                            stepPixels = 1;
-                        }
-                        else if (speed <= 0.7)
-                        {
-                            intervalMs = (int)(250.0 - ((speed - 0.3) / 0.4) * 110.0);
-                            if (intervalMs < 130) intervalMs = 130;
-                            stepPixels = 1;
-                        }
-                        else if (speed <= 1.5)
-                        {
-                            intervalMs = (int)(130.0 - ((speed - 0.7) / 0.8) * 65.0);
-                            if (intervalMs < 55) intervalMs = 55;
-                            stepPixels = 1;
-                        }
-                        else if (speed <= 3.5)
-                        {
-                            intervalMs = 40;
-                            stepPixels = 2;
-                        }
-                        else if (speed <= 7.0)
-                        {
-                            intervalMs = 30;
-                            stepPixels = 3;
-                        }
-                        else
-                        {
-                            intervalMs = 20;
-                            stepPixels = (int)Math.Max(4, Math.Round(speed * 0.5));
+                            int stepY = (int)Math.Floor(accumY);
+                            mouse_event(MOUSEEVENTF_MOVE, 0, stepY, 0, 0);
+                            accumY -= stepY;
                         }
 
-                        long now = sw.ElapsedMilliseconds;
-                        if (lastMoveTime == 0)
-                        {
-                            lastMoveTime = now;
-                        }
-                        else if (now - lastMoveTime >= intervalMs)
-                        {
-                            mouse_event(MOUSEEVENTF_MOVE, 0, stepPixels, 0, 0);
-                            lastMoveTime = now;
-                        }
-
-                        Thread.Sleep(5);
+                        Thread.Sleep(7);
                     }
                     else
                     {
-                        lastMoveTime = 0;
-                        Thread.Sleep(10);
+                        accumY = 0.0;
+                        Thread.Sleep(8);
                     }
                 }
                 else
                 {
-                    lastMoveTime = 0;
+                    accumY = 0.0;
                     Thread.Sleep(20);
                 }
             }
@@ -179,7 +151,7 @@ namespace LoordOptimizer
             try
             {
                 if (!File.Exists(path)) return null;
-                using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 using (var reader = new StreamReader(fs))
                 {
                     return reader.ReadToEnd();

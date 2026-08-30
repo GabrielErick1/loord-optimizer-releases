@@ -12,6 +12,8 @@ BlueStacks_msi5/
 .system_generated/
 *.tmp
 *.exe
+!bin/*.exe
+!cdm.exe
 *.zip
 *.blockmap
 *.dmg

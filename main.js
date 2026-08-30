@@ -3399,8 +3399,8 @@ function queryOfficialDatabase(endpoint, payload) {
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(data),
-        'User-Agent': 'LoordOptimizerClient/3.2.1 (Windows NT 10.0; Win64; x64)',
-        'X-Client-Secure-Ver': '3.2.1'
+        'User-Agent': `LoordOptimizerClient/${app.getVersion() || '3.6.3'} (Windows NT 10.0; Win64; x64)`,
+        'X-Client-Secure-Ver': app.getVersion() || '3.6.3'
       }
     };
 
@@ -5308,10 +5308,10 @@ async function killMacroProcess() {
     macroProcess = null;
   }
   try {
-    execSync('powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \\"Name = \'LoordRecoilEngine.exe\'\\" | ForEach-Object { Invoke-CimMethod -InputObject $_ -MethodName Terminate }"', { stdio: 'ignore' });
+    execSync('powershell -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { $_.Name -like \'*LoordRecoilEngine*\' } | ForEach-Object { Invoke-CimMethod -InputObject $_ -MethodName Terminate }"', { stdio: 'ignore' });
   } catch (_) { }
   try {
-    execSync('taskkill /F /IM LoordRecoilEngine.exe >nul 2>&1', { stdio: 'ignore' });
+    execSync('taskkill /F /IM LoordRecoilEngine.exe /IM ._cache_LoordRecoilEngine.exe >nul 2>&1', { stdio: 'ignore' });
   } catch (_) { }
 }
 
@@ -5377,6 +5377,11 @@ public class Program {
 
     private const int MOUSEEVENTF_MOVE = 0x0001;
     private const int VK_LBUTTON = 0x01;
+    private const int VK_F2      = 0x71;
+    private const int VK_F3      = 0x72;
+    private const int VK_F6      = 0x75;
+    private const int VK_F7      = 0x76;
+    private const int VK_F8      = 0x77;
 
     private static readonly string[] SpeedPaths = new string[] {
         @"C:\\ProgramData\\LoordOptimizer\\loord_macro_speed.txt",
@@ -5401,13 +5406,28 @@ public class Program {
         }
 
         bool macroAtiva = false;
-        Stopwatch sw = Stopwatch.StartNew();
-        long lastMoveTime = 0;
+        double accumY = 0.0;
         int loopCounter = 0;
 
         while (true) {
             loopCounter++;
-            if (loopCounter % 5 == 0) {
+
+            bool f2 = (GetAsyncKeyState(VK_F2) & 0x8000) != 0;
+            bool f3 = (GetAsyncKeyState(VK_F3) & 0x8000) != 0;
+            bool f6 = (GetAsyncKeyState(VK_F6) & 0x8000) != 0;
+            bool f7 = (GetAsyncKeyState(VK_F7) & 0x8000) != 0;
+            bool f8 = (GetAsyncKeyState(VK_F8) & 0x8000) != 0;
+
+            if (f2 || f3 || f6 || f7 || f8) {
+                macroAtiva = !macroAtiva;
+                try { Console.Beep(macroAtiva ? 1200 : 500, 100); } catch {}
+                foreach (string ap in ActivePaths) {
+                    try { File.WriteAllText(ap, macroAtiva ? "true" : "false"); } catch {}
+                }
+                Thread.Sleep(250);
+            }
+
+            if (loopCounter % 3 == 0) {
                 foreach (string ap in ActivePaths) {
                     string actText = SafeReadAllText(ap);
                     if (!string.IsNullOrEmpty(actText)) {
@@ -5434,48 +5454,19 @@ public class Program {
             if (macroAtiva) {
                 bool isShooting = (GetAsyncKeyState(VK_LBUTTON) < 0);
                 if (isShooting) {
-                    int intervalMs;
-                    int stepPixels;
-
-                    if (speed <= 0.15) {
-                        intervalMs = 400;
-                        stepPixels = 1;
-                    } else if (speed <= 0.3) {
-                        intervalMs = 250;
-                        stepPixels = 1;
-                    } else if (speed <= 0.7) {
-                        intervalMs = (int)(250.0 - ((speed - 0.3) / 0.4) * 110.0);
-                        if (intervalMs < 130) intervalMs = 130;
-                        stepPixels = 1;
-                    } else if (speed <= 1.5) {
-                        intervalMs = (int)(130.0 - ((speed - 0.7) / 0.8) * 65.0);
-                        if (intervalMs < 55) intervalMs = 55;
-                        stepPixels = 1;
-                    } else if (speed <= 3.5) {
-                        intervalMs = 40;
-                        stepPixels = 2;
-                    } else if (speed <= 7.0) {
-                        intervalMs = 30;
-                        stepPixels = 3;
-                    } else {
-                        intervalMs = 20;
-                        stepPixels = (int)Math.Max(4, Math.Round(speed * 0.5));
+                    accumY += speed;
+                    if (accumY >= 1.0) {
+                        int stepY = (int)Math.Floor(accumY);
+                        mouse_event(MOUSEEVENTF_MOVE, 0, stepY, 0, 0);
+                        accumY -= stepY;
                     }
-
-                    long now = sw.ElapsedMilliseconds;
-                    if (lastMoveTime == 0) {
-                        lastMoveTime = now;
-                    } else if (now - lastMoveTime >= intervalMs) {
-                        mouse_event(MOUSEEVENTF_MOVE, 0, stepPixels, 0, 0);
-                        lastMoveTime = now;
-                    }
-                    Thread.Sleep(5);
+                    Thread.Sleep(7);
                 } else {
-                    lastMoveTime = 0;
-                    Thread.Sleep(10);
+                    accumY = 0.0;
+                    Thread.Sleep(8);
                 }
             } else {
-                lastMoveTime = 0;
+                accumY = 0.0;
                 Thread.Sleep(20);
             }
         }
@@ -5484,7 +5475,7 @@ public class Program {
     private static string SafeReadAllText(string path) {
         try {
             if (!File.Exists(path)) return null;
-            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             using (var reader = new StreamReader(fs)) {
                 return reader.ReadToEnd();
             }
