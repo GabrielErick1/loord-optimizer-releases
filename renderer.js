@@ -4106,6 +4106,16 @@ const adaptiveProfileDetails = document.getElementById('adaptive-profile-details
 const adaptiveProfileError = document.getElementById('adaptive-profile-error');
 const adaptiveProfileErrorMsg = document.getElementById('adaptive-profile-error-msg');
 
+// Interatividade dos Cards de Perfil (Destaque visual azul marinho imediato ao clicar)
+document.querySelectorAll('.adaptive-profile-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.adaptive-profile-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    const radio = card.querySelector('input[type="radio"]');
+    if (radio) radio.checked = true;
+  });
+});
+
 if (btnApplyAdaptiveProfile) {
   btnApplyAdaptiveProfile.addEventListener('click', async () => {
     try {

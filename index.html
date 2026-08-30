@@ -76,14 +76,21 @@
       <!-- Sidebar Navigation -->
       <aside class="sidebar">
         <div class="sidebar-header">
-          <div class="title-main">Loord Optimizer</div>
-          <div class="title-sub">LoordOpt</div>
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <div style="width: 38px; height: 38px; border-radius: 50%; background: rgba(37, 99, 235, 0.15); border: 1.5px solid #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);">
+              🧭
+            </div>
+            <div>
+              <div class="title-main" style="font-size: 1.15rem; font-weight: 800; color: #ffffff; letter-spacing: 0.5px;">Loord Optimizer</div>
+              <div class="title-sub" style="font-size: 0.78rem; font-weight: 700; color: #38bdf8;">LoordOpt</div>
+            </div>
+          </div>
 
           <!-- Seletor de Idioma (Engrenagem) -->
           <div class="lang-selector-wrapper" id="lang-selector-wrapper">
             <button type="button" class="btn-lang-toggle" id="btn-lang-toggle" title="Selecionar Idioma / Select Language">
-              <span class="gear-icon">⚙️</span>
-              <span id="current-lang-display">🇧🇷 Português</span>
+              <span class="gear-icon">🌐</span>
+              <span id="current-lang-display">BR</span>
               <span class="dropdown-chevron">▼</span>
             </button>
             <div class="lang-dropdown" id="lang-dropdown">
@@ -108,10 +115,10 @@
         </div>
 
         <nav class="nav-menu">
-          <button class="nav-item" data-tab="semi-precision-regis" style="color: #c084fc; font-weight: 800;">
+          <button class="nav-item" data-tab="semi-precision-regis">
             <span class="nav-icon">🎯</span> Semi Precision Regis
           </button>
-          <button class="nav-item active" data-tab="regedit-adaptativa" style="color: #fbbf24; font-weight: 800;">
+          <button class="nav-item active" data-tab="regedit-adaptativa">
             <span class="nav-icon">🧬</span> Regedit Adaptativa
           </button>
           <button class="nav-item" data-tab="calculadora">
@@ -130,19 +137,23 @@
             <span class="nav-icon">🎮</span> Emulador + FPS
           </button>
           <button class="nav-item" data-tab="minha-config" style="position: relative; display: flex; align-items: center; justify-content: space-between;">
-            <span style="display: flex; align-items: center;"><span class="nav-icon">💾</span> Minha Config &amp; Atualizações</span>
-            <span id="nav-update-badge" style="display: none; background: linear-gradient(135deg, #f59e0b, #ef4444); color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 7px; border-radius: 20px; box-shadow: 0 0 10px rgba(245, 158, 11, 0.6); animation: pulseUpdate 1.8s infinite; margin-left: 6px;">v1.7.6 🔥</span>
+            <span style="display: flex; align-items: center;"><span class="nav-icon">⚙️</span> Minha Configuração</span>
+            <span id="nav-update-badge" style="display: none; background: linear-gradient(135deg, #1d4ed8, #38bdf8); color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 7px; border-radius: 20px; box-shadow: 0 0 10px rgba(56, 189, 248, 0.5); animation: pulseUpdate 1.8s infinite; margin-left: 6px;">v3.6.6 🔥</span>
           </button>
-          <button class="nav-item" data-tab="pc-fraco" style="color: #f59e0b; font-weight: 700;">
+          <button class="nav-item" data-tab="pc-fraco">
             <span class="nav-icon">⚡</span> PC Fraco (Ultra FPS)
           </button>
         </nav>
 
-          <div class="sidebar-footer">
-            <div class="version-label" id="sidebar-vip-label">🔒 BLOQUEADO</div>
-            <div class="version-sub" id="sidebar-client-name">👤 Sem licença</div>
-            <div id="sidebar-validity" style="font-size: 0.62rem; color: #94a3b8; margin-top: 2px; letter-spacing: 0.3px;"></div>
+        <div class="sidebar-footer">
+          <div class="version-label" id="sidebar-vip-label">👑 VIP ATIVO</div>
+          <div class="version-sub" id="sidebar-client-name">👤 Carregando...</div>
+          <div id="sidebar-validity" style="font-size: 0.65rem; color: #38bdf8; margin-top: 2px; letter-spacing: 0.3px;"></div>
+          <div style="font-size: 0.65rem; color: #64748b; margin-top: 8px; display: flex; align-items: center; gap: 6px;">
+            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10b981; box-shadow: 0 0 6px #10b981;"></span>
+            <span>Executando como Administrador</span>
           </div>
+        </div>
       </aside>
 
       <!-- Content Area -->
@@ -173,103 +184,102 @@
 
         <!-- TAB: REGEDIT ADAPTATIVA -->
         <section id="tab-regedit-adaptativa" class="tab-content active">
-          <div class="card" style="border: 2px solid #f59e0b; background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(0,0,0,0.65)); box-shadow: 0 0 25px rgba(245,158,11,0.25); border-radius: 12px; padding: 20px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-              <h2 style="margin:0; color:#fbbf24; font-size:1.15rem; display:flex; align-items:center; gap:8px;" data-i18n="adaptiveTitle">
-                ⚡ OTIMIZADOR DE MOUSE E DESEMPENHO - BLUESTACKS
+          <div class="card" style="border: 1px solid rgba(59, 130, 246, 0.28); background: #0c1527; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(37, 99, 235, 0.15); border-radius: 12px; padding: 22px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+              <h2 style="margin:0; color:#ffffff; font-size:1.18rem; font-weight:800; display:flex; align-items:center; gap:8px;" data-i18n="adaptiveTitle">
+                <span style="color: #38bdf8;">⚡</span> OTIMIZADOR DE MOUSE E DESEMPENHO - BLUESTACKS
               </h2>
-              <span class="badge" style="background:#f59e0b; color:#000; font-weight:900;" data-i18n="adaptiveBadge">REGEDIT ADAPTATIVA 🔥</span>
+              <div style="display: flex; gap: 8px;">
+                <span class="badge" style="background: rgba(37, 99, 235, 0.2); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-weight: 800; font-size: 0.72rem; padding: 4px 10px; border-radius: 20px;" data-i18n="adaptiveBadge">⚡ REGEDIT ADAPTATIVA</span>
+                <span class="badge" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(59, 130, 246, 0.25); color: #94a3b8; font-weight: 700; font-size: 0.72rem; padding: 4px 10px; border-radius: 20px;">REGEDIT ADAPTATIVA</span>
+              </div>
             </div>
-            <p style="color:#cbd5e1; font-size:0.84rem; margin:0 0 16px 0; line-height:1.5;" data-i18n="adaptiveDesc">
-              Ajustes reais e documentados do Windows: curva de resposta e velocidade 1:1 (<code style="color:#fde68a;">HKCU\Control Panel\Mouse</code>), plano de energia em <strong>Alto Desempenho</strong> e prioridade máxima de processo para instâncias do BlueStacks (<code style="color:#fde68a;">HD-Player.exe</code>).
+            <p style="color:#94a3b8; font-size:0.84rem; margin:0 0 18px 0; line-height:1.5;" data-i18n="adaptiveDesc">
+              Ajustes reais e documentados do Windows: curva de resposta e velocidade 1:1 (<code style="color:#38bdf8; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">HKCU\Control Panel\Mouse</code>), plano de energia em <strong>Alto Desempenho</strong> e prioridade máxima de processo para instâncias do BlueStacks.
             </p>
 
             <!-- Escolha do Perfil -->
             <div style="margin-bottom: 20px;">
-              <label style="font-size:0.9rem; color:#fbbf24; font-weight:800; display:block; margin-bottom:12px;" data-i18n="profileSelectLabel">
-                🎯 Escolha um perfil de sensibilidade de mouse e desempenho:
+              <label style="font-size:0.88rem; color:#cbd5e1; font-weight:700; display:flex; align-items:center; gap:6px; margin-bottom:12px;" data-i18n="profileSelectLabel">
+                <span style="color:#38bdf8;">🎯</span> Escolha um perfil de sensibilidade de mouse e desempenho:
               </label>
 
               <div style="display: flex; flex-direction: column; gap: 10px;">
                 <!-- [1] RAPIDA -->
-                <label class="radio-card adaptive-profile-card" data-profile="RAPIDA"
-                  style="border: 2px solid #ef4444; background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(0,0,0,0.6)); cursor: pointer; padding: 12px 14px; border-radius: 8px; display: flex; align-items: flex-start; gap: 12px; transition: all 0.2s;">
-                  <input type="radio" name="adapt-profile-choice" value="RAPIDA" checked style="margin-top: 4px; accent-color: #ef4444;">
+                <label class="adaptive-profile-card selected" data-profile="RAPIDA">
+                  <input type="radio" name="adapt-profile-choice" value="RAPIDA" checked>
                   <div style="flex: 1;">
                     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
-                      <span style="color: #ff4757; font-weight: 900; font-size: 0.95rem;" data-i18n="profileFastTitle">[1] ⚡ RÁPIDA — Sem Aceleração &amp; Resposta 1:1 (Sensibilidade Alta: 15)</span>
-                      <span style="background: #ef4444; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;" data-i18n="profileFastBadge">FPS / MIRA RÁPIDA 🏆</span>
+                      <span style="color: #ffffff; font-weight: 800; font-size: 0.95rem;" data-i18n="profileFastTitle">⚡ [1] RÁPIDA — Sem Aceleração &amp; Resposta 1:1 (Sensibilidade Alta: 15)</span>
+                      <span style="background: rgba(37, 99, 235, 0.25); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-size: 0.68rem; font-weight: 800; padding: 2px 8px; border-radius: 4px;" data-i18n="profileFastBadge">FPS / MIRA RÁPIDA 🏆</span>
                     </div>
-                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #fecdd3; line-height: 1.4;" data-i18n="profileFastDesc">
+                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #94a3b8; line-height: 1.45;" data-i18n="profileFastDesc">
                       Sem aceleração (MouseSpeed 0, Thresholds 0), resposta 1:1 com sensibilidade alta 15, plano de Alto Desempenho e prioridade Alta no BlueStacks.
                     </p>
                   </div>
                 </label>
 
                 <!-- [2] LEVE -->
-                <label class="radio-card adaptive-profile-card" data-profile="LEVE"
-                  style="border: 2px solid #38bdf8; background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(0,0,0,0.6)); cursor: pointer; padding: 12px 14px; border-radius: 8px; display: flex; align-items: flex-start; gap: 12px; transition: all 0.2s;">
-                  <input type="radio" name="adapt-profile-choice" value="LEVE" style="margin-top: 4px; accent-color: #38bdf8;">
+                <label class="adaptive-profile-card" data-profile="LEVE">
+                  <input type="radio" name="adapt-profile-choice" value="LEVE">
                   <div style="flex: 1;">
                     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
-                      <span style="color: #38bdf8; font-weight: 900; font-size: 0.95rem;" data-i18n="profileLightTitle">[2] ⚖️ LEVE — Sem Aceleração &amp; Sensibilidade Neutra (Sensibilidade: 10)</span>
-                      <span style="background: #0284c7; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;" data-i18n="profileLightBadge">EQUILIBRADO 🎯</span>
+                      <span style="color: #ffffff; font-weight: 800; font-size: 0.95rem;" data-i18n="profileLightTitle">⚖️ LEVE [2] — Sem Aceleração &amp; Sensibilidade Neutra (Sensibilidade: 10)</span>
+                      <span style="background: rgba(37, 99, 235, 0.25); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-size: 0.68rem; font-weight: 800; padding: 2px 8px; border-radius: 4px;" data-i18n="profileLightBadge">EQUILIBRADO 🎯</span>
                     </div>
-                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #bae6fd; line-height: 1.4;" data-i18n="profileLightDesc">
+                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #94a3b8; line-height: 1.45;" data-i18n="profileLightDesc">
                       Resposta 1:1 equilibrada sem aceleração com sensibilidade neutra padrão 10. Bom ponto de partida para qualquer DPI.
                     </p>
                   </div>
                 </label>
 
                 <!-- [3] SUAVE -->
-                <label class="radio-card adaptive-profile-card" data-profile="SUAVE"
-                  style="border: 2px solid #10b981; background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(0,0,0,0.6)); cursor: pointer; padding: 12px 14px; border-radius: 8px; display: flex; align-items: flex-start; gap: 12px; transition: all 0.2s;">
-                  <input type="radio" name="adapt-profile-choice" value="SUAVE" style="margin-top: 4px; accent-color: #10b981;">
+                <label class="adaptive-profile-card" data-profile="SUAVE">
+                  <input type="radio" name="adapt-profile-choice" value="SUAVE">
                   <div style="flex: 1;">
                     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
-                      <span style="color: #34d399; font-weight: 900; font-size: 0.95rem;" data-i18n="profileSmoothTitle">[3] 🌊 SUAVE — Movimento Controlado &amp; Menos Brusco (Sensibilidade: 8)</span>
-                      <span style="background: #059669; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;" data-i18n="profileSmoothBadge">CONTROLE TOTAL 💎</span>
+                      <span style="color: #ffffff; font-weight: 800; font-size: 0.95rem;" data-i18n="profileSmoothTitle">🌊 SUAVE [3] — Movimento Controlado &amp; Menos Brusco (Sensibilidade: 8)</span>
+                      <span style="background: rgba(37, 99, 235, 0.25); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-size: 0.68rem; font-weight: 800; padding: 2px 8px; border-radius: 4px;" data-i18n="profileSmoothBadge">CONTROLE TOTAL 💎</span>
                     </div>
-                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #a7f3d0; line-height: 1.4;" data-i18n="profileSmoothDesc">
-                      Aceleração leve mantida (MouseSpeed 1, Thresholds 6/10) com sensibilidade reduzida para 8. Movimento macio e menos brusco para travar a mira na cabeça.
+                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #94a3b8; line-height: 1.45;" data-i18n="profileSmoothDesc">
+                      Aceleração leve mantida com sensibilidade reduzida para 8. Movimento macio e menos brusco para travar a mira na cabeça.
                     </p>
                   </div>
                 </label>
 
                 <!-- [4] SO_DESEMPENHO -->
-                <label class="radio-card adaptive-profile-card" data-profile="SO_DESEMPENHO"
-                  style="border: 1px solid rgba(245, 158, 11, 0.6); background: rgba(245, 158, 11, 0.08); cursor: pointer; padding: 12px 14px; border-radius: 8px; display: flex; align-items: flex-start; gap: 12px; transition: all 0.2s;">
-                  <input type="radio" name="adapt-profile-choice" value="SO_DESEMPENHO" style="margin-top: 4px; accent-color: #f59e0b;">
+                <label class="adaptive-profile-card" data-profile="SO_DESEMPENHO">
+                  <input type="radio" name="adapt-profile-choice" value="SO_DESEMPENHO">
                   <div style="flex: 1;">
                     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
-                      <span style="color: #fbbf24; font-weight: 800; font-size: 0.92rem;" data-i18n="profilePerfOnlyTitle">[4] 🚀 SÓ DESEMPENHO — Plano de Energia &amp; Prioridade (Sem mexer no mouse)</span>
-                      <span style="background: #d97706; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;" data-i18n="profilePerfOnlyBadge">DESEMPENHO PURO</span>
+                      <span style="color: #ffffff; font-weight: 800; font-size: 0.95rem;" data-i18n="profilePerfOnlyTitle">🚀 [4] SÓ DESEMPENHO — Plano de Energia &amp; Prioridade (Sem mexer no mouse)</span>
+                      <span style="background: rgba(37, 99, 235, 0.25); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-size: 0.68rem; font-weight: 800; padding: 2px 8px; border-radius: 4px;" data-i18n="profilePerfOnlyBadge">DESEMPENHO PURO ⚡</span>
                     </div>
-                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #fde68a; line-height: 1.4;" data-i18n="profilePerfOnlyDesc">
+                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #94a3b8; line-height: 1.45;" data-i18n="profilePerfOnlyDesc">
                       Ativa o plano de energia de Alto Desempenho no Windows e eleva a prioridade de processo do BlueStacks para Alta, sem alterar a sensibilidade do mouse.
                     </p>
                   </div>
                 </label>
 
                 <!-- [5] RESTAURAR -->
-                <label class="radio-card adaptive-profile-card" data-profile="RESTAURAR"
-                  style="border: 1px solid rgba(148, 163, 184, 0.4); background: rgba(148, 163, 184, 0.06); cursor: pointer; padding: 12px 14px; border-radius: 8px; display: flex; align-items: flex-start; gap: 12px; transition: all 0.2s;">
-                  <input type="radio" name="adapt-profile-choice" value="RESTAURAR" style="margin-top: 4px; accent-color: #94a3b8;">
+                <label class="adaptive-profile-card" data-profile="RESTAURAR">
+                  <input type="radio" name="adapt-profile-choice" value="RESTAURAR">
                   <div style="flex: 1;">
                     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
-                      <span style="color: #cbd5e1; font-weight: 800; font-size: 0.92rem;" data-i18n="profileRestoreTitle">[5] 🔄 RESTAURAR PADRÃO DO WINDOWS</span>
-                      <span style="background: #475569; color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;" data-i18n="profileRestoreBadge">RESET ↩️</span>
+                      <span style="color: #ffffff; font-weight: 800; font-size: 0.95rem;" data-i18n="profileRestoreTitle">🔄 [5] RESTAURAR PADRÃO DO WINDOWS</span>
+                      <span style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(59, 130, 246, 0.25); color: #94a3b8; font-size: 0.68rem; font-weight: 800; padding: 2px 8px; border-radius: 4px;" data-i18n="profileRestoreBadge">PADRÃO WINDOWS ↩️</span>
                     </div>
-                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #94a3b8; line-height: 1.4;" data-i18n="profileRestoreDesc">
+                    <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #94a3b8; line-height: 1.45;" data-i18n="profileRestoreDesc">
                       Restaura a aceleração padrão do Windows (MouseSpeed 1, Thresholds 6/10, Sensi 10) e volta o plano de energia para o modo Equilibrado padrão.
                     </p>
                   </div>
+                </label>
               </div>
             </div>
 
             <!-- Botão de Aplicação -->
             <button class="btn btn-primary" id="btn-apply-adaptive-profile" type="button"
-              style="width:100%; background: linear-gradient(90deg, #f59e0b, #ef4444); border:none; font-size:1rem; font-weight:900; letter-spacing:0.5px; padding:14px; border-radius:8px; cursor:pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(239,68,68,0.35);">
+              style="width:100%; font-size:0.95rem; font-weight:800; letter-spacing:0.5px; padding:14px; border-radius:8px; cursor:pointer;">
               ⚡ Aplicar Perfil Selecionado no Windows &amp; BlueStacks
             </button>
 
@@ -1826,7 +1836,7 @@
                 <p style="margin: 0; font-size: 12px; color: #94a3b8;" data-i18n="systemUpdatesCardDesc">Verifique e receba novas versões e otimizações
                   automaticamente</p>
               </div>
-              <span id="app-version-badge" class="badge badge-success">v3.6.5</span>
+              <span id="app-version-badge" class="badge badge-success">v3.6.6</span>
             </div>
 
             <!-- Update Card Content -->
