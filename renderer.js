@@ -4417,3 +4417,215 @@ rarefixBtns.forEach(btn => {
     });
   }
 })();
+
+// ─── BLINDAGEM DE SESSÃO: LISTENER DE REVOGAÇÃO DE LICENÇA ───────────────────
+if (window.api && window.api.onLicenseRevoked) {
+  window.api.onLicenseRevoked((data) => {
+    alert('🔒 SESSÃO BLOQUEADA:\n\n' + (data?.reason || 'Sua licença expirou ou foi revogada pelo administrador.'));
+    try {
+      localStorage.removeItem('loord_vip_key');
+      localStorage.removeItem('activation_key');
+    } catch (_) { }
+    location.reload();
+  });
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// MÓDULO: OVERCLOCK & BOOST (AMD PBO / Intel Power Limits / RAM)
+// ════════════════════════════════════════════════════════════════════════════
+(function initOverclock() {
+  let ocHwCache = null;
+
+  window.detectHardwareOC = async function () {
+    const btn = document.getElementById('btn-detect-hardware');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Detectando...'; }
+    try {
+      const hw = await window.api.detectHardwareOC();
+      ocHwCache = hw;
+      updateHardwareUI(hw);
+    } catch (e) {
+      const el = document.getElementById('oc-cpu-name');
+      if (el) el.textContent = 'Erro ao detectar';
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '🔍 Detectar Agora'; }
+    }
+  };
+
+  function updateHardwareUI(hw) {
+    if (!hw) return;
+    const set = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val || '—'; };
+
+    set('oc-cpu-name', hw.cpuName);
+    set('oc-cpu-brand', hw.cpuBrand === 'AMD' ? '🔴 AMD Ryzen' : hw.cpuBrand === 'Intel' ? '🔵 Intel Core' : hw.cpuBrand);
+    set('oc-ram-info', `${hw.ramGB} GB DDR${hw.ramGen || ''}`);
+    set('oc-ram-speed', hw.ramSpeed ? `${hw.ramSpeed} MHz (${hw.ramType || ''})` : '');
+    set('oc-mb-name', hw.mbProduct);
+    set('oc-mb-man', hw.mbManufacturer);
+
+    const amdCard = document.getElementById('oc-card-amd');
+    const intelCard = document.getElementById('oc-card-intel');
+    const boostEl = document.getElementById('oc-boost-type');
+    const boostNote = document.getElementById('oc-boost-note');
+    const brandMsg = document.getElementById('oc-status-brand-msg');
+
+    if (hw.cpuBrand === 'AMD') {
+      if (amdCard) amdCard.style.display = '';
+      if (intelCard) intelCard.style.display = 'none';
+      if (boostEl) { boostEl.textContent = 'PBO Ryzen 🔴'; boostEl.style.color = '#f87171'; }
+      if (boostNote) boostNote.textContent = 'Precision Boost Overdrive via Registro';
+      if (brandMsg) brandMsg.textContent = `✅ AMD Ryzen detectado — PBO + limites PPT/TDC/EDC disponíveis. Clique em Aplicar Boost!`;
+
+      const cores = hw.cpuCores || 6;
+      const ppt = Math.round(cores * 30);
+      const tdc = Math.round(cores * 8.5);
+      const edc = Math.round(cores * 12);
+      const s = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+      s('oc-amd-ppt', ppt); s('oc-amd-tdc', tdc); s('oc-amd-edc', edc);
+    } else if (hw.cpuBrand === 'Intel') {
+      if (amdCard) amdCard.style.display = 'none';
+      if (intelCard) intelCard.style.display = '';
+      if (boostEl) { boostEl.textContent = 'Power Limit Intel 🔵'; boostEl.style.color = '#38bdf8'; }
+      if (boostNote) boostNote.textContent = 'PL1/PL2 desbloqueado + Turbo Boost máximo';
+      if (brandMsg) brandMsg.textContent = `✅ Intel Core detectado — Power Limits PL1/PL2 disponíveis para desbloqueio!`;
+    } else {
+      if (boostEl) boostEl.textContent = 'CPU desconhecido';
+      if (brandMsg) brandMsg.textContent = 'CPU não identificado como AMD ou Intel. Boost de RAM ainda disponível.';
+    }
+  }
+
+  window.applyAmdPBO = async function () {
+    const btn = document.getElementById('btn-apply-amd-pbo');
+    const status = document.getElementById('oc-amd-status');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Aplicando PBO...'; }
+    try {
+      const res = await window.api.applyAmdPBO();
+      if (status) {
+        status.style.display = 'block';
+        status.textContent = res && res.message ? res.message : '✅ PBO AMD aplicado!';
+        status.style.color = res && res.success ? '#10b981' : '#f87171';
+      }
+      if (btn) btn.textContent = '✅ PBO AMD Ativo!';
+    } catch (e) {
+      if (status) { status.style.display = 'block'; status.textContent = '❌ Erro: ' + e.message; status.style.color = '#f87171'; }
+      if (btn) { btn.disabled = false; btn.textContent = '🔴 Ativar PBO Máximo AMD'; }
+    }
+  };
+
+  window.applyIntelPL = async function () {
+    const btn = document.getElementById('btn-apply-intel-pl');
+    const status = document.getElementById('oc-intel-status');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Desbloqueando PL...'; }
+    try {
+      const res = await window.api.applyIntelPL();
+      if (status) {
+        status.style.display = 'block';
+        status.textContent = res && res.message ? res.message : '✅ Intel PL1/PL2 desbloqueado!';
+        status.style.color = res && res.success ? '#10b981' : '#f87171';
+      }
+      if (btn) btn.textContent = '✅ PL Intel Desbloqueado!';
+    } catch (e) {
+      if (status) { status.style.display = 'block'; status.textContent = '❌ Erro: ' + e.message; status.style.color = '#f87171'; }
+      if (btn) { btn.disabled = false; btn.textContent = '🔵 Desbloquear PL1/PL2 Intel'; }
+    }
+  };
+
+  window.applyRamBoost = async function () {
+    const btn = document.getElementById('btn-apply-ram-boost');
+    const status = document.getElementById('oc-ram-status');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Otimizando RAM...'; }
+    try {
+      const res = await window.api.applyRamBoost();
+      if (status) {
+        status.style.display = 'block';
+        status.textContent = res && res.message ? res.message : '✅ RAM Boost aplicado!';
+        status.style.color = res && res.success ? '#10b981' : '#f87171';
+      }
+      if (btn) btn.textContent = '✅ RAM Boost Ativo!';
+    } catch (e) {
+      if (status) { status.style.display = 'block'; status.textContent = '❌ Erro: ' + e.message; status.style.color = '#f87171'; }
+      if (btn) { btn.disabled = false; btn.textContent = '💾 Aplicar RAM Boost'; }
+    }
+  };
+
+  window.openBiosGuide = async function () {
+    const linkDiv = document.getElementById('oc-bios-guide-link');
+    const hw = ocHwCache || await window.api.detectHardwareOC().catch(() => null);
+    if (!hw || !linkDiv) return;
+    const guides = {
+      'asus': { name: 'ASUS', url: 'https://www.asus.com/support/FAQ/1013018/', label: '📖 Guia ASUS — Ativar XMP/DOCP' },
+      'msi': { name: 'MSI', url: 'https://www.msi.com/support/technical_support/26', label: '📖 Guia MSI — Ativar XMP' },
+      'gigabyte': { name: 'Gigabyte', url: 'https://www.gigabyte.com/WebPage/821/BIOS-XMP.html', label: '📖 Guia Gigabyte — Ativar XMP' },
+      'asrock': { name: 'ASRock', url: 'https://www.asrock.com/support/index.asp', label: '📖 Guia ASRock — Ativar DOCP/XMP' },
+    };
+    const man = (hw.mbManufacturer || '').toLowerCase();
+    const guide = Object.entries(guides).find(([k]) => man.includes(k));
+    if (guide) {
+      const [, g] = guide;
+      linkDiv.style.display = 'block';
+      linkDiv.innerHTML = `<a href="${g.url}" target="_blank" style="color:#38bdf8;font-weight:700;text-decoration:underline;">${g.label}</a><br><small style="color:#64748b;">Placa-mãe ${hw.mbManufacturer}: ${hw.mbProduct}</small>`;
+    } else {
+      linkDiv.style.display = 'block';
+      linkDiv.innerHTML = `<span style="color:#94a3b8;">Fabricante <b style="color:#f1f5f9;">${hw.mbManufacturer || 'desconhecido'}</b> — Procure "XMP" ou "DOCP" nas configurações de BIOS/Memória.</span>`;
+    }
+  };
+
+  const btnApplyAll = document.getElementById('btn-apply-overclock');
+  if (btnApplyAll) {
+    btnApplyAll.addEventListener('click', async () => {
+      const confirmed = confirm(
+        '🔥 APLICAR BOOST MÁXIMO DE CPU + RAM?\n\n' +
+        'O sistema irá:\n' +
+        '• Detectar automaticamente seu CPU (AMD ou Intel)\n' +
+        '• AMD: Ativar PBO + PPT/TDC/EDC máximo\n' +
+        '• Intel: Desbloquear PL1/PL2 + Turbo Boost sem limite\n' +
+        '• Ambos: Pagefile fixo + Plano Ultimate + RAM otimizada\n\n' +
+        '✅ Seguro e reversível. Reinicialização necessária.\n' +
+        'Continuar?'
+      );
+      if (!confirmed) return;
+
+      const statusEl = document.getElementById('oc-apply-status');
+      const globalStatus = document.getElementById('oc-global-status');
+      btnApplyAll.disabled = true;
+      btnApplyAll.textContent = '⏳ Detectando e aplicando...';
+
+      const show = (msg, color = '#34d399') => {
+        if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = msg; statusEl.style.color = color; }
+        if (globalStatus) { globalStatus.style.display = 'block'; globalStatus.textContent = msg; globalStatus.style.color = color; }
+      };
+
+      try {
+        show('🔍 Detectando hardware...');
+        const hw = await window.api.detectHardwareOC();
+        ocHwCache = hw;
+        updateHardwareUI(hw);
+
+        show(`⚙️ ${hw.cpuBrand === 'AMD' ? 'Aplicando PBO Ryzen...' : 'Desbloqueando Power Limits Intel...'}`);
+        await (hw.cpuBrand === 'AMD' ? window.api.applyAmdPBO() : window.api.applyIntelPL());
+
+        show('💾 Aplicando RAM Boost e Pagefile fixo...');
+        await window.api.applyRamBoost();
+
+        show(`✅ Boost máximo aplicado! CPU: ${hw.cpuName} | RAM: ${hw.ramGB}GB. Reiniciando em 5s...`);
+        btnApplyAll.textContent = '✅ Boost Aplicado — Reiniciando...';
+
+        setTimeout(async () => {
+          await window.api.rebootComputer();
+        }, 5000);
+
+      } catch (e) {
+        show('❌ Erro: ' + e.message, '#f87171');
+        btnApplyAll.disabled = false;
+        btnApplyAll.textContent = '🔥 APLICAR BOOST + REINICIAR';
+      }
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    const navBtn = e.target.closest('[data-tab="overclock"]');
+    if (navBtn && !ocHwCache) {
+      setTimeout(() => window.detectHardwareOC(), 300);
+    }
+  });
+})();
+

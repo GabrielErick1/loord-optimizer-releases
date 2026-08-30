@@ -5,24 +5,28 @@ const JavaScriptObfuscator = require('javascript-obfuscator');
 const rootDir = path.join(__dirname, '..');
 const backupDir = path.join(rootDir, '.dev_source_backup');
 
+// ─── CONFIGURAÇÃO MILITAR DE OFUSCAÇÃO COM SELF-DEFENDING ───────────────────
 const obfuscatorOptionsNode = {
   compact: true,
-  controlFlowFlattening: false,
-  deadCodeInjection: false,
-  numbersToExpressions: false,
+  controlFlowFlattening: true,
+  controlFlowFlatteningThreshold: 0.75,
+  deadCodeInjection: true,
+  deadCodeInjectionThreshold: 0.2,
+  numbersToExpressions: true,
   simplify: true,
   stringArray: true,
   stringArrayCallsTransform: true,
-  stringArrayCallsTransformThreshold: 0.5,
+  stringArrayCallsTransformThreshold: 0.75,
   stringArrayEncoding: ['base64'],
   stringArrayIndexShift: true,
   stringArrayRotate: true,
   stringArrayShuffle: true,
-  stringArrayWrappersCount: 1,
-  stringArrayThreshold: 0.75,
-  splitStrings: false,
+  stringArrayWrappersCount: 2,
+  stringArrayThreshold: 0.85,
+  splitStrings: true,
+  splitStringsChunkLength: 10,
   transformObjectKeys: false,
-  selfDefending: false,
+  selfDefending: true, // Se alguém alterar 1 byte ou formatar o código, ele trava e entra em loop
   disableConsoleOutput: false,
   target: 'node'
 };
@@ -40,7 +44,15 @@ const filesToProtect = [
 ];
 
 function isAlreadyObfuscated(code) {
-  return code.startsWith('(function(') || (code.length > 500000 && code.includes('_0x'));
+  if (!code || typeof code !== 'string') return false;
+  const sample = code.slice(0, 1000);
+  return (
+    sample.includes('_0x') ||
+    sample.startsWith('(function(') ||
+    sample.startsWith('const _0x') ||
+    sample.startsWith('var _0x') ||
+    sample.startsWith('let _0x')
+  );
 }
 
 const action = process.argv[2] || 'obfuscate';
@@ -57,18 +69,21 @@ if (action === 'backup-and-obfuscate') {
 
     const backupPath = path.join(backupDir, path.basename(item.file));
     const code = fs.readFileSync(srcPath, 'utf8');
-    
-    // Só faz backup se o código for legível (não ofuscado)
+
+    // Salva o backup apenas se o arquivo atual não estiver ofuscado
     if (!isAlreadyObfuscated(code)) {
       fs.writeFileSync(backupPath, code, 'utf8');
     }
 
-    console.log(`🔒 Ofuscando e criptografando: ${item.file}...`);
-    const codeToObfuscate = (!isAlreadyObfuscated(code)) ? code : fs.readFileSync(backupPath, 'utf8');
+    console.log(`🔒 Ofuscando e blindando: ${item.file}...`);
+    const codeToObfuscate = (!isAlreadyObfuscated(code))
+      ? code
+      : (fs.existsSync(backupPath) ? fs.readFileSync(backupPath, 'utf8') : code);
+
     const obfuscated = JavaScriptObfuscator.obfuscate(codeToObfuscate, item.opts).getObfuscatedCode();
     fs.writeFileSync(srcPath, obfuscated, 'utf8');
   }
-  console.log('✔️ [BLINDAGEM CONCLUÍDA] Todo o código foi 100% blindado contra clonagem, descompilação e engenharia reversa!');
+  console.log('✔️ [BLINDAGEM CONCLUÍDA] Código 100% blindado com Self-Defending contra engenharia reversa e portables!');
 } else if (action === 'restore') {
   console.log('🔄 [RESTAURAÇÃO] Restaurando código original para desenvolvimento...');
   for (const item of filesToProtect) {
@@ -81,4 +96,3 @@ if (action === 'backup-and-obfuscate') {
     }
   }
 }
-

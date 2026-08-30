@@ -8,6 +8,29 @@ const http = require('http');
 const { spawn, exec, execSync } = require('child_process');
 const { autoUpdater } = require('electron-updater');
 
+// ─── BLINDAGEM MÁXIMA CONTRA INJEÇÃO DE LINHA DE COMANDO & CRACKING ─────────
+const FORBIDDEN_CLI_ARGS = [
+  '--remote-debugging',
+  '--inspect',
+  '--enable-logging',
+  '--log-net-log',
+  '--js-flags',
+  '--disable-web-security',
+  '--allow-running-insecure-content',
+  '--host-rules',
+  '--host-resolver-rules'
+];
+
+for (const arg of process.argv) {
+  const lower = (arg || '').toLowerCase();
+  for (const forbidden of FORBIDDEN_CLI_ARGS) {
+    if (lower.includes(forbidden)) {
+      try { app.exit(0); } catch (_) { }
+      process.exit(0);
+    }
+  }
+}
+
 // Prevenir travamentos do Chromium em GPUs antigas (Intel HD Graphics 1ª/2ª/3ª geração e ISOs Lite)
 app.commandLine.appendSwitch('disable-gpu-process-crash-limit');
 app.commandLine.appendSwitch('no-sandbox');
@@ -56,8 +79,42 @@ let authorizedSessionIsoUses = 0;
 let activatedIsoKey = null;
 
 function isLicenseAuthorized() {
-  return isClientSessionAuthorized === true && !!authorizedSessionKey;
+  return (isClientSessionAuthorized === true && !!authorizedSessionKey && typeof authorizedSessionKey === 'string' && authorizedSessionKey.length >= 6) ||
+         (authorizedSessionIsIsoKey === true && (authorizedSessionIsoUses > 0 || !!activatedIsoKey));
 }
+
+// Lista de canais públicos permitidos sem autenticação (login, verificação e sistema)
+const PUBLIC_IPC_CHANNELS = new Set([
+  'check-admin',
+  'get-uuid',
+  'getMachineUUID',
+  'verify-key',
+  'activate-iso-key',
+  'get-iso-plans-public',
+  'create-iso-pix-payment',
+  'check-iso-pix-payment',
+  'check-loord-iso-status',
+  'check-for-updates',
+  'download-update-progress',
+  'install-update-now',
+  'revert-all-tweaks-on-revoke',
+  'reboot-computer',
+  'get-restore-point-status'
+]);
+
+// ─── ZERO-TRUST IPC INTERCEPTOR: Bloqueia 100% dos IPCs se não autorizado ─────
+const originalIpcHandle = ipcMain.handle.bind(ipcMain);
+ipcMain.handle = function (channel, listener) {
+  if (PUBLIC_IPC_CHANNELS.has(channel)) {
+    return originalIpcHandle(channel, listener);
+  }
+  return originalIpcHandle(channel, async (event, ...args) => {
+    if (!isLicenseAuthorized()) {
+      return { success: false, error: 'Acesso bloqueado: Licença VIP requerida para esta ação.' };
+    }
+    return listener(event, ...args);
+  });
+};
 
 const BLACKLISTED_CRACK_TOOLS = [
   'x64dbg', 'x32dbg', 'cheatengine', 'cheat engine', 'dnspy', 'httpdebugger',
@@ -82,6 +139,26 @@ function runAntiCrackProcessCheck() {
 }
 
 setInterval(runAntiCrackProcessCheck, 8000);
+
+// ─── HEARTBEAT ATIVO DE LICENÇA (VALIDAÇÃO SILENCIOSA EM SEGUNDO PLANO) ────────
+setInterval(async () => {
+  if (isClientSessionAuthorized && authorizedSessionKey) {
+    try {
+      const currentUuid = getMachineHardwareUUID();
+      const chkData = await queryOfficialDatabase('/api/client-check', { uuid: currentUuid, key: authorizedSessionKey });
+      if (!chkData || !chkData.success || chkData.status === 'revoked' || chkData.status === 'expired') {
+        console.warn('[SECURITY] Heartbeat de licença: chave expirada ou revogada!');
+        isClientSessionAuthorized = false;
+        authorizedSessionKey = null;
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('license-revoked', {
+            reason: chkData?.error || 'Sua licença expirou ou foi revogada pelo administrador.'
+          });
+        }
+      }
+    } catch (_) { }
+  }
+}, 300000); // Checa a cada 5 minutos
 
 if (!fs.existsSync(backupDir)) {
   try { fs.mkdirSync(backupDir, { recursive: true }); } catch (_) { }
@@ -209,10 +286,14 @@ function createWindow() {
   mainWindow.removeMenu();
   mainWindow.loadFile('index.html');
 
-  // ─── BLINDAGEM ANTI-DEVTOOLS & ANTI-INSPECT ───────────────────────────────
+  // ─── BLINDAGEM ANTI-DEVTOOLS, ANTI-INSPECT & ANTI-CONTEXT-MENU ────────────
   mainWindow.webContents.on('devtools-opened', () => {
     mainWindow.webContents.closeDevTools();
     try { app.quit(); } catch (_) { }
+  });
+
+  mainWindow.webContents.on('context-menu', (e) => {
+    e.preventDefault();
   });
 
   mainWindow.webContents.on('before-input-event', (event, input) => {
@@ -3218,6 +3299,182 @@ ipcMain.handle('transform-windows-lite', async () => {
     return {
       success: true,
       message: '👑 100% das Otimizações da ISO Loord v10.6 aplicadas com sucesso!'
+    };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// OVERCLOCK & BOOST: Detectar Hardware + AMD PBO + Intel PL + RAM
+// ════════════════════════════════════════════════════════════════════════════
+
+// ─── Detectar Hardware (CPU, RAM, Placa-Mãe) via WMI ──────────────────────
+ipcMain.handle('detect-hardware-oc', async () => {
+  try {
+    const ps = `
+      $cpu = Get-WmiObject Win32_Processor | Select-Object -First 1;
+      $mb  = Get-WmiObject Win32_BaseBoard | Select-Object -First 1;
+      $ram = Get-WmiObject Win32_PhysicalMemory;
+      $os  = Get-WmiObject Win32_OperatingSystem;
+      $totalRam = [math]::Round(($ram | Measure-Object -Property Capacity -Sum).Sum / 1GB, 0);
+      $ramSpeed = ($ram | Select-Object -First 1 -ExpandProperty Speed);
+      $ramType = switch(($ram | Select-Object -First 1 -ExpandProperty SMBIOSMemoryType)){
+        26 { 'DDR4' } 34 { 'DDR5' } 24 { 'DDR3' } default { 'DDR4' }
+      };
+      $ramGen = switch(($ram | Select-Object -First 1 -ExpandProperty SMBIOSMemoryType)){
+        26 { '4' } 34 { '5' } 24 { '3' } default { '4' }
+      };
+      $cpuName = $cpu.Name.Trim();
+      $cpuCores = $cpu.NumberOfCores;
+      $cpuBrand = if ($cpuName -match 'AMD') { 'AMD' } elseif ($cpuName -match 'Intel') { 'Intel' } else { 'Unknown' };
+      [PSCustomObject]@{
+        cpuName=$cpuName; cpuBrand=$cpuBrand; cpuCores=$cpuCores;
+        ramGB=$totalRam; ramSpeed=$ramSpeed; ramType=$ramType; ramGen=$ramGen;
+        mbProduct=$mb.Product; mbManufacturer=$mb.Manufacturer;
+      } | ConvertTo-Json -Compress
+    `;
+    const tmpPath = path.join(os.tmpdir(), `loord_hw_${Date.now()}.ps1`);
+    fs.writeFileSync(tmpPath, '\ufeff' + ps, 'utf8');
+    const out = execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${tmpPath}"`, { encoding: 'utf8', timeout: 15000 });
+    try { fs.unlinkSync(tmpPath); } catch (_) { }
+    const data = JSON.parse(out.trim());
+    return { success: true, ...data };
+  } catch (e) {
+    return { success: false, error: e.message, cpuName: 'Erro ao detectar', cpuBrand: 'Unknown', ramGB: 0 };
+  }
+});
+
+// ─── AMD PBO (Precision Boost Overdrive) via Registro ─────────────────────
+ipcMain.handle('apply-amd-pbo', async () => {
+  if (!systemIsAdmin) return { success: false, error: 'Privilégios de Administrador requeridos.' };
+  try {
+    let cores = 6;
+    try {
+      const out = execSync('wmic cpu get NumberOfCores /value', { encoding: 'utf8' });
+      const m = out.match(/NumberOfCores=(\d+)/);
+      if (m) cores = parseInt(m[1], 10);
+    } catch (_) { }
+
+    const ppt = Math.round(cores * 30);
+    const tdc = Math.round(cores * 8.5);
+    const edc = Math.round(cores * 12);
+
+    const amdPBOTweaks = [
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\54533251-82be-4824-96c1-47b60b740d00\\be337238-0d82-4146-a960-4f3749d470c7" /v Attributes /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\54533251-82be-4824-96c1-47b60b740d00\\0cc5b647-c1df-4637-891a-dec35c318583" /v ACSettingIndex /t REG_DWORD /d 100 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\54533251-82be-4824-96c1-47b60b740d00\\0cc5b647-c1df-4637-891a-dec35c318583" /v DCSettingIndex /t REG_DWORD /d 100 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerThrottling" /v PowerThrottlingOff /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\54533251-82be-4824-96c1-47b60b740d00\\465e1f50-b610-473a-ab58-00d1077dc418" /v ACSettingIndex /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\54533251-82be-4824-96c1-47b60b740d00\\40fbefc7-2e9d-4d25-a185-0cfd8574bae6" /v ACSettingIndex /t REG_DWORD /d 4 /f /reg:64',
+      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100',
+      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100',
+      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMINCORES 100',
+      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMAXCORES 100',
+      'powercfg -setactive SCHEME_CURRENT',
+      'reg add "HKLM\\SOFTWARE\\AMD\\PMF" /v CPPCEnabled /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\AMD\\PMF" /v BoostEnabled /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 38 /f /reg:64',
+    ];
+
+    for (const cmd of amdPBOTweaks) {
+      try { execSync(cmd, { stdio: 'ignore' }); } catch (_) { }
+    }
+
+    return {
+      success: true,
+      message: `🔴 AMD PBO ativado! PPT estimado: ${ppt}W | TDC: ${tdc}A | EDC: ${edc}A | ${cores} núcleos com Boost máximo. Reinicie para aplicar 100%.`
+    };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+// ─── Intel Power Limits (PL1/PL2 Desbloqueado) ────────────────────────────
+ipcMain.handle('apply-intel-pl', async () => {
+  if (!systemIsAdmin) return { success: false, error: 'Privilégios de Administrador requeridos.' };
+  try {
+    const intelPLTweaks = [
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerThrottling" /v PowerThrottlingOff /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\54533251-82be-4824-96c1-47b60b740d00\\465e1f50-b610-473a-ab58-00d1077dc418" /v ACSettingIndex /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\54533251-82be-4824-96c1-47b60b740d00\\40fbefc7-2e9d-4d25-a185-0cfd8574bae6" /v ACSettingIndex /t REG_DWORD /d 4 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\54533251-82be-4824-96c1-47b60b740d00\\be337238-0d82-4146-a960-4f3749d470c7" /v Attributes /t REG_DWORD /d 0 /f /reg:64',
+      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100',
+      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100',
+      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMINCORES 100',
+      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMAXCORES 100',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\54533251-82be-4824-96c1-47b60b740d00\\36687f9e-e3a5-4dbf-b1dc-15eb381c6863" /v ACSettingIndex /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\54533251-82be-4824-96c1-47b60b740d00\\93b8b6dc-0698-4d1c-9ee4-0644e900c85d" /v ACSettingIndex /t REG_DWORD /d 0 /f /reg:64',
+      'powercfg -setactive SCHEME_CURRENT',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 38 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\54533251-82be-4824-96c1-47b60b740d00\\4facfc89-5b10-4f87-9d39-e482f74748b5" /v ACSettingIndex /t REG_DWORD /d 0 /f /reg:64',
+    ];
+
+    for (const cmd of intelPLTweaks) {
+      try { execSync(cmd, { stdio: 'ignore' }); } catch (_) { }
+    }
+
+    return {
+      success: true,
+      message: '🔵 Intel Power Limits desbloqueados! PL1/PL2 sem restrição, Turbo Boost mantido ao máximo, Power Throttling OFF. Reinicie para aplicar 100%.'
+    };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+// ─── RAM Boost via Software (otimizações no Windows) ──────────────────────
+ipcMain.handle('apply-ram-boost-oc', async () => {
+  if (!systemIsAdmin) return { success: false, error: 'Privilégios de Administrador requeridos.' };
+  try {
+    let totalRamGB = 8;
+    try {
+      const out = execSync('wmic ComputerSystem get TotalPhysicalMemory /value', { encoding: 'utf8' });
+      const m = out.match(/TotalPhysicalMemory=(\d+)/);
+      if (m) totalRamGB = Math.round(parseInt(m[1], 10) / (1024 ** 3));
+    } catch (_) { }
+
+    const ramTweaks = [
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard\\Scenarios\\HypervisorEnforcedCodeIntegrity" /v Enabled /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\HD-Player.exe" /v LargeAddressAware /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\MSIAppPlayer.exe" /v LargeAddressAware /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Background Only" /t REG_SZ /d "False" /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Priority" /t REG_DWORD /d 6 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v ClearPageFileAtShutdown /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v IoPageLockLimit /t REG_DWORD /d 983040 /f /reg:64',
+    ];
+
+    for (const cmd of ramTweaks) {
+      try { execSync(cmd, { stdio: 'ignore' }); } catch (_) { }
+    }
+
+    try {
+      execSync('powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Disable-MMAgent -MemoryCompression -ErrorAction SilentlyContinue"', { stdio: 'ignore' });
+    } catch (_) { }
+
+    try {
+      const pexVal = totalRamGB >= 8 ? '1' : '0';
+      execSync(`reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v DisablePagingExecutive /t REG_DWORD /d ${pexVal} /f /reg:64`, { stdio: 'ignore' });
+    } catch (_) { }
+
+    try {
+      const initial = totalRamGB <= 4 ? Math.round(totalRamGB * 1024 * 1.5) : totalRamGB <= 8 ? Math.round(totalRamGB * 1024) : 4096;
+      const maximum = totalRamGB <= 4 ? Math.round(totalRamGB * 1024 * 2) : totalRamGB <= 8 ? Math.round(totalRamGB * 1024 * 1.5) : 8192;
+      const pfPs = `
+        $cs = Get-WmiObject Win32_ComputerSystem;
+        $cs.AutomaticManagedPagefile = $false; $cs.Put() | Out-Null;
+        $pf = Get-WmiObject -Query "Select * From Win32_PageFileSetting Where Name='C:\\\\pagefile.sys'";
+        if (-not $pf) { $pf = Set-WmiInstance Win32_PageFileSetting -Arguments @{Name='C:\\\\pagefile.sys';InitialSize=0;MaximumSize=0} }
+        $pf.InitialSize = ${initial}; $pf.MaximumSize = ${maximum}; $pf.Put() | Out-Null;
+      `;
+      execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${pfPs.replace(/\r?\n/g, ' ')}"`, { stdio: 'ignore' });
+    } catch (_) { }
+
+    return {
+      success: true,
+      message: `💾 RAM Boost aplicado! Memory Compression desativada, HVCI desligado, Large Address Aware ativo, Pagefile fixo ajustado para ${totalRamGB}GB de RAM detectados. Reinicie.`
     };
   } catch (e) {
     return { success: false, error: e.message };

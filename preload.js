@@ -105,6 +105,16 @@ contextBridge.exposeInMainWorld('api', {
   },
   // ─── Loord IA Gamer ──────────────────────────────────────────────
   askIa: (question) => ipcRenderer.invoke('ask-ia-gamer', question),
+  // ─── Overclock & Boost ───────────────────────────────────────────
+  detectHardwareOC: () => ipcRenderer.invoke('detect-hardware-oc'),
+  applyAmdPBO: () => ipcRenderer.invoke('apply-amd-pbo'),
+  applyIntelPL: () => ipcRenderer.invoke('apply-intel-pl'),
+  applyRamBoost: () => ipcRenderer.invoke('apply-ram-boost-oc'),
+  // ─── Segurança & Heartbeat ───────────────────────────────────────
+  onLicenseRevoked: (cb) => {
+    ipcRenderer.removeAllListeners('license-revoked');
+    ipcRenderer.on('license-revoked', (_e, data) => cb(data));
+  },
   // ─────────────────────────────────────────────────────────────────
 });
 

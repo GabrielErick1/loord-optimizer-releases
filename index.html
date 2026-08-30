@@ -142,10 +142,13 @@
           </button>
           <button class="nav-item" data-tab="minha-config" style="position: relative; display: flex; align-items: center; justify-content: space-between;">
             <span style="display: flex; align-items: center;"><span class="nav-icon">⚙️</span> Minha Configuração</span>
-            <span id="nav-update-badge" style="display: none; background: linear-gradient(135deg, #1d4ed8, #38bdf8); color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 7px; border-radius: 20px; box-shadow: 0 0 10px rgba(56, 189, 248, 0.5); animation: pulseUpdate 1.8s infinite; margin-left: 6px;">v3.6.9 🔥</span>
+            <span id="nav-update-badge" style="display: none; background: linear-gradient(135deg, #1d4ed8, #38bdf8); color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 7px; border-radius: 20px; box-shadow: 0 0 10px rgba(56, 189, 248, 0.5); animation: pulseUpdate 1.8s infinite; margin-left: 6px;">v3.7.0 🔥</span>
           </button>
           <button class="nav-item" data-tab="pc-fraco">
             <span class="nav-icon">⚡</span> PC Fraco (Ultra FPS)
+          </button>
+          <button class="nav-item" data-tab="overclock">
+            <span class="nav-icon">🔥</span> Overclock & Boost
           </button>
         </nav>
 
@@ -1937,7 +1940,7 @@
                 <p style="margin: 0; font-size: 12px; color: #94a3b8;" data-i18n="systemUpdatesCardDesc">Verifique e receba novas versões e otimizações
                   automaticamente</p>
               </div>
-              <span id="app-version-badge" class="badge badge-success">v3.6.9</span>
+              <span id="app-version-badge" class="badge badge-success">v3.7.0</span>
             </div>
 
             <!-- Update Card Content -->
@@ -2214,6 +2217,190 @@
                 jogo; baixe apenas as roupas e armas que você usa.</li>
             </ul>
           </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- ABA: OVERCLOCK & BOOST (CPU AMD PBO / Intel XTU + RAM)            -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <section id="tab-overclock" class="tab-content">
+          <h2>🔥 Overclock &amp; Boost de Hardware</h2>
+          <p class="subtitle">Detecção automática de CPU e placa-mãe. Aplica boost máximo seguro com 1 clique — AMD via PBO, Intel via ajustes de multiplicador, e RAM via timings otimizados.</p>
+
+          <!-- AVISO TÉCNICO -->
+          <div class="card" style="background: rgba(245,158,11,0.1); border: 1.5px solid rgba(245,158,11,0.45); margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span style="font-size:1.6rem;">⚠️</span>
+              <div>
+                <strong style="color:#fbbf24;font-size:0.92rem;display:block;">LEIA ANTES DE USAR</strong>
+                <span style="color:#cbd5e1;font-size:0.8rem;line-height:1.5;">
+                  O overclock de CPU via software é <strong>seguro</strong> e reversível (AMD PBO / Intel limites de potência).
+                  O XMP/RAM é uma <strong>configuração de BIOS</strong> — não pode ser automatizado via Windows por limitação de hardware universal.
+                  Esta aba aplica os ajustes máximos via registro/driver que o Windows permite. Reinicialização é necessária.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- PAINEL DE DETECÇÃO DE HARDWARE -->
+          <div class="card" style="background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,41,59,0.8)); border: 1px solid #334155; margin-bottom:16px;">
+            <div style="font-weight:800;color:#38bdf8;font-size:0.95rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+              <span>🖥️ Hardware Detectado</span>
+              <button id="btn-detect-hardware" style="margin-left:auto;background:rgba(56,189,248,0.15);border:1px solid #38bdf8;color:#38bdf8;font-size:0.78rem;font-weight:700;padding:4px 12px;border-radius:6px;cursor:pointer;" onclick="detectHardwareOC()">🔍 Detectar Agora</button>
+            </div>
+            <div id="oc-hardware-info" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+              <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:12px;border:1px solid #1e293b;">
+                <div style="font-size:0.7rem;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:4px;">🧠 Processador</div>
+                <div id="oc-cpu-name" style="color:#f1f5f9;font-size:0.85rem;font-weight:700;">Detectando...</div>
+                <div id="oc-cpu-brand" style="font-size:0.72rem;color:#94a3b8;margin-top:2px;"></div>
+              </div>
+              <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:12px;border:1px solid #1e293b;">
+                <div style="font-size:0.7rem;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:4px;">💾 RAM</div>
+                <div id="oc-ram-info" style="color:#f1f5f9;font-size:0.85rem;font-weight:700;">Detectando...</div>
+                <div id="oc-ram-speed" style="font-size:0.72rem;color:#94a3b8;margin-top:2px;"></div>
+              </div>
+              <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:12px;border:1px solid #1e293b;">
+                <div style="font-size:0.7rem;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:4px;">🏠 Placa-Mãe</div>
+                <div id="oc-mb-name" style="color:#f1f5f9;font-size:0.85rem;font-weight:700;">Detectando...</div>
+                <div id="oc-mb-man" style="font-size:0.72rem;color:#94a3b8;margin-top:2px;"></div>
+              </div>
+              <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:12px;border:1px solid #1e293b;">
+                <div style="font-size:0.7rem;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:4px;">📊 Boost Disponível</div>
+                <div id="oc-boost-type" style="color:#34d399;font-size:0.85rem;font-weight:800;">—</div>
+                <div id="oc-boost-note" style="font-size:0.72rem;color:#94a3b8;margin-top:2px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- BOOST DE 1 CLIQUE (CARD PRINCIPAL) -->
+          <div class="card" style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(168,85,247,0.12));border:2px solid rgba(239,68,68,0.5);padding:22px;margin-bottom:16px;box-shadow:0 0 30px rgba(239,68,68,0.2);">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+              <div>
+                <div style="font-weight:900;font-size:1.2rem;color:#f87171;display:flex;align-items:center;gap:8px;">
+                  <span>🔥 Aplicar Máximo Boost (1 Clique) + Reiniciar</span>
+                  <span style="background:linear-gradient(90deg,#ef4444,#f59e0b);color:#fff;font-size:10px;font-weight:900;padding:2px 8px;border-radius:20px;">AUTOMÁTICO</span>
+                </div>
+                <div style="font-size:0.83rem;color:#e2e8f0;margin-top:6px;line-height:1.5;">
+                  Detecta seu CPU automaticamente e aplica: <strong style="color:#fbbf24;">AMD → PBO ativado + limites PPT/TDC/EDC máximos</strong> ou <strong style="color:#38bdf8;">Intel → Power Limit desbloqueado</strong> + timings de RAM otimizados + plano Ultimate Performance. Reinicia ao finalizar.
+                </div>
+                <div id="oc-status-brand-msg" style="font-size:0.78rem;color:#94a3b8;margin-top:6px;">⏳ Clique em "Detectar Agora" ou em "Aplicar" para detectar e aplicar automaticamente.</div>
+              </div>
+              <button id="btn-apply-overclock" style="background:linear-gradient(135deg,#ef4444,#dc2626);border:none;color:#fff;font-weight:900;font-size:1rem;padding:14px 28px;border-radius:10px;cursor:pointer;box-shadow:0 4px 20px rgba(239,68,68,0.5);white-space:nowrap;transition:all 0.2s;" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'">
+                🔥 APLICAR BOOST + REINICIAR
+              </button>
+            </div>
+            <div id="oc-apply-status" style="margin-top:12px;font-size:0.85rem;font-weight:700;display:none;background:rgba(16,185,129,0.1);padding:8px 12px;border-radius:6px;border:1px solid rgba(16,185,129,0.3);color:#34d399;"></div>
+          </div>
+
+          <!-- CARDS INDIVIDUAIS DE BOOST -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;">
+
+            <!-- AMD PBO -->
+            <div class="card" id="oc-card-amd" style="border:1px solid rgba(239,68,68,0.35);display:none;">
+              <div style="font-weight:700;color:#f87171;font-size:0.95rem;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                <span>🔴 AMD PBO (Precision Boost Overdrive)</span>
+              </div>
+              <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:14px;line-height:1.5;">
+                Ativa PBO + eleva limites de PPT (potência total), TDC (corrente sustentada) e EDC (corrente de pico) ao máximo seguro via registro. Compatível com <strong style="color:#e2e8f0;">Ryzen 3000, 4000, 5000, 7000</strong>.
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
+                <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:10px;text-align:center;">
+                  <div style="font-size:0.65rem;color:#f87171;font-weight:700;text-transform:uppercase;">PPT</div>
+                  <div id="oc-amd-ppt" style="color:#fff;font-size:1.1rem;font-weight:900;">—</div>
+                  <div style="font-size:0.62rem;color:#64748b;">Watts</div>
+                </div>
+                <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:10px;text-align:center;">
+                  <div style="font-size:0.65rem;color:#f87171;font-weight:700;text-transform:uppercase;">TDC</div>
+                  <div id="oc-amd-tdc" style="color:#fff;font-size:1.1rem;font-weight:900;">—</div>
+                  <div style="font-size:0.62rem;color:#64748b;">Amperes</div>
+                </div>
+                <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:10px;text-align:center;">
+                  <div style="font-size:0.65rem;color:#f87171;font-weight:700;text-transform:uppercase;">EDC</div>
+                  <div id="oc-amd-edc" style="color:#fff;font-size:1.1rem;font-weight:900;">—</div>
+                  <div style="font-size:0.62rem;color:#64748b;">Amperes</div>
+                </div>
+              </div>
+              <button class="btn btn-danger btn-sm" id="btn-apply-amd-pbo" style="width:100%;" onclick="applyAmdPBO()">
+                🔴 Ativar PBO Máximo AMD
+              </button>
+              <div id="oc-amd-status" style="margin-top:8px;font-size:0.8rem;color:#10b981;display:none;"></div>
+            </div>
+
+            <!-- INTEL XTU -->
+            <div class="card" id="oc-card-intel" style="border:1px solid rgba(56,189,248,0.35);display:none;">
+              <div style="font-weight:700;color:#38bdf8;font-size:0.95rem;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                <span>🔵 Intel Power Limits (PL1/PL2 Desbloqueado)</span>
+              </div>
+              <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:14px;line-height:1.5;">
+                Remove os limites de potência PL1/PL2 que o fabricante impõe via BIOS, permitindo que o CPU Intel mantenha o Turbo Boost por mais tempo. Compatível com <strong style="color:#e2e8f0;">Core i3/i5/i7/i9 (6ª gen+)</strong>.
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+                <div style="background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.3);border-radius:8px;padding:10px;text-align:center;">
+                  <div style="font-size:0.65rem;color:#38bdf8;font-weight:700;text-transform:uppercase;">PL1</div>
+                  <div style="color:#fff;font-size:0.9rem;font-weight:900;">Desbloqueado</div>
+                  <div style="font-size:0.62rem;color:#64748b;">Potência sustentada</div>
+                </div>
+                <div style="background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.3);border-radius:8px;padding:10px;text-align:center;">
+                  <div style="font-size:0.65rem;color:#38bdf8;font-weight:700;text-transform:uppercase;">PL2</div>
+                  <div style="color:#fff;font-size:0.9rem;font-weight:900;">Desbloqueado</div>
+                  <div style="font-size:0.62rem;color:#64748b;">Pico de Turbo</div>
+                </div>
+              </div>
+              <button class="btn btn-primary btn-sm" id="btn-apply-intel-pl" style="width:100%;" onclick="applyIntelPL()">
+                🔵 Desbloquear PL1/PL2 Intel
+              </button>
+              <div id="oc-intel-status" style="margin-top:8px;font-size:0.8rem;color:#10b981;display:none;"></div>
+            </div>
+
+            <!-- RAM BOOST VIA SOFTWARE -->
+            <div class="card" style="border:1px solid rgba(34,197,94,0.35);">
+              <div style="font-weight:700;color:#4ade80;font-size:0.95rem;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                <span>💾 Boost de RAM (Software)</span>
+                <span style="background:rgba(34,197,94,0.2);border:1px solid #22c55e;color:#4ade80;font-size:0.65rem;font-weight:800;padding:2px 6px;border-radius:4px;">SEGURO</span>
+              </div>
+              <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:12px;line-height:1.5;">
+                Aplica otimizações de latência de RAM via Windows: Pagefile inteligente, desativa compressão de memória, prioriza buffer de L3 e ajusta largura de banda do DMA. <strong style="color:#fbbf24;">XMP permanece configuração de BIOS — não pode ser alterado via software.</strong>
+              </div>
+              <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:8px;padding:10px;margin-bottom:12px;">
+                <div style="font-size:0.72rem;color:#86efac;line-height:1.6;">
+                  ✅ Desativar compressão de memória (aumenta latência disponível)<br>
+                  ✅ Pagefile fixo (elimina realocação dinâmica que causa stutter)<br>
+                  ✅ Prioridade de L3 cache para jogos (MMCSS)<br>
+                  ✅ Desativar memory integrity (libera RAM do VBS)<br>
+                  ✅ Large Address Aware para aplicativos 32-bit
+                </div>
+              </div>
+              <button class="btn btn-sm" id="btn-apply-ram-boost" style="width:100%;background:linear-gradient(135deg,#22c55e,#16a34a);color:#000;font-weight:800;" onclick="applyRamBoost()">
+                💾 Aplicar RAM Boost
+              </button>
+              <div id="oc-ram-status" style="margin-top:8px;font-size:0.8rem;color:#10b981;display:none;"></div>
+            </div>
+
+            <!-- AVISO XMP -->
+            <div class="card" style="border:1px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.05);">
+              <div style="font-weight:700;color:#fbbf24;font-size:0.95rem;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                <span>📋 XMP/EXPO — Como Ativar (BIOS)</span>
+              </div>
+              <div style="font-size:0.78rem;color:#cbd5e1;line-height:1.7;">
+                O XMP/EXPO é configurado <strong>na BIOS da placa-mãe</strong>, não pode ser alterado pelo Windows:
+              </div>
+              <ol style="font-size:0.75rem;color:#94a3b8;line-height:1.8;margin:8px 0 0 0;padding-left:16px;">
+                <li>Reinicie o PC e pressione <kbd style="background:#1e293b;border:1px solid #334155;padding:1px 5px;border-radius:3px;color:#38bdf8;">Del</kbd> ou <kbd style="background:#1e293b;border:1px solid #334155;padding:1px 5px;border-radius:3px;color:#38bdf8;">F2</kbd> para entrar na BIOS</li>
+                <li>Procure por <strong style="color:#fbbf24;">"XMP"</strong> (Intel) ou <strong style="color:#fbbf24;">"EXPO"</strong> / <strong style="color:#fbbf24;">"DOCP"</strong> (AMD)</li>
+                <li>Selecione o perfil <strong style="color:#4ade80;">XMP Profile 1</strong> ou <strong style="color:#4ade80;">EXPO Profile 1</strong></li>
+                <li>Salve com <kbd style="background:#1e293b;border:1px solid #334155;padding:1px 5px;border-radius:3px;color:#38bdf8;">F10</kbd> e reinicie</li>
+              </ol>
+              <div style="margin-top:10px;font-size:0.72rem;color:#64748b;">💡 Detectar fabricante da placa-mãe via WMI e abrir manual online:</div>
+              <button id="btn-open-bios-guide" style="margin-top:6px;width:100%;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.4);color:#fbbf24;font-weight:700;font-size:0.78rem;padding:8px;border-radius:6px;cursor:pointer;" onclick="openBiosGuide()">
+                📖 Ver Guia de BIOS para minha Placa-Mãe
+              </button>
+              <div id="oc-bios-guide-link" style="margin-top:8px;font-size:0.78rem;display:none;"></div>
+            </div>
+
+          </div>
+
+          <!-- STATUS GERAL -->
+          <div id="oc-global-status" style="display:none;margin-top:16px;padding:14px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.35);border-radius:8px;font-size:0.85rem;color:#34d399;font-weight:700;"></div>
+
         </section>
 
       </main>
