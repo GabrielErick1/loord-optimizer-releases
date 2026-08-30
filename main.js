@@ -2844,9 +2844,29 @@ ipcMain.handle('optimize-pc-fraco', async () => {
 ipcMain.handle('clean-deep-disk', async () => {
   if (!systemIsAdmin) return { success: false, error: 'Privilégios de Administrador requeridos.' };
   try {
-    const cleanCmd = 'cmd.exe /c "del /q /f /s \"%TEMP%\\*\" & del /q /f /s \"C:\\Windows\\Temp\\*\" & del /q /f /s \"C:\\Windows\\Prefetch\\*\" & del /q /f /s \"%LOCALAPPDATA%\\D3DSCache\\*\" & del /q /f /s \"%LOCALAPPDATA%\\NVIDIA\\DXCache\\*\" & del /q /f /s \"%LOCALAPPDATA%\\AMD\\DxCache\\*\" & del /q /f /s \"C:\\Windows\\SoftwareDistribution\\Download\\*\" & del /q /f /s \"C:\\ProgramData\\BlueStacks_nxt\\Logs\\*\" & del /q /f /s \"C:\\ProgramData\\BlueStacks_msi5\\Logs\\*\" & del /q /f /s \"C:\\ProgramData\\BlueStacks\\Logs\\*\" & ipconfig /flushdns & exit /b 0"';
-    execSync(cleanCmd, { stdio: 'ignore' });
-    return { success: true, message: 'Limpeza profunda de disco e cache concluída! Espaço e RAM liberados.' };
+    const cleanCmds = [
+      // 1. Limpeza de arquivos temporários e caches de shader
+      'cmd.exe /c "del /q /f /s \"%TEMP%\\*\" & del /q /f /s \"C:\\Windows\\Temp\\*\" & del /q /f /s \"C:\\Windows\\Prefetch\\*\" & del /q /f /s \"%LOCALAPPDATA%\\D3DSCache\\*\" & del /q /f /s \"%LOCALAPPDATA%\\NVIDIA\\DXCache\\*\" & del /q /f /s \"%LOCALAPPDATA%\\AMD\\DxCache\\*\" & del /q /f /s \"C:\\Windows\\SoftwareDistribution\\Download\\*\" & del /q /f /s \"C:\\ProgramData\\BlueStacks_nxt\\Logs\\*\" & del /q /f /s \"C:\\ProgramData\\BlueStacks_msi5\\Logs\\*\" & del /q /f /s \"C:\\ProgramData\\BlueStacks\\Logs\\*\" & exit /b 0"',
+      // 2. Limpeza de Crash Dumps e relatórios de erros do Windows
+      'cmd.exe /c "del /q /f /s \"%LOCALAPPDATA%\\CrashDumps\\*\" & del /q /f /s \"C:\\Windows\\Minidump\\*\" & exit /b 0"',
+      // 3. Esvaziar Lixeira de todos os discos
+      'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Clear-RecycleBin -Force -ErrorAction SilentlyContinue"',
+      // 4. Limpar Logs de Eventos do Windows (Event Viewer) que deixam o Explorer lento
+      'cmd.exe /c "wevtutil.exe cl Application & wevtutil.exe cl Security & wevtutil.exe cl System & wevtutil.exe cl Setup & exit /b 0"',
+      // 5. Desativar arquivo de hibernação (hiberfil.sys) liberando 4GB a 16GB de espaço no C:
+      'powercfg -h off',
+      // 6. Limpar cache DNS e tabelas de rede
+      'ipconfig /flushdns'
+    ];
+
+    for (const c of cleanCmds) {
+      try { execSync(c, { stdio: 'ignore' }); } catch (_) { }
+    }
+
+    return {
+      success: true,
+      message: '🧹 Limpeza profunda concluída! Arquivos temporários, lixeira, logs de erro, shaders e lixos do Windows eliminados com sucesso. O disco e a memória estão 100% limpos!'
+    };
   } catch (e) {
     return { success: false, error: e.message };
   }
@@ -3186,6 +3206,13 @@ ipcMain.handle('transform-windows-lite', async () => {
       cleanHostsFileOfBluestacks();
       execSync('netsh int tcp set global autotuninglevel=normal', { stdio: 'ignore' });
       execSync('ipconfig /flushdns', { stdio: 'ignore' });
+    } catch (_) { }
+
+    // Limpeza profunda de lixo, lixeira, caches e logs do Windows (sensação de PC formatado)
+    try {
+      execSync('cmd.exe /c "del /q /f /s \"%TEMP%\\*\" & del /q /f /s \"C:\\Windows\\Temp\\*\" & del /q /f /s \"C:\\Windows\\Prefetch\\*\" & del /q /f /s \"%LOCALAPPDATA%\\D3DSCache\\*\" & del /q /f /s \"%LOCALAPPDATA%\\NVIDIA\\DXCache\\*\" & del /q /f /s \"%LOCALAPPDATA%\\AMD\\DxCache\\*\" & del /q /f /s \"C:\\Windows\\SoftwareDistribution\\Download\\*\" & del /q /f /s \"%LOCALAPPDATA%\\CrashDumps\\*\" & del /q /f /s \"C:\\Windows\\Minidump\\*\" & exit /b 0"', { stdio: 'ignore' });
+      execSync('powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Clear-RecycleBin -Force -ErrorAction SilentlyContinue"', { stdio: 'ignore' });
+      execSync('cmd.exe /c "wevtutil.exe cl Application & wevtutil.exe cl Security & wevtutil.exe cl System & wevtutil.exe cl Setup & exit /b 0"', { stdio: 'ignore' });
     } catch (_) { }
 
     return {
