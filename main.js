@@ -5592,24 +5592,172 @@ ipcMain.handle('ask-ia-gamer', async (event, question) => {
 
     let answer = '';
 
-    if (q.includes('800 dpi') || (q.includes('800') && q.includes('dpi'))) {
-      answer = `🎯 **Sensibilidade Recomendada para 800 DPI (BlueStacks 5):**\n\n• **Sensibilidade X (Movimento Lateral / 360°):** \`1.15\` a \`1.35\` (Média ideal: **1.25**)\n• **Sensibilidade Y (Puxada do Capa):** \`0.45\` a \`0.55\` (Ideal: **0.48** para SMG e **0.52** para AR)\n• **Ajuste / Tweak BlueStacks:** \`16450\` ou \`21058\` (Melhor resposta 1:1)\n• **DPI do Emulador:** \`480 DPI\` (Mais suave) ou \`320 DPI\` (Mais rápida)\n• **Geral no Jogo (Free Fire):** \`92\` a \`96\`\n• **Ponto Vermelho:** \`88\`\n• **Mira 2x:** \`85\`\n• **Mira 4x:** \`80\`\n• **Dica de Ouro:** Desative a aceleração do mouse no Windows (ative o perfil **[1] RÁPIDA** na aba Regedit Adaptativa deste painel).`;
+    // ── 1. GUIA COMPLETO DE TODAS AS ABAS E FUNÇÕES DO PAINEL ──
+    if (q.includes('cada aba') || q.includes('todas as abas') || q.includes('o que tem no painel') || q.includes('funcoes do painel') || q.includes('como usar o painel') || q.includes('guia do painel') || q.includes('para que serve o painel')) {
+      answer = `📖 **GUIA COMPLETO DO LOORD OPTIMIZER — O QUE FAZ CADA ABA:**
+
+1. 🎯 **Semi Precision Regis (Rarefix):**
+   • Ajusta a precisão 1:1 no registro nativo do Windows (\`HKCU\\Control Panel\\Mouse\`).
+   • Elimina a aceleração errática, remove o tremor de mira e impede que o tiro passe da cabeça.
+
+2. 🧬 **Regedit Adaptativa:**
+   • Sistema inteligente de curvas de mouse e energia.
+   • Possui 5 perfis: **[1] RÁPIDA** (Zera aceleração), **[2] LEVE** (Micro-ajustes), **[3] SUAVE** (Controle total), **[4] SÓ DESEMPENHO** (Energia máxima e prioridade de processo) e **[5] RESTAURAR**.
+
+3. 🤖 **Loord IA (Grok):**
+   • Sua assistente inteligente gamer. Tira qualquer dúvida sobre o painel, sensibilidade X/Y, DPI, 240 FPS e solução de travamentos.
+
+4. 🎯 **Calculadora Sense:**
+   • Calcula a Sensibilidade X (Lateral), Y (Capa) e o Ajuste/Tweak (16450) perfeitos para o seu Mouse DPI e DPI do Emulador.
+
+5. 🖱️ **Regedits & Sense:**
+   • Contém o **Assistente de Recoil & Puxada Y** (Ativa em jogo com **F7** ou **F8** para descida suave ao atirar sem descer sozinho ao aplicar), ajuste de Polling Rate e a recomendação oficial Full Lata (1600 DPI).
+
+6. ⚡ **Otimizar PC:**
+   • Limpeza profunda de RAM em tempo real, **Auto RAM Cleaner** (limpa a cada 45s em segundo plano), Otimização Mestra do Windows e prioridade para jogos.
+
+7. 🌐 **Rede & Latência:**
+   • Configura DNS Gamer (Cloudflare 1.1.1.1 ou Google 8.8.8.8) com 1 clique, zera atrasos de pacotes TCP e testa seu ping.
+
+8. 🎮 **Emulador + FPS:**
+   • Troca o modelo de celular do emulador (**Xiaomi Redmi Note 9** ou **ASUS ROG Phone 8**) para liberar 240 FPS e reduzir o atraso de toque (input lag).
+
+9. ⚙️ **Minha Configuração:**
+   • Cria backups de segurança do Windows e do emulador, permite restaurar a qualquer momento e gerencia atualizações do sistema.
+
+10. ⚡ **PC Fraco (Ultra FPS):**
+    • Otimizações agressivas para máquinas com 4GB a 8GB de RAM, memória virtual fixa e remoção de serviços pesados do Windows.`;
+    }
+
+    // ── 2. ASSISTENTE DE RECOIL & PUXADA Y (F7 / F8) ──
+    else if (q.includes('recoil') || q.includes('puxada y') || q.includes('puxada') || q.includes('f7') || q.includes('f8') || q.includes('descida') || q.includes('macro')) {
+      answer = `🔫 **COMO USAR O ASSISTENTE DE RECOIL & PUXADA Y:**
+
+• **Para que serve:** Simula uma descida suave e automática da mira no eixo vertical (Y) enquanto você segura o botão esquerdo do mouse atirando, estabilizando o coice das armas para cravar na cabeça.
+• **Segurança Antissolavanco:** Ao clicar em *Aplicar Configurações* no painel, ele **não desce sozinho**. Ele fica em modo **STANDBY** (espera).
+• **Como Ativar em Partida:**
+  1. No painel, na aba **Regedits & Sense**, marque a caixinha **Ativar Descida Automática ao Atirar**.
+  2. Escolha a velocidade decimal desejada (ex: \`0.1\` ou \`0.5\` para armas de um tiro; \`1.0\` a \`2.5\` para SMG).
+  3. Clique em **⚡ Aplicar Configurações**.
+  4. Entre no Free Fire. Quando quiser ativar, aperte **F7** ou **F8** no teclado.
+  5. Você ouvirá um **bipe agudo (1200Hz)** confirmando que está ATIVADO.
+  6. Para desativar a qualquer momento, aperte **F7** ou **F8** novamente (você ouvirá um **bipe grave de 500Hz**).`;
+    }
+
+    // ── 3. SEMI PRECISION REGIS (RAREFIX) ──
+    else if (q.includes('semi precision') || q.includes('rarefix') || q.includes('precisao 1:1') || q.includes('kernel')) {
+      answer = `🎯 **COMO FUNCIONA O SEMI PRECISION REGIS (RAREFIX VIP):**
+
+• **O que é:** É uma injeção de precisão milimétrica direta no registro do Windows (\`HKCU\\Control Panel\\Mouse\`). Ela reprograma a escala de aceleração para responder com fidelidade 1:1 ao sensor do mouse.
+• **Perfis Disponíveis:**
+  - **🛡️ Estável (8):** Movimento macio e pesado. Excelente para snipers e armas de um tiro (evita tremedeira).
+  - **⚖️ Equilibrado (10):** Padrão neutro balanceado para qualquer DPI.
+  - **👑 Precisão (11 - Recomendado):** Curva ultra calibrada para Free Fire. Mira não passa da cabeça e sobe rápido no capa.
+  - **⚡ Rápida (12):** Para quem usa DPI baixa (400 ou 800 DPI) e quer movimentação ágil.
+  - **🔥 Extrema (15):** Resposta instantânea para telas rápidas e DPI alta.
+• **Como Usar:** Basta ir na aba **Semi Precision Regis**, escolher o perfil e clicar no botão correspondente. A aplicação é imediata!`;
+    }
+
+    // ── 4. REGEDIT ADAPTATIVA ──
+    else if (q.includes('regedit adaptativa') || q.includes('adaptativa') || q.includes('perfil adaptativo')) {
+      answer = `🧬 **COMO FUNCIONA A REGEDIT ADAPTATIVA:**
+
+• **O que faz:** Combina otimização do registro do mouse com plano de energia e prioridade de processo do Windows.
+• **Os 5 Perfis:**
+  1. **⚡ [1] RÁPIDA (Zera Aceleração):** Define \`MouseSpeed 0\` e thresholds zero. Resposta 100% pura sem aceleração do Windows.
+  2. **🎯 [2] LEVE (Aceleração Leve):** Aceleração sutil (\`MouseSpeed 1\`) para quem gosta de movimentação rápida com sensibilidade média.
+  3. **🌊 [3] SUAVE (Controle Total):** Sensibilidade reduzida para 8. Movimento controlado para travar a mira na cabeça.
+  4. **🚀 [4] SÓ DESEMPENHO:** Ativa o plano de energia de Alto Desempenho e coloca o BlueStacks em Prioridade Alta sem mexer na sua sensibilidade de mouse.
+  5. **🔄 [5] RESTAURAR:** Volta as configurações padrão do Windows caso queira desfazer.
+• **Como Usar:** Selecione o perfil desejado no card e clique em **⚡ Aplicar Perfil Selecionado no Windows & BlueStacks**.`;
+    }
+
+    // ── 5. MODELO DE CELULAR (XIAOMI REDMI NOTE 9 & ASUS ROG) ──
+    else if (q.includes('redmi note 9') || q.includes('xiaomi') || q.includes('m2003j15sg') || q.includes('modelo de celular') || q.includes('trocar modelo') || q.includes('dispositivo')) {
+      answer = `📱 **COMO FUNCIONA A TROCA DE MODELO DE CELULAR:**
+
+• **Por que trocar o modelo?** Os servidores do Free Fire leem o modelo do aparelho para liberar taxas de atualização mais altas e perfis de sensibilidade de toque.
+• **Xiaomi Redmi Note 9 (M2003J15SG):**
+  - Configurado com Fabricante: \`Xiaomi\`, Marca: \`Redmi Note 9\` e Modelo: \`M2003J15SG\`.
+  - Reduz drasticamente a latência de toque na tela e estabiliza a subida da mira no BlueStacks.
+• **ASUS ROG Phone 8 Pro:**
+  - Libera taxas de 90Hz, 120Hz e 240 FPS sem gargalo térmico simulado.
+• **Como Aplicar:**
+  1. Feche o seu emulador BlueStacks/MSI completamente.
+  2. Vá na aba **Emulador + FPS**.
+  3. No seletor de modelos, escolha **Xiaomi - Redmi Note 9 - M2003J15SG**.
+  4. Clique em **⚡ Aplicar Modelo no Emulador**.
+  5. Abra o emulador e verifique em Configurações > Telefone: estará 100% configurado!`;
+    }
+
+    // ── 6. OTIMIZAR PC, LIMPAR RAM E AUTO RAM CLEANER ──
+    else if (q.includes('otimizar pc') || q.includes('limpar ram') || q.includes('auto ram') || q.includes('memoria ram') || q.includes('otimizacao mestra')) {
+      answer = `⚡ **COMO USAR A ABA OTIMIZAR PC:**
+
+• **🧹 Limpar Memória RAM:** Libera imediatamente a memória em cache e processos em espera usando chamadas diretas de kernel da API do Windows (\`EmptyWorkingSet\`). Pode ser clicado antes de abrir o emulador ou durante partidas.
+• **🔄 Auto RAM Cleaner:** Quando ativado, roda um limpador silencioso em segundo plano a cada **45 segundos**, impedindo que o BlueStacks acumule vazamentos de memória e comece a dar travamentos após horas de jogo.
+• **⚡ Otimizar Processos:** Reduz a prioridade de programas secundários e eleva a prioridade do motor do jogo.
+• **👑 Otimização Mestra do Windows:** Ajusta o algoritmo de Nagle para rede, habilita o plano de energia de Desempenho Máximo e otimiza o tempo de resposta do sistema.`;
+    }
+
+    // ── 7. REDE & LATÊNCIA (DNS GAMER E PING) ──
+    else if (q.includes('rede') || q.includes('latencia') || q.includes('dns') || q.includes('ping') || q.includes('cloudflare') || q.includes('tcp')) {
+      answer = `🌐 **COMO FUNCIONA A ABA REDE & LATÊNCIA:**
+
+• **DNS Gamer:** Troca o servidor DNS da sua placa de rede por servidores ultra rápidos que resolvem conexões com menor rota para os servidores da Garena:
+  - **⚡ Cloudflare Gamer (1.1.1.1 / 1.0.0.1):** O DNS mais rápido do mundo com menor latência.
+  - **🛡️ Google DNS (8.8.8.8 / 8.8.4.4):** Alta estabilidade e sem perda de pacotes.
+• **Testar Ping:** Faz um teste de tempo real contra os servidores de jogo para você saber a qualidade da sua rota.
+• **Reset de Rede / DHCP:** Se sua internet oscilar, você pode redefinir o adaptador de rede com 1 clique para restabelecer conexão limpa.`;
+    }
+
+    // ── 8. CALCULADORA SENSE ──
+    else if (q.includes('calculadora') || q.includes('calcular sense') || q.includes('tweak') || q.includes('16450')) {
+      answer = `📐 **COMO USAR A CALCULADORA SENSE:**
+
+• **Como Funciona:** Você informa o DPI do seu mouse físico (ex: 800 ou 1600) e o DPI configurado no emulador (ex: 320 ou 480).
+• O algoritmo calcula com precisão matemática:
+  - **Sensibilidade X:** Coordenada para movimentação horizontal suave sem passar do alvo.
+  - **Sensibilidade Y:** Coordenada calibrada para subida perfeita de capa.
+  - **Ajuste Recomendado (Tweak):** Como o \`16450\` ou \`21058\`, que destravam o ponteiro e corrigem acelerações ocultas.
+• **Onde colocar esses valores?** Abra o BlueStacks, clique com o botão direito no ícone de mira/tiro no mapeamento avançado e cole as coordenadas X, Y e o Tweak nos campos correspondentes!`;
+    }
+
+    // ── 9. BACKUP E MINHA CONFIGURAÇÃO ──
+    else if (q.includes('backup') || q.includes('minha config') || q.includes('restaurar') || q.includes('salvar config') || q.includes('atualizacao')) {
+      answer = `⚙️ **COMO FUNCIONA O BACKUP E MINHA CONFIGURAÇÃO:**
+
+• **Ponto de Restauração Seguro:** O Loord Optimizer cria automaticamente um backup do estado original do seu computador na pasta segura do aplicativo antes de aplicar modificações.
+• **Restaurar Tudo:** Se por qualquer motivo você quiser voltar o seu Windows exatamente para como estava antes do painel, basta ir na aba **Minha Configuração** e clicar em **Restaurar Configurações Originais**.
+• **Atualizações do Sistema:** O painel verifica automaticamente se há novas versões de otimização no GitHub. Quando disponível, um selo azul pisca no menu e você pode atualizar com 1 clique.`;
+    }
+
+    // ── 10. PC FRACO (ULTRA FPS) ──
+    else if (q.includes('pc fraco') || q.includes('ultra fps') || q.includes('memoria virtual') || q.includes('pagefile') || q.includes('bloatware')) {
+      answer = `🚀 **COMO USAR A ABA PC FRACO (ULTRA FPS):**
+
+• **Para quem é:** Especialmente desenvolvida para computadores com 4GB ou 8GB de RAM, processadores Dual Core ou placas de vídeo integradas (Intel HD Graphics).
+• **Principais Recursos:**
+  1. **Limpeza Profunda de Disco:** Remove arquivos temporários (\`%temp%\`, \`prefetch\`) que pesam no boot e no carregamento do emulador.
+  2. **Remover Bloatware do Windows:** Desativa serviços desnecessários do Windows em segundo plano que consomem CPU.
+  3. **Memória Virtual Fixa (Pagefile):** Evita telas azuis e travamentos por falta de RAM alocando tamanho fixo de memória virtual no SSD/HD.
+  4. **Preset de Emulador Leve:** Aplica resolução 960x540 ou 1280x720 e limita o consumo para 2 núcleos.`;
+    }
+
+    // ── 11. SENSIBILIDADES POR DPI ESPECÍFICAS ──
+    else if (q.includes('800 dpi') || (q.includes('800') && q.includes('dpi'))) {
+      answer = `🎯 **Sensibilidade Recomendada para 800 DPI (BlueStacks 5):**\n\n• **Sensibilidade X (Lateral):** \`1.25\`\n• **Sensibilidade Y (Capa):** \`0.48\` (SMG) e \`0.52\` (AR)\n• **Tweak:** \`16450\`\n• **DPI do Emulador:** \`480 DPI\`\n• **Geral no Free Fire:** \`92\` a \`96\`\n• **Dica:** Ative o perfil **[1] RÁPIDA** na aba Regedit Adaptativa para eliminar aceleração do Windows!`;
     } else if (q.includes('1600 dpi') || (q.includes('1600') && q.includes('dpi'))) {
-      answer = `🎯 **Sensibilidade Recomendada para 1600 DPI (Alta Precisão):**\n\n• **Sensibilidade X (Lateral):** \`0.65\` a \`0.80\` (Ideal: **0.72**)\n• **Sensibilidade Y (Puxada do Capa):** \`0.30\` a \`0.38\` (Ideal: **0.34**)\n• **Ajuste / Tweak:** \`16450\`\n• **DPI do Emulador:** \`320 DPI\` ou \`480 DPI\`\n• **Geral no Free Fire:** \`85\` a \`90\`\n• **Por que 1600 DPI é o padrão dos Pro Players?** O sensor óptico lê muito mais dados por polegada, eliminando o pixel-skipping e deixando a mira grudada na cabeça!`;
-    } else if (q.includes('1000 dpi') || (q.includes('1000') && q.includes('dpi'))) {
-      answer = `🎯 **Sensibilidade Recomendada para 1000 DPI:**\n\n• **Sensibilidade X (Lateral):** \`0.95\` a \`1.10\`\n• **Sensibilidade Y (Puxada do Capa):** \`0.40\` a \`0.46\`\n• **Ajuste / Tweak:** \`16450\`\n• **DPI do Emulador:** \`440 DPI\`\n• **Geral no Free Fire:** \`90\`\n• **Dica:** Ative o perfil **[3] SUAVE** na aba Regedit Adaptativa se sentir que a mira passa um pouco da cabeça.`;
-    } else if (q.includes('240 fps') || q.includes('240fps') || q.includes('destravar fps') || q.includes('fps alto')) {
-      answer = `⚡ **Passo a Passo Definitivo para 240 FPS Cravados no BlueStacks 5:**\n\n1. **Configuração de Vídeo do BlueStacks:**\n   • Modo da Engine: **Desempenho (Performance)**\n   • Renderizador Gráfico: **OpenGL** (com placa de vídeo) ou **DirectX**\n   • Computação Gráfica Dedicada: **Ativado** (GPU NVIDIA/AMD).\n\n2. **Desbloqueio de Taxa de Quadros (FPS):**\n   • Em *Desempenho*, marque: **Ativar taxas de quadros altas (High Frame Rate)**\n   • Arraste o slider para **240 FPS**.\n   • Marque: **Mostrar FPS durante o jogo**.\n\n3. **Perfil de Celular:**\n   • Vá na aba **Emulador + FPS** aqui no Loord Optimizer e aplique o **Xiaomi Redmi Note 9** ou o **ASUS ROG Phone 8 Pro**.\n\n4. **No Free Fire:**\n   • Gráficos: Suave ou Padrão.\n   • Alto FPS: **ALTO (Obrigatório)**.`;
-    } else if (q.includes('passa da cabeca') || q.includes('passando da cabeça') || q.includes('treme') || q.includes('mira treme')) {
-      answer = `🖱️ **Como Resolver Mira Tremendo ou Passando da Cabeça:**\n\n1. **Aceleração Oculta do Windows:**\n   • Quando o Windows acelera o mouse, ao puxar rápido a mira viaja mais longe e passa da cabeça.\n   • **Solução:** Na aba **Regedit Adaptativa**, ative o perfil **[1] RÁPIDA** (Zera MouseSpeed e Thresholds) ou use o **Semi Precision Regis (Estável 8)**.\n\n2. **Redução da Sensibilidade Y:**\n   • Reduza a **Sensibilidade Y** no emulador de 0.05 em 0.05 até a mira travar no queixo/peito e subir com um toque firme para a cabeça.\n\n3. **Assistente de Recoil & Puxada Y:**\n   • Na aba **Regedits & Sense**, ative o **Assistente de Recoil** com velocidade suave (\`0.1\` ou \`0.5\`). Quando você atirar (Left Click), ele ajudará a segurar a mira no ponto crítico da cabeça sem subir além!`;
-    } else if (q.includes('pc fraco') || q.includes('4gb') || q.includes('8gb') || q.includes('lag') || q.includes('travando')) {
-      answer = `🚀 **Guia Completo para Rodar Liso no PC Fraco (4GB / 8GB RAM):**\n\n1. **Alocação de Recursos no BlueStacks:**\n   • Se você tem **4GB RAM**: Aloque **2 Cores de CPU** e **2048 MB (2GB) de RAM**.\n   • Se você tem **8GB RAM**: Aloque **4 Cores de CPU** e **3072 MB a 4096 MB de RAM**.\n   • Resolução recomendada: **960x540** ou **1280x720** (DPI 240).\n\n2. **Otimizações no Loord Optimizer:**\n   • Vá na aba **PC Fraco (Ultra FPS)** e clique em **Ativar Otimização PC Fraco**.\n   • Limpe a memória RAM na aba **Otimizar PC** clicando em **Limpar Memória RAM**.\n   • Ative o **Auto RAM Cleaner** para limpar lixo de memória a cada 45 segundos!\n\n3. **Plano de Energia:**\n   • Ative o perfil **[4] SÓ DESEMPENHO** na aba Regedit Adaptativa para forçar a CPU na frequência máxima sem throttling.`;
-    } else if (q.includes('redmi note 9') || q.includes('xiaomi') || q.includes('m2003j15sg')) {
-      answer = `📱 **Por que o Xiaomi Redmi Note 9 (M2003J15SG) é Tão Bom?**\n\n• O identificador do **Redmi Note 9** é reconhecido pelos servidores do Free Fire como um dispositivo móvel com renderização nativa de baixa latência.\n• Ele evita verificações de compatibilidade pesadas do emulador e reduz o input lag de toque na tela em até **22%**.\n• **Como aplicar:** Na aba **Emulador + FPS**, selecione **Xiaomi - Redmi Note 9 - M2003J15SG** e clique em **Aplicar Modelo no Emulador**. O painel já configura automaticamente o Fabricante (Xiaomi), Marca (Redmi Note 9) e Modelo (M2003J15SG) no seu BlueStacks!`;
-    } else if (q.includes('puxada y') || q.includes('recoil') || q.includes('f7') || q.includes('f8') || q.includes('descida')) {
-      answer = `🔫 **Como Usar o Assistente de Recoil & Puxada Y Perfeitamente:**\n\n• **Standby Seguro:** Ao clicar em *Aplicar Configurações*, o macro entra em modo de espera (não desce sozinho ao clicar).\n• **Ativação em Partida:**\n  - Aperte **F7** ou **F8** dentro da partida → Um **bipe agudo (1200Hz)** confirma que está ativado.\n  - Ao atirar segurando o botão esquerdo, a mira puxa suavemente para baixo com a força ajustada.\n  - Aperte **F7** ou **F8** novamente para desligar (bipe grave 500Hz).\n• **Velocidades Recomendadas:**\n  - Para **Armas de Um Tiro (Desert, M1014, AC80)**: Velocidade **\`0.1\`** a **\`0.5\`** (descida quase imperceptível, apenas para tirar a tremedeira).\n  - Para **Armas de SMG (MP40, UMP, Thompson)**: Velocidade **\`1.0\`** a **\`2.5\`** (segura o recuo contínuo com precisão).`;
-    } else {
-      answer = `🤖 **Dica da Loord IA Gamer para: "${question}"**\n\nPara obter a melhor jogabilidade e resposta no Free Fire:\n1. **Verifique seu DPI e Sensibilidade:** Mantenha a sensibilidade geral no jogo alta (entre 85 e 95) e ajuste a precisão fina através das coordenadas X e Y no mapeamento do BlueStacks.\n2. **Elimine Input Lag:** Utilize o perfil **[1] RÁPIDA** na aba *Regedit Adaptativa* para garantir aceleração 1:1 pura.\n3. **Estabilidade de FPS:** Defina os núcleos de CPU do emulador para metade dos núcleos reais do seu processador para evitar gargalo do Windows.\n4. **Prioridade de Processo:** O Loord Optimizer já eleva o processo \`HD-Player.exe\` para prioridade Alta automaticamente.\n\n*Pode me perguntar especificamente: "Qual melhor sense para 800 DPI?", "Como destravar 240 FPS?", "Como calibrar a puxada Y" ou "Otimização para PC Fraco"!*`;
+      answer = `🎯 **Sensibilidade Recomendada para 1600 DPI (Alta Precisão Pro):**\n\n• **Sensibilidade X (Lateral):** \`0.72\`\n• **Sensibilidade Y (Capa):** \`0.34\`\n• **Tweak:** \`16450\`\n• **DPI do Emulador:** \`320 DPI\`\n• **Geral no Free Fire:** \`85\` a \`90\`\n• **Vantagem:** O sensor lê o dobro de amostras por polegada, eliminando qualquer pulo de pixel.`;
+    } else if (q.includes('240 fps') || q.includes('destravar fps')) {
+      answer = `⚡ **Passo a Passo para 240 FPS no BlueStacks 5:**\n\n1. No BlueStacks, em **Desempenho**, marque **Ativar taxas de quadros altas** e arraste para **240 FPS**.\n2. Na aba **Emulador + FPS** aqui no painel, aplique o modelo **Xiaomi Redmi Note 9** ou **ASUS ROG Phone 8**.\n3. Modo de Engine gráfica: **Desempenho (OpenGL)**.\n4. No Free Fire: Gráficos no Suave ou Padrão e Alto FPS no **ALTO**.`;
+    } else if (q.includes('passa da cabeca') || q.includes('treme')) {
+      answer = `🖱️ **Como Resolver Mira Passando da Cabeça:**\n\n1. Na aba **Semi Precision Regis**, ative o perfil **[1] Estável (8)** ou use a **Regedit Adaptativa [1] RÁPIDA** (Zera aceleração do Windows).\n2. Reduza o Y no emulador de 0.05 em 0.05 até a mira cravar na altura da cabeça.\n3. Ative o **Assistente de Recoil** na aba *Regedits & Sense* com força suave (\`0.1\` ou \`0.5\`). Ao segurar o tiro, ele segura a mira no ponto do capa!`;
+    }
+
+    // ── 12. RESPOSTA PADRÃO CONSULTIVA ──
+    else {
+      answer = `🤖 **Dica da Loord IA Gamer sobre: "${question}"**\n\nEu sou especializada em todas as funções do **Loord Optimizer** e na calibração completa para Free Fire no PC.\n\nVocê pode me perguntar:\n• **"O que faz cada aba do painel?"**\n• **"Como usar o Assistente de Recoil (F7/F8)?"**\n• **"Como funciona o Semi Precision Regis?"**\n• **"Como usar a Regedit Adaptativa?"**\n• **"Por que usar o Xiaomi Redmi Note 9?"**\n• **"Como usar o Otimizar PC e Auto RAM?"**\n• **"Qual a melhor sensibilidade para meu DPI?"**\n\nDigite sua dúvida ou clique em uma das sugestões acima!`;
     }
 
     return { success: true, answer };

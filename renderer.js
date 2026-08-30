@@ -4289,18 +4289,18 @@ rarefixBtns.forEach(btn => {
   function appendBotMessage(text) {
     const msgDiv = document.createElement('div');
     msgDiv.className = 'ia-message ia-bot';
-    msgDiv.style.cssText = 'display: flex; gap: 10px; align-items: flex-start; max-width: 90%;';
+    msgDiv.style.cssText = 'display: flex; gap: 12px; align-items: flex-start; max-width: 96%; width: 100%;';
 
     const formattedHtml = formatBotResponse(text);
 
     msgDiv.innerHTML = `
-      <div style="width: 32px; height: 32px; border-radius: 50%; background: #1e3a8a; border: 1.5px solid #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
+      <div style="width: 36px; height: 36px; border-radius: 50%; background: #1e3a8a; border: 1.5px solid #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);">
         🤖
       </div>
-      <div class="ia-bubble" style="background: rgba(13, 23, 44, 0.9); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 14px 16px; color: #f8fafc; font-size: 0.86rem; line-height: 1.6; box-shadow: 0 4px 15px rgba(0,0,0,0.3); flex: 1;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-          <div style="font-weight: 800; color: #38bdf8; font-size: 0.8rem;">LOORD IA GAMER (GROK)</div>
-          <button type="button" class="btn-copy-ia-res" style="background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); color: #38bdf8; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; cursor: pointer;">📋 Copiar</button>
+      <div class="ia-bubble" style="background: rgba(13, 23, 44, 0.95); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 14px 18px; color: #f8fafc; font-size: 0.88rem; line-height: 1.65; box-shadow: 0 4px 18px rgba(0,0,0,0.4); flex: 1; min-width: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px;">
+          <div style="font-weight: 800; color: #38bdf8; font-size: 0.8rem; letter-spacing: 0.5px;">LOORD IA GAMER • RESPOSTA OFICIAL</div>
+          <button type="button" class="btn-copy-ia-res" style="background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); color: #38bdf8; font-size: 0.72rem; font-weight: 700; padding: 2px 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">📋 Copiar</button>
         </div>
         <div>${formattedHtml}</div>
       </div>
@@ -4324,13 +4324,13 @@ rarefixBtns.forEach(btn => {
     const indDiv = document.createElement('div');
     indDiv.id = id;
     indDiv.className = 'ia-message ia-bot';
-    indDiv.style.cssText = 'display: flex; gap: 10px; align-items: center; max-width: 80%;';
+    indDiv.style.cssText = 'display: flex; gap: 12px; align-items: center; max-width: 85%;';
     indDiv.innerHTML = `
-      <div style="width: 28px; height: 28px; border-radius: 50%; background: #1e3a8a; border: 1px solid #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">
+      <div style="width: 32px; height: 32px; border-radius: 50%; background: #1e3a8a; border: 1px solid #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
         🤖
       </div>
-      <div style="background: rgba(13, 23, 44, 0.8); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 12px; padding: 8px 14px; font-size: 0.8rem; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
-        <span>Loord IA está analisando sua pergunta...</span>
+      <div style="background: rgba(13, 23, 44, 0.85); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; padding: 10px 16px; font-size: 0.82rem; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+        <span>Loord IA está consultando as configurações do painel...</span>
         <span class="ia-typing-dots"><span></span><span></span><span></span></span>
       </div>
     `;
@@ -4352,8 +4352,8 @@ rarefixBtns.forEach(btn => {
 
   function formatBotResponse(text) {
     let s = escapeHtml(text);
-    s = s.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    s = s.replace(/`([^`]+)`/g, '<code style="background: rgba(0,0,0,0.4); color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.88em; font-weight: 700;">$1</code>');
+    s = s.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #ffffff;">$1</strong>');
+    s = s.replace(/`([^`]+)`/g, '<code style="background: rgba(0,0,0,0.5); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); padding: 2px 7px; border-radius: 4px; font-family: monospace; font-size: 0.88em; font-weight: 700;">$1</code>');
     s = s.replace(/\n/g, '<br>');
     return s;
   }
