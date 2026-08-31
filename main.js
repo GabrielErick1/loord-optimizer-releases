@@ -751,6 +751,45 @@ ipcMain.handle('unlock-fps-hz', async (event, hz) => {
   return { success: modifiedCount > 0, modifiedCount, targetHz };
 });
 
+ipcMain.handle('unlock-fps-hz-classic', async (event, hz) => {
+  if (!isLicenseAuthorized()) {
+    return { success: false, error: 'Acesso negado: Licença VIP ativa obrigatória.' };
+  }
+  const targetHz = String(hz || 240);
+  const files = [
+    'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_bgp_msi\\bluestacks.conf',
+    'C:\\ProgramData\\BlueStacks_bgp\\bluestacks.conf'
+  ];
+
+  let modifiedCount = 0;
+  for (const f of files) {
+    if (fs.existsSync(f)) {
+      try {
+        let content = fs.readFileSync(f, 'utf8');
+        // Método 2 (Clássico PowerShell): enable_high_fps="0", max_fps="999", mim.max_fps="<hz>"
+        content = content.replace(/bst\.instance\.(.*?)\.enable_high_fps=".*?"/g, 'bst.instance.$1.enable_high_fps="0"');
+        content = content.replace(/bst\.instance\.(.*?)\.max_fps=".*?"/g, 'bst.instance.$1.max_fps="999"');
+        if (/bst\.mim\.max_fps=".*?"/.test(content)) {
+          content = content.replace(/bst\.mim\.max_fps=".*?"/g, `bst.mim.max_fps="${targetHz}"`);
+        } else {
+          content += `\r\nbst.mim.max_fps="${targetHz}"`;
+        }
+
+        safeWriteBluestacksConf(f, content);
+        modifiedCount++;
+      } catch (e) {
+        console.error(`Erro ao atualizar FPS Clássico em ${f}:`, e.message);
+      }
+    }
+  }
+
+  return { success: modifiedCount > 0, modifiedCount, targetHz };
+});
+
 ipcMain.handle('remove-freefire-delay', async () => {
   const folders = [
     'C:\\ProgramData\\BlueStacks_msi5\\Engine\\UserData\\InputMapper',

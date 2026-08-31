@@ -1656,6 +1656,39 @@ if (document.readyState === 'loading') {
     });
   }
 
+  // ── Desbloquear FPS Clássico (Método 2 - High FPS 0 & 999 FPS) ─────
+  const inputScreenHzClassic = document.getElementById('input-screen-hz-classic');
+  const btnUnlockFpsClassic = document.getElementById('btn-unlock-fps-classic');
+  const presetHzClassicBtns = document.querySelectorAll('.preset-hz-classic-btn');
+
+  presetHzClassicBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const val = btn.getAttribute('data-hz');
+      if (inputScreenHzClassic && val) {
+        inputScreenHzClassic.value = val;
+      }
+    });
+  });
+
+  if (btnUnlockFpsClassic) {
+    btnUnlockFpsClassic.addEventListener('click', async () => {
+      const hzVal = inputScreenHzClassic?.value?.trim() || '240';
+      btnUnlockFpsClassic.disabled = true;
+      btnUnlockFpsClassic.textContent = 'Aplicando...';
+
+      const res = await window.api.unlockFpsHzClassic(hzVal);
+      if (res && res.success) {
+        setApplied('badge-unlock-fps-classic');
+        btnUnlockFpsClassic.textContent = '✔ FPS Clássico Desbloqueado!';
+        logAdb(`✔ FPS Clássico aplicado! enable_high_fps=0, max_fps=999 e mim.max_fps=${hzVal}`, '#0ea5e9');
+        alert(`✔ FPS Desbloqueado com Sucesso (Método Clássico)!\n\n• bst.instance.*.enable_high_fps="0"\n• bst.instance.*.max_fps="999"\n• bst.mim.max_fps="${hzVal}"\n\nArquivos otimizados: ${res.modifiedCount}`);
+      } else {
+        alert('Nenhum arquivo bluestacks.conf encontrado. Verifique se o BlueStacks/MSI está instalado.');
+      }
+      btnUnlockFpsClassic.disabled = false;
+    });
+  }
+
   // ── Remover Delay do Free Fire (ExclusiveDelay 1ms) ───────────────
   const btnRemoveFfDelay = document.getElementById('btn-remove-ff-delay');
   if (btnRemoveFfDelay) {

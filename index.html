@@ -169,7 +169,7 @@
           </button>
           <button class="nav-item" data-tab="minha-config" style="position: relative; display: flex; align-items: center; justify-content: space-between;">
             <span style="display: flex; align-items: center;"><span class="nav-icon">⚙️</span> Minha Configuração</span>
-            <span id="nav-update-badge" style="display: none; background: linear-gradient(135deg, #1d4ed8, #38bdf8); color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 7px; border-radius: 20px; box-shadow: 0 0 10px rgba(56, 189, 248, 0.5); animation: pulseUpdate 1.8s infinite; margin-left: 6px;">v3.7.2 🔥</span>
+            <span id="nav-update-badge" style="display: none; background: linear-gradient(135deg, #1d4ed8, #38bdf8); color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 7px; border-radius: 20px; box-shadow: 0 0 10px rgba(56, 189, 248, 0.5); animation: pulseUpdate 1.8s infinite; margin-left: 6px;">v3.7.3 🔥</span>
           </button>
           <button class="nav-item" data-tab="pc-fraco">
             <span class="nav-icon">⚡</span> PC Fraco (Ultra FPS)
@@ -1744,9 +1744,53 @@
             </div>
 
             <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
-              <button class="btn btn-primary btn-sm" id="btn-unlock-fps">⚡ Desbloquear FPS no Emulador</button>
+              <button class="btn btn-primary btn-sm" id="btn-unlock-fps">⚡ Desbloquear FPS no Emulador (Método 1)</button>
               <span class="adb-applied-badge" id="badge-unlock-fps"
                 style="display:none; margin-left:8px; color:#28c385; font-size:12px;">✔ FPS Desbloqueado!</span>
+            </div>
+          </div>
+
+          <!-- Desbloquear FPS Método 2 (Clássico - High FPS 0 & 999 FPS) -->
+          <div class="card"
+            style="border: 1px solid rgba(14, 165, 233, 0.45); background: linear-gradient(135deg, rgba(14, 165, 233, 0.07), rgba(0,0,0,0.4));">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <div>
+                <h3 style="margin:0 0 4px 0;">⚡ Desbloquear FPS Clássico (Método 2 - High FPS 0 &amp; 999 FPS)</h3>
+                <p style="color:#94a3b8; font-size:12px; margin:0;">
+                  Aplica o método tradicional com <b>enable_high_fps="0"</b> e <b>max_fps="999"</b>, sincronizando o <b>mim.max_fps</b> com os Hz informados da sua tela. Ideal para quem prefere o padrão clássico do script PowerShell.
+                </p>
+              </div>
+              <span class="badge" style="background:#0ea5e9; color:#fff; font-weight:800;">MÉTODO 2</span>
+            </div>
+
+            <div
+              style="margin-top:10px; padding:6px 10px; background:rgba(14, 165, 233, 0.12); border:1px solid rgba(14, 165, 233, 0.3); border-radius:6px; font-size:11px; color:#7dd3fc;">
+              ⚠️ <strong>Importante:</strong> Feche o emulador antes de aplicar para que o BlueStacks salve as novas configurações.
+            </div>
+
+            <div style="margin-top:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <label style="font-size:12px; color:#cbd5e1; font-weight:600;">Hz da Tela:</label>
+                <input type="number" id="input-screen-hz-classic" value="240" min="60" max="500"
+                  style="width:80px; padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-size:13px; font-weight:700;">
+              </div>
+
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-classic-btn" data-hz="60" style="padding:4px 7px; font-size:11px;">60Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-classic-btn" data-hz="75" style="padding:4px 7px; font-size:11px;">75Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-classic-btn" data-hz="120" style="padding:4px 7px; font-size:11px;">120Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-classic-btn" data-hz="144" style="padding:4px 7px; font-size:11px;">144Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-classic-btn" data-hz="165" style="padding:4px 7px; font-size:11px;">165Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-classic-btn" data-hz="240" style="padding:4px 7px; font-size:11px;">240Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-classic-btn" data-hz="260" style="padding:4px 7px; font-size:11px;">260Hz</button>
+                <button type="button" class="btn btn-secondary btn-sm preset-hz-classic-btn" data-hz="360" style="padding:4px 7px; font-size:11px;">360Hz</button>
+              </div>
+            </div>
+
+            <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
+              <button class="btn btn-primary btn-sm" id="btn-unlock-fps-classic" style="background: linear-gradient(135deg, #0284c7, #0ea5e9);">⚡ Desbloquear FPS Clássico (High FPS 0)</button>
+              <span class="adb-applied-badge" id="badge-unlock-fps-classic"
+                style="display:none; margin-left:8px; color:#38bdf8; font-size:12px;">✔ FPS Clássico Desbloqueado!</span>
             </div>
           </div>
 
@@ -1973,7 +2017,7 @@
                 <p style="margin: 0; font-size: 12px; color: #94a3b8;" data-i18n="systemUpdatesCardDesc">Verifique e receba novas versões e otimizações
                   automaticamente</p>
               </div>
-              <span id="app-version-badge" class="badge badge-success">v3.7.2</span>
+              <span id="app-version-badge" class="badge badge-success">v3.7.3</span>
             </div>
 
             <!-- Update Card Content -->

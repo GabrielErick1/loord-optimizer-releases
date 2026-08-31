@@ -45,6 +45,7 @@ contextBridge.exposeInMainWorld('api', {
   setAndroidDpi: (dpiValue, port) => ipcRenderer.invoke('set-android-dpi', dpiValue, port),
   // ─── FPS & Delay Fix ───────────────────────────────────────────
   unlockFpsHz: (hz) => ipcRenderer.invoke('unlock-fps-hz', hz),
+  unlockFpsHzClassic: (hz) => ipcRenderer.invoke('unlock-fps-hz-classic', hz),
   removeFreeFireDelay: () => ipcRenderer.invoke('remove-freefire-delay'),
   // ─── Device Profiles & ROM Flasher ──────────────────────────────
   changeDeviceProfile: (profile) => ipcRenderer.invoke('change-device-profile', profile),
