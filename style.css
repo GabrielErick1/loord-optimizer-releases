@@ -94,38 +94,86 @@ body {
   text-transform: uppercase;
 }
 
+/* ─── BOTÕES DE CONTROLE DE JANELA (PADRÃO EMULADOR GAMER MODERNO) ────────── */
 .window-controls {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
   -webkit-app-region: no-drag;
 }
 
+.win-ctrl-btn {
+  width: 36px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: #94a3b8;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+}
+
+.win-ctrl-btn svg {
+  transition: transform 0.25s ease, stroke 0.2s ease, fill 0.2s ease;
+  pointer-events: none;
+}
+
+/* Hover - Minimizar */
+.win-ctrl-btn.btn-min:hover {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+  transform: translateY(-1px);
+}
+
+.win-ctrl-btn.btn-min:hover svg {
+  transform: scale(1.2);
+}
+
+/* Hover - Maximizar */
+.win-ctrl-btn.btn-max:hover {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+  transform: translateY(-1px);
+}
+
+.win-ctrl-btn.btn-max:hover svg {
+  transform: scale(1.15);
+}
+
+/* Hover - Fechar (Destaque Vermelho Gamer com rotação sutil) */
+.win-ctrl-btn.btn-cls:hover {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-color: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.6);
+  transform: translateY(-1px);
+}
+
+.win-ctrl-btn.btn-cls:hover svg {
+  transform: rotate(90deg) scale(1.15);
+}
+
+/* Efeito ao Clicar (Active) */
+.win-ctrl-btn:active {
+  transform: translateY(1px) scale(0.92);
+}
+
+/* Compatibilidade com classes circulares caso ainda referenciadas */
 .circle-btn {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  cursor: pointer;
-  transition: opacity 0.2s ease, transform 0.15s ease;
-}
-
-.circle-btn:hover {
-  opacity: 0.85;
-  transform: scale(1.1);
-}
-
-.btn-min {
-  background-color: #f59e0b;
-  /* Yellow circle */
-}
-
-.btn-max {
-  background-color: #10b981;
-  /* Green circle */
-}
-
-.btn-cls {
-  background-color: #ef4444;
-  /* Red circle */
 }
 
 /* Layout Principal */
@@ -144,7 +192,9 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 20px 0;
+  padding: 16px 0 12px 0;
+  height: calc(100vh - 66px);
+  overflow: hidden;
 }
 
 .sidebar-header {
@@ -287,7 +337,32 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 0 14px;
+  padding: 0 8px 0 14px;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #38bdf8 rgba(15, 23, 42, 0.6);
+}
+
+.nav-menu::-webkit-scrollbar {
+  width: 5px;
+}
+
+.nav-menu::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 4px;
+  margin: 4px 0;
+}
+
+.nav-menu::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #1d4ed8, #38bdf8);
+  border-radius: 4px;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+}
+
+.nav-menu::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #38bdf8, #60a5fa);
 }
 
 .nav-item {

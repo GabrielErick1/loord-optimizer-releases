@@ -99,6 +99,7 @@ const PUBLIC_IPC_CHANNELS = new Set([
   'install-update-now',
   'revert-all-tweaks-on-revoke',
   'reboot-computer',
+  'reboot-to-bios',
   'get-restore-point-status'
 ]);
 
@@ -319,7 +320,6 @@ app.on('second-instance', () => {
 app.whenReady().then(() => {
   try { dismountAllVirtualIsos(); } catch (_) { }
   try { cleanSecurityHosts(); } catch (_) { }
-  try { sanitizeBluestacksConfFiles(); } catch (_) { }
   checkAdminPrivileges((isAdmin) => {
     systemIsAdmin = isAdmin;
     createWindow();
@@ -725,15 +725,22 @@ ipcMain.handle('unlock-fps-hz', async (event, hz) => {
   for (const f of files) {
     if (fs.existsSync(f)) {
       try {
+        // 1. Atualizar chaves por instância para desbloqueio máximo de PC fraco / versões 5.9, 5.12, 5.21, 5.22
+        updateBluestacksInstanceKeys(f, () => ({
+          'max_fps': '999',
+          'enable_high_fps': '1',
+          'eco_mode_max_fps': '10'
+        }));
+
+        // 2. Atualizar mim.max_fps com os Hz informados pelo usuário
         let content = fs.readFileSync(f, 'utf8');
-        content = content.replace(/bst\.instance\.(.*?)\.enable_high_fps=".*?"/g, 'bst.instance.$1.enable_high_fps="0"');
-        content = content.replace(/bst\.instance\.(.*?)\.max_fps=".*?"/g, 'bst.instance.$1.max_fps="999"');
         if (/bst\.mim\.max_fps=".*?"/.test(content)) {
           content = content.replace(/bst\.mim\.max_fps=".*?"/g, `bst.mim.max_fps="${targetHz}"`);
         } else {
           content += `\r\nbst.mim.max_fps="${targetHz}"`;
         }
-        fs.writeFileSync(f, content, 'utf8');
+
+        safeWriteBluestacksConf(f, content);
         modifiedCount++;
       } catch (e) {
         console.error(`Erro ao atualizar FPS em ${f}:`, e.message);
@@ -741,7 +748,7 @@ ipcMain.handle('unlock-fps-hz', async (event, hz) => {
     }
   }
 
-  return { success: modifiedCount > 0, modifiedCount };
+  return { success: modifiedCount > 0, modifiedCount, targetHz };
 });
 
 ipcMain.handle('remove-freefire-delay', async () => {
@@ -782,6 +789,73 @@ ipcMain.handle('remove-freefire-delay', async () => {
 
   return { success: filesModified > 0, filesModified, totalReplaced };
 });
+
+// ─── HELPER: GRAVAÇÃO ATÔMICA E BLINDADA DE BLUESTACKS.CONF ──────────────────
+const CRITICAL_BLUESTACKS_KEYS = [
+  'bst.launcher_version',
+  'bst.status.hypervisor',
+  'bst.status.imap_schema_version',
+  'bst.machine_id',
+  'bst.guid',
+  'bst.install_id',
+  'bst.install_date',
+  'bst.installed_images',
+  'bst.version_machine_id'
+];
+
+function safeWriteBluestacksConf(confPath, contentOrLines) {
+  if (!confPath || !fs.existsSync(confPath)) return false;
+  try {
+    // 1. Ler o conteúdo original para capturar as chaves de integridade originais
+    const originalContent = fs.readFileSync(confPath, 'utf8');
+    const originalLines = originalContent.split(/\r?\n/);
+    const criticalMap = new Map();
+
+    for (const line of originalLines) {
+      const trimmed = line.trim();
+      for (const critKey of CRITICAL_BLUESTACKS_KEYS) {
+        if (trimmed.startsWith(`${critKey}=`)) {
+          criticalMap.set(critKey, trimmed);
+        }
+      }
+    }
+
+    // 2. Normalizar linhas a serem salvas
+    let lines = Array.isArray(contentOrLines)
+      ? [...contentOrLines]
+      : contentOrLines.split(/\r?\n/);
+
+    lines = lines.map(l => l.trim()).filter(l => l.length > 0);
+
+    // 3. Garantir que as chaves críticas NUNCA sejam modificadas ou excluídas
+    for (const [critKey, origLine] of criticalMap) {
+      const idx = lines.findIndex(l => l.startsWith(`${critKey}=`));
+      if (idx !== -1) {
+        lines[idx] = origLine; // Preserva o valor original do sistema
+      } else {
+        lines.push(origLine);
+      }
+    }
+
+    const finalContent = lines.join('\r\n') + '\r\n';
+
+    // 4. Escrita Atômica: grava no .tmp primeiro e substitui de forma segura
+    const tmpPath = `${confPath}.tmp_${Date.now()}`;
+    fs.writeFileSync(tmpPath, finalContent, 'utf8');
+
+    try {
+      fs.renameSync(tmpPath, confPath);
+    } catch (renameErr) {
+      fs.copyFileSync(tmpPath, confPath);
+      try { fs.unlinkSync(tmpPath); } catch (_) { }
+    }
+
+    return true;
+  } catch (err) {
+    console.error(`Erro ao gravar com segurança em ${confPath}:`, err);
+    return false;
+  }
+}
 
 // Helper: Atualizar ou inserir chaves para todas as instâncias do BlueStacks/MSI
 function updateBluestacksInstanceKeys(confPath, keysToUpdateByInstance) {
@@ -824,8 +898,7 @@ function updateBluestacksInstanceKeys(confPath, keysToUpdateByInstance) {
       }
     }
 
-    fs.writeFileSync(confPath, updatedLines.join('\r\n'), 'utf8');
-    return 1;
+    return safeWriteBluestacksConf(confPath, updatedLines) ? 1 : 0;
   } catch (e) {
     console.error('Error updating bluestacks.conf instance keys:', e);
     return 0;
@@ -942,12 +1015,18 @@ function sanitizeBluestacksConfFiles() {
     if (fs.existsSync(f)) {
       try {
         const lines = fs.readFileSync(f, 'utf8').split(/\r?\n/);
-        const filtered = lines.filter(l => {
-          if (l.match(/^bst\.instance\..*?\.(show_ads|show_banner|show_banner_ads|show_sidebar_ads|show_game_center_ads|show_promoted_apps|banner_games_enabled)=/)) return false;
-          if (l.match(/^bst\.(banner_games_enabled|feature\.rewards|feature\.nowgg|feature\.cloud_game|promoted_apps|app_center_game_list_url)=/)) return false;
-          return true;
+        const updated = lines.map(l => {
+          if (l.match(/^bst\.instance\..*?\.(show_ads|show_banner|show_banner_ads|show_sidebar_ads|show_game_center_ads|show_promoted_apps|banner_games_enabled)=/)) {
+            const prefix = l.split('=')[0];
+            return `${prefix}="0"`;
+          }
+          if (l.match(/^bst\.(banner_games_enabled|enable_programmatic_ads)=/)) {
+            const prefix = l.split('=')[0];
+            return `${prefix}="0"`;
+          }
+          return l;
         });
-        fs.writeFileSync(f, filtered.join('\r\n'), 'utf8');
+        safeWriteBluestacksConf(f, updated);
       } catch (_) { }
     }
   }
@@ -1953,8 +2032,7 @@ function updateConfFile(confPath, dpi, maxFps, forceRog2, engine, astc) {
     newLines.push(line);
   }
 
-  fs.writeFileSync(confPath, newLines.join('\r\n'), 'utf8');
-  return true;
+  return safeWriteBluestacksConf(confPath, newLines);
 }
 
 ipcMain.handle('apply-optimizations', async (event, config) => {
@@ -2347,8 +2425,14 @@ ipcMain.handle('restore-backup', async () => {
     ];
 
     for (const item of pathsToRestore) {
-      if (fs.existsSync(path.join(backupDir, item.key)) && fs.existsSync(path.dirname(item.path))) {
-        fs.copyFileSync(path.join(backupDir, item.key), item.path);
+      const bkpFile = path.join(backupDir, item.key);
+      if (fs.existsSync(bkpFile) && fs.existsSync(path.dirname(item.path))) {
+        if (fs.existsSync(item.path)) {
+          const bkpContent = fs.readFileSync(bkpFile, 'utf8');
+          safeWriteBluestacksConf(item.path, bkpContent);
+        } else {
+          fs.copyFileSync(bkpFile, item.path);
+        }
       }
     }
 
@@ -2556,6 +2640,26 @@ ipcMain.handle('reboot-computer', async () => {
   }
 });
 
+// ─── REINICIAR COMPUTADOR DIRETO NA TELA DA BIOS UEFI (PARA XMP / EXPO) ───────
+ipcMain.handle('reboot-to-bios', async () => {
+  try {
+    // Comando nativo do Windows para forçar a placa-mãe a inicializar direto na BIOS Setup
+    try {
+      execSync('shutdown.exe /r /fw /t 2', { windowsHide: true, stdio: 'ignore' });
+      return { success: true, method: 'uefi_firmware' };
+    } catch (_) {
+      // Fallback para placas legadas sem flag /fw
+      try {
+        execSync('bcdedit.exe /set {bootmgr} booterrorux Standard', { windowsHide: true, stdio: 'ignore' });
+      } catch (_) { }
+      execSync('shutdown.exe /r /t 2', { windowsHide: true, stdio: 'ignore' });
+      return { success: true, method: 'standard_reboot' };
+    }
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
 // ─── MOTOR DA MACRO DE RECOIL & DESCIDA Y ──────────────────────────────────
 async function killMacroProcess() {
   if (macroProcess) {
@@ -2682,8 +2786,21 @@ function getCommandsForTweak(tweakId) {
         'bcdedit /set useplatformclock no'
       ];
     case 'disable-throttling':
+    case 'gpo-energy-saver':
       return [
-        'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerThrottling" /v PowerThrottlingOff /t REG_DWORD /d 1 /f /reg:64'
+        // 1. gpedit.msc: Configurações de Limitação de Energia -> Desativar Limitação de Energia: Habilitado
+        'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerThrottling" /v PowerThrottlingOff /t REG_DWORD /d 1 /f /reg:64',
+        'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Power\\PowerThrottling" /v PowerThrottlingOff /t REG_DWORD /d 1 /f /reg:64',
+        // 2. gpedit.msc: Configurações de Economia de Energia -> Limite de Bateria de Economia de Energia (conectado): Desativado (0%)
+        'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Power\\PowerSettings\\E69653CA-CF7F-4F05-AA73-CB833FA90AD4" /v ACSettingIndex /t REG_DWORD /d 0 /f /reg:64',
+        'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\E69653CA-CF7F-4F05-AA73-CB833FA90AD4" /v ACSettingIndex /t REG_DWORD /d 0 /f /reg:64',
+        // 3. gpedit.msc: Configurações de Economia de Energia -> Limite de Bateria de Economia de Energia (na bateria): Desativado (0%)
+        'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Power\\PowerSettings\\E69653CA-CF7F-4F05-AA73-CB833FA90AD4" /v DCSettingIndex /t REG_DWORD /d 0 /f /reg:64',
+        'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\E69653CA-CF7F-4F05-AA73-CB833FA90AD4" /v DCSettingIndex /t REG_DWORD /d 0 /f /reg:64',
+        // 4. Powercfg: Zerar limiar de economia de energia no esquema ativo
+        'powercfg -setacvalueindex SCHEME_CURRENT SUB_ENERGYSAVER ESBATTTHRESHOLD 0',
+        'powercfg -setdcvalueindex SCHEME_CURRENT SUB_ENERGYSAVER ESBATTTHRESHOLD 0',
+        'powercfg -setactive SCHEME_CURRENT'
       ];
     case 'win32-priority':
       return [
@@ -3050,7 +3167,7 @@ ipcMain.handle('apply-low-end-emulator-config', async (event, preset) => {
           }
           newLines.push(line);
         }
-        fs.writeFileSync(confPath, newLines.join('\r\n'), 'utf8');
+        safeWriteBluestacksConf(confPath, newLines);
       }
     }
 
@@ -4669,7 +4786,7 @@ ipcMain.handle('apply-competitive-emulator-tweak', async (event, config) => {
           // Preferência global de GPU dedicada
           content = content.replace(/(bst\.prefer_dedicated_gpu\s*=\s*)"[^"]*"/g, '$1"1"');
 
-          fs.writeFileSync(confPath, content, 'utf8');
+          safeWriteBluestacksConf(confPath, content);
           confUpdatedCount++;
         } catch (_) { }
       }
@@ -5213,9 +5330,9 @@ ipcMain.handle('apply-adaptive-regedit', async (event, config) => {
             }
           }
 
-          content = content.replace(/(bst\.prefer_dedicated_gpu\s*=\\s*)"[^"]*"/g, '$1"1"');
+          content = content.replace(/(bst\.prefer_dedicated_gpu\s*=\s*)"[^"]*"/g, '$1"1"');
 
-          fs.writeFileSync(confPath, content, 'utf8');
+          safeWriteBluestacksConf(confPath, content);
           emusConfigured++;
         } catch (_) { }
       }

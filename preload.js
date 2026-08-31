@@ -110,6 +110,7 @@ contextBridge.exposeInMainWorld('api', {
   applyAmdPBO: () => ipcRenderer.invoke('apply-amd-pbo'),
   applyIntelPL: () => ipcRenderer.invoke('apply-intel-pl'),
   applyRamBoost: () => ipcRenderer.invoke('apply-ram-boost-oc'),
+  rebootToBios: () => ipcRenderer.invoke('reboot-to-bios'),
   // ─── Segurança & Heartbeat ───────────────────────────────────────
   onLicenseRevoked: (cb) => {
     ipcRenderer.removeAllListeners('license-revoked');

@@ -34,17 +34,92 @@ if (btnLockCls) btnLockCls.addEventListener('click', () => window.api.windowCont
 
 
 // Tab System
-navItems.forEach(item => {
-  item.addEventListener('click', () => {
-    navItems.forEach(nav => nav.classList.remove('active'));
-    tabContents.forEach(content => content.classList.remove('active'));
+function activateNavTab(item) {
+  navItems.forEach(nav => nav.classList.remove('active'));
+  tabContents.forEach(content => content.classList.remove('active'));
 
-    item.classList.add('active');
-    const tabId = `tab-${item.getAttribute('data-tab')}`;
-    const target = document.getElementById(tabId);
-    if (target) {
-      target.classList.add('active');
+  item.classList.add('active');
+  const tabId = `tab-${item.getAttribute('data-tab')}`;
+  const target = document.getElementById(tabId);
+  if (target) {
+    target.classList.add('active');
+  }
+}
+
+// ─── TERMO DE RESPONSABILIDADE E CONSENTIMENTO DE OVERCLOCK ──────────────────
+const modalOcConsent = document.getElementById('modal-overclock-consent');
+const checkAcceptOc = document.getElementById('check-accept-oc-terms');
+const btnConfirmOc = document.getElementById('btn-confirm-oc-terms');
+const btnCancelOc = document.getElementById('btn-cancel-oc-terms');
+let pendingOcNavItem = null;
+
+if (checkAcceptOc && btnConfirmOc) {
+  checkAcceptOc.addEventListener('change', () => {
+    if (checkAcceptOc.checked) {
+      btnConfirmOc.disabled = false;
+      btnConfirmOc.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+      btnConfirmOc.style.color = '#fff';
+      btnConfirmOc.style.cursor = 'pointer';
+      btnConfirmOc.style.boxShadow = '0 4px 18px rgba(239, 68, 68, 0.45)';
+    } else {
+      btnConfirmOc.disabled = true;
+      btnConfirmOc.style.background = '#334155';
+      btnConfirmOc.style.color = '#64748b';
+      btnConfirmOc.style.cursor = 'not-allowed';
+      btnConfirmOc.style.boxShadow = 'none';
     }
+  });
+
+  btnConfirmOc.addEventListener('click', () => {
+    sessionStorage.setItem('loord_oc_consent_accepted', 'true');
+    if (modalOcConsent) modalOcConsent.style.display = 'none';
+    const ocNav = pendingOcNavItem || document.querySelector('[data-tab="overclock"]');
+    if (ocNav) {
+      activateNavTab(ocNav);
+      if (window.detectHardwareOC) setTimeout(() => window.detectHardwareOC(), 250);
+    }
+  });
+}
+
+if (btnCancelOc && modalOcConsent) {
+  btnCancelOc.addEventListener('click', () => {
+    modalOcConsent.style.display = 'none';
+    if (checkAcceptOc) checkAcceptOc.checked = false;
+    if (btnConfirmOc) {
+      btnConfirmOc.disabled = true;
+      btnConfirmOc.style.background = '#334155';
+      btnConfirmOc.style.color = '#64748b';
+      btnConfirmOc.style.cursor = 'not-allowed';
+      btnConfirmOc.style.boxShadow = 'none';
+    }
+    pendingOcNavItem = null;
+  });
+}
+
+navItems.forEach(item => {
+  item.addEventListener('click', (e) => {
+    const tabName = item.getAttribute('data-tab');
+
+    // Intercepta a aba de Overclock exigindo confirmação de responsabilidade
+    if (tabName === 'overclock' && sessionStorage.getItem('loord_oc_consent_accepted') !== 'true') {
+      e.preventDefault();
+      e.stopPropagation();
+      pendingOcNavItem = item;
+      if (modalOcConsent) {
+        modalOcConsent.style.display = 'flex';
+        if (checkAcceptOc) checkAcceptOc.checked = false;
+        if (btnConfirmOc) {
+          btnConfirmOc.disabled = true;
+          btnConfirmOc.style.background = '#334155';
+          btnConfirmOc.style.color = '#64748b';
+          btnConfirmOc.style.cursor = 'not-allowed';
+          btnConfirmOc.style.boxShadow = 'none';
+        }
+      }
+      return;
+    }
+
+    activateNavTab(item);
   });
 });
 
@@ -149,7 +224,7 @@ function updateFpsEstimate() {
 // List of all tweak IDs
 const allTweakIds = [
   'remove-kbd-delay', 'mouse-default', 'mouse-current', 'mouse-no-accel', 'display-input-tweak',
-  'disable-overlays', 'disable-gamedvr', 'game-mode-toggle', 'game-priority', 'freefire-delay',
+  'disable-overlays', 'disable-gamedvr', 'game-mode-toggle', 'game-priority', 'freefire-delay', 'gpo-energy-saver',
   'clean-startup-apps', 'disable-telemetry', 'disable-prefetch', 'disable-background-apps', 'pause-windows-update',
   'disable-core-parking', 'gpu-max-power', 'enable-hags', 'ultimate-power', 'disable-throttling',
   'timestamp-0ms', 'disable-fse', 'csrss-priority', 'disable-hpet', 'win32-priority',
@@ -1572,8 +1647,8 @@ if (document.readyState === 'loading') {
       if (res && res.success) {
         setApplied('badge-unlock-fps');
         btnUnlockFps.textContent = '✔ FPS Desbloqueado!';
-        logAdb(`✔ FPS desbloqueado com sucesso! max_fps=999 e mim.max_fps=${hzVal}`, '#28c385');
-        alert(`✔ FPS Desbloqueado com sucesso!\n\n• max_fps configurado para 999\n• mim.max_fps configurado para ${hzVal}Hz\n• Arquivos modificados: ${res.modifiedCount}`);
+        logAdb(`✔ FPS desbloqueado com sucesso! max_fps=999, enable_high_fps=1, eco_mode=10 e mim.max_fps=${hzVal}`, '#28c385');
+        alert(`✔ FPS Desbloqueado com Sucesso (PC Fraco & v5.9/5.12/5.21/5.22)!\n\n• bst.mim.max_fps="${hzVal}"\n• bst.instance.*.max_fps="999"\n• bst.instance.*.enable_high_fps="1"\n• bst.instance.*.eco_mode_max_fps="10"\n\nArquivos de configuração otimizados: ${res.modifiedCount}`);
       } else {
         alert('Nenhum arquivo bluestacks.conf encontrado. Verifique se o BlueStacks/MSI está instalado.');
       }
@@ -4569,6 +4644,45 @@ if (window.api && window.api.onLicenseRevoked) {
     }
   };
 
+  // ─── BOTÃO 1-CLIQUE: Reiniciar Direto na Tela da BIOS (XMP / EXPO) ────────
+  window.rebootDirectToBiosXMP = async function () {
+    const btn = document.getElementById('btn-reboot-to-xmp-bios');
+    const status = document.getElementById('oc-xmp-btn-status');
+
+    const confirmed = confirm(
+      '⚡ ATIVAR XMP / EXPO (REINICIAR DIRETO NA BIOS)\n\n' +
+      '• O seu computador será reiniciado e entrará SOZINHO direto na tela da sua BIOS (sem precisar apertar Del nem F2).\n' +
+      '• Na tela inicial da BIOS (EZ Mode):\n' +
+      '   1. Clique em "EXPO I" (se for AMD) ou "XMP I" (se for Intel)\n' +
+      '   2. Pressione F10 para Salvar e Reiniciar com velocidade máxima de RAM!\n\n' +
+      'Deseja reiniciar direto na BIOS agora?'
+    );
+    if (!confirmed) return;
+
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '⏳ Reiniciando direto na BIOS em 2s...';
+    }
+    if (status) {
+      status.style.display = 'block';
+      status.textContent = '🔄 Preparando boot UEFI e reiniciando direto na BIOS...';
+      status.style.color = '#fbbf24';
+    }
+
+    try {
+      await window.api.rebootToBios();
+    } catch (e) {
+      if (status) {
+        status.textContent = 'Erro ao reiniciar: ' + e.message;
+        status.style.color = '#f87171';
+      }
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '🚀 ATIVAR XMP / EXPO (REINICIAR DIRETO NA BIOS)';
+      }
+    }
+  };
+
   const btnApplyAll = document.getElementById('btn-apply-overclock');
   if (btnApplyAll) {
     btnApplyAll.addEventListener('click', async () => {
@@ -4623,7 +4737,7 @@ if (window.api && window.api.onLicenseRevoked) {
 
   document.addEventListener('click', (e) => {
     const navBtn = e.target.closest('[data-tab="overclock"]');
-    if (navBtn && !ocHwCache) {
+    if (navBtn && !ocHwCache && sessionStorage.getItem('loord_oc_consent_accepted') === 'true') {
       setTimeout(() => window.detectHardwareOC(), 300);
     }
   });
