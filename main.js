@@ -2113,8 +2113,14 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
     const selectedRegConfig = selectedRegData[mouseMode || 'loord-3-sense-full-red'];
 
     // ── Limpeza Completa e Dinâmica de Regedits Antigas ──
-    // Remove 100% das chaves customizadas anteriores para manter SOMENTE a nova regedit ativa
+    // Remove 100% das chaves customizadas e subchaves anteriores para manter SOMENTE a nova regedit ativa
     try {
+      // 1. Remove subchaves residuais criadas por regedits anteriores (ex: HKEY_LOCAL_MACHINE clone)
+      try { execSync('reg delete "HKCU\\Control Panel\\Mouse\\HKEY_LOCAL_MACHINE" /f', { stdio: 'ignore' }); } catch (_) { }
+
+      // 2. Limpa o valor padrão (Default) de volta ao padrão do Windows
+      try { execSync('reg add "HKCU\\Control Panel\\Mouse" /ve /t REG_SZ /d "" /f', { stdio: 'ignore' }); } catch (_) { }
+
       const stdMouseProps = new Set([
         '',
         '(padrão)',
@@ -2161,17 +2167,26 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
     }
 
     const staticKeysToClean = [
-      'Active', 'ActiveAC', 'ActiveDeveloped', 'ActiveDevoloped', 'ActiveFix', 'ActiveUser',
-      'Beep2', 'DoubleClickHeight2', 'DoubleClickSpeed2', 'DoubleClickWidth2', 'Fov',
+      'Active', 'ActiveAC', 'ActiveDeveloped', 'ActiveDevoloped', 'ActiveFix', 'ActiveUser', 'ActiveHWID', 'ActiveMouseInGame',
+      'Aim', 'AimLock', 'AimBot', 'AimAssist', 'AimHead', 'AimHeadshot', 'AimSpeed', 'AimFov', 'AimLok',
+      'AimPRO', 'HAOHAO', 'FLAMES', 'AimHeadRightClick', 'AimHeadRightClickLifter', 'AimbotHeadLeftClickLifter',
+      'AimbotHeadLeft', 'AimbotHeadshot', 'AimbotSpeed', 'AimbotHeadLetf', 'AimHeadRight',
+      'AutoHeadshot', 'AutoHeadshots', 'FovAutoHeadshot', 'FovHead', 'Fov', 'sensitivity', 'sensibility',
+      'StabilityOn', 'AimlockOn', 'AimSystem', 'FixMouse', 'MouseFix',
+      'Beep2', 'DoubleClickHeight2', 'DoubleClickSpeed2', 'DoubleClickWidth2',
+      'ExtendedSounds2', 'MouseSensibility2', 'MouseSpeed2', 'MouseThreshold12', 'MouseThreshold22',
       'MouseAccel_Scale', 'MouseActiveWindowTracking', 'MouseCl', 'MouseCL', 'Mousecontrolusb',
-      'Mousecontroslub', 'MouseCP', 'Mousecrib', 'MouseGrab', 'MouseSpeed2', 'MouseStickOn',
+      'Mousecontroslub', 'MouseCP', 'Mousecrib', 'MouseGrab', 'MouseStickOn', 'MouseHead', 'MouseHeadLeft', 'MouseHeadRight',
       'MouseTK', 'Mousetrack', 'ClickLock', 'ClickLockTime',
       'DockTargetMouse', 'DockTargetMouse1', 'DockTargetMouse2',
       'DockTargetMouseDragOutWidth', 'DockTargetMouseSideMoveWidth', 'DockTargetMouseWidth',
       'DockTargetPen', 'DockTargetPen1', 'DockTargetPen2',
       'DockTargetPenDragOutWidth', 'DockTargetPenSideMoveWidth', 'DockTargetPenWidth',
+      'DockTargetMousePenDragOutWidth', 'DockTargetMousePenSideMoveWidth',
       'DefaultTTL', 'EnablePMTUBHDetect', 'EnablePMTUDiscovery', 'SackOpts', 'Tcp1323Opts',
-      'TCPDelAckTicks', 'TcpMaxDataRetransmissions', 'TcpNoDelay', 'TcpWindowSize'
+      'TCPDelAckTicks', 'TcpMaxDataRetransmissions', 'TcpNoDelay', 'TcpWindowSize',
+      'generalemulatorsensitivity', 'joystick', 'LEFTCLICK', 'keyboard', 'keyboardSpeed',
+      'LOORD REGEDIT V.2', 'CPU', 'GPU', 'DPI', 'Headshot'
     ];
 
     for (const keyName of staticKeysToClean) {
@@ -2184,7 +2199,10 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
     if (selectedRegConfig && Array.isArray(selectedRegConfig.keys)) {
       for (const item of selectedRegConfig.keys) {
         try {
-          const cmd = `reg add "${item.path}" /v "${item.name}" /t ${item.type} /d "${item.value}" /f`;
+          const valArg = item.value === '' ? '""' : `"${item.value}"`;
+          const cmd = item.name === ''
+            ? `reg add "${item.path}" /ve /t ${item.type} /d ${valArg} /f`
+            : `reg add "${item.path}" /v "${item.name}" /t ${item.type} /d ${valArg} /f`;
           execSync(cmd, { stdio: 'ignore' });
         } catch (e) {
           console.error(`Erro ao aplicar regkey (${item.name}):`, e.message);
@@ -6198,6 +6216,27 @@ ipcMain.handle('ask-ia-gamer', async (event, question) => {
   4. **🚀 [4] SÓ DESEMPENHO:** Ativa o plano de energia de Alto Desempenho e coloca o BlueStacks em Prioridade Alta sem mexer na sua sensibilidade de mouse.
   5. **🔄 [5] RESTAURAR:** Volta as configurações padrão do Windows caso queira desfazer.
 • **Como Usar:** Selecione o perfil desejado no card e clique em **⚡ Aplicar Perfil Selecionado no Windows & BlueStacks**.`;
+    }
+
+    // ── 4.1 REGEDITS OFICIAIS (RANQUEADA, APOSTADO, V3 TED EXE, V2 SUPREME) ──
+    else if (q.includes('ranqueada') || q.includes('apostado') || q.includes('ted exe') || q.includes('v3') || q.includes('v2') || q.includes('qual regedit') || q.includes('melhor regedit') || q.includes('curva de sensibilidade')) {
+      answer = `👑 **GUIA OFICIAL DE REGEDITS DE SENSIBILIDADE (LOORD OPTIMIZER):**
+
+• 🏆 **LOORD REGEDIT RANQUEADA (Recomendada para Ranqueada / Battle Royale):**
+  - **Foco:** Disparos de média e longa distância com armas AR (Scar, M4A1, Groza, SVD, AC80).
+  - **Diferencial:** Curva progressiva não linear que crava a mira na altura do peito/cabeça e impede que os tiros espalhem no mapa aberto.
+
+• 🔥 **LOORD REGEDIT APOSTADO (Recomendada para 4v4 / X1 dos Famosos):**
+  - **Foco:** Disparo cirúrgico em curta e média distância com SMG (UMP, MP40) e armas de um tiro (Desert Eagle, M1014, Bau Bau).
+  - **Diferencial:** Resposta instantânea de clique com \`MouseSpeed 1\` e thresholds calibrados para subida rápida sem passar da cabeça.
+
+• ⚡ **LOORD V3 VIP (Ted Exe • AimLock & Stability):**
+  - **Foco:** Estabilização máxima contra tremedeira, AimLock, AimAssist e TCP NoDelay com tempo de hover de 8ms para clique ultrarrápido.
+
+• 💎 **LOORD REGEDIT V.2 (Curva Suave 1:1 & Headshot Lock):**
+  - **Foco:** Puxada suave e macia com parâmetros AimPRO, Flames e curva milimétrica 1:1.
+
+💡 **Segurança e Limpeza Garantida:** Ao escolher qualquer uma dessas regedits na aba **Regedits & Sense**, o painel remove automaticamente 100% da regedit anterior do seu registro antes de ativar a nova!`;
     }
 
     // ── 5. MODELO DE CELULAR (XIAOMI REDMI NOTE 9 & ASUS ROG) ──

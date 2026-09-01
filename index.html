@@ -198,7 +198,7 @@
             style="position: relative; display: flex; align-items: center; justify-content: space-between;">
             <span style="display: flex; align-items: center;"><span class="nav-icon">⚙️</span> Minha Configuração</span>
             <span id="nav-update-badge"
-              style="display: none; background: linear-gradient(135deg, #1d4ed8, #38bdf8); color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 7px; border-radius: 20px; box-shadow: 0 0 10px rgba(56, 189, 248, 0.5); animation: pulseUpdate 1.8s infinite; margin-left: 6px;">v3.7.3
+              style="display: none; background: linear-gradient(135deg, #1d4ed8, #38bdf8); color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 7px; border-radius: 20px; box-shadow: 0 0 10px rgba(56, 189, 248, 0.5); animation: pulseUpdate 1.8s infinite; margin-left: 6px;">v3.7.5
               🔥</span>
           </button>
           <button class="nav-item" data-tab="pc-fraco">
@@ -863,7 +863,7 @@
               style="font-weight: 900; color: #38bdf8; font-size: 0.98rem; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
               <span>🎯 RECOMENDAÇÃO OFICIAL PARA DAR FULL LATA (CAPA PERFEITO):</span>
             </div>
-            <div style="font-size: 0.88rem; color: #fecdd3; line-height: 1.6; font-weight: 600;">
+            <div style="font-size: 0.88rem; color: #fecdd3; line-height: 1.7; font-weight: 600;">
               • <strong>Mouse Físico:</strong> <span
                 style="color: #ffffff; background: #dc2626; padding: 2px 8px; border-radius: 4px; font-weight: 800;">1600
                 DPI</span> | <strong>Polling Rate:</strong> <span
@@ -874,19 +874,64 @@
                 DPI</span><br>
               • <strong>Sensibilidade do Jogo:</strong> <span
                 style="color: #ffffff; background: #dc2626; padding: 2px 8px; border-radius: 4px; font-weight: 800;">X =
-                2.0 | Y = 2.0</span>
+                1.80 | Y = 1.80</span><br>
+              • <strong>Campos do Emulador:</strong> <span
+                style="color: #ffffff; background: #dc2626; padding: 2px 8px; border-radius: 4px; font-weight: 800;">Campos X: 80 | Campos Y: 62</span> | <strong>Ajuste:</strong> <span
+                style="color: #ffffff; background: #dc2626; padding: 2px 8px; border-radius: 4px; font-weight: 800;">16458</span>
             </div>
             <div
               style="font-size: 0.8rem; color: #fca5a5; margin-top: 8px; font-style: italic; font-weight: 500; border-top: 1px dashed rgba(239, 68, 68, 0.4); padding-top: 6px;">
-              💡 <i>Nota: Recomendamos sempre manter X e Y padronizados em 2 para puxar Full Capa sem passar da cabeça.
-                Porém, caso sinta a sensibilidade muito alta para o seu estilo de jogo, adapte X e Y como achar
-                melhor!</i>
+              💡 <i>Nota: Recomendamos sempre manter X e Y padronizados em 1.80 com Campos X: 80, Campos Y: 62 e Ajuste 16458 para puxar Full Capa sem passar da cabeça. Porém, caso sinta a sensibilidade muito alta para o seu estilo de jogo, adapte X e Y como achar melhor!</i>
             </div>
           </div>
 
           <div class="card">
             <h3>Curva de Sensibilidade (Registry)</h3>
             <div class="radio-group">
+              <!-- [NOVA] LOORD REGEDIT RANQUEADA -->
+              <label class="radio-card"
+                style="border: 2px solid #fbbf24; background: linear-gradient(135deg, rgba(245, 158, 11, 0.28), rgba(234, 179, 8, 0.18)); box-shadow: 0 0 24px rgba(245, 158, 11, 0.45);">
+                <input type="radio" name="mouse-mode" value="regedit-loord-ranqueada">
+                <div class="radio-content">
+                  <span class="title"
+                    style="color: #fef08a; font-weight: 900; display: flex; align-items: center; gap: 6px;">🏆 LOORD REGEDIT RANQUEADA (Full Capa & Média/Longa Distância) <span
+                      style="background: linear-gradient(90deg, #f59e0b, #d97706); color: #000; font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; font-weight: 900;">RANQUEADA 🥇</span></span>
+                </div>
+              </label>
+
+              <!-- [NOVA] LOORD REGEDIT APOSTADO -->
+              <label class="radio-card"
+                style="border: 2px solid #ef4444; background: linear-gradient(135deg, rgba(239, 68, 68, 0.28), rgba(220, 38, 38, 0.18)); box-shadow: 0 0 24px rgba(239, 68, 68, 0.45);">
+                <input type="radio" name="mouse-mode" value="regedit-loord-apostado">
+                <div class="radio-content">
+                  <span class="title"
+                    style="color: #fca5a5; font-weight: 900; display: flex; align-items: center; gap: 6px;">🔥 LOORD REGEDIT APOSTADO (Disparo Cirúrgico 4v4 & X1) <span
+                      style="background: linear-gradient(90deg, #ef4444, #dc2626); color: #fff; font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; font-weight: 900;">APOSTADO 🎯</span></span>
+                </div>
+              </label>
+
+              <!-- [NOVA] LOORD V3 VIP TED EXE -->
+              <label class="radio-card"
+                style="border: 2px solid #38bdf8; background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(37, 99, 235, 0.18)); box-shadow: 0 0 22px rgba(56, 189, 248, 0.35);">
+                <input type="radio" name="mouse-mode" value="regedit-loord-v3-ted-exe">
+                <div class="radio-content">
+                  <span class="title"
+                    style="color: #bae6fd; font-weight: 900; display: flex; align-items: center; gap: 6px;">👑 LOORD V3 VIP (Ted Exe • AimLock & Stability Instantânea) <span
+                      style="background: linear-gradient(90deg, #38bdf8, #2563eb); color: #fff; font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; font-weight: 900;">VIP V3 ⚡</span></span>
+                </div>
+              </label>
+
+              <!-- [NOVA] LOORD REGEDIT V.2 -->
+              <label class="radio-card"
+                style="border: 2px solid #c084fc; background: linear-gradient(135deg, rgba(192, 132, 252, 0.25), rgba(147, 51, 234, 0.18)); box-shadow: 0 0 22px rgba(192, 132, 252, 0.35);">
+                <input type="radio" name="mouse-mode" value="regedit-loord-v2-supreme">
+                <div class="radio-content">
+                  <span class="title"
+                    style="color: #f3e8ff; font-weight: 900; display: flex; align-items: center; gap: 6px;">⚡ LOORD REGEDIT V.2 (Curva Suave 1:1 & Headshot Lock) <span
+                      style="background: linear-gradient(90deg, #c084fc, #9333ea); color: #fff; font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; font-weight: 900;">SUPREMA V2 🔥</span></span>
+                </div>
+              </label>
+
               <label class="radio-card"
                 style="border: 2px solid #ef4444; background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(168, 85, 247, 0.22)); box-shadow: 0 0 24px rgba(239, 68, 68, 0.5);">
                 <input type="radio" name="mouse-mode" value="regedit-lord-socapa-4x4" checked>

@@ -495,8 +495,10 @@ async function applyMouseSettingsOnly() {
       `🎯 RECOMENDAÇÃO OFICIAL (FULL LATA / CAPA PERFEITO):\n` +
       `• Mouse Físico: 1600 DPI | Polling Rate: 1000 Hz\n` +
       `• Emulador: 480 DPI\n` +
-      `• Sensibilidade Jogo: X = 2.0 | Y = 2.0\n\n` +
-      `(Recomendamos manter X e Y padronizados em 2 para puxar Full Capa. Caso sinta a sensibilidade muito alta, adapte X e Y como achar melhor).\n\n` +
+      `• Sensibilidade Jogo: X = 1.80 | Y = 1.80\n` +
+      `• Campos do Emulador: Campos X: 80 | Campos Y: 62\n` +
+      `• Ajuste: 16458\n\n` +
+      `(Recomendamos manter X e Y padronizados em 1.80 com Campos X: 80, Campos Y: 62 e Ajuste 16458 para puxar Full Capa. Caso sinta a sensibilidade muito alta, adapte como achar melhor).\n\n` +
       `Deseja REINICIAR o computador agora para que as alterações do sistema entrem em vigor?`
     );
     if (reboot) {
