@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loord In-Game Overlay Panel</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background: rgba(10, 15, 29, 0.94);
+      border: 1.5px solid #38bdf8;
+      border-radius: 12px;
+      padding: 16px;
+      color: #ffffff;
+      user-select: none;
+      -webkit-user-select: none;
+      box-shadow: 0 0 30px rgba(56, 189, 248, 0.35);
+      overflow: hidden;
+    }
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.25);
+      -webkit-app-region: drag;
+    }
+    .panel-title {
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .panel-close {
+      -webkit-app-region: no-drag;
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid #ef4444;
+      color: #ef4444;
+      border-radius: 6px;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+    }
+    .panel-close:hover {
+      background: #ef4444;
+      color: #fff;
+    }
+    .ctrl-group {
+      margin-bottom: 10px;
+    }
+    .ctrl-label {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .ctrl-slider {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: #1e293b;
+      outline: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+    .ctrl-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #38bdf8;
+      box-shadow: 0 0 8px #38bdf8;
+      cursor: pointer;
+    }
+    .btn-toggle {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #38bdf8;
+      background: linear-gradient(135deg, #1d4ed8, #0284c7);
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.8rem;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: all 0.2s;
+    }
+    .btn-toggle:hover {
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="panel-header">
+    <div class="panel-title"><span>🎯</span> LOORD MIRA IN-GAME</div>
+    <div class="panel-close" id="btn-close-panel">✕</div>
+  </div>
+
+  <div class="ctrl-group">
+    <div class="ctrl-label">
+      <span>Tamanho (Escala):</span>
+      <span id="lbl-size" style="color: #38bdf8; font-weight: bold;">36px</span>
+    </div>
+    <input type="range" class="ctrl-slider" id="slider-size" min="12" max="100" value="36">
+  </div>
+
+  <div class="ctrl-group">
+    <div class="ctrl-label">
+      <span>Opacidade:</span>
+      <span id="lbl-opacity" style="color: #38bdf8; font-weight: bold;">100%</span>
+    </div>
+    <input type="range" class="ctrl-slider" id="slider-opacity" min="10" max="100" value="100">
+  </div>
+
+  <div class="ctrl-group">
+    <div class="ctrl-label">
+      <span>Posição Horizontal (X):</span>
+      <span id="lbl-x" style="color: #38bdf8; font-weight: bold;">0px</span>
+    </div>
+    <input type="range" class="ctrl-slider" id="slider-offset-x" min="-100" max="100" value="0">
+  </div>
+
+  <div class="ctrl-group">
+    <div class="ctrl-label">
+      <span>Posição Vertical (Y):</span>
+      <span id="lbl-y" style="color: #38bdf8; font-weight: bold;">0px</span>
+    </div>
+    <input type="range" class="ctrl-slider" id="slider-offset-y" min="-100" max="100" value="0">
+  </div>
+
+  <button class="btn-toggle" id="btn-toggle-overlay">👁️ OCULTAR / EXIBIR MIRA</button>
+
+  <script>
+    const sliderSize = document.getElementById('slider-size');
+    const sliderOpacity = document.getElementById('slider-opacity');
+    const sliderX = document.getElementById('slider-offset-x');
+    const sliderY = document.getElementById('slider-offset-y');
+    const lblSize = document.getElementById('lbl-size');
+    const lblOpacity = document.getElementById('lbl-opacity');
+    const lblX = document.getElementById('lbl-x');
+    const lblY = document.getElementById('lbl-y');
+    const btnToggle = document.getElementById('btn-toggle-overlay');
+    const btnClose = document.getElementById('btn-close-panel');
+
+    let currentCfg = { enabled: true, size: 36, opacity: 100, offsetX: 0, offsetY: 0 };
+
+    async function loadConfig() {
+      if (window.api && window.api.getOverlayConfig) {
+        currentCfg = await window.api.getOverlayConfig() || currentCfg;
+        sliderSize.value = currentCfg.size || 36;
+        sliderOpacity.value = currentCfg.opacity ?? 100;
+        sliderX.value = currentCfg.offsetX || 0;
+        sliderY.value = currentCfg.offsetY || 0;
+        updateLabels();
+      }
+    }
+
+    function updateLabels() {
+      lblSize.textContent = `${sliderSize.value}px`;
+      lblOpacity.textContent = `${sliderOpacity.value}%`;
+      lblX.textContent = `${sliderX.value}px`;
+      lblY.textContent = `${sliderY.value}px`;
+    }
+
+    function syncConfig() {
+      currentCfg.size = parseInt(sliderSize.value);
+      currentCfg.opacity = parseInt(sliderOpacity.value);
+      currentCfg.offsetX = parseInt(sliderX.value);
+      currentCfg.offsetY = parseInt(sliderY.value);
+      updateLabels();
+      if (window.api && window.api.previewOverlayConfig) {
+        window.api.previewOverlayConfig(currentCfg);
+      }
+    }
+
+    sliderSize.addEventListener('input', syncConfig);
+    sliderOpacity.addEventListener('input', syncConfig);
+    sliderX.addEventListener('input', syncConfig);
+    sliderY.addEventListener('input', syncConfig);
+
+    btnToggle.addEventListener('click', async () => {
+      currentCfg.enabled = !currentCfg.enabled;
+      if (window.api && window.api.saveOverlayConfig) {
+        await window.api.saveOverlayConfig(currentCfg);
+      }
+    });
+
+    btnClose.addEventListener('click', () => {
+      if (window.api && window.api.closeInGamePanel) {
+        window.api.closeInGamePanel();
+      }
+    });
+
+    loadConfig();
+  </script>
+</body>
+</html>

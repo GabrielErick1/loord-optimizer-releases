@@ -329,6 +329,14 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 
+  try {
+    globalShortcut.register('CommandOrControl+Shift+X', () => {
+      toggleLoordInGamePanel();
+    });
+  } catch (err) {
+    console.error('Erro ao registrar atalho in-game Ctrl+Shift+X:', err);
+  }
+
   // ─── Auto-Updater Setup ───────────────────────────────────────────
   // Só verifica atualizações se for build empacotado (não em dev)
   if (app.isPackaged) {
@@ -6333,6 +6341,494 @@ ipcMain.handle('ask-ia-gamer', async (event, question) => {
     return { success: false, error: 'Não foi possível processar sua pergunta. Tente novamente.' };
   }
 });
+
+// ── LOORD SUÍTE DE PRECISÃO, OVERLAY DE MIRA, DISPLAY & RAW ACCEL ───────
+let loordOverlayWindow = null;
+let loordOverlayConfig = {
+  enabled: false,
+  shape: 'dot',
+  size: 36,
+  opacity: 100,
+  color: '#38bdf8',
+  offsetX: 0,
+  offsetY: 0,
+  outline: true,
+  outlineWidth: 1,
+  outlineColor: '#000000',
+  type: 'vector',
+  customImage: null,
+  holdMode: false
+};
+
+let loordDisplayConfig = {
+  saturation: 100,
+  gamma: 1.0,
+  temperature: 6500,
+  brightness: 100,
+  isCustom: false
+};
+
+let loordTimerResolutionActive = false;
+let loordDisplayKeeperTimer = null;
+
+function createLoordOverlayWindow() {
+  if (loordOverlayWindow && !loordOverlayWindow.isDestroyed()) {
+    return loordOverlayWindow;
+  }
+  const { width, height } = screen.getPrimaryDisplay().bounds;
+  loordOverlayWindow = new BrowserWindow({
+    width: width,
+    height: height,
+    x: 0,
+    y: 0,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    hasShadow: false,
+    resizable: false,
+    focusable: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+
+  loordOverlayWindow.setAlwaysOnTop(true, 'screen-saver');
+  loordOverlayWindow.setIgnoreMouseEvents(true, { forward: true });
+  loordOverlayWindow.loadFile(path.join(__dirname, 'overlay.html'));
+
+  loordOverlayWindow.on('closed', () => {
+    loordOverlayWindow = null;
+  });
+
+  return loordOverlayWindow;
+}
+
+function createLoordInGamePanelWindow() {
+  if (loordInGamePanelWindow && !loordInGamePanelWindow.isDestroyed()) {
+    if (loordInGamePanelWindow.isVisible()) {
+      loordInGamePanelWindow.hide();
+    } else {
+      loordInGamePanelWindow.show();
+      loordInGamePanelWindow.focus();
+    }
+    return loordInGamePanelWindow;
+  }
+
+  const { width, height } = screen.getPrimaryDisplay().bounds;
+  loordInGamePanelWindow = new BrowserWindow({
+    width: 280,
+    height: 330,
+    x: Math.round(width - 310),
+    y: Math.round(height / 2 - 165),
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+
+  loordInGamePanelWindow.setAlwaysOnTop(true, 'screen-saver');
+  loordInGamePanelWindow.loadFile(path.join(__dirname, 'panel.html'));
+
+  loordInGamePanelWindow.on('closed', () => {
+    loordInGamePanelWindow = null;
+  });
+
+  return loordInGamePanelWindow;
+}
+
+function toggleLoordInGamePanel() {
+  if (loordInGamePanelWindow && !loordInGamePanelWindow.isDestroyed() && loordInGamePanelWindow.isVisible()) {
+    loordInGamePanelWindow.hide();
+  } else {
+    createLoordInGamePanelWindow();
+  }
+}
+
+// ── MarkC 1:1 Scale Calculator ──
+function buildMarkCCurveHex(scalePercent = 100) {
+  const s = (scalePercent || 100) / 100;
+  const x0 = "0000000000000000";
+  const x1 = Math.round(0x6e15 * s).toString(16).padStart(8, '0') + "00000000";
+  const x2 = Math.round(0x400000 * s).toString(16).padStart(8, '0') + "00000000";
+  const x3 = Math.round(0xa00000 * s).toString(16).padStart(8, '0') + "00000000";
+  const x4 = Math.round(0x40000000 * s).toString(16).padStart(8, '0') + "00000000";
+  
+  const yHex = "00000000000000000018000000000000004000000000000000800000000000000000010000000000";
+  const xHex = (x0 + x1 + x2 + x3 + x4).padEnd(80, '0').slice(0, 80);
+  return { xHex, yHex };
+}
+
+// ── Hardware Gamma Ramp Calculator (GDI32) ──
+function buildGammaRampBuffer(gamma = 1.0, saturation = 100, tempK = 6500, brightness = 100) {
+  const ramp = Buffer.alloc(1536);
+  let rMul = 1.0, gMul = 1.0, bMul = 1.0;
+  if (tempK < 6500) {
+    rMul = 1.0 + (6500 - tempK) / 7000 * 0.25;
+    bMul = 1.0 - (6500 - tempK) / 7000 * 0.35;
+  } else if (tempK > 6500) {
+    bMul = 1.0 + (tempK - 6500) / 3500 * 0.25;
+    rMul = 1.0 - (tempK - 6500) / 3500 * 0.20;
+  }
+
+  const satMul = (saturation || 100) / 100;
+  const invGamma = 1 / (gamma || 1.0);
+  const brightMul = (brightness || 100) / 100;
+
+  for (let i = 0; i < 256; i++) {
+    const norm = Math.pow(i / 255, invGamma) * brightMul;
+    let r = norm * rMul;
+    let g = norm * gMul;
+    let b = norm * bMul;
+
+    const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    r = lum + (r - lum) * satMul;
+    g = lum + (g - lum) * satMul;
+    b = lum + (b - lum) * satMul;
+
+    const r16 = Math.max(0, Math.min(65535, Math.round(r * 65535)));
+    const g16 = Math.max(0, Math.min(65535, Math.round(g * 65535)));
+    const b16 = Math.max(0, Math.min(65535, Math.round(b * 65535)));
+
+    ramp.writeUInt16LE(r16, i * 2);
+    ramp.writeUInt16LE(g16, (256 + i) * 2);
+    ramp.writeUInt16LE(b16, (512 + i) * 2);
+  }
+  return ramp;
+}
+
+function applyHardwareGamma(gamma, saturation, tempK, brightness) {
+  try {
+    const ramp = buildGammaRampBuffer(gamma, saturation, tempK, brightness);
+    const b64 = ramp.toString('base64');
+    const psScript = '\n$bytes = [Convert]::FromBase64String("' + b64 + '")\n' +
+      'Add-Type -MemberDefinition @\'\n' +
+      '[DllImport("user32.dll")] public static extern IntPtr GetDC(IntPtr h);\n' +
+      '[DllImport("user32.dll")] public static extern int ReleaseDC(IntPtr h, IntPtr dc);\n' +
+      '[DllImport("gdi32.dll")] public static extern bool SetDeviceGammaRamp(IntPtr dc, byte[] r);\n' +
+      '\'@ -Name Win32Disp -Namespace Loord\n' +
+      '$hdc = [Loord.Win32Disp]::GetDC([IntPtr]::Zero)\n' +
+      '$res = [Loord.Win32Disp]::SetDeviceGammaRamp($hdc, $bytes)\n' +
+      '[Loord.Win32Disp]::ReleaseDC([IntPtr]::Zero, $hdc) | Out-Null\n';
+    const enc = Buffer.from(psScript, 'utf16le').toString('base64');
+    execSync('powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ' + enc, { stdio: 'ignore', windowsHide: true });
+    return true;
+  } catch (err) {
+    console.error('Erro ao aplicar Gamma Ramp:', err);
+    return false;
+  }
+}
+
+function resetHardwareGamma() {
+  try {
+    const ramp = Buffer.alloc(1536);
+    for (let i = 0; i < 256; i++) {
+      const v = Math.round((i / 255) * 65535);
+      ramp.writeUInt16LE(v, i * 2);
+      ramp.writeUInt16LE(v, (256 + i) * 2);
+      ramp.writeUInt16LE(v, (512 + i) * 2);
+    }
+    const b64 = ramp.toString('base64');
+    const psScript = '\n$bytes = [Convert]::FromBase64String("' + b64 + '")\n' +
+      'Add-Type -MemberDefinition @\'\n' +
+      '[DllImport("user32.dll")] public static extern IntPtr GetDC(IntPtr h);\n' +
+      '[DllImport("user32.dll")] public static extern int ReleaseDC(IntPtr h, IntPtr dc);\n' +
+      '[DllImport("gdi32.dll")] public static extern bool SetDeviceGammaRamp(IntPtr dc, byte[] r);\n' +
+      '\'@ -Name Win32DispReset -Namespace Loord\n' +
+      '$hdc = [Loord.Win32DispReset]::GetDC([IntPtr]::Zero)\n' +
+      '$res = [Loord.Win32DispReset]::SetDeviceGammaRamp($hdc, $bytes)\n' +
+      '[Loord.Win32DispReset]::ReleaseDC([IntPtr]::Zero, $hdc) | Out-Null\n';
+    const enc = Buffer.from(psScript, 'utf16le').toString('base64');
+    execSync('powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ' + enc, { stdio: 'ignore', windowsHide: true });
+    return true;
+  } catch (err) {
+    console.error('Erro ao resetar Gamma Ramp:', err);
+    return false;
+  }
+}
+
+// ── IPC Handlers: Loord Crosshair Overlay ──
+ipcMain.handle('overlay:get', () => {
+  return loordOverlayConfig;
+});
+
+ipcMain.handle('overlay:save', (_e, newCfg) => {
+  loordOverlayConfig = { ...loordOverlayConfig, ...newCfg };
+  if (loordOverlayConfig.enabled) {
+    const win = createLoordOverlayWindow();
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('overlay:render', loordOverlayConfig);
+    }
+  } else if (loordOverlayWindow && !loordOverlayWindow.isDestroyed()) {
+    loordOverlayWindow.webContents.send('overlay:render', { enabled: false });
+  }
+  return { success: true, config: loordOverlayConfig };
+});
+
+ipcMain.handle('overlay:preview', (_e, newCfg) => {
+  loordOverlayConfig = { ...loordOverlayConfig, ...newCfg };
+  if (loordOverlayWindow && !loordOverlayWindow.isDestroyed()) {
+    loordOverlayWindow.webContents.send('overlay:render', loordOverlayConfig);
+  }
+  return { success: true };
+});
+
+ipcMain.handle('overlay:toggle', () => {
+  loordOverlayConfig.enabled = !loordOverlayConfig.enabled;
+  if (loordOverlayConfig.enabled) {
+    const win = createLoordOverlayWindow();
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('overlay:render', loordOverlayConfig);
+    }
+  } else if (loordOverlayWindow && !loordOverlayWindow.isDestroyed()) {
+    loordOverlayWindow.webContents.send('overlay:render', { enabled: false });
+  }
+  return { success: true, enabled: loordOverlayConfig.enabled };
+});
+
+ipcMain.handle('panel:close', () => {
+  if (loordInGamePanelWindow && !loordInGamePanelWindow.isDestroyed()) {
+    loordInGamePanelWindow.hide();
+  }
+  return { success: true };
+});
+
+// ── IPC Handlers: Loord Precision MarkC 1:1 ──
+ipcMain.handle('detect-monitor-scale', () => {
+  try {
+    const sf = screen.getPrimaryDisplay().scaleFactor || 1.0;
+    const scalePercent = Math.round(sf * 100);
+    return { success: true, scalePercent };
+  } catch (_) {
+    return { success: true, scalePercent: 100 };
+  }
+});
+
+ipcMain.handle('apply-markc-curve', (_e, scalePercent) => {
+  try {
+    const scale = scalePercent || 100;
+    const { xHex, yHex } = buildMarkCCurveHex(scale);
+    execSync(`reg add "HKCU\\Control Panel\\Mouse" /v SmoothMouseXCurve /t REG_BINARY /d ${xHex} /f`, { stdio: 'ignore' });
+    execSync(`reg add "HKCU\\Control Panel\\Mouse" /v SmoothMouseYCurve /t REG_BINARY /d ${yHex} /f`, { stdio: 'ignore' });
+    execSync(`reg add "HKCU\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d "0" /f`, { stdio: 'ignore' });
+    execSync(`reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d "0" /f`, { stdio: 'ignore' });
+    execSync(`reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d "0" /f`, { stdio: 'ignore' });
+    
+    applyRealtimeWindowsMouse(10);
+    return { success: true, scalePercent: scale, message: `Curva MarkC 1:1 aplicada com sucesso para escala de ${scale}%!` };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// ── IPC Handlers: Loord Raw Accel Presets ──
+const RAWACCEL_PRESETS = {
+  'precisao': {
+    name: 'Precisão Loord (Foco em Capa)',
+    description: 'Aceleração suave e controlada com ganho dinâmico para puxar capa no Free Fire.',
+    settings: {
+      mode: 'classic',
+      sensitivity: 0.8,
+      acceleration: 0.08,
+      cap: 1.8,
+      inputOffset: 15,
+      exponent: 2.3,
+      gain: true
+    }
+  },
+  'flick': {
+    name: 'Flick Rápido',
+    description: 'Aim rápido e nervoso para trocação rápida e tiros curtos.',
+    settings: {
+      mode: 'classic',
+      sensitivity: 0.9,
+      acceleration: 0.06,
+      cap: 1.5,
+      inputOffset: 10,
+      exponent: 2.0,
+      gain: true
+    }
+  },
+  'controle': {
+    name: 'Controle PvP',
+    description: 'Equilíbrio milimétrico entre velocidade horizontal e estabilidade vertical.',
+    settings: {
+      mode: 'classic',
+      sensitivity: 1.0,
+      acceleration: 0.05,
+      cap: 1.4,
+      inputOffset: 20,
+      exponent: 2.5,
+      gain: true
+    }
+  },
+  'pesado': {
+    name: 'Pesado (Inércia)',
+    description: 'Compensação de inércia para mouses acima de 80g ou DPI baixo (400/800 DPI).',
+    settings: {
+      mode: 'classic',
+      sensitivity: 1.3,
+      acceleration: 0.10,
+      cap: 2.2,
+      inputOffset: 12,
+      exponent: 2.1,
+      gain: true
+    }
+  },
+  'sniper': {
+    name: 'Sniper (Precisão Cirúrgica)',
+    description: 'Movimento ultra lento e preciso para tiros milimétricos de longa distância.',
+    settings: {
+      mode: 'classic',
+      sensitivity: 0.7,
+      acceleration: 0.04,
+      cap: 1.3,
+      inputOffset: 25,
+      exponent: 3.0,
+      gain: true
+    }
+  },
+  'sensitivo': {
+    name: 'Sensitivo (Giro Ágil)',
+    description: 'Giro ágil de 360° com alta resposta para movimentação e rush rápido.',
+    settings: {
+      mode: 'classic',
+      sensitivity: 1.2,
+      acceleration: 0.12,
+      cap: 2.0,
+      gain: false
+    }
+  },
+  'padrao': {
+    name: 'Padrão Neutro 1:1',
+    description: 'Sensibilidade pura sem qualquer aceleração.',
+    settings: {
+      mode: 'noaccel',
+      sensitivity: 1.0
+    }
+  }
+};
+
+ipcMain.handle('rawaccel:status', () => {
+  const candidateDirs = [
+    path.join(process.env.LOCALAPPDATA || '', 'Raw Accel'),
+    path.join(process.env.PROGRAMFILES || 'C:\\Program Files', 'Raw Accel'),
+    path.join(process.env.LOCALAPPDATA || '', 'LoordOptimizer', 'rawaccel')
+  ];
+  const found = candidateDirs.find(d => fs.existsSync(path.join(d, 'settings.json')));
+  return {
+    installed: !!found,
+    path: found || candidateDirs[0],
+    presets: Object.entries(RAWACCEL_PRESETS).map(([id, p]) => ({ id, name: p.name, description: p.description }))
+  };
+});
+
+ipcMain.handle('rawaccel:apply-preset', (_e, presetId) => {
+  try {
+    const preset = RAWACCEL_PRESETS[presetId] || RAWACCEL_PRESETS['precisao'];
+    const targetDir = path.join(process.env.LOCALAPPDATA || '', 'Raw Accel');
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
+    const settingsPath = path.join(targetDir, 'settings.json');
+    fs.writeFileSync(settingsPath, JSON.stringify(preset.settings, null, 2), 'utf8');
+
+    return {
+      success: true,
+      presetName: preset.name,
+      message: `Preset "${preset.name}" aplicado com sucesso no Raw Accel!`
+    };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// ── IPC Handlers: Loord Display & Digital Vibrance ──
+ipcMain.handle('display:get', () => {
+  return loordDisplayConfig;
+});
+
+ipcMain.handle('display:apply', (_e, cfg) => {
+  loordDisplayConfig = { ...loordDisplayConfig, ...cfg, isCustom: true };
+  const ok = applyHardwareGamma(
+    loordDisplayConfig.gamma,
+    loordDisplayConfig.saturation,
+    loordDisplayConfig.temperature,
+    loordDisplayConfig.brightness
+  );
+
+  // Ativa Display Keeper para reaplicar periodicamente se jogo em tela cheia tentar resetar
+  if (!loordDisplayKeeperTimer && ok) {
+    loordDisplayKeeperTimer = setInterval(() => {
+      if (loordDisplayConfig.isCustom) {
+        applyHardwareGamma(
+          loordDisplayConfig.gamma,
+          loordDisplayConfig.saturation,
+          loordDisplayConfig.temperature,
+          loordDisplayConfig.brightness
+        );
+      }
+    }, 30000);
+  }
+
+  return { success: ok, config: loordDisplayConfig };
+});
+
+ipcMain.handle('display:reset', () => {
+  loordDisplayConfig = { saturation: 100, gamma: 1.0, temperature: 6500, brightness: 100, isCustom: false };
+  if (loordDisplayKeeperTimer) {
+    clearInterval(loordDisplayKeeperTimer);
+    loordDisplayKeeperTimer = null;
+  }
+  const ok = resetHardwareGamma();
+  return { success: ok, config: loordDisplayConfig };
+});
+
+ipcMain.handle('display:apply-preset', (_e, presetId) => {
+  let cfg = { saturation: 100, gamma: 1.0, temperature: 6500, brightness: 100 };
+  if (presetId === 'inimigos') {
+    cfg = { saturation: 140, gamma: 1.1, temperature: 6500, brightness: 100 };
+  } else if (presetId === 'noturno') {
+    cfg = { saturation: 120, gamma: 1.3, temperature: 7500, brightness: 105 };
+  } else if (presetId === 'contraste') {
+    cfg = { saturation: 160, gamma: 1.15, temperature: 6500, brightness: 100 };
+  } else if (presetId === 'quente') {
+    cfg = { saturation: 110, gamma: 0.95, temperature: 5500, brightness: 95 };
+  }
+
+  loordDisplayConfig = { ...cfg, isCustom: presetId !== 'padrao' };
+  const ok = presetId === 'padrao' ? resetHardwareGamma() : applyHardwareGamma(cfg.gamma, cfg.saturation, cfg.temperature, cfg.brightness);
+  return { success: ok, config: loordDisplayConfig };
+});
+
+// ── IPC Handlers: Loord Timer Resolution (0.5ms) ──
+ipcMain.handle('get-timer-resolution-status', () => {
+  return { active: loordTimerResolutionActive };
+});
+
+ipcMain.handle('apply-timer-resolution', (_e, enable) => {
+  try {
+    const shouldEnable = enable !== false;
+    const psCmd = shouldEnable
+      ? `Add-Type -TypeDefinition '[DllImport(\"ntdll.dll\")] public static extern int NtSetTimerResolution(uint a, bool b, out uint c); [DllImport(\"winmm.dll\")] public static extern int timeBeginPeriod(uint p);' -Name Win32Timer -Namespace Loord; uint $c; [Loord.Win32Timer]::NtSetTimerResolution(5000, $true, [ref]$c); [Loord.Win32Timer]::timeBeginPeriod(1);`
+      : `Add-Type -TypeDefinition '[DllImport(\"ntdll.dll\")] public static extern int NtSetTimerResolution(uint a, bool b, out uint c); [DllImport(\"winmm.dll\")] public static extern int timeEndPeriod(uint p);' -Name Win32Timer -Namespace Loord; uint $c; [Loord.Win32Timer]::NtSetTimerResolution(156250, $false, [ref]$c); [Loord.Win32Timer]::timeEndPeriod(1);`;
+
+    execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psCmd}"`, { stdio: 'ignore', windowsHide: true });
+    loordTimerResolutionActive = shouldEnable;
+    return { success: true, active: loordTimerResolutionActive, message: shouldEnable ? 'Temporizador travado em 0.5ms (Latência Zero)!' : 'Temporizador restaurado para o padrão do Windows.' };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 
 
 

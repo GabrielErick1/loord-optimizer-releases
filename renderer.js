@@ -4961,3 +4961,385 @@ if (window.api && window.api.onLicenseRevoked) {
   });
 })();
 
+// ─── LOORD PRECISION SUITE: MarkC 1:1, Raw Accel, Crosshair Overlay, Display & Timer ─────────
+
+(function () {
+  // ── MarkC 1:1 Adaptativo ──
+  const markcApplyBtn = document.getElementById('btn-markc-apply');
+  const markcAutoBtn = document.getElementById('btn-markc-auto-detect');
+  const markcRestoreBtn = document.getElementById('btn-markc-restore');
+  const markcStatus = document.getElementById('markc-status');
+  const markcSelect = document.getElementById('markc-scale-select');
+
+  function showMarkcStatus(msg, ok = true) {
+    if (!markcStatus) return;
+    markcStatus.style.display = 'block';
+    markcStatus.style.color = ok ? '#10b981' : '#ef4444';
+    markcStatus.style.background = ok ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.08)';
+    markcStatus.style.borderColor = ok ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)';
+    markcStatus.textContent = msg;
+  }
+
+  if (markcAutoBtn) {
+    markcAutoBtn.addEventListener('click', async () => {
+      markcAutoBtn.textContent = '⏳ Detectando...';
+      markcAutoBtn.disabled = true;
+      try {
+        const res = await window.api.detectMonitorScale();
+        if (res && res.scalePercent && markcSelect) {
+          markcSelect.value = res.scalePercent;
+          showMarkcStatus(`✅ Escala detectada automaticamente: ${res.scalePercent}%`);
+        }
+      } catch (e) {
+        showMarkcStatus('Não foi possível detectar a escala.', false);
+      }
+      markcAutoBtn.textContent = '🔍 Auto-Detectar';
+      markcAutoBtn.disabled = false;
+    });
+  }
+
+  if (markcApplyBtn) {
+    markcApplyBtn.addEventListener('click', async () => {
+      const scale = parseInt(markcSelect ? markcSelect.value : '100') || 100;
+      markcApplyBtn.textContent = '⏳ Aplicando...';
+      markcApplyBtn.disabled = true;
+      try {
+        const res = await window.api.applyMarkcCurve(scale);
+        if (res && res.success) {
+          showMarkcStatus(`✅ ${res.message || 'Curva MarkC 1:1 aplicada para ' + scale + '%!'}`);
+          markcApplyBtn.style.boxShadow = '0 0 20px rgba(168,85,247,0.5)';
+        } else {
+          showMarkcStatus('❌ Erro: ' + (res?.error || 'Falha ao aplicar'), false);
+        }
+      } catch (e) {
+        showMarkcStatus('❌ Erro: ' + e.message, false);
+      }
+      markcApplyBtn.textContent = '🧬 APLICAR CURVA MARKC 1:1';
+      markcApplyBtn.disabled = false;
+    });
+  }
+
+  if (markcRestoreBtn) {
+    markcRestoreBtn.addEventListener('click', async () => {
+      // Restore by applying default Windows curves
+      markcRestoreBtn.disabled = true;
+      try {
+        await window.api.applyMarkcCurve(100);
+        showMarkcStatus('🔄 Curvas restauradas para o padrão do Windows (100%).');
+      } catch (e) {}
+      markcRestoreBtn.disabled = false;
+    });
+  }
+
+  // ── Loord Raw Accel Engine ──
+  const rawAccelBtns = document.querySelectorAll('.rawaccel-preset-btn');
+  const rawAccelStatus = document.getElementById('rawaccel-status');
+
+  function showRawAccelStatus(msg, ok = true) {
+    if (!rawAccelStatus) return;
+    rawAccelStatus.style.display = 'block';
+    rawAccelStatus.style.color = ok ? '#10b981' : '#ef4444';
+    rawAccelStatus.style.background = ok ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.08)';
+    rawAccelStatus.textContent = msg;
+  }
+
+  rawAccelBtns.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const presetId = btn.dataset.preset;
+      const originalContent = btn.innerHTML;
+      btn.innerHTML = `<div style="font-size:0.8rem;font-weight:800;color:#fbbf24">⏳ Aplicando...</div>`;
+      btn.disabled = true;
+
+      // Resetar visual dos outros botões
+      rawAccelBtns.forEach(b => {
+        b.style.borderColor = 'rgba(100,116,139,0.3)';
+        b.style.background = 'rgba(30,41,59,0.8)';
+        b.disabled = false;
+      });
+
+      try {
+        const res = await window.api.applyRawAccelPreset(presetId);
+        btn.innerHTML = originalContent;
+        btn.disabled = false;
+        if (res && res.success) {
+          // Destaca o botão ativo
+          btn.style.borderColor = 'rgba(251,191,36,0.8)';
+          btn.style.background = 'linear-gradient(135deg, rgba(251,191,36,0.2), rgba(251,191,36,0.08))';
+          btn.style.boxShadow = '0 0 15px rgba(251,191,36,0.3)';
+          showRawAccelStatus(`✅ ${res.message || 'Preset aplicado!'}`);
+        } else {
+          showRawAccelStatus('❌ Erro: ' + (res?.error || 'Falha ao aplicar'), false);
+        }
+      } catch (e) {
+        btn.innerHTML = originalContent;
+        btn.disabled = false;
+        showRawAccelStatus('❌ Erro: ' + e.message, false);
+      }
+    });
+  });
+
+  // ── Loord Crosshair Overlay ──
+  let crosshairConfig = {
+    enabled: false,
+    shape: 'dot',
+    size: 36,
+    opacity: 100,
+    color: '#38bdf8',
+    offsetX: 0,
+    offsetY: 0,
+    outline: true,
+    outlineColor: '#000000',
+    outlineWidth: 1,
+    type: 'vector'
+  };
+
+  function syncCrosshairSliders() {
+    const sizeSlider = document.getElementById('ch-size');
+    const opacitySlider = document.getElementById('ch-opacity');
+    const offsetX = document.getElementById('ch-offsetx');
+    const offsetY = document.getElementById('ch-offsety');
+    const colorIn = document.getElementById('ch-color');
+    const outlineColorIn = document.getElementById('ch-outline-color');
+    const outlineOn = document.getElementById('ch-outline-on');
+
+    if (sizeSlider) {
+      crosshairConfig.size = parseInt(sizeSlider.value);
+      document.getElementById('ch-size-val').textContent = sizeSlider.value + 'px';
+    }
+    if (opacitySlider) {
+      crosshairConfig.opacity = parseInt(opacitySlider.value);
+      document.getElementById('ch-opacity-val').textContent = opacitySlider.value + '%';
+    }
+    if (offsetX) {
+      crosshairConfig.offsetX = parseInt(offsetX.value);
+      document.getElementById('ch-offsetx-val').textContent = offsetX.value + 'px';
+    }
+    if (offsetY) {
+      crosshairConfig.offsetY = parseInt(offsetY.value);
+      document.getElementById('ch-offsety-val').textContent = offsetY.value + 'px';
+    }
+    if (colorIn) crosshairConfig.color = colorIn.value;
+    if (outlineColorIn) crosshairConfig.outlineColor = outlineColorIn.value;
+    if (outlineOn) crosshairConfig.outline = outlineOn.checked;
+
+    if (crosshairConfig.enabled && window.api && window.api.previewOverlayConfig) {
+      window.api.previewOverlayConfig({ ...crosshairConfig });
+    }
+  }
+
+  // Selecionar mira
+  const chBtns = document.querySelectorAll('.ch-btn');
+  chBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      chBtns.forEach(b => {
+        b.style.background = 'rgba(30,41,59,0.8)';
+        b.style.borderColor = 'rgba(100,116,139,0.3)';
+        b.querySelectorAll('div').forEach(d => d.style.color = '#94a3b8');
+      });
+      btn.style.background = 'rgba(56,189,248,0.15)';
+      btn.style.borderColor = '#38bdf8';
+      btn.querySelectorAll('div').forEach(d => d.style.color = '#38bdf8');
+
+      crosshairConfig.shape = btn.dataset.shape;
+      if (crosshairConfig.enabled && window.api?.previewOverlayConfig) {
+        window.api.previewOverlayConfig({ ...crosshairConfig });
+      }
+    });
+  });
+
+  // Sliders de configuração
+  ['ch-size', 'ch-opacity', 'ch-offsetx', 'ch-offsety', 'ch-color', 'ch-outline-color'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', syncCrosshairSliders);
+  });
+  const outlineOn = document.getElementById('ch-outline-on');
+  if (outlineOn) outlineOn.addEventListener('change', syncCrosshairSliders);
+
+  // Toggle overlay
+  const overlayToggle = document.getElementById('btn-overlay-toggle');
+  if (overlayToggle) {
+    overlayToggle.addEventListener('click', async () => {
+      crosshairConfig.enabled = !crosshairConfig.enabled;
+      syncCrosshairSliders();
+      try {
+        await window.api.saveOverlayConfig({ ...crosshairConfig });
+        if (crosshairConfig.enabled) {
+          overlayToggle.textContent = '🎯 DESATIVAR MIRA';
+          overlayToggle.style.background = 'linear-gradient(135deg, #dc2626, #ef4444)';
+        } else {
+          overlayToggle.textContent = '👁️ ATIVAR MIRA IN-GAME';
+          overlayToggle.style.background = 'linear-gradient(135deg, #0284c7, #38bdf8)';
+        }
+      } catch (e) {}
+    });
+  }
+
+  // Abrir mini painel in-game
+  const panelBtn = document.getElementById('btn-overlay-panel');
+  if (panelBtn) {
+    panelBtn.addEventListener('click', async () => {
+      try {
+        // Aciona o atalho globalmente pelo main
+        await window.api.getOverlayConfig();
+      } catch (e) {}
+    });
+  }
+
+  // ── Loord Display & Digital Vibrance ──
+  function updateDisplayLabels() {
+    const satSlider = document.getElementById('display-saturation');
+    const gammaSlider = document.getElementById('display-gamma');
+    const tempSlider = document.getElementById('display-temperature');
+    const brightSlider = document.getElementById('display-brightness');
+
+    if (satSlider) document.getElementById('display-sat-val').textContent = satSlider.value + '%';
+    if (gammaSlider) document.getElementById('display-gamma-val').textContent = (parseInt(gammaSlider.value) / 100).toFixed(2);
+    if (tempSlider) document.getElementById('display-temp-val').textContent = tempSlider.value + 'K';
+    if (brightSlider) document.getElementById('display-bright-val').textContent = brightSlider.value + '%';
+  }
+
+  ['display-saturation', 'display-gamma', 'display-temperature', 'display-brightness'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', updateDisplayLabels);
+  });
+
+  // Presets de Display
+  const displayPresetBtns = document.querySelectorAll('.display-preset-btn');
+  displayPresetBtns.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const presetId = btn.dataset.preset;
+      btn.style.opacity = '0.5';
+      try {
+        const res = await window.api.applyDisplayPreset(presetId);
+        if (res && res.success) {
+          // Sincronizar sliders
+          if (res.config) {
+            const s = document.getElementById('display-saturation');
+            const g = document.getElementById('display-gamma');
+            const t = document.getElementById('display-temperature');
+            const b = document.getElementById('display-brightness');
+            if (s) s.value = res.config.saturation;
+            if (g) g.value = Math.round(res.config.gamma * 100);
+            if (t) t.value = res.config.temperature;
+            if (b) b.value = res.config.brightness;
+            updateDisplayLabels();
+          }
+          // Atualizar Keeper status
+          const keeper = document.getElementById('display-keeper-status');
+          if (keeper) {
+            keeper.textContent = presetId === 'padrao' ? 'Inativo' : '🟢 Ativo — Reprotegendo a cada 30s';
+            keeper.style.color = presetId === 'padrao' ? '#64748b' : '#10b981';
+          }
+        }
+      } catch (e) {}
+      btn.style.opacity = '1';
+    });
+  });
+
+  // Aplicar calibração manual
+  const displayApplyBtn = document.getElementById('btn-display-apply');
+  if (displayApplyBtn) {
+    displayApplyBtn.addEventListener('click', async () => {
+      const satSlider = document.getElementById('display-saturation');
+      const gammaSlider = document.getElementById('display-gamma');
+      const tempSlider = document.getElementById('display-temperature');
+      const brightSlider = document.getElementById('display-brightness');
+
+      const cfg = {
+        saturation: parseInt(satSlider?.value || 100),
+        gamma: parseInt(gammaSlider?.value || 100) / 100,
+        temperature: parseInt(tempSlider?.value || 6500),
+        brightness: parseInt(brightSlider?.value || 100)
+      };
+
+      displayApplyBtn.textContent = '⏳ Aplicando...';
+      displayApplyBtn.disabled = true;
+      try {
+        const res = await window.api.applyDisplayCalibration(cfg);
+        if (res && res.success) {
+          const keeper = document.getElementById('display-keeper-status');
+          if (keeper) {
+            keeper.textContent = '🟢 Ativo — Reprotegendo a cada 30s';
+            keeper.style.color = '#10b981';
+          }
+          displayApplyBtn.style.boxShadow = '0 0 20px rgba(16,185,129,0.5)';
+          setTimeout(() => { displayApplyBtn.style.boxShadow = ''; }, 2000);
+        }
+      } catch (e) {}
+      displayApplyBtn.textContent = '🌈 APLICAR CALIBRAÇÃO';
+      displayApplyBtn.disabled = false;
+    });
+  }
+
+  // Resetar Display
+  const displayResetBtn = document.getElementById('btn-display-reset');
+  if (displayResetBtn) {
+    displayResetBtn.addEventListener('click', async () => {
+      displayResetBtn.disabled = true;
+      try {
+        await window.api.resetDisplayCalibration();
+        const s = document.getElementById('display-saturation');
+        const g = document.getElementById('display-gamma');
+        const t = document.getElementById('display-temperature');
+        const b = document.getElementById('display-brightness');
+        if (s) s.value = 100;
+        if (g) g.value = 100;
+        if (t) t.value = 6500;
+        if (b) b.value = 100;
+        updateDisplayLabels();
+        const keeper = document.getElementById('display-keeper-status');
+        if (keeper) { keeper.textContent = 'Inativo'; keeper.style.color = '#64748b'; }
+      } catch (e) {}
+      displayResetBtn.disabled = false;
+    });
+  }
+
+  // ── Loord Timer Resolution ──
+  const timerApplyBtn = document.getElementById('btn-timer-apply');
+  const timerResetBtn = document.getElementById('btn-timer-reset');
+  const timerStatus = document.getElementById('timer-status');
+
+  function showTimerStatus(msg, ok = true) {
+    if (!timerStatus) return;
+    timerStatus.style.display = 'block';
+    timerStatus.style.color = ok ? '#ef4444' : '#94a3b8';
+    timerStatus.textContent = msg;
+  }
+
+  if (timerApplyBtn) {
+    timerApplyBtn.addEventListener('click', async () => {
+      timerApplyBtn.textContent = '⏳ Ativando...';
+      timerApplyBtn.disabled = true;
+      try {
+        const res = await window.api.applyTimerResolution(true);
+        if (res && res.success) {
+          showTimerStatus('⚡ ' + (res.message || 'Timer 0.5ms ativo! Latência de clique zerada.'), true);
+          timerApplyBtn.style.boxShadow = '0 0 20px rgba(239,68,68,0.5)';
+        } else {
+          showTimerStatus('Erro: ' + (res?.error || 'Falha'), false);
+        }
+      } catch (e) {
+        showTimerStatus('Erro: ' + e.message, false);
+      }
+      timerApplyBtn.textContent = '⏱️ ATIVAR TIMER 0.5ms';
+      timerApplyBtn.disabled = false;
+    });
+  }
+
+  if (timerResetBtn) {
+    timerResetBtn.addEventListener('click', async () => {
+      timerResetBtn.disabled = true;
+      try {
+        const res = await window.api.applyTimerResolution(false);
+        if (res && res.success) {
+          showTimerStatus('🔄 ' + (res.message || 'Timer restaurado para o padrão.'), false);
+          if (timerApplyBtn) timerApplyBtn.style.boxShadow = '';
+        }
+      } catch (e) {}
+      timerResetBtn.disabled = false;
+    });
+  }
+
+})();
+
+
