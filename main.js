@@ -80,7 +80,7 @@ let activatedIsoKey = null;
 
 function isLicenseAuthorized() {
   return (isClientSessionAuthorized === true && !!authorizedSessionKey && typeof authorizedSessionKey === 'string' && authorizedSessionKey.length >= 6) ||
-         (authorizedSessionIsIsoKey === true && (authorizedSessionIsoUses > 0 || !!activatedIsoKey));
+    (authorizedSessionIsIsoKey === true && (authorizedSessionIsoUses > 0 || !!activatedIsoKey));
 }
 
 // Lista de canais públicos permitidos sem autenticação (login, verificação e sistema)
@@ -3465,29 +3465,117 @@ ipcMain.handle('transform-windows-lite', async () => {
 // OVERCLOCK & BOOST: Detectar Hardware + AMD PBO + Intel PL + RAM
 // ════════════════════════════════════════════════════════════════════════════
 
-// ─── Detectar Hardware (CPU, RAM, Placa-Mãe) via WMI ──────────────────────
+// ─── Detectar Hardware (CPU, RAM, Placa-Mãe, Suporte OC & XMP) via WMI ────────
 ipcMain.handle('detect-hardware-oc', async () => {
   try {
     const ps = `
       $cpu = Get-WmiObject Win32_Processor | Select-Object -First 1;
       $mb  = Get-WmiObject Win32_BaseBoard | Select-Object -First 1;
       $ram = Get-WmiObject Win32_PhysicalMemory;
-      $os  = Get-WmiObject Win32_OperatingSystem;
-      $totalRam = [math]::Round(($ram | Measure-Object -Property Capacity -Sum).Sum / 1GB, 0);
-      $ramSpeed = ($ram | Select-Object -First 1 -ExpandProperty Speed);
-      $ramType = switch(($ram | Select-Object -First 1 -ExpandProperty SMBIOSMemoryType)){
-        26 { 'DDR4' } 34 { 'DDR5' } 24 { 'DDR3' } default { 'DDR4' }
-      };
-      $ramGen = switch(($ram | Select-Object -First 1 -ExpandProperty SMBIOSMemoryType)){
-        26 { '4' } 34 { '5' } 24 { '3' } default { '4' }
-      };
+      
       $cpuName = $cpu.Name.Trim();
       $cpuCores = $cpu.NumberOfCores;
-      $cpuBrand = if ($cpuName -match 'AMD') { 'AMD' } elseif ($cpuName -match 'Intel') { 'Intel' } else { 'Unknown' };
+      $cpuThreads = $cpu.NumberOfLogicalProcessors;
+      $cpuManufacturer = if ($cpu.Manufacturer) { $cpu.Manufacturer.Trim() } else { 'Unknown' };
+      $cpuBrand = if ($cpuManufacturer -match 'AMD' -or $cpuName -match 'AMD') { 'AMD' } elseif ($cpuManufacturer -match 'Intel' -or $cpuName -match 'Intel') { 'Intel' } else { $cpuManufacturer };
+
+      $totalRamBytes = ($ram | Measure-Object -Property Capacity -Sum).Sum;
+      $totalRamGB = [math]::Round($totalRamBytes / 1GB, 0);
+      $ramModulesCount = ($ram | Measure-Object).Count;
+      $firstModule = $ram | Select-Object -First 1;
+      $ramModuleGB = [math]::Round($firstModule.Capacity / 1GB, 0);
+      $ramPartNumber = if ($firstModule.PartNumber) { $firstModule.PartNumber.Trim() } else { '' };
+
+      $baseSpeed = ($ram | Measure-Object -Property Speed -Maximum).Maximum;
+      $configuredSpeed = ($ram | Measure-Object -Property ConfiguredClockSpeed -Maximum).Maximum;
+      if (-not $configuredSpeed -or $configuredSpeed -lt $baseSpeed) { $configuredSpeed = $baseSpeed };
+
+      $smbiosType = $firstModule.SMBIOSMemoryType;
+      $ramType = switch ($smbiosType) {
+        20 { 'DDR' }
+        21 { 'DDR2' }
+        24 { 'DDR3' }
+        26 { 'DDR4' }
+        30 { 'LPDDR4' }
+        34 { 'DDR5' }
+        35 { 'LPDDR5' }
+        default {
+          if ($configuredSpeed -ge 4400) { 'DDR5' }
+          elseif ($configuredSpeed -ge 2133) { 'DDR4' }
+          elseif ($configuredSpeed -ge 1066) { 'DDR3' }
+          else { 'DDR' }
+        }
+      };
+
+      $mbProduct = if ($mb.Product) { $mb.Product.Trim() } else { 'Placa Desconhecida' };
+      $mbManufacturer = if ($mb.Manufacturer) { $mb.Manufacturer.Trim() } else { 'Desconhecido' };
+
+      # 1. Identificar se XMP / EXPO já está ativado na BIOS
+      $xmpActive = ($configuredSpeed -gt $baseSpeed) -or ($ramType -eq 'DDR5' -and $configuredSpeed -ge 5200) -or ($ramType -eq 'DDR4' -and $configuredSpeed -ge 3000);
+
+      # 2. Identificar se é Laptop / Notebook
+      $chassis = (Get-WmiObject Win32_SystemEnclosure).ChassisTypes;
+      $isLaptop = $false;
+      if ($chassis | Where-Object { $_ -in @(8, 9, 10, 11, 12, 14, 18, 21, 31, 32) }) {
+        $isLaptop = $true;
+      }
+      if (Get-WmiObject Win32_Battery) {
+        $isLaptop = $true;
+      }
+
+      # 3. Identificar compatibilidade da Placa-Mãe e Processador com Overclock/PBO
+      $ocSupported = $true;
+      $ocReason = '';
+      $ocChipset = '';
+
+      if ($isLaptop) {
+        $ocSupported = $false;
+        $ocReason = 'Laptop/Notebook detectado: BIOS com perfil de overclock restrito pelo fabricante.';
+      } elseif ($cpuBrand -eq 'AMD') {
+        if ($mbProduct -match 'A320|A520|A620|A300|A400') {
+          $ocSupported = $false;
+          $ocReason = 'Placa-mãe com Chipset Série A (' + ($Matches[0]) + ') não suporta Overclock de CPU nem PBO por limitação de hardware/VRM.';
+          $ocChipset = $Matches[0];
+        } elseif ($cpuName -match 'Athlon|Sempron') {
+          $ocSupported = $false;
+          $ocReason = 'Processador Athlon/Sempron com multiplicador e PBO bloqueados de fábrica.';
+        } else {
+          $ocSupported = $true;
+          if ($mbProduct -match 'X670|B650|X570|B550|X470|B450|X370|B350') {
+            $ocChipset = $Matches[0];
+          }
+        }
+      } elseif ($cpuBrand -eq 'Intel') {
+        if ($mbProduct -match 'H61|H81|H110|H310|H410|H510|H610|H670|H770|B150|B250|B360|B365|B460|B560|B660|B760') {
+          $ocSupported = $false;
+          $ocReason = 'Placa-mãe Série H ou B (' + ($Matches[0]) + ') não suporta Overclock de CPU (recurso exclusivo da Série Z e X).';
+          $ocChipset = $Matches[0];
+        } elseif ($cpuName -notmatch 'K|KF|KS|X\\b|Extreme') {
+          $ocSupported = $false;
+          $ocReason = 'Processador Intel sem sufixo K/KF possui multiplicador de frequência travado.';
+        } else {
+          $ocSupported = $true;
+          if ($mbProduct -match 'Z790|Z690|Z590|Z490|Z390|Z370|Z270|Z170|X299|X99') {
+            $ocChipset = $Matches[0];
+          }
+        }
+      }
+
+      # 4. Identificar se PBO / Power Limits já estão aplicados no sistema
+      $pboApplied = $false;
+      try {
+        $pt = (Get-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerThrottling' -ErrorAction SilentlyContinue).PowerThrottlingOff;
+        $w32 = (Get-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl' -ErrorAction SilentlyContinue).Win32PrioritySeparation;
+        if ($pt -eq 1 -and $w32 -eq 38) { $pboApplied = $true }
+      } catch { }
+
       [PSCustomObject]@{
-        cpuName=$cpuName; cpuBrand=$cpuBrand; cpuCores=$cpuCores;
-        ramGB=$totalRam; ramSpeed=$ramSpeed; ramType=$ramType; ramGen=$ramGen;
-        mbProduct=$mb.Product; mbManufacturer=$mb.Manufacturer;
+        cpuName=$cpuName; cpuCores=$cpuCores; cpuThreads=$cpuThreads; cpuManufacturer=$cpuManufacturer; cpuBrand=$cpuBrand;
+        ramGB=$totalRamGB; ramModulesCount=$ramModulesCount; ramModuleGB=$ramModuleGB;
+        ramType=$ramType; ramSpeed=$configuredSpeed; baseSpeed=$baseSpeed; ramPartNumber=$ramPartNumber; xmpActive=$xmpActive;
+        mbProduct=$mbProduct; mbManufacturer=$mbManufacturer;
+        isLaptop=$isLaptop; ocSupported=$ocSupported; ocReason=$ocReason; ocChipset=$ocChipset;
+        pboApplied=$pboApplied;
       } | ConvertTo-Json -Compress
     `;
     const tmpPath = path.join(os.tmpdir(), `loord_hw_${Date.now()}.ps1`);
@@ -3497,7 +3585,7 @@ ipcMain.handle('detect-hardware-oc', async () => {
     const data = JSON.parse(out.trim());
     return { success: true, ...data };
   } catch (e) {
-    return { success: false, error: e.message, cpuName: 'Erro ao detectar', cpuBrand: 'Unknown', ramGB: 0 };
+    return { success: false, error: e.message, cpuName: 'Erro ao detectar', cpuBrand: 'Unknown', ramGB: 0, ocSupported: true };
   }
 });
 

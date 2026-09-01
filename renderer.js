@@ -4563,41 +4563,217 @@ if (window.api && window.api.onLicenseRevoked) {
     if (!hw) return;
     const set = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val || '—'; };
 
+    // 1. PROCESSADOR - Nome oficial + Núcleos e Threads físicos reais do PC
     set('oc-cpu-name', hw.cpuName);
-    set('oc-cpu-brand', hw.cpuBrand === 'AMD' ? '🔴 AMD Ryzen' : hw.cpuBrand === 'Intel' ? '🔵 Intel Core' : hw.cpuBrand);
-    set('oc-ram-info', `${hw.ramGB} GB DDR${hw.ramGen || ''}`);
-    set('oc-ram-speed', hw.ramSpeed ? `${hw.ramSpeed} MHz (${hw.ramType || ''})` : '');
+    const cpuSpec = (hw.cpuCores && hw.cpuThreads) 
+      ? `${hw.cpuCores} Núcleos, ${hw.cpuThreads} Threads (${hw.cpuManufacturer || hw.cpuBrand})`
+      : (hw.cpuManufacturer || hw.cpuBrand);
+    set('oc-cpu-brand', cpuSpec);
+
+    // 2. MEMÓRIA RAM - Pentes físicos reais (ex: 32 GB 2x 16GB DDR5) + PartNumber oficial
+    const ramModulesText = (hw.ramModulesCount && hw.ramModuleGB)
+      ? `${hw.ramGB} GB (${hw.ramModulesCount}x ${hw.ramModuleGB}GB) ${hw.ramType}`
+      : `${hw.ramGB} GB ${hw.ramType}`;
+    set('oc-ram-info', ramModulesText);
+    
+    // Frequência real configurada na BIOS + PartNumber do pente + Status do XMP/EXPO
+    const ramPartText = hw.ramPartNumber ? `${hw.ramPartNumber} • ` : '';
+    const xmpStatusText = hw.xmpActive ? 'EXPO / XMP Ativo 🔥' : `Base (${hw.baseSpeed} MHz)`;
+    set('oc-ram-speed', `${hw.ramSpeed} MHz • ${ramPartText}${xmpStatusText}`);
+
+    // 3. PLACA-MÃE - Modelo real da BIOS + Fabricante e compatibilidade
     set('oc-mb-name', hw.mbProduct);
-    set('oc-mb-man', hw.mbManufacturer);
+    const mbStatus = hw.ocSupported 
+      ? `${hw.mbManufacturer} • Compatível com Overclock ✔` 
+      : `${hw.mbManufacturer} • ${hw.ocReason ? 'Overclock Não Suportado ⚠️' : ''}`;
+    set('oc-mb-man', mbStatus);
 
     const amdCard = document.getElementById('oc-card-amd');
     const intelCard = document.getElementById('oc-card-intel');
     const boostEl = document.getElementById('oc-boost-type');
     const boostNote = document.getElementById('oc-boost-note');
     const brandMsg = document.getElementById('oc-status-brand-msg');
+    const btnApplyAll = document.getElementById('btn-apply-overclock');
+    const mainBadge = document.getElementById('oc-main-boost-badge');
+    const btnAmd = document.getElementById('btn-apply-amd-pbo');
+    const btnIntel = document.getElementById('btn-apply-intel-pl');
+    const amdPboBadge = document.getElementById('oc-amd-pbo-badge');
+    const intelPlBadge = document.getElementById('oc-intel-pl-badge');
 
-    if (hw.cpuBrand === 'AMD') {
-      if (amdCard) amdCard.style.display = '';
-      if (intelCard) intelCard.style.display = 'none';
-      if (boostEl) { boostEl.textContent = 'PBO Ryzen 🔴'; boostEl.style.color = '#f87171'; }
-      if (boostNote) boostNote.textContent = 'Precision Boost Overdrive via Registro';
-      if (brandMsg) brandMsg.textContent = `✅ AMD Ryzen detectado — PBO + limites PPT/TDC/EDC disponíveis. Clique em Aplicar Boost!`;
+    // ── ATUALIZAÇÃO DO CARD XMP / EXPO ──
+    const btnXmp = document.getElementById('btn-reboot-to-xmp-bios');
+    const ocXmpBadge = document.getElementById('oc-xmp-badge');
+    const ocXmpDesc = document.getElementById('oc-xmp-desc');
 
-      const cores = hw.cpuCores || 6;
-      const ppt = Math.round(cores * 30);
-      const tdc = Math.round(cores * 8.5);
-      const edc = Math.round(cores * 12);
-      const s = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-      s('oc-amd-ppt', ppt); s('oc-amd-tdc', tdc); s('oc-amd-edc', edc);
-    } else if (hw.cpuBrand === 'Intel') {
-      if (amdCard) amdCard.style.display = 'none';
-      if (intelCard) intelCard.style.display = '';
-      if (boostEl) { boostEl.textContent = 'Power Limit Intel 🔵'; boostEl.style.color = '#38bdf8'; }
-      if (boostNote) boostNote.textContent = 'PL1/PL2 desbloqueado + Turbo Boost máximo';
-      if (brandMsg) brandMsg.textContent = `✅ Intel Core detectado — Power Limits PL1/PL2 disponíveis para desbloqueio!`;
+    if (hw.xmpActive) {
+      if (ocXmpBadge) {
+        ocXmpBadge.textContent = 'JÁ ATIVO 🔥';
+        ocXmpBadge.style.background = 'linear-gradient(90deg, #10b981, #059669)';
+        ocXmpBadge.style.color = '#fff';
+      }
+      if (ocXmpDesc) {
+        ocXmpDesc.innerHTML = `✅ <strong>Sua memória RAM já está operando na velocidade máxima de ${hw.ramSpeed} MHz com perfil EXPO/XMP ativado na BIOS!</strong> Não é necessário reativar, a menos que queira alterar o perfil.`;
+      }
+      if (btnXmp) {
+        btnXmp.innerHTML = `✔ EXPO / XMP Já Ativo (${hw.ramSpeed} MHz) — Reiniciar na BIOS`;
+        btnXmp.style.background = 'linear-gradient(135deg, rgba(16,185,129,0.25), rgba(5,150,105,0.2))';
+        btnXmp.style.border = '1.5px solid #10b981';
+        btnXmp.style.color = '#34d399';
+      }
     } else {
-      if (boostEl) boostEl.textContent = 'CPU desconhecido';
-      if (brandMsg) brandMsg.textContent = 'CPU não identificado como AMD ou Intel. Boost de RAM ainda disponível.';
+      if (ocXmpBadge) {
+        ocXmpBadge.textContent = '1-CLIQUE';
+        ocXmpBadge.style.background = 'linear-gradient(90deg, #f59e0b, #ef4444)';
+        ocXmpBadge.style.color = '#000';
+      }
+      if (ocXmpDesc) {
+        ocXmpDesc.innerHTML = `Sua memória RAM está operando no clock base (${hw.baseSpeed || hw.ramSpeed} MHz). Clique abaixo para entrar direto na BIOS e dobrar a velocidade da sua RAM.`;
+      }
+      if (btnXmp) {
+        btnXmp.innerHTML = `🚀 ATIVAR XMP / EXPO (REINICIAR DIRETO NA BIOS)`;
+        btnXmp.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+        btnXmp.style.border = 'none';
+        btnXmp.style.color = '#000';
+      }
+    }
+
+    // ── VALIDAÇÃO DE COMPATIBILIDADE DE OVERCLOCK / PBO ──
+    if (hw.ocSupported === false) {
+      // Hardware não suporta Overclock de CPU (Chipset A320/A520/A620/H610, Laptop, etc.)
+      if (btnApplyAll) {
+        btnApplyAll.disabled = true;
+        btnApplyAll.style.opacity = '0.5';
+        btnApplyAll.style.cursor = 'not-allowed';
+        btnApplyAll.style.filter = 'grayscale(0.6)';
+        btnApplyAll.textContent = '🚫 OVERCLOCK NÃO SUPORTADO';
+      }
+      if (mainBadge) {
+        mainBadge.textContent = 'BLOQUEADO ⚠️';
+        mainBadge.style.background = 'linear-gradient(90deg, #64748b, #475569)';
+      }
+      if (brandMsg) {
+        brandMsg.style.color = '#f87171';
+        brandMsg.innerHTML = `⚠️ <strong>Overclock de CPU Bloqueado:</strong> ${hw.ocReason}`;
+      }
+      if (boostEl) {
+        boostEl.textContent = 'Não Suportado ⚠️';
+        boostEl.style.color = '#f87171';
+      }
+      if (boostNote) {
+        boostNote.textContent = hw.ocReason;
+      }
+
+      if (hw.cpuBrand === 'AMD') {
+        if (amdCard) amdCard.style.display = '';
+        if (intelCard) intelCard.style.display = 'none';
+        if (btnAmd) {
+          btnAmd.disabled = true;
+          btnAmd.textContent = '🚫 PBO Bloqueado nesta Placa/CPU';
+          btnAmd.style.opacity = '0.5';
+          btnAmd.style.cursor = 'not-allowed';
+        }
+        if (amdPboBadge) {
+          amdPboBadge.textContent = 'NÃO SUPORTADO';
+          amdPboBadge.style.background = 'rgba(100,116,139,0.3)';
+          amdPboBadge.style.color = '#94a3b8';
+        }
+      } else if (hw.cpuBrand === 'Intel') {
+        if (amdCard) amdCard.style.display = 'none';
+        if (intelCard) intelCard.style.display = '';
+        if (btnIntel) {
+          btnIntel.disabled = true;
+          btnIntel.textContent = '🚫 PL Bloqueado nesta Placa/CPU';
+          btnIntel.style.opacity = '0.5';
+          btnIntel.style.cursor = 'not-allowed';
+        }
+        if (intelPlBadge) {
+          intelPlBadge.textContent = 'NÃO SUPORTADO';
+          intelPlBadge.style.background = 'rgba(100,116,139,0.3)';
+          intelPlBadge.style.color = '#94a3b8';
+        }
+      }
+    } else {
+      // Hardware 100% COMPATÍVEL com Overclock/PBO
+      if (btnApplyAll) {
+        btnApplyAll.disabled = false;
+        btnApplyAll.style.opacity = '1';
+        btnApplyAll.style.cursor = 'pointer';
+        btnApplyAll.style.filter = 'none';
+        btnApplyAll.textContent = hw.pboApplied ? '✔ REAPLICAR BOOST + REINICIAR' : '🔥 APLICAR BOOST + REINICIAR';
+      }
+      if (mainBadge) {
+        mainBadge.textContent = hw.pboApplied ? 'JÁ ATIVADO ✔' : 'COMPATÍVEL ✔';
+        mainBadge.style.background = hw.pboApplied ? 'linear-gradient(90deg, #10b981, #059669)' : 'linear-gradient(90deg, #ef4444, #f59e0b)';
+      }
+
+      if (hw.cpuBrand === 'AMD') {
+        if (amdCard) amdCard.style.display = '';
+        if (intelCard) intelCard.style.display = 'none';
+        if (boostEl) { boostEl.textContent = 'PBO Ryzen 🔴'; boostEl.style.color = '#f87171'; }
+        if (boostNote) boostNote.textContent = `Placa-mãe ${hw.mbProduct} 100% compatível com PBO via Registro`;
+
+        const cores = hw.cpuCores || 6;
+        const ppt = Math.round(cores * 30);
+        const tdc = Math.round(cores * 8.5);
+        const edc = Math.round(cores * 12);
+        const s = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+        s('oc-amd-ppt', ppt); s('oc-amd-tdc', tdc); s('oc-amd-edc', edc);
+
+        if (hw.pboApplied) {
+          if (btnAmd) {
+            btnAmd.disabled = false;
+            btnAmd.textContent = '✔ PBO Já Ativado no Sistema (Reaplicar)';
+            btnAmd.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            btnAmd.style.opacity = '1';
+            btnAmd.style.cursor = 'pointer';
+          }
+          if (amdPboBadge) {
+            amdPboBadge.textContent = 'JÁ ATIVO ✔';
+            amdPboBadge.style.background = 'rgba(16,185,129,0.2)';
+            amdPboBadge.style.color = '#34d399';
+          }
+          if (brandMsg) {
+            brandMsg.style.color = '#34d399';
+            brandMsg.innerHTML = `✅ <strong>AMD Ryzen + ${hw.mbProduct}:</strong> PBO Máximo já está ativo no seu sistema!`;
+          }
+        } else {
+          if (btnAmd) {
+            btnAmd.disabled = false;
+            btnAmd.textContent = '🔴 Ativar PBO Máximo AMD';
+            btnAmd.style.background = '';
+            btnAmd.style.opacity = '1';
+            btnAmd.style.cursor = 'pointer';
+          }
+          if (amdPboBadge) {
+            amdPboBadge.textContent = 'RYZEN';
+            amdPboBadge.style.background = 'rgba(239,68,68,0.2)';
+            amdPboBadge.style.color = '#f87171';
+          }
+          if (brandMsg) {
+            brandMsg.style.color = '#94a3b8';
+            brandMsg.innerHTML = `✅ AMD Ryzen detectado — Placa-mãe <strong>${hw.mbProduct}</strong> 100% compatível com PBO e limites PPT/TDC/EDC. Clique em Aplicar Boost!`;
+          }
+        }
+      } else if (hw.cpuBrand === 'Intel') {
+        if (amdCard) amdCard.style.display = 'none';
+        if (intelCard) intelCard.style.display = '';
+        if (boostEl) { boostEl.textContent = 'Power Limit Intel 🔵'; boostEl.style.color = '#38bdf8'; }
+        if (boostNote) boostNote.textContent = 'PL1/PL2 desbloqueado + Turbo Boost máximo';
+
+        if (btnIntel) {
+          btnIntel.disabled = false;
+          btnIntel.textContent = '🔵 Desbloquear PL1/PL2 Intel';
+          btnIntel.style.opacity = '1';
+          btnIntel.style.cursor = 'pointer';
+        }
+        if (brandMsg) {
+          brandMsg.style.color = '#94a3b8';
+          brandMsg.innerHTML = `✅ Intel Core detectado — Placa-mãe <strong>${hw.mbProduct}</strong> pronta para desbloqueio de Power Limits PL1/PL2!`;
+        }
+      } else {
+        if (boostEl) boostEl.textContent = 'CPU desconhecido';
+        if (brandMsg) brandMsg.textContent = 'CPU não identificado como AMD ou Intel. Boost de RAM ainda disponível.';
+      }
     }
   }
 
@@ -4746,6 +4922,13 @@ if (window.api && window.api.onLicenseRevoked) {
         const hw = await window.api.detectHardwareOC();
         ocHwCache = hw;
         updateHardwareUI(hw);
+
+        if (hw.ocSupported === false) {
+          show(`⚠️ ${hw.ocReason || 'Overclock de CPU não suportado pelo seu hardware.'}`, '#f87171');
+          btnApplyAll.disabled = true;
+          btnApplyAll.textContent = '🚫 NÃO SUPORTADO';
+          return;
+        }
 
         show(`⚙️ ${hw.cpuBrand === 'AMD' ? 'Aplicando PBO Ryzen...' : 'Desbloqueando Power Limits Intel...'}`);
         await (hw.cpuBrand === 'AMD' ? window.api.applyAmdPBO() : window.api.applyIntelPL());
