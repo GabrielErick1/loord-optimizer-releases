@@ -25,3 +25,5 @@ isodoloord/
 .dev_source_backup/
 .vercel/
 .vercelignore
+.agents
+/agents
