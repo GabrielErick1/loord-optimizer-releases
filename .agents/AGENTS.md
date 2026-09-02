@@ -105,7 +105,7 @@ O Loord Optimizer é construído sobre uma **Arquitetura de 3 Camadas Isoladas**
 ## 4. 🌐 SISTEMA WEB & API REMOTA (VERCEL API)
 
 O painel se comunica em tempo real com a infraestrutura em nuvem hospedada em:
-**`https://loord-auth.vercel.app`**
+**`https://web-key-generator.vercel.app`**
 
 ### 4.1. Mecanismo de HWID (Hardware Identification Único)
 * O identificador exclusivo da máquina (`get-uuid`) é gerado pela combinação criptografada de:
@@ -115,36 +115,40 @@ O painel se comunica em tempo real com a infraestrutura em nuvem hospedada em:
 * O resultado é submetido a um hash SHA-256 no formato `LOORD-HWID-XXXX-XXXX-XXXX`.
 * Uma chave VIP fica vinculada **exclusivamente** a esse HWID no banco da Vercel, impedindo que a mesma chave seja compartilhada entre múltiplos computadores.
 
-### 4.2. Fluxo de Ativação de Chave VIP (`verify-key`)
-1. O usuário digita a chave na tela de bloqueio (`#key-lock-screen`).
-2. O `renderer.js` invoca `window.api.verifyKey(key)`.
-3. O `main.js` dispara uma requisição HTTPS POST para `https://loord-auth.vercel.app/api/auth`:
-   ```json
-   {
-     "key": "LOORD-XXXX-XXXX",
-     "hwid": "LOORD-HWID-XXXX-XXXX",
-     "version": "3.7.3",
-     "timestamp": 1725178400000
-   }
-   ```
-4. Se o servidor responder com `{ authorized: true, plan: "vip", expiresAt: "..." }`:
-   * A flag interna `isLicenseAuthorized()` é definida como `true`.
-   * Salva o cache de autenticação local criptografado em `userData`.
-   * Desbloqueia a interface do painel, oculta a tela de bloqueio e exibe as abas completas.
+### 4.2. Validação Server-Side de Identidade & Anti-Rebranding
+* Toda requisição de ativação e heartbeat envia atestação de integridade:
+  ```json
+  {
+    "appName": "Loord Optimizer",
+    "appId": "com.loord.optimizer",
+    "appVersion": "3.8.2"
+  }
+  ```
+* Se um atacante tentar renomear o painel para vender como outro software, a **Vercel recusa a requisição no servidor com HTTP 403 (`identity_mismatch`)**. A decisão final fica fora do alcance do cracker.
 
-### 4.3. Sistema de Heartbeat Ativo (Intervalo de 5 Minutos)
+### 4.3. Rate-Limiting & Detecção de Anomalia no Backend
+* O servidor rastreia o histórico recente de ativações por chave e endereço IP.
+* Se a mesma chave registrar tentativas de conexão de múltiplos HWIDs em um curto intervalo de tempo (sinal clássico de clone ou compartilhamento pirata), o servidor altera automaticamente o status da licença para revogado (`status: 'revoked'`) e bloqueia o acesso instantaneamente.
+
+### 4.4. Emissão de SessionToken Criptográfico (HMAC-SHA256)
+* Ao validar a licença (no login ou a cada 5 minutos no heartbeat), a Vercel emite um `sessionToken` assinado digitalmente com chave secreta privada (`SERVER_AUTH_SECRET`).
+* O token é atrelado exclusivamente ao HWID daquela máquina e possui validade curta (renovada a cada 5 min).
+* O cliente mantém o token estritamente em memória RAM volátil (`activeServerSessionToken`). Se o token for inválido, ausente ou expirado, o painel bloqueia os tweaks.
+
+### 4.5. Entrega Dinâmica do "Coração" do Produto na Nuvem (`/api/vip-payload`)
+* As curvas matemáticas de sensibilidade VIP (`SmoothMouseXCurve`, `SmoothMouseYCurve`, sensibilidade, hover time) **não ficam salvas estaticamente no cliente**.
+* Ao aplicar qualquer sensibilidade VIP, o painel invoca `fetchServerVipPayload('semi-precision-curve')` enviando o `sessionToken` para o backend.
+* O backend valida a assinatura HMAC e entrega os parâmetros matemáticos em tempo real na memória RAM do painel.
+* **Resultado Anti-Portable:** Se um cracker tentar rodar uma versão "portable offline" ou burlar a tela de login localmente, **o painel fica vazio e sem as funções reais**, pois o servidor não entrega as curvas matemáticas para quem não possui sessão oficial ativa.
+* **Regra de Roteamento Vercel Hobby (Cota de 12 Funções):** O endpoint `_vipPayload.js` é despachado internamente através de `client-check.js?action=vip-payload` com rewrite no `vercel.json`. **JAMAIS crie mais de 12 arquivos .js soltos na pasta `api/`**, pois a Vercel Hobby rejeitará o build. Utilize sempre o prefixo `_` para módulos internos.
+
+### 4.6. Sistema de Heartbeat Ativo (Intervalo de 5 Minutos)
 * A cada 5 minutos (300.000ms), o `main.js` consulta silenciosamente `/api/client-check`.
 * **Ação em Caso de Revogação ou Expiração:**
-  1. A autorização é revogada imediatamente (`isLicenseAuthorized() = false`).
+  1. A autorização é revogada imediatamente (`isLicenseAuthorized() = false`, `activeServerSessionToken = null`).
   2. Executa a reversão preventiva de tweaks (`revert-all-tweaks-on-revoke`).
   3. O cache local é expurgado.
   4. Dispara evento IPC que reativa a tela de bloqueio `#key-lock-screen`, impossibilitando o uso do painel.
-
-### 4.4. Gateway de Pagamento PIX Integrado & Planos ISO
-* O painel possui integração direta para compra de licenças e acesso à ISO Loord Lite via PIX automatizado:
-  * **Geração de Cobrança (`create-iso-pix-payment`):** Retorna o QR Code em Base64 e o código "Copia e Cola" do Banco Central.
-  * **Polling de Confirmação (`check-iso-pix-payment`):** Consulta a cada 4 segundos o status do pagamento na Vercel.
-  * **Liberação Instantânea:** Ao detectar compensação bancária (`PAID`), a chave VIP é ativada ou os arquivos da ISO são liberados para download/preparação de partição.
 
 ---
 
@@ -153,7 +157,7 @@ O painel se comunica em tempo real com a infraestrutura em nuvem hospedada em:
 O Loord Optimizer emprega medidas ativas de nível militar para proteção de integridade:
 
 ### 5.1. Barreira IPC Zero-Trust no `main.js`
-Apenas uma lista estrita de canais públicos pode responder sem chave VIP validada:
+Apenas uma lista estrita de canais públicos pode responder sem chave VIP validada e sem `sessionToken` ativo:
 ```javascript
 const PUBLIC_IPC_CHANNELS = [
   'check-admin', 'get-uuid', 'verify-key', 'activate-iso-key',
@@ -166,34 +170,28 @@ const PUBLIC_IPC_CHANNELS = [
 Qualquer invocação a canais de tweaks, registro, ADB, overclock ou arquivos de emulador fora dessa lista retorna imediatamente `{ success: false, error: 'Acesso bloqueado: Licença VIP requerida.' }`.
 
 ### 5.2. Bloqueio de Injeção de CLI e DevTools
-* **Anti-Debugging:** Ao iniciar, o `main.js` inspeciona `process.argv`. Argumentos como `--remote-debugging-port`, `--inspect`, `--inspect-brk`, `--js-flags` ou `--disable-web-security` provocam encerramento forçado imediato (`app.exit(0)`).
+* **Anti-Debugging:** Ao iniciar, o `main.js` inspeciona `process.argv`. Argumentos hostis como `--remote-debugging`, `--inspect`, `--inspect-brk`, `--enable-logging`, `--js-flags`, `--disable-web-security` provocam encerramento imediato via `app.exit(0)`.
 * **Bloqueio de DevTools:** Em builds empacotados (`app.isPackaged`), qualquer tentativa de abrir DevTools é interceptada e fechada instantaneamente.
 * **Bloqueio de Teclas de Atalho:** Teclas `F12`, `Ctrl+Shift+I`, `Ctrl+Shift+J` e `Ctrl+R` são bloqueadas no `before-input-event`.
 
-### 5.3. Pipeline de Ofuscação Militar & V8 Bytecode (`scripts/obfuscate.js`)
-Antes da compilação do instalador (`npm run publish` ou `npm run dist`), o pipeline:
+### 5.3. Pipeline de Ofuscação Militar com Self-Defending (`scripts/obfuscate.js`)
+Antes da compilação do instalador (`npm run publish` ou `npm run dist`), o pipeline automático:
 1. Faz backup de segurança do código limpo em `.dev_source_backup/`.
 2. Aplica `javascript-obfuscator` em `main.js`, `preload.js`, `renderer.js` e `regis/encrypted_reg_data.js` com:
    * `compact: true`
-   * `controlFlowFlattening: true` (probabilidade 0.75)
-   * `deadCodeInjection: true`
-   * `selfDefending: true` (se qualquer byte for alterado ou o código for formatado/desminificado, o binário trava em loop infinito)
+   * `controlFlowFlattening: true` (probabilidade 0.75 - embaralhamento de controle)
+   * `deadCodeInjection: true` (injeção de código falso)
+   * `selfDefending: true` (**Se qualquer byte for alterado ou o código for desminificado/formatado, o binário trava em loop infinito**)
+   * `stringArrayEncoding: ['base64']` (criptografia total de strings)
    * `splitStrings: true`
-   * `stringArrayEncoding: ['base64']`
-3. **Compilação em V8 Bytecode Binário (.jsc via Bytenode):**
-   * Invoca `scripts/compile-bytecode.js` através do próprio motor Electron (`ELECTRON_RUN_AS_NODE=1`).
-   * Gera `main.jsc` e `preload.jsc` em binário puro de máquina virtual V8.
-   * **Nenhuma IA (ChatGPT, Claude, etc.) consegue ler, analisar ou descompilar bytecode V8**.
-4. **Injeção de Loaders Seguros:**
-   * Substitui `main.js` e `preload.js` por carregadores mínimos de 3 linhas que apenas executam o bytecode binário.
-5. O `electron-builder` empacota os binários no arquivo `app.asar`.
-6. O script restaura automaticamente o código-fonte limpo para o ambiente de desenvolvimento.
+3. O `electron-builder` empacota os binários no arquivo `app.asar`.
+4. O script restaura automaticamente o código-fonte limpo para o ambiente de desenvolvimento.
+> [!IMPORTANT]
+> **NÃO utilize compiladores de V8 snapshot externos (como Bytenode) no processo principal empacotado do Electron 30**. No Windows com elevação de Administrador, os snapshots de bytecode V8 sofrem rejeição em runtime (`cachedDataRejected`), impedindo a abertura da janela. O pipeline oficial comprovado e estável é o **JavaScriptObfuscator com Self-Defending**, aliado à **validação server-side na Vercel**.
 
-### 5.4. Proteção Anti-Portable, Anti-Tamper & Anti-Rebranding
-* **Bloqueio de Runner Portable:** Bloqueia inicialização através de runners genéricos do Electron (`process.defaultApp === true`).
-* **Bloqueio de Execução Descompactada:** Em produção (`app.isPackaged`), exige que a execução ocorra estritamente de dentro do contêiner `app.asar`.
-* **Anti-Rebranding de Executável:** O executável em produção deve corresponder estritamente a `loord optimizer.exe`. Se for renomeado, encerra imediatamente via `app.exit(0)`.
-* **Anti-Rebranding de Aplicação:** O nome no `package.json` deve ser estritamente `Loord Optimizer`.
+### 5.4. Proteção de Instância Única & Execução Segura
+* `app.requestSingleInstanceLock()` garante que apenas uma janela do painel rode por vez. Se uma segunda instância for chamada, a primeira ganha foco automaticamente.
+* O aplicativo roda com elevação de Administrador compulsória (`"requestedExecutionLevel": "requireAdministrator"` no `package.json`).
 
 ---
 
