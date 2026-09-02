@@ -8,17 +8,23 @@ const http = require('http');
 const { spawn, exec, execSync } = require('child_process');
 const { autoUpdater } = require('electron-updater');
 
-// ─── BLINDAGEM MÁXIMA CONTRA INJEÇÃO DE LINHA DE COMANDO & CRACKING ─────────
+// ─── BLINDAGEM MÁXIMA CONTRA ENGENHARIA REVERSA, PORTABLES & CRACKING ─────────
 const FORBIDDEN_CLI_ARGS = [
   '--remote-debugging',
+  '--remote-debugging-port',
+  '--remote-debugging-targets',
   '--inspect',
+  '--inspect-brk',
   '--enable-logging',
   '--log-net-log',
   '--js-flags',
   '--disable-web-security',
   '--allow-running-insecure-content',
   '--host-rules',
-  '--host-resolver-rules'
+  '--host-resolver-rules',
+  '--custom-devtools-frontend',
+  '--load-extension',
+  '--disable-extensions-except'
 ];
 
 for (const arg of process.argv) {
@@ -30,6 +36,38 @@ for (const arg of process.argv) {
     }
   }
 }
+
+// Bloqueio rigoroso de Portables, cópias não autorizadas e alteração de nome
+function verifyApplicationIntegrity() {
+  if (app.isPackaged) {
+    // 1. Bloqueia se foi iniciado através de um runner portable ou electron.exe desempacotado
+    if (process.defaultApp === true) {
+      try { app.exit(0); } catch (_) {}
+      process.exit(0);
+    }
+
+    // 2. Bloqueia se os arquivos foram descompactados e rodados soltos fora do app.asar oficial
+    const currentDir = __dirname.toLowerCase();
+    if (!currentDir.includes('app.asar')) {
+      try { app.exit(0); } catch (_) {}
+      process.exit(0);
+    }
+
+    // 3. Anti-Rebranding: Bloqueia se o executável foi renomeado para outro nome
+    const exeName = path.basename(process.execPath).toLowerCase();
+    if (exeName !== 'loord optimizer.exe') {
+      try { app.exit(0); } catch (_) {}
+      process.exit(0);
+    }
+
+    // 4. Anti-Rebranding: Bloqueia se o nome da aplicação foi alterado no package.json
+    if (app.getName() !== 'Loord Optimizer') {
+      try { app.exit(0); } catch (_) {}
+      process.exit(0);
+    }
+  }
+}
+verifyApplicationIntegrity();
 
 // ─── FLAGS DE PERFORMANCE DO CHROMIUM (anti-jank, anti-throttle) ─────────────
 app.commandLine.appendSwitch('disable-gpu-process-crash-limit');

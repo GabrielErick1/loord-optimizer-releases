@@ -21,7 +21,9 @@
     ],
     "files": [
       "main.js",
+      "main.jsc",
       "preload.js",
+      "preload.jsc",
       "renderer.js",
       "i18n.js",
       "index.html",
@@ -65,6 +67,7 @@
     "javascript-obfuscator": "^5.6.0"
   },
   "dependencies": {
+    "bytenode": "^1.6.0",
     "electron-updater": "6.3.9"
   }
 }

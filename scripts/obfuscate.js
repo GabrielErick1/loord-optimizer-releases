@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 const JavaScriptObfuscator = require('javascript-obfuscator');
 
 const rootDir = path.join(__dirname, '..');
@@ -58,11 +59,12 @@ function isAlreadyObfuscated(code) {
 const action = process.argv[2] || 'obfuscate';
 
 if (action === 'backup-and-obfuscate') {
-  console.log('🛡️ [BLINDAGEM] Criando backup de desenvolvimento e aplicando Criptografia Militar...');
+  console.log('🛡️ [BLINDAGEM MILITAR] Criando backup de desenvolvimento...');
   if (!fs.existsSync(backupDir)) {
     fs.mkdirSync(backupDir, { recursive: true });
   }
 
+  // 1. Backup do código-fonte limpo
   for (const item of filesToProtect) {
     const srcPath = path.join(rootDir, item.file);
     if (!fs.existsSync(srcPath)) continue;
@@ -70,12 +72,20 @@ if (action === 'backup-and-obfuscate') {
     const backupPath = path.join(backupDir, path.basename(item.file));
     const code = fs.readFileSync(srcPath, 'utf8');
 
-    // Salva o backup apenas se o arquivo atual não estiver ofuscado
     if (!isAlreadyObfuscated(code)) {
       fs.writeFileSync(backupPath, code, 'utf8');
     }
+  }
 
-    console.log(`🔒 Ofuscando e blindando: ${item.file}...`);
+  // 2. Ofuscação avançada com JavaScriptObfuscator
+  for (const item of filesToProtect) {
+    const srcPath = path.join(rootDir, item.file);
+    if (!fs.existsSync(srcPath)) continue;
+
+    const backupPath = path.join(backupDir, path.basename(item.file));
+    const code = fs.readFileSync(srcPath, 'utf8');
+
+    console.log(`🔒 Ofuscando camada 1: ${item.file}...`);
     const codeToObfuscate = (!isAlreadyObfuscated(code))
       ? code
       : (fs.existsSync(backupPath) ? fs.readFileSync(backupPath, 'utf8') : code);
@@ -83,16 +93,60 @@ if (action === 'backup-and-obfuscate') {
     const obfuscated = JavaScriptObfuscator.obfuscate(codeToObfuscate, item.opts).getObfuscatedCode();
     fs.writeFileSync(srcPath, obfuscated, 'utf8');
   }
-  console.log('✔️ [BLINDAGEM CONCLUÍDA] Código 100% blindado com Self-Defending contra engenharia reversa e portables!');
+
+  // 3. Compilação em V8 Bytecode Binário (.jsc via Bytenode sob o motor Electron)
+  console.log('⚡ [V8 BYTECODE] Compilando arquivos principais em Bytecode Binário V8...');
+  try {
+    execSync('npx electron scripts/compile-bytecode.js', {
+      cwd: rootDir,
+      env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
+      stdio: 'inherit'
+    });
+  } catch (err) {
+    console.error('❌ Erro na compilação em bytecode:', err.message);
+    process.exit(1);
+  }
+
+  // 4. Injeção dos Loaders Seguros nos arquivos .js de entrada
+  console.log('🧩 [LOADERS] Injetando carregadores mínimos binários em main.js e preload.js...');
+  const mainLoader = [
+    "'use strict';",
+    "const bytenode = require('bytenode');",
+    "const path = require('path');",
+    "require(path.join(__dirname, 'main.jsc'));"
+  ].join('\n');
+  fs.writeFileSync(path.join(rootDir, 'main.js'), mainLoader, 'utf8');
+
+  const preloadLoader = [
+    "'use strict';",
+    "const bytenode = require('bytenode');",
+    "const path = require('path');",
+    "require(path.join(__dirname, 'preload.jsc'));"
+  ].join('\n');
+  fs.writeFileSync(path.join(rootDir, 'preload.js'), preloadLoader, 'utf8');
+
+  console.log('✔️ [BLINDAGEM TOTAL CONCLUÍDA] V8 Bytecode + Self-Defending ativos! Impossível ler com IA ou descompilar!');
 } else if (action === 'restore') {
   console.log('🔄 [RESTAURAÇÃO] Restaurando código original para desenvolvimento...');
+
+  // Remove arquivos binários .jsc temporários de build
+  const jscFiles = ['main.jsc', 'preload.jsc'];
+  for (const jsc of jscFiles) {
+    const jscPath = path.join(rootDir, jsc);
+    if (fs.existsSync(jscPath)) {
+      fs.unlinkSync(jscPath);
+      console.log(`🗑️ Removido artefato binário: ${jsc}`);
+    }
+  }
+
+  // Restaura código limpo dos fontes originais
   for (const item of filesToProtect) {
     const backupPath = path.join(backupDir, path.basename(item.file));
     const srcPath = path.join(rootDir, item.file);
     if (fs.existsSync(backupPath)) {
       const origCode = fs.readFileSync(backupPath, 'utf8');
       fs.writeFileSync(srcPath, origCode, 'utf8');
-      console.log(`✔️ Restaurado: ${item.file}`);
+      console.log(`✔️ Restaurado com sucesso: ${item.file}`);
     }
   }
 }
