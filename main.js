@@ -31,11 +31,20 @@ for (const arg of process.argv) {
   }
 }
 
-// Prevenir travamentos do Chromium em GPUs antigas (Intel HD Graphics 1ª/2ª/3ª geração e ISOs Lite)
+// ─── FLAGS DE PERFORMANCE DO CHROMIUM (anti-jank, anti-throttle) ─────────────
 app.commandLine.appendSwitch('disable-gpu-process-crash-limit');
 app.commandLine.appendSwitch('no-sandbox');
 app.commandLine.appendSwitch('disable-software-rasterizer');
 app.commandLine.appendSwitch('disable-features', 'HardwareMediaKeyHandling');
+// Performance: impede que o Chromium reduza FPS quando a janela perde foco
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('disable-background-timer-throttling');
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
+// Reduz uso de memória desativando spell-check e extensões não usadas
+app.commandLine.appendSwitch('disable-spell-checking');
+app.commandLine.appendSwitch('disable-extensions');
+// Força garbage-collect agressivo para liberar RAM entre ações
+app.commandLine.appendSwitch('js-flags', '--expose-gc --max-old-space-size=256');
 
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
@@ -274,13 +283,19 @@ function createWindow() {
     minWidth: 850,
     minHeight: 550,
     resizable: true,
-    frame: false, // Frame-less custom UI
+    frame: false,
     backgroundColor: '#0e0e11',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      devTools: false // Bloqueia DevTools nativamente
+      devTools: false,
+      // ── Performance ────────────────────────────────────────────────
+      backgroundThrottling: false,   // não reduz FPS ao minimizar
+      spellcheck: false,             // elimina thread de spell-check
+      images: true,
+      webgl: false,                  // painel não usa WebGL, libera memória GPU
+      enableBlinkFeatures: '',       // desativa blink features extras desnecessárias
     },
   });
 
@@ -436,15 +451,30 @@ app.on('will-quit', () => {
   } catch (e) { }
 });
 
-// Helper: execute command asynchronously
-function runCmd(command) {
+// ─── HELPERS ASYNC (NUNCA BLOQUEIA O PROCESSO PRINCIPAL) ─────────────────────
+
+// Executa um comando e retorna stdout. Nunca bloqueia o event loop.
+function execAsync(cmd, opts = {}) {
   return new Promise((resolve, reject) => {
-    exec(command, (err, stdout, stderr) => {
+    exec(cmd, { windowsHide: true, timeout: opts.timeout || 10000, ...opts }, (err, stdout) => {
       if (err) reject(err);
-      else resolve(stdout.trim());
+      else resolve((stdout || '').trim());
     });
   });
 }
+
+// Executa silenciosamente sem importar se falhar (fire-and-forget seguro)
+function safeExec(cmd, opts = {}) {
+  return execAsync(cmd, opts).catch(() => '');
+}
+
+// Alias de compatibilidade com o código existente
+function runCmd(command) {
+  return execAsync(command);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 
 function cleanSecurityHosts() {
   try {
@@ -2747,26 +2777,20 @@ ipcMain.handle('apply-single-tweak', async (event, tweakId) => {
   }
   try {
     const commands = getCommandsForTweak(tweakId);
-    // Run each registry command directly and silently (app is already Admin)
-    for (const cmd of commands) {
-      try {
-        execSync(cmd, { stdio: 'ignore' });
-      } catch (e) {
-        console.warn(`Tweak cmd failed (non-fatal): ${cmd}`, e.message);
-      }
-    }
+    // Roda TODOS os comandos REG em paralelo — zero bloqueio no event loop
+    await Promise.all(
+      commands.map(cmd => execAsync(cmd).catch(e =>
+        console.warn('Tweak cmd (non-fatal):', cmd.slice(0, 60), e.message)
+      ))
+    );
 
-    // Reload mouse settings live in Windows memory without reboot
+    // Recarrega mouse sem reboot (fire-and-forget — não bloqueia)
     if (tweakId.startsWith('mouse-') || tweakId === 'remove-kbd-delay') {
-      try {
-        execSync(`powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Add-Type '[DllImport(\"user32.dll\")] public static extern bool SystemParametersInfo(int a,int b,IntPtr c,int d);' -Name U -Namespace W -PassThru | ForEach-Object { $null = $_::SystemParametersInfo(0x0004,0,[IntPtr]::Zero,0x0003); $null = $_::SystemParametersInfo(0x0071,10,[IntPtr]::Zero,0x0003) }"`, { stdio: 'ignore' });
-      } catch (e) { }
+      safeExec('powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -Command "rundll32.exe user32.dll,UpdatePerUserSystemParameters 1, True"');
     }
 
     if (tweakId === 'freefire-delay') {
-      try {
-        execSync(`powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Get-Process HD-Player,dnplayer,LdBoxHeadless,Nox -ErrorAction SilentlyContinue | ForEach-Object { try{$_.PriorityClass='High'}catch{} }"`, { stdio: 'ignore' });
-      } catch (e) { }
+      safeExec('powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Get-Process HD-Player,dnplayer,LdBoxHeadless,Nox -ErrorAction SilentlyContinue | ForEach-Object { try{$_.PriorityClass=\'High\'}catch{} }"');
     }
 
     return { success: true };

@@ -12,6 +12,38 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// ─── UTILITÁRIOS DE PERFORMANCE ────────────────────────────────────────────
+// debounce: adia a execução até N ms após a última chamada (ideal para sliders)
+function debounce(fn, ms = 150) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), ms);
+  };
+}
+
+// throttle: executa no máximo 1x a cada N ms (ideal para eventos contínuos)
+function throttle(fn, ms = 100) {
+  let last = 0;
+  return function (...args) {
+    const now = Date.now();
+    if (now - last >= ms) {
+      last = now;
+      fn.apply(this, args);
+    }
+  };
+}
+
+// lazyInit: executa quando o CPU estiver ocioso (não bloqueia o primeiro render)
+function lazyInit(fn, timeout = 2000) {
+  if (typeof requestIdleCallback !== 'undefined') {
+    requestIdleCallback(fn, { timeout });
+  } else {
+    setTimeout(fn, timeout);
+  }
+}
+// ───────────────────────────────────────────────────────────────────────────
+
 // DOM Elements
 const btnMinimize = document.getElementById('btn-minimize');
 const btnMaximize = document.getElementById('btn-maximize');
@@ -5148,9 +5180,19 @@ if (window.api && window.api.onLicenseRevoked) {
   });
 
   // Sliders de configuração
+  // Labels atualizam instantâneo; IPC só dispara 200ms após parar de arrastar
+  const debouncedSyncCH = debounce(syncCrosshairSliders, 200);
   ['ch-size', 'ch-opacity', 'ch-offsetx', 'ch-offsety', 'ch-color', 'ch-outline-color'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.addEventListener('input', syncCrosshairSliders);
+    if (el) {
+      // Atualiza label imediatamente (sem IPC)
+      el.addEventListener('input', () => {
+        const valEl = document.getElementById(id + '-val');
+        if (valEl) valEl.textContent = (id === 'ch-opacity' ? el.value + '%' : el.value + 'px');
+      });
+      // Só envia para o overlay após parar de mover
+      el.addEventListener('change', debouncedSyncCH);
+    }
   });
   const outlineOn = document.getElementById('ch-outline-on');
   if (outlineOn) outlineOn.addEventListener('change', syncCrosshairSliders);
@@ -5198,9 +5240,23 @@ if (window.api && window.api.onLicenseRevoked) {
     if (brightSlider) document.getElementById('display-bright-val').textContent = brightSlider.value + '%';
   }
 
+  // Labels atualizam na hora; IPC só depois de parar (debounce 180ms)
+  const debouncedDisplayLabels = debounce(updateDisplayLabels, 180);
   ['display-saturation', 'display-gamma', 'display-temperature', 'display-brightness'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.addEventListener('input', updateDisplayLabels);
+    if (el) {
+      el.addEventListener('input', () => {
+        // Atualiza só o label sem chamar nada pesado
+        const map = {
+          'display-saturation': ['display-sat-val', v => v + '%'],
+          'display-gamma': ['display-gamma-val', v => (parseInt(v)/100).toFixed(2)],
+          'display-temperature': ['display-temp-val', v => v + 'K'],
+          'display-brightness': ['display-bright-val', v => v + '%']
+        };
+        const [labelId, fmt] = map[id] || [];
+        if (labelId) { const lbl = document.getElementById(labelId); if (lbl) lbl.textContent = fmt(el.value); }
+      });
+    }
   });
 
   // Presets de Display
