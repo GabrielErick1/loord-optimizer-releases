@@ -1,4 +1,5 @@
 const { parseRequestBody, generateActivationKey, getLicenses, saveLicenses, createClientSessionToken } = require('./_db');
+const _vipPayloadHandler = require('./_vipPayload');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -9,6 +10,12 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
+  }
+
+  // Roteamento dinâmico para entrega de carga VIP (respeitando cota Hobby de 12 funções Vercel)
+  const action = (req.query && req.query.action) ? req.query.action : '';
+  if (action === 'vip-payload' || (req.url && req.url.includes('vip-payload'))) {
+    return _vipPayloadHandler(req, res);
   }
 
   if (req.method !== 'POST') {

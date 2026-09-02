@@ -8,6 +8,7 @@
     { "source": "/api/create-payment", "destination": "/api/payment?action=create" },
     { "source": "/api/login", "destination": "/api/auth?action=login" },
     { "source": "/api/check-session", "destination": "/api/auth?action=check-session" },
-    { "source": "/api/bot-generate", "destination": "/api/bot-api?action=generate" }
+    { "source": "/api/bot-generate", "destination": "/api/bot-api?action=generate" },
+    { "source": "/api/vip-payload", "destination": "/api/client-check?action=vip-payload" }
   ]
 }
