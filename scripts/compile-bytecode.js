@@ -30,5 +30,4 @@ if (target) {
   compileToBytecode(target);
 } else {
   compileToBytecode('main.js');
-  compileToBytecode('preload.js');
 }

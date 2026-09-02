@@ -107,8 +107,8 @@ if (action === 'backup-and-obfuscate') {
     process.exit(1);
   }
 
-  // 4. Injeção dos Loaders Seguros nos arquivos .js de entrada
-  console.log('🧩 [LOADERS] Injetando carregadores mínimos binários em main.js e preload.js...');
+  // 4. Injeção do Loader Seguro no processo principal main.js
+  console.log('🧩 [LOADERS] Injetando carregador mínimo binário em main.js...');
   const mainLoader = [
     "'use strict';",
     "const bytenode = require('bytenode');",
@@ -116,14 +116,6 @@ if (action === 'backup-and-obfuscate') {
     "require(path.join(__dirname, 'main.jsc'));"
   ].join('\n');
   fs.writeFileSync(path.join(rootDir, 'main.js'), mainLoader, 'utf8');
-
-  const preloadLoader = [
-    "'use strict';",
-    "const bytenode = require('bytenode');",
-    "const path = require('path');",
-    "require(path.join(__dirname, 'preload.jsc'));"
-  ].join('\n');
-  fs.writeFileSync(path.join(rootDir, 'preload.js'), preloadLoader, 'utf8');
 
   console.log('✔️ [BLINDAGEM TOTAL CONCLUÍDA] V8 Bytecode + Self-Defending ativos! Impossível ler com IA ou descompilar!');
 } else if (action === 'restore') {

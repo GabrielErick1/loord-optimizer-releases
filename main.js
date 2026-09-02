@@ -40,15 +40,15 @@ for (const arg of process.argv) {
 // Bloqueio rigoroso de Portables, cópias não autorizadas e alteração de nome
 function verifyApplicationIntegrity() {
   if (app.isPackaged) {
-    // 1. Bloqueia se foi iniciado através de um runner portable ou electron.exe desempacotado
+    // 1. Bloqueia se foi iniciado através de um runner portable ou electron.exe genérico
     if (process.defaultApp === true) {
       try { app.exit(0); } catch (_) {}
       process.exit(0);
     }
 
     // 2. Bloqueia se os arquivos foram descompactados e rodados soltos fora do app.asar oficial
-    const currentDir = __dirname.toLowerCase();
-    if (!currentDir.includes('app.asar')) {
+    const appPath = (app.getAppPath ? app.getAppPath() : __dirname).toLowerCase();
+    if (!appPath.includes('.asar')) {
       try { app.exit(0); } catch (_) {}
       process.exit(0);
     }
@@ -60,8 +60,9 @@ function verifyApplicationIntegrity() {
       process.exit(0);
     }
 
-    // 4. Anti-Rebranding: Bloqueia se o nome da aplicação foi alterado no package.json
-    if (app.getName() !== 'Loord Optimizer') {
+    // 4. Anti-Rebranding: Bloqueia se o nome da aplicação foi alterado
+    const currentName = (app.getName ? app.getName() : '').toLowerCase();
+    if (currentName !== 'loord-optimizer' && currentName !== 'loord optimizer') {
       try { app.exit(0); } catch (_) {}
       process.exit(0);
     }
@@ -73,7 +74,7 @@ function getIdentityFingerprint() {
   return {
     appName: 'Loord Optimizer',
     appId: 'com.loord.optimizer',
-    appVersion: app.getVersion() || '3.8.0',
+    appVersion: app.getVersion() || '3.8.1',
     isPackaged: app.isPackaged
   };
 }
@@ -4063,8 +4064,8 @@ function queryOfficialDatabase(endpoint, payload) {
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(data),
-        'User-Agent': `LoordOptimizerClient/${app.getVersion() || '3.8.0'} (Windows NT 10.0; Win64; x64)`,
-        'X-Client-Secure-Ver': app.getVersion() || '3.8.0'
+        'User-Agent': `LoordOptimizerClient/${app.getVersion() || '3.8.1'} (Windows NT 10.0; Win64; x64)`,
+        'X-Client-Secure-Ver': app.getVersion() || '3.8.1'
       }
     };
 
