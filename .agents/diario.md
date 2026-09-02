@@ -4,18 +4,26 @@ Este documento registra cronologicamente todas as tarefas, correções, implemen
 
 ---
 
-## 📅 [02/09/2026] — Validação Server-Side, HMAC SessionToken & Entrega Dinâmica de Funções VIP na Nuvem
+## 📅 [02/09/2026] — Release Oficial v3.8.0 Publicada (Bytecode V8 + Validação Server-Side Vercel)
 * **Arquivos Modificados / Criados:**
-  * [web-key-generator/api/vip-payload.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/web-key-generator/api/vip-payload.js) (Novo Endpoint Serverless)
+  * [web-key-generator/api/_vipPayload.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/web-key-generator/api/_vipPayload.js)
   * [web-key-generator/api/_db.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/web-key-generator/api/_db.js)
   * [web-key-generator/api/client-activate.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/web-key-generator/api/client-activate.js)
   * [web-key-generator/api/client-check.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/web-key-generator/api/client-check.js)
+  * [web-key-generator/vercel.json](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/web-key-generator/vercel.json)
   * [main.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/main.js)
-* **Resumo das Entregas:**
-  - **Validação de Identidade Server-Side:** A Vercel API agora valida `appName` e `appId` diretamente na nuvem. Se alguém alterar o nome para tentar rebrandear ou clonar o app, a recusa ocorre no servidor com HTTP 403.
-  - **Detecção de Anomalia e Rate-Limiting no Backend:** O servidor rastreia o histórico de ativação por chave e bloqueia automaticamente a licença (`anomaly_locked`) se detectar requisições de múltiplos HWIDs em curto período de tempo.
-  - **Emissão de `sessionToken` Assinado por HMAC-SHA256:** A cada ativação e no heartbeat de 5 minutos, a Vercel emite um token de sessão criptografado atrelado exclusivamente ao HWID da máquina autorizada.
-  - **Entrega Dinâmica do "Coração" do Produto (`/api/vip-payload`):** As curvas matemáticas de sensibilidade VIP (`SmoothMouseXCurve`, `SmoothMouseYCurve`, sensibilidade e hover time) deixaram de ser puramente locais e agora são requisitadas e descriptografadas em tempo real da nuvem com o `sessionToken`. Se um cracker tentar rodar um portable offline, o painel fica sem as funções VIP.
+  * [index.html](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/index.html)
+  * [package.json](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/package.json)
+* **Resumo das Entregas & Publicação:**
+  - **Deploy Vercel:** Código da API Vercel sincronizado com roteamento respeitando o limite Hobby de 12 funções (`_vipPayload.js` via rewrite e dispatch interno).
+  - **Validação Server-Side:** Backend rejeita com HTTP 403 se `appName` ou `appId` forem adulterados.
+  - **Detecção de Anomalia:** Chaves compartilhadas entre múltiplos computadores em curto período são bloqueadas automaticamente pelo servidor.
+  - **Entrega Dinâmica na Nuvem:** Curvas matemáticas VIP e registros pesados agora são solicitados em tempo real com `sessionToken` HMAC assinado.
+  - **Release v3.8.0 Compilada e Publicada:**
+    - Artefatos gerados: `Loord Optimizer Setup 3.8.0.exe`, `Loord-Optimizer-3.8.0-win.zip` e `.blockmap`.
+    - Blindagem com **V8 Bytecode (.jsc puro)** e loaders mínimos ativos.
+    - Publicada com sucesso nas GitHub Releases do repositório `GabrielErick1/loord-optimizer-releases`.
+    - Código de desenvolvimento restaurado automaticamente limpo.
 
 ---
 
