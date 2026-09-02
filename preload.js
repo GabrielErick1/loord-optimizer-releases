@@ -112,27 +112,12 @@ contextBridge.exposeInMainWorld('api', {
   applyIntelPL: () => ipcRenderer.invoke('apply-intel-pl'),
   applyRamBoost: () => ipcRenderer.invoke('apply-ram-boost-oc'),
   rebootToBios: () => ipcRenderer.invoke('reboot-to-bios'),
-  // ─── Loord Crosshair Overlay & In-Game Panel ─────────────────────
-  getOverlayConfig: () => ipcRenderer.invoke('overlay:get'),
-  saveOverlayConfig: (cfg) => ipcRenderer.invoke('overlay:save', cfg),
-  previewOverlayConfig: (cfg) => ipcRenderer.invoke('overlay:preview', cfg),
-  toggleOverlay: () => ipcRenderer.invoke('overlay:toggle'),
-  onOverlayRender: (cb) => {
-    ipcRenderer.removeAllListeners('overlay:render');
-    ipcRenderer.on('overlay:render', (_e, cfg) => cb(cfg));
-  },
-  closeInGamePanel: () => ipcRenderer.invoke('panel:close'),
   // ─── Loord Precision MarkC 1:1 ───────────────────────────────────
   applyMarkcCurve: (scalePercent) => ipcRenderer.invoke('apply-markc-curve', scalePercent),
   detectMonitorScale: () => ipcRenderer.invoke('detect-monitor-scale'),
   // ─── Loord Raw Accel Engine ──────────────────────────────────────
   applyRawAccelPreset: (presetId) => ipcRenderer.invoke('rawaccel:apply-preset', presetId),
   getRawAccelStatus: () => ipcRenderer.invoke('rawaccel:status'),
-  // ─── Loord Display & Digital Vibrance ────────────────────────────
-  applyDisplayCalibration: (cfg) => ipcRenderer.invoke('display:apply', cfg),
-  resetDisplayCalibration: () => ipcRenderer.invoke('display:reset'),
-  applyDisplayPreset: (presetId) => ipcRenderer.invoke('display:apply-preset', presetId),
-  getDisplayCalibration: () => ipcRenderer.invoke('display:get'),
   // ─── Loord Timer Resolution 0.5ms ────────────────────────────────
   applyTimerResolution: (enable) => ipcRenderer.invoke('apply-timer-resolution', enable),
   getTimerResolutionStatus: () => ipcRenderer.invoke('get-timer-resolution-status'),
