@@ -25,6 +25,8 @@
       "renderer.js",
       "i18n.js",
       "index.html",
+      "overlay.html",
+      "panel.html",
       "style.css",
       "package.json",
       "bin/**",

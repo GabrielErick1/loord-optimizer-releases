@@ -1138,7 +1138,8 @@ async function initApp() {
 
   checkStatus();
   updateFpsEstimate();
-  setInterval(checkStatus, 3000);
+  // Consulta de status leve a cada 30 segundos (evita sobrecarregar CPU com tasklist contínuo)
+  setInterval(checkStatus, 30000);
 
 }
 
@@ -3989,29 +3990,9 @@ if (btnRemovePartitionAction) {
     });
   }
 
-  // ── Verifica segurança periodicamente (anti-bypass / anti-crack) ───────────
+  // ── Verifica segurança periodicamente (Unificado e leve — 120s) ───────────
   function startSecurityWatch(key) {
-    if (window._vipSecurityTimer) clearInterval(window._vipSecurityTimer);
-    window._vipSecurityTimer = setInterval(async () => {
-      try {
-        const activeKey = localStorage.getItem('loord_vip_key') || localStorage.getItem('activation_key');
-
-        // Se não tem chave no localStorage mas está no painel → FORÇA LOGOUT E ROLLBACK
-        if (!activeKey) {
-          await forceLogoutSecurity('Sessão inválida detectada. Faça login novamente.');
-          return;
-        }
-
-        // Valida no servidor
-        const check = await window.api.verifyKey(activeKey);
-        if (!check || !check.valid) {
-          await forceLogoutSecurity(check?.error || 'Sua chave foi revogada, expirou ou não pertence a este computador.');
-        } else {
-          // Atualiza sidebar com dados frescos do servidor
-          updateSidebarStatus(true, check.clientName, check.plan?.includes('Vitalícia') ? 'permanent' : 'temporary', check.plan);
-        }
-      } catch (_) { }
-    }, 20000); // Checa a cada 20 segundos
+    startVipHeartbeat(key);
   }
 
   // 1. Obter o UUID real do computador
@@ -4097,7 +4078,7 @@ if (btnRemovePartitionAction) {
           }
         }
       } catch (_) { }
-    }, 15000);
+    }, 120000); // Validação a cada 2 minutos (leve, sem picos de rede/CPU durante o jogo)
   }
 
   // 3. Verificar se já existe uma chave válida salva no computador
