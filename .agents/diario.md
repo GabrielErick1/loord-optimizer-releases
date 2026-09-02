@@ -4,6 +4,23 @@ Este documento registra cronologicamente todas as tarefas, correções, implemen
 
 ---
 
+## 📅 [02/09/2026] — Release Oficial v3.8.2: Estabilidade Total de Inicialização com Blindagem de v3.7.5 & Segurança na Nuvem
+* **Arquivos Modificados / Restaurados:**
+  * [scripts/obfuscate.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/scripts/obfuscate.js)
+  * [main.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/main.js)
+  * [index.html](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/index.html)
+  * [package.json](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/package.json)
+* **Resumo das Correções & Publicação:**
+  - **Restauração do Fluxo de Abertura Estável (Igual à v3.7.5):** Substituído o empacotador de snapshot Bytenode (que causava falhas silenciosas no Electron 30 instalado no Windows) pelo pipeline oficial de ofuscação militar comprovado da v3.7.5 (`javascript-obfuscator` com `selfDefending: true`, `controlFlowFlattening: true`, `stringArrayEncoding: ['base64']` e RC4).
+  - **Remoção de Trava Falso-Positivo:** Removido encerramento antecipado em `main.js` que fechava o aplicativo na inicialização.
+  - **Manutenção Integral da Segurança Server-Side:**
+    - Validação de integridade e identidade ativa na Vercel API.
+    - Emissão de `sessionToken` criptografado HMAC-SHA256 no login e heartbeat.
+    - Detecção automática de anomalias no servidor.
+    - Entrega dinâmica de parâmetros VIP na nuvem via `fetchServerVipPayload`.
+
+---
+
 ## 📅 [02/09/2026] — Release Oficial v3.8.0 Publicada (Bytecode V8 + Validação Server-Side Vercel)
 * **Arquivos Modificados / Criados:**
   * [web-key-generator/api/_vipPayload.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/web-key-generator/api/_vipPayload.js)

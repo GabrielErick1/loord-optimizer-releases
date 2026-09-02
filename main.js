@@ -37,44 +37,11 @@ for (const arg of process.argv) {
   }
 }
 
-// Bloqueio rigoroso de Portables, cópias não autorizadas e alteração de nome
-function verifyApplicationIntegrity() {
-  if (app.isPackaged) {
-    // 1. Bloqueia se foi iniciado através de um runner portable ou electron.exe genérico
-    if (process.defaultApp === true) {
-      try { app.exit(0); } catch (_) {}
-      process.exit(0);
-    }
-
-    // 2. Bloqueia se os arquivos foram descompactados e rodados soltos fora do app.asar oficial
-    const appPath = (app.getAppPath ? app.getAppPath() : __dirname).toLowerCase();
-    if (!appPath.includes('.asar')) {
-      try { app.exit(0); } catch (_) {}
-      process.exit(0);
-    }
-
-    // 3. Anti-Rebranding: Bloqueia se o executável foi renomeado para outro nome
-    const exeName = path.basename(process.execPath).toLowerCase();
-    if (exeName !== 'loord optimizer.exe') {
-      try { app.exit(0); } catch (_) {}
-      process.exit(0);
-    }
-
-    // 4. Anti-Rebranding: Bloqueia se o nome da aplicação foi alterado
-    const currentName = (app.getName ? app.getName() : '').toLowerCase();
-    if (currentName !== 'loord-optimizer' && currentName !== 'loord optimizer') {
-      try { app.exit(0); } catch (_) {}
-      process.exit(0);
-    }
-  }
-}
-verifyApplicationIntegrity();
-
 function getIdentityFingerprint() {
   return {
     appName: 'Loord Optimizer',
     appId: 'com.loord.optimizer',
-    appVersion: app.getVersion() || '3.8.1',
+    appVersion: app.getVersion() || '3.8.2',
     isPackaged: app.isPackaged
   };
 }
@@ -4064,8 +4031,8 @@ function queryOfficialDatabase(endpoint, payload) {
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(data),
-        'User-Agent': `LoordOptimizerClient/${app.getVersion() || '3.8.1'} (Windows NT 10.0; Win64; x64)`,
-        'X-Client-Secure-Ver': app.getVersion() || '3.8.1'
+        'User-Agent': `LoordOptimizerClient/${app.getVersion() || '3.8.2'} (Windows NT 10.0; Win64; x64)`,
+        'X-Client-Secure-Ver': app.getVersion() || '3.8.2'
       }
     };
 
