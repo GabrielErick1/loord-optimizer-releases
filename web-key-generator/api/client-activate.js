@@ -1,4 +1,4 @@
-const { parseRequestBody, generateActivationKey, getLicenses, saveLicenses } = require('./_db');
+const { parseRequestBody, generateActivationKey, getLicenses, saveLicenses, createClientSessionToken } = require('./_db');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -17,9 +17,18 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { uuid, key } = await parseRequestBody(req);
+    const { uuid, key, appName, appId, appVersion } = await parseRequestBody(req);
     if (!uuid || !key) {
       res.status(400).json({ success: false, error: 'UUID e chave requeridos.' });
+      return;
+    }
+
+    // 0. Validação Server-Side de Identidade: Se foi alterado o nome da aplicação, recusa no backend
+    if (appName && (appName !== 'Loord Optimizer' || (appId && appId !== 'com.loord.optimizer'))) {
+      res.status(403).json({
+        success: false,
+        error: 'Violação de Integridade: Identidade da aplicação adulterada. Requisição recusada pelo servidor oficial.'
+      });
       return;
     }
 
@@ -45,7 +54,25 @@ module.exports = async (req, res) => {
     if (license.status === 'revoked') {
       res.status(403).json({
         success: false,
-        error: 'Esta chave foi revogada pelo administrador!'
+        error: license.revokeReason || 'Esta chave foi revogada pelo administrador!'
+      });
+      return;
+    }
+
+    // 2.1 Detecção de Anomalia e Rate-Limiting Server-Side
+    const now = Date.now();
+    license.activationHistory = Array.isArray(license.activationHistory) ? license.activationHistory : [];
+    license.activationHistory = license.activationHistory.filter(h => now - h.time < 2 * 60 * 60 * 1000);
+    license.activationHistory.push({ uuid: cleanUuid, ip: cleanIp, time: now });
+
+    const distinctUuids = new Set(license.activationHistory.map(h => h.uuid));
+    if (distinctUuids.size >= 3) {
+      license.status = 'revoked';
+      license.revokeReason = 'Detecção de Anomalia Server-Side: Chave compartilhada em múltiplos computadores.';
+      await saveLicenses(licenses);
+      res.status(403).json({
+        success: false,
+        error: 'Licença bloqueada pelo servidor: Uso indevido em múltiplos computadores detectado.'
       });
       return;
     }
@@ -95,22 +122,22 @@ module.exports = async (req, res) => {
       }
     }
 
+    // Gera o sessionToken criptográfico assinado pelo servidor
+    const sessionToken = createClientSessionToken(cleanKey, cleanUuid, license.licenseType);
+
     res.status(200).json({
       success: true,
+      sessionToken,
       message: (license.licenseType === 'permanent-unlimited' && license.activatedAt)
-        ? 'Reativação realizada com sucesso neste computador!' 
-        : 'Ativação realizada com sucesso!',
+        ? 'Chave permanente validada com sucesso!'
+        : 'Chave ativada com sucesso neste computador!',
       clientName: license.clientName || 'Cliente VIP',
       licenseType: license.licenseType,
-      activationMode: license.activationMode || 'unlimited',
-      expiresAt: license.expiresAt,
-      remainingHours,
-      daysRemaining: remainingDays,
-      timeRemainingStr
+      expiresAt: license.expiresAt || null,
+      timeRemainingStr: timeRemainingStr
     });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ success: false, error: 'Erro interno.' });
+  } catch (error) {
+    console.error('Erro em client-activate:', error);
+    res.status(500).json({ success: false, error: 'Erro interno ao validar chave.' });
   }
 };
-

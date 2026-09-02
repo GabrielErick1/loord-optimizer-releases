@@ -244,6 +244,30 @@ function hashPassword(password) {
   return crypto.pbkdf2Sync(password, defaultSalt, 1000, 64, 'sha512').toString('hex');
 }
 
+const clientSessionSecret = 'LoordClientAuthSecret2026_HMAC_ZeroTrust_MilitaryPayload_v1';
+
+function createClientSessionToken(key, uuid, plan) {
+  // Validade de 10 minutos (renovado silenciosamente a cada 5 min no heartbeat do app)
+  const expiry = Date.now() + 10 * 60 * 1000;
+  const payload = JSON.stringify({ key, uuid, plan, expiry });
+  const signature = crypto.createHmac('sha256', clientSessionSecret).update(payload).digest('hex');
+  return Buffer.from(JSON.stringify({ payload, signature })).toString('base64');
+}
+
+function verifyClientSessionToken(token, expectedUuid) {
+  try {
+    const { payload, signature } = JSON.parse(Buffer.from(token, 'base64').toString('utf8'));
+    const expectedSignature = crypto.createHmac('sha256', clientSessionSecret).update(payload).digest('hex');
+    if (signature !== expectedSignature) return null;
+    const data = JSON.parse(payload);
+    if (!data.expiry || Date.now() > data.expiry) return null;
+    if (expectedUuid && data.uuid && data.uuid.toLowerCase() !== expectedUuid.toLowerCase()) return null;
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
+
 function createSessionToken(username, isAdmin, role) {
   const resolvedRole = role || (username.toLowerCase() === 'gabriel' ? 'worn' : (isAdmin ? 'admin' : 'vendedor'));
   const expiry = Date.now() + 8 * 60 * 60 * 1000; // Validade rigorosa de 8 horas (após isso, desloga)
@@ -448,6 +472,8 @@ module.exports = {
   MP_PUBLIC_KEY,
   hashPassword,
   createSessionToken,
+  createClientSessionToken,
+  verifyClientSessionToken,
   generateActivationKey,
   verifyAuth,
   activationSalt

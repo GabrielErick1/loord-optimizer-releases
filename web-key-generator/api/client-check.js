@@ -1,4 +1,4 @@
-const { parseRequestBody, generateActivationKey, getLicenses, saveLicenses } = require('./_db');
+const { parseRequestBody, generateActivationKey, getLicenses, saveLicenses, createClientSessionToken } = require('./_db');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -17,9 +17,18 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { uuid, key } = await parseRequestBody(req);
+    const { uuid, key, appName, appId, appVersion } = await parseRequestBody(req);
     if (!uuid || !key) {
       res.status(400).json({ success: false, error: 'UUID e chave requeridos.' });
+      return;
+    }
+
+    // 0. Validação Server-Side de Identidade
+    if (appName && (appName !== 'Loord Optimizer' || (appId && appId !== 'com.loord.optimizer'))) {
+      res.status(403).json({
+        success: false,
+        error: 'Violação de Integridade: Identidade da aplicação adulterada. Requisição recusada pelo servidor oficial.'
+      });
       return;
     }
 
@@ -45,7 +54,7 @@ module.exports = async (req, res) => {
     if (license.status === 'revoked') {
       res.status(403).json({
         success: false,
-        error: 'Licença revogada pelo administrador!'
+        error: license.revokeReason || 'Licença revogada pelo administrador!'
       });
       return;
     }
@@ -78,8 +87,11 @@ module.exports = async (req, res) => {
         await saveLicenses(licenses);
       }
 
+      const sessionToken = createClientSessionToken(cleanKey, cleanUuid, 'iso');
+
       res.status(200).json({
         success: true,
+        sessionToken,
         clientName: license.clientName || 'Cliente ISO',
         licenseType: 'iso',
         isIsoKey: true,
@@ -133,8 +145,12 @@ module.exports = async (req, res) => {
       }
     }
 
+    // Renova o sessionToken assinado
+    const sessionToken = createClientSessionToken(cleanKey, cleanUuid, license.licenseType || 'permanent');
+
     res.status(200).json({
       success: true,
+      sessionToken,
       clientName: license.clientName || 'Cliente VIP',
       licenseType: license.licenseType || 'permanent',
       isIsoKey: false,

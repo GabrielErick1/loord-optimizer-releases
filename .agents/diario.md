@@ -4,6 +4,21 @@ Este documento registra cronologicamente todas as tarefas, correções, implemen
 
 ---
 
+## 📅 [02/09/2026] — Validação Server-Side, HMAC SessionToken & Entrega Dinâmica de Funções VIP na Nuvem
+* **Arquivos Modificados / Criados:**
+  * [web-key-generator/api/vip-payload.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/web-key-generator/api/vip-payload.js) (Novo Endpoint Serverless)
+  * [web-key-generator/api/_db.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/web-key-generator/api/_db.js)
+  * [web-key-generator/api/client-activate.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/web-key-generator/api/client-activate.js)
+  * [web-key-generator/api/client-check.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/web-key-generator/api/client-check.js)
+  * [main.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/main.js)
+* **Resumo das Entregas:**
+  - **Validação de Identidade Server-Side:** A Vercel API agora valida `appName` e `appId` diretamente na nuvem. Se alguém alterar o nome para tentar rebrandear ou clonar o app, a recusa ocorre no servidor com HTTP 403.
+  - **Detecção de Anomalia e Rate-Limiting no Backend:** O servidor rastreia o histórico de ativação por chave e bloqueia automaticamente a licença (`anomaly_locked`) se detectar requisições de múltiplos HWIDs em curto período de tempo.
+  - **Emissão de `sessionToken` Assinado por HMAC-SHA256:** A cada ativação e no heartbeat de 5 minutos, a Vercel emite um token de sessão criptografado atrelado exclusivamente ao HWID da máquina autorizada.
+  - **Entrega Dinâmica do "Coração" do Produto (`/api/vip-payload`):** As curvas matemáticas de sensibilidade VIP (`SmoothMouseXCurve`, `SmoothMouseYCurve`, sensibilidade e hover time) deixaram de ser puramente locais e agora são requisitadas e descriptografadas em tempo real da nuvem com o `sessionToken`. Se um cracker tentar rodar um portable offline, o painel fica sem as funções VIP.
+
+---
+
 ## 📅 [02/09/2026] — Blindagem Militar Anti-IA: V8 Bytecode (.jsc), Anti-Portable & Anti-Rebranding
 * **Arquivos Modificados / Adicionados:**
   * [scripts/compile-bytecode.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/scripts/compile-bytecode.js) (Novo)

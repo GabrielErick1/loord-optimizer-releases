@@ -69,6 +69,15 @@ function verifyApplicationIntegrity() {
 }
 verifyApplicationIntegrity();
 
+function getIdentityFingerprint() {
+  return {
+    appName: 'Loord Optimizer',
+    appId: 'com.loord.optimizer',
+    appVersion: app.getVersion() || '3.7.5',
+    isPackaged: app.isPackaged
+  };
+}
+
 // ─── FLAGS DE PERFORMANCE DO CHROMIUM (anti-jank, anti-throttle) ─────────────
 app.commandLine.appendSwitch('disable-gpu-process-crash-limit');
 app.commandLine.appendSwitch('no-sandbox');
@@ -124,10 +133,16 @@ let authorizedSessionKey = null;
 let authorizedSessionIsIsoKey = false;
 let authorizedSessionIsoUses = 0;
 let activatedIsoKey = null;
+let activeServerSessionToken = null;
 
 function isLicenseAuthorized() {
-  return (isClientSessionAuthorized === true && !!authorizedSessionKey && typeof authorizedSessionKey === 'string' && authorizedSessionKey.length >= 6) ||
-    (authorizedSessionIsIsoKey === true && (authorizedSessionIsoUses > 0 || !!activatedIsoKey));
+  return (
+    isClientSessionAuthorized === true &&
+    !!authorizedSessionKey &&
+    typeof authorizedSessionKey === 'string' &&
+    authorizedSessionKey.length >= 6 &&
+    (authorizedSessionIsIsoKey === true || !!activeServerSessionToken)
+  ) || (authorizedSessionIsIsoKey === true && (authorizedSessionIsoUses > 0 || !!activatedIsoKey));
 }
 
 // Lista de canais públicos permitidos sem autenticação (login, verificação e sistema)
@@ -199,11 +214,14 @@ setInterval(async () => {
         console.warn('[SECURITY] Heartbeat de licença: chave expirada ou revogada!');
         isClientSessionAuthorized = false;
         authorizedSessionKey = null;
+        activeServerSessionToken = null;
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.webContents.send('license-revoked', {
             reason: chkData?.error || 'Sua licença expirou ou foi revogada pelo administrador.'
           });
         }
+      } else if (chkData.sessionToken) {
+        activeServerSessionToken = chkData.sessionToken;
       }
     } catch (_) { }
   }
@@ -2777,6 +2795,18 @@ ipcMain.handle('apply-single-tweak', async (event, tweakId) => {
     return { success: false, error: 'Acesso negado: Licença VIP ativa obrigatória.' };
   }
   try {
+    // ─── PROTEÇÃO SERVER-SIDE (Coração do Produto na Nuvem) ─────────────────
+    // Para curvas de sensibilidade VIP, descriptografa os parâmetros em tempo real do servidor
+    if (tweakId === 'semi-precision' || tweakId === 'mouse-current') {
+      const vipPayload = await fetchServerVipPayload('semi-precision-curve');
+      if (vipPayload && vipPayload.SmoothMouseXCurve) {
+        await execAsync(`reg add "HKCU\\Control Panel\\Mouse" /v SmoothMouseXCurve /t REG_BINARY /d ${vipPayload.SmoothMouseXCurve} /f`);
+        await execAsync(`reg add "HKCU\\Control Panel\\Mouse" /v SmoothMouseYCurve /t REG_BINARY /d ${vipPayload.SmoothMouseYCurve} /f`);
+        await execAsync(`reg add "HKCU\\Control Panel\\Mouse" /v MouseSensitivity /t REG_SZ /d "${vipPayload.MouseSensitivity || '10'}" /f`);
+        await execAsync(`reg add "HKCU\\Control Panel\\Mouse" /v MouseHoverTime /t REG_DWORD /d ${vipPayload.MouseHoverTime || 0} /f`);
+      }
+    }
+
     const commands = getCommandsForTweak(tweakId);
     // Roda TODOS os comandos REG em paralelo — zero bloqueio no event loop
     await Promise.all(
@@ -2786,7 +2816,7 @@ ipcMain.handle('apply-single-tweak', async (event, tweakId) => {
     );
 
     // Recarrega mouse sem reboot (fire-and-forget — não bloqueia)
-    if (tweakId.startsWith('mouse-') || tweakId === 'remove-kbd-delay') {
+    if (tweakId.startsWith('mouse-') || tweakId === 'remove-kbd-delay' || tweakId === 'semi-precision') {
       safeExec('powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -Command "rundll32.exe user32.dll,UpdatePerUserSystemParameters 1, True"');
     }
 
@@ -4021,7 +4051,9 @@ ipcMain.handle('get-uuid', async () => {
 function queryOfficialDatabase(endpoint, payload) {
   return new Promise((resolve, reject) => {
     cleanSecurityHosts();
-    const data = JSON.stringify(payload);
+    const identity = getIdentityFingerprint();
+    const fullPayload = { ...identity, ...payload };
+    const data = JSON.stringify(fullPayload);
     const options = {
       hostname: 'web-key-generator.vercel.app',
       port: 443,
@@ -4031,8 +4063,8 @@ function queryOfficialDatabase(endpoint, payload) {
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(data),
-        'User-Agent': `LoordOptimizerClient/${app.getVersion() || '3.6.3'} (Windows NT 10.0; Win64; x64)`,
-        'X-Client-Secure-Ver': app.getVersion() || '3.6.3'
+        'User-Agent': `LoordOptimizerClient/${app.getVersion() || '3.7.5'} (Windows NT 10.0; Win64; x64)`,
+        'X-Client-Secure-Ver': app.getVersion() || '3.7.5'
       }
     };
 
@@ -4063,6 +4095,24 @@ function queryOfficialDatabase(endpoint, payload) {
   });
 }
 
+// ─── ENTREGA DINÂMICA DE CARGAS CRÍTICAS NA NUVEM (Zero-Trust Server-Side) ────
+async function fetchServerVipPayload(tweakId) {
+  if (!isClientSessionAuthorized || !authorizedSessionKey || !activeServerSessionToken) {
+    throw new Error('Função VIP Bloqueada: Sessão oficial não autenticada no servidor.');
+  }
+  const currentUuid = getMachineHardwareUUID();
+  const res = await queryOfficialDatabase('/api/vip-payload', {
+    key: authorizedSessionKey,
+    uuid: currentUuid,
+    sessionToken: activeServerSessionToken,
+    tweakId
+  });
+  if (!res || !res.success || !res.payload) {
+    throw new Error(res?.error || 'Servidor recusou descriptografar os parâmetros VIP.');
+  }
+  return res.payload;
+}
+
 ipcMain.handle('verify-key', async (_e, inputKey) => {
   try {
     if (!inputKey || typeof inputKey !== 'string') {
@@ -4084,6 +4134,7 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
     if (chkData && chkData.success) {
       isClientSessionAuthorized = true;
       authorizedSessionKey = cleanKey;
+      activeServerSessionToken = chkData.sessionToken || null;
       authorizedSessionIsIsoKey = !!chkData.isIsoKey || chkData.licenseType === 'iso';
       authorizedSessionIsoUses = chkData.isoUsesRemaining || 0;
       return {
@@ -4108,6 +4159,7 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
     if (actData && actData.success) {
       isClientSessionAuthorized = true;
       authorizedSessionKey = cleanKey;
+      activeServerSessionToken = actData.sessionToken || null;
       authorizedSessionIsIsoKey = !!actData.isIsoKey || actData.licenseType === 'iso';
       authorizedSessionIsoUses = actData.isoUsesRemaining || 0;
       return {
@@ -4122,6 +4174,7 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
 
     // Se houve erro de rede (offline/sem internet) e nenhuma resposta de recusa do servidor
     if (!chkData && !actData && networkError) {
+      activeServerSessionToken = null;
       return {
         valid: false,
         isNetworkError: true,
@@ -4132,6 +4185,7 @@ ipcMain.handle('verify-key', async (_e, inputKey) => {
     // Se o servidor respondeu ativamente recusando (Chave inativa, expirada, excluída ou inválida)
     isClientSessionAuthorized = false;
     authorizedSessionKey = null;
+    activeServerSessionToken = null;
     const serverError = chkData?.error || actData?.error || 'Chave não encontrada ou expirada no banco de dados oficial.';
     return {
       valid: false,
