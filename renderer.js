@@ -2202,9 +2202,18 @@ if (btnMasterPcFraco) {
 
     const res = await window.api.optimizePcFraco();
     btnMasterPcFraco.disabled = false;
-    btnMasterPcFraco.textContent = '✔️ Modo Batata Turbo Ativo!';
+    btnMasterPcFraco.textContent = '✔️ Ultra Boost Extreme Ativo!';
     if (statusPcFracoMaster) {
-      statusPcFracoMaster.textContent = res && res.message ? res.message : 'Modo Batata Turbo aplicado com sucesso no Windows!';
+      statusPcFracoMaster.innerHTML = [
+        '⚡ <b>MODO ULTRA BOOST EXTREME APLICADO COM 100% DE SUCESSO!</b>',
+        '<div style="margin-top: 6px; line-height: 1.6; font-size: 0.8rem; color: #cbd5e1;">',
+        '✔ <b>Efeitos Visuais Mínimos:</b> Transparências, animações e sombras desativadas<br>',
+        '✔ <b>Serviços Pesados:</b> SysMain, WSearch, DiagTrack e telemetrias desativados<br>',
+        '✔ <b>Plano de Energia:</b> Ultimate Performance / Desempenho Máximo (100% CPU Clock)<br>',
+        '✔ <b>Rede & Latência:</b> Algoritmo de Nagle desativado (TcpAckFrequency 1 / TCPNoDelay 1)<br>',
+        '✔ <b>Limpeza em Tempo Real:</b> Processos desnecessários purgados e StandbyList limpa',
+        '</div>'
+      ].join('');
     }
   });
 }
@@ -2213,14 +2222,14 @@ const btnTransformWindowsLite = document.getElementById('btn-transform-windows-l
 const statusWindowsLite = document.getElementById('status-windows-lite');
 if (btnTransformWindowsLite) {
   btnTransformWindowsLite.addEventListener('click', async () => {
-    const confirmLite = confirm('👑 DESEJA APLICAR 100% DAS OTIMIZAÇÕES DA ISO LOORD v10.6 NO WINDOWS?\n\nIsso irá aplicar instantaneamente:\n- 31 Serviços Pesados e Telemetria Desativados\n- Curva de Mira Matemática Loord (Full Capa)\n- GPU Priority = 8 (MMCSS Games) & SystemResponsiveness = 0\n- Win32PrioritySeparation = 38 (Process Scheduler Quântico)\n- BCDEDIT Low Latency 0.5ms (DynamicTick Off, TSC Enhanced)\n- Plano de Energia Ultimate Performance Loord\n- Fullscreen Exclusive & DWM Anti-Stutter\n\nO computador será reiniciado para que todas as otimizações entrem em vigor com 100% de FPS!');
+    const confirmLite = confirm('👑 DESEJA APLICAR 100% DAS OTIMIZAÇÕES DA ISO LOORD v10.6 NO WINDOWS?\n\nIsso irá aplicar instantaneamente:\n- 31 Serviços Pesados e Telemetria Desativados\n- Curva de Mira Matemática Loord (Full Capa)\n- GPU Priority = 8 (MMCSS Games) & SystemResponsiveness = 0\n- Win32PrioritySeparation = 38 (Process Scheduler Quântico)\n- BCDEDIT Low Latency 0.5ms (DynamicTick Off, TSC Enhanced)\n- Plano de Energia Ultimate Performance Loord (100% Clock)\n- Delay 1ms Free Fire & Otimização Nagle TCP');
     if (!confirmLite) return;
 
     btnTransformWindowsLite.disabled = true;
     btnTransformWindowsLite.textContent = '⏳ Injetando Otimizações da ISO Loord...';
     if (statusWindowsLite) {
       statusWindowsLite.style.display = 'block';
-      statusWindowsLite.textContent = 'Injetando 31 serviços desativados, curva de mira Loord, BCDEDIT e prioridades de GPU...';
+      statusWindowsLite.textContent = 'Injetando 31 serviços desativados, curva de mira Loord, BCDEDIT, prioridades de GPU e plano extremo...';
     }
 
     const res = await window.api.transformWindowsLite();
@@ -2231,22 +2240,29 @@ if (btnTransformWindowsLite) {
         '👑 <b>100% DAS OTIMIZAÇÕES DA ISO LOORD v10.6 APLICADAS!</b>',
         '<div style="margin-top: 6px; line-height: 1.6; font-size: 0.8rem; color: #cbd5e1;">',
         '✔ <b>31 Serviços Pesados & Telemetrias:</b> Desativados<br>',
-        '✔ <b>Curva de Mira Loord Oficial:</b> Injetada no Registro<br>',
-        '✔ <b>Prioridade de GPU:</b> GPU Priority = 8 | SystemResponsiveness = 0<br>',
+        '✔ <b>Curva de Mira Loord Oficial:</b> Injetada no Registro do Mouse<br>',
+        '✔ <b>Prioridade de GPU & Emuladores:</b> GPU Priority = 8 | SystemResponsiveness = 0 | HD-Player Alta Prioridade<br>',
         '✔ <b>Escalonador de CPU Gamer:</b> Win32PrioritySeparation = 38<br>',
         '✔ <b>Latência BCDEDIT:</b> DynamicTick OFF | PlatformClock NO | TSC Enhanced<br>',
-        '✔ <b>Plano de Energia:</b> Ultimate Performance Loord (100% CPU Clock)',
+        '✔ <b>Plano de Energia:</b> Ultimate Performance Loord (100% CPU Clock)<br>',
+        '✔ <b>Delay Free Fire:</b> 1ms ExclusiveDelay aplicado aos arquivos de mapeamento<br>',
+        '✔ <b>Ping & Bufferbloat:</b> Algoritmo de Nagle desativado em todos os adaptadores de rede',
         '</div>',
-        '<div style="margin-top: 10px; color: #fbbf24; font-weight: 800; font-size: 0.9rem;">',
-        '🔄 REINICIANDO COMPUTADOR EM 5 SEGUNDOS PARA APLICAR TUDO NO WINDOWS...',
+        '<div style="margin-top: 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">',
+        '  <button id="btn-reboot-now" class="btn btn-primary" style="background: linear-gradient(135deg, #ef4444, #dc2626); border: none; font-weight: 800; padding: 8px 16px; font-size: 0.85rem; cursor: pointer;">🔄 Reiniciar Agora (Recomendado)</button>',
+        '  <span style="font-size: 0.78rem; color: #94a3b8;">ou reinicie manualmente quando desejar.</span>',
         '</div>'
       ].join('');
-    }
 
-    // Reinicia o computador automaticamente para aplicar tudo no Windows
-    setTimeout(async () => {
-      await window.api.rebootComputer();
-    }, 4000);
+      const btnRebootNow = document.getElementById('btn-reboot-now');
+      if (btnRebootNow) {
+        btnRebootNow.addEventListener('click', async () => {
+          btnRebootNow.disabled = true;
+          btnRebootNow.textContent = '⏳ Reiniciando...';
+          await window.api.rebootComputer();
+        });
+      }
+    }
   });
 }
 

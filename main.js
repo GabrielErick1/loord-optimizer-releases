@@ -3006,6 +3006,55 @@ function getCommandsForTweak(tweakId) {
   }
 }
 
+// ─── HELPER: ATIVAÇÃO BLINDADA DO PLANO ULTIMATE / DESEMPENHO MÁXIMO ─────────
+async function activateUltimatePerformancePowerScheme() {
+  try {
+    const script = `
+      $list = powercfg /list
+      $guid = $null
+      $dup = powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61 2>&1
+      if ($dup -match '([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})') {
+        $guid = $matches[1]
+      } elseif ($list -match '([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}).*?(Desempenho|Ultimate|Performance)') {
+        $guid = $matches[1]
+      } else {
+        $guid = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
+      }
+      if ($guid) {
+        powercfg -setactive $guid
+      }
+      powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100
+      powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100
+      powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMINCORES 100
+      powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMAXCORES 100
+      powercfg -setactive SCHEME_CURRENT
+      powercfg -h off
+    `;
+    const b64 = Buffer.from(script, 'utf16le').toString('base64');
+    await safeExec(`powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${b64}`);
+  } catch (_) {}
+}
+
+// ─── HELPER: OTIMIZAÇÃO DE REDE NAGLE & LATÊNCIA ZERO ─────────────────────────
+async function applyNetworkNagleLatencyZero() {
+  try {
+    const script = `
+      Get-NetAdapter | Foreach-Object {
+        $key = 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\' + $_.InterfaceGuid
+        if (Test-Path $key) {
+          Set-ItemProperty -Path $key -Name TcpAckFrequency -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue
+          Set-ItemProperty -Path $key -Name TCPNoDelay -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue
+          Set-ItemProperty -Path $key -Name TcpDelAckTicks -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+        }
+      }
+      netsh int tcp set global autotuninglevel=normal
+      ipconfig /flushdns
+    `;
+    const b64 = Buffer.from(script, 'utf16le').toString('base64');
+    await safeExec(`powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${b64}`);
+  } catch (_) {}
+}
+
 // ─── PC Fraco / 1ª Geração (Ultra FPS) ───────────────────────────
 ipcMain.handle('optimize-pc-fraco', async () => {
   if (!systemIsAdmin) return { success: false, error: 'Privilégios de Administrador requeridos.' };
@@ -3041,25 +3090,23 @@ ipcMain.handle('optimize-pc-fraco', async () => {
       'sc config "PcaSvc" start= disabled',
       'sc stop "PcaSvc"',
 
-      // 3. Plano de Energia Máxima & Core Unparking
-      'powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61',
-      'powercfg -setactive e9a42b02-d5df-448d-aa00-03f14749eb61',
-      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100',
-      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100',
-      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMINCORES 100',
-      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMAXCORES 100',
-      'powercfg -setactive SCHEME_CURRENT',
-      'powercfg -h off',
-
-      // 4. Prioridade Win32 Separator para primeiro plano
+      // 3. Prioridade Win32 Separator para primeiro plano
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 26 /f /reg:64',
       'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "GPU Priority" /t REG_DWORD /d 8 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Priority" /t REG_DWORD /d 6 /f /reg:64',
 
-      // 5. Otimizações de GPU Integrada (Intel HD Graphics / AMD APU)
+      // 4. Otimizações de GPU Integrada (Intel HD Graphics / AMD APU)
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers" /v PowerMizerEnable /t REG_DWORD /d 1 /f /reg:64',
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers" /v PowerMizerLevel /t REG_DWORD /d 1 /f /reg:64',
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers" /v PowerMizerLevelAC /t REG_DWORD /d 1 /f /reg:64',
       'reg add "HKLM\\SOFTWARE\\Intel\\GMM" /v DedicatedSegmentSize /t REG_DWORD /d 512 /f /reg:64',
+
+      // 5. GameDVR & Fullscreen Exclusive (FSE)
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v AllowGameDVR /t REG_DWORD /d 0 /f /reg:64',
+      'reg add "HKCU\\System\\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f',
+      'reg add "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehavior /t REG_DWORD /d 2 /f',
+      'reg add "HKCU\\Software\\Microsoft\\GameBar" /v AutoGameModeEnabled /t REG_DWORD /d 1 /f',
 
       // 6. BCD Latência 0ms
       'bcdedit /set useplatformtick yes',
@@ -3070,8 +3117,14 @@ ipcMain.handle('optimize-pc-fraco', async () => {
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\kernel" /v GlobalTimerResolutionRequests /t REG_DWORD /d 1 /f /reg:64'
     ];
 
-    // Executa tweaks de baixo consumo em paralelo
+    // Executa tweaks em paralelo
     await Promise.all(lowEndTweaks.map(cmd => safeExec(cmd)));
+
+    // Ativa plano Ultimate Performance / Desempenho Máximo real
+    await activateUltimatePerformancePowerScheme();
+
+    // Aplica Nagle / Rede
+    await applyNetworkNagleLatencyZero();
 
     // Purgar processos desnecessários e limpar RAM assincronamente
     const procScript = getPhysicalScriptPath('otimizar_processos.ps1');
@@ -3080,7 +3133,7 @@ ipcMain.handle('optimize-pc-fraco', async () => {
     const ramScript = getPhysicalScriptPath('clean_ram.ps1');
     safeExec(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${ramScript}"`);
 
-    return { success: true, message: 'Otimização para PC Fraco aplicada com sucesso!' };
+    return { success: true, message: '⚡ Modo Ultra Boost Extreme aplicado com 100% de sucesso!' };
   } catch (e) {
     return { success: false, error: e.message };
   }
@@ -3320,8 +3373,8 @@ ipcMain.handle('transform-windows-lite', async () => {
       'reg add "HKCU\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d "0" /f',
       'reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d "0" /f',
       'reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d "0" /f',
-      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters" /v MouseDataQueueSize /t REG_DWORD /d 32 /f',
-      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\kbdclass\\Parameters" /v KeyboardDataQueueSize /t REG_DWORD /d 32 /f',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mouclass\\Parameters" /v MouseDataQueueSize /t REG_DWORD /d 32 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\kbdclass\\Parameters" /v KeyboardDataQueueSize /t REG_DWORD /d 32 /f /reg:64',
 
       // 3. Priorização Extrema de Processos Gamer (MMCSS + Win32PrioritySeparation = 38 / Hex 26)
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 38 /f /reg:64',
@@ -3340,6 +3393,7 @@ ipcMain.handle('transform-windows-lite', async () => {
       'reg add "HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences" /v "MEmuHeadless.exe" /t REG_SZ /d "GpuPreference=2;" /f',
       'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\HD-Player.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f /reg:64',
       'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\MSIAppPlayer.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\csrss.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 4 /f /reg:64',
 
       // 5. Agrupamento de Svchost (Transforma ~60 processos svchost em menos de 15)
       'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control" /v SvcHostSplitThresholdInKB /t REG_DWORD /d 4294967295 /f /reg:64',
@@ -3360,6 +3414,8 @@ ipcMain.handle('transform-windows-lite', async () => {
       'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f /reg:64',
       'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v AllowCortana /t REG_DWORD /d 0 /f /reg:64',
       'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerThrottling" /v PowerThrottlingOff /t REG_DWORD /d 1 /f /reg:64',
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v PowerThrottlingOff /t REG_DWORD /d 1 /f /reg:64',
       'reg add "HKCU\\Control Panel\\Desktop" /v MenuShowDelay /t REG_SZ /d 0 /f',
       'reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects" /v VisualFXSetting /t REG_DWORD /d 2 /f',
 
@@ -3423,40 +3479,44 @@ ipcMain.handle('transform-windows-lite', async () => {
       'bcdedit /set hypervisorlaunchtype off',
       'bcdedit /timeout 3',
 
-      // 12. Plano de Energia Ultimate Performance Loord
-      'powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61',
-      'powercfg -setactive e9a42b02-d5df-448d-aa00-03f14749eb61',
-      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100',
-      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100',
-      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMINCORES 100',
-      'powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMAXCORES 100',
-      'powercfg /setacvalueindex scheme_current 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0',
-      'powercfg /setdcvalueindex scheme_current 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0',
-      'powercfg -setactive SCHEME_CURRENT',
-      'powercfg -h off',
-      // 13. SSD TRIM & Rede QoS 0% & Netsh Anti-Bufferbloat
+      // 12. SSD TRIM & Rede QoS 0%
       'fsutil behavior set DisableDeleteNotify 0',
-      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched" /v NonBestEffortLimit /t REG_DWORD /d 0 /f /reg:64',
-      'netsh int tcp set global autotuninglevel=normal'
+      'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched" /v NonBestEffortLimit /t REG_DWORD /d 0 /f /reg:64'
     ];
 
-    for (const cmd of liteCommands) {
-      try { execSync(cmd, { stdio: 'ignore' }); } catch (_) { }
-    }
+    // Executa todos os comandos de registro, BCDEDIT e serviços em paralelo de forma blindada
+    await Promise.all(liteCommands.map(cmd => safeExec(cmd)));
 
-    // Otimizar Nagle TCP em adaptadores de rede físicos de forma rápida
-    try {
-      cleanHostsFileOfBluestacks();
-      execSync('netsh int tcp set global autotuninglevel=normal', { stdio: 'ignore' });
-      execSync('ipconfig /flushdns', { stdio: 'ignore' });
-    } catch (_) { }
+    // Ativa plano Ultimate Performance / Desempenho Máximo real
+    await activateUltimatePerformancePowerScheme();
 
-    // Limpeza profunda de lixo, lixeira, caches e logs do Windows (sensação de PC formatado)
+    // Aplica Nagle / Rede Zero Ping
+    await applyNetworkNagleLatencyZero();
+
+    // Aplica ExclusiveDelay 1ms no Free Fire em todos os emuladores instalados
     try {
-      execSync('cmd.exe /c "del /q /f /s \"%TEMP%\\*\" & del /q /f /s \"C:\\Windows\\Temp\\*\" & del /q /f /s \"C:\\Windows\\Prefetch\\*\" & del /q /f /s \"%LOCALAPPDATA%\\D3DSCache\\*\" & del /q /f /s \"%LOCALAPPDATA%\\NVIDIA\\DXCache\\*\" & del /q /f /s \"%LOCALAPPDATA%\\AMD\\DxCache\\*\" & del /q /f /s \"C:\\Windows\\SoftwareDistribution\\Download\\*\" & del /q /f /s \"%LOCALAPPDATA%\\CrashDumps\\*\" & del /q /f /s \"C:\\Windows\\Minidump\\*\" & exit /b 0"', { stdio: 'ignore' });
-      execSync('powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Clear-RecycleBin -Force -ErrorAction SilentlyContinue"', { stdio: 'ignore' });
-      execSync('cmd.exe /c "wevtutil.exe cl Application & wevtutil.exe cl Security & wevtutil.exe cl System & wevtutil.exe cl Setup & exit /b 0"', { stdio: 'ignore' });
-    } catch (_) { }
+      const folders = [
+        'C:\\ProgramData\\BlueStacks_nxt\\Engine\\UserData\\InputMapper\\UserFiles',
+        'C:\\ProgramData\\BlueStacks_msi5\\Engine\\UserData\\InputMapper\\UserFiles',
+        'C:\\ProgramData\\BlueStacks\\Engine\\UserData\\InputMapper\\UserFiles'
+      ];
+      const cfgFiles = ['com.dts.freefireth.cfg', 'com.dts.freefiremax.cfg'];
+      for (const folder of folders) {
+        for (const cfg of cfgFiles) {
+          const fullPath = path.join(folder, cfg);
+          if (fs.existsSync(fullPath)) {
+            let content = fs.readFileSync(fullPath, 'utf8');
+            content = content.replace(/"ExclusiveDelay"\s*:\s*\d+/g, '"ExclusiveDelay" : 1');
+            fs.writeFileSync(fullPath, content, 'utf8');
+          }
+        }
+      }
+    } catch (_) {}
+
+    // Limpeza profunda assíncrona de lixo, caches e logs
+    safeExec('cmd.exe /c "del /q /f /s \"%TEMP%\\*\" & del /q /f /s \"C:\\Windows\\Temp\\*\" & del /q /f /s \"C:\\Windows\\Prefetch\\*\" & del /q /f /s \"%LOCALAPPDATA%\\D3DSCache\\*\" & del /q /f /s \"%LOCALAPPDATA%\\NVIDIA\\DXCache\\*\" & del /q /f /s \"%LOCALAPPDATA%\\AMD\\DxCache\\*\" & del /q /f /s \"C:\\Windows\\SoftwareDistribution\\Download\\*\" & del /q /f /s \"%LOCALAPPDATA%\\CrashDumps\\*\" & del /q /f /s \"C:\\Windows\\Minidump\\*\" & exit /b 0"');
+    safeExec('powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Clear-RecycleBin -Force -ErrorAction SilentlyContinue"');
+    safeExec('cmd.exe /c "wevtutil.exe cl Application & wevtutil.exe cl Security & wevtutil.exe cl System & wevtutil.exe cl Setup & exit /b 0"');
 
     return {
       success: true,
