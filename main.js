@@ -41,7 +41,7 @@ function getIdentityFingerprint() {
   return {
     appName: 'Loord Optimizer',
     appId: 'com.loord.optimizer',
-    appVersion: app.getVersion() || '3.8.2',
+    appVersion: app.getVersion() || '3.8.3',
     isPackaged: app.isPackaged
   };
 }
@@ -4031,8 +4031,8 @@ function queryOfficialDatabase(endpoint, payload) {
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(data),
-        'User-Agent': `LoordOptimizerClient/${app.getVersion() || '3.8.2'} (Windows NT 10.0; Win64; x64)`,
-        'X-Client-Secure-Ver': app.getVersion() || '3.8.2'
+        'User-Agent': `LoordOptimizerClient/${app.getVersion() || '3.8.3'} (Windows NT 10.0; Win64; x64)`,
+        'X-Client-Secure-Ver': app.getVersion() || '3.8.3'
       }
     };
 
@@ -6435,17 +6435,52 @@ ipcMain.handle('ask-ia-gamer', async (event, question) => {
 
 // ── LOORD SUÍTE DE PRECISÃO: MarkC 1:1, Raw Accel & Timer Resolution ────────
 let loordTimerResolutionActive = false;
+let loordTimerResolutionWorker = null;
 
-// ── MarkC 1:1 Scale Calculator ──
+// Notifica a API do Windows (user32.dll) em tempo real sobre mudanças no cursor e velocidade
+function applyRealtimeWindowsMouse(sensitivity = 10) {
+  try {
+    const ps = `
+      Add-Type -TypeDefinition @"
+      using System;
+      using System.Runtime.InteropServices;
+      public class LoordMouseApi {
+          [DllImport("user32.dll", SetLastError = true)]
+          public static extern bool SystemParametersInfo(uint uiAction, uint uiParam, IntPtr pvParam, uint fWinIni);
+      }
+"@
+      [LoordMouseApi]::SystemParametersInfo(0x0071, ${sensitivity}, [IntPtr]::Zero, 3);
+      $mouseArr = [int[]]@(0, 0, 0);
+      $ptr = [System.Runtime.InteropServices.Marshal]::AllocHGlobal(12);
+      [System.Runtime.InteropServices.Marshal]::Copy($mouseArr, 0, $ptr, 3);
+      [LoordMouseApi]::SystemParametersInfo(0x0004, 0, $ptr, 3);
+      [System.Runtime.InteropServices.Marshal]::FreeHGlobal($ptr);
+    `;
+    safeExec(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${ps.replace(/\r?\n/g, ' ')}"`);
+  } catch (_) {}
+}
+
+function toLittleEndianHex32(num) {
+  const buf = Buffer.alloc(4);
+  buf.writeUInt32LE(num >>> 0, 0);
+  return buf.toString('hex');
+}
+
+// ── MarkC 1:1 Scale Calculator (Fórmula Oficial MarkC Windows 10/11) ──
 function buildMarkCCurveHex(scalePercent = 100) {
   const s = (scalePercent || 100) / 100;
+  const p1 = Math.round(0x000cccC0 * s);
+  const p2 = Math.round(0x00199980 * s);
+  const p3 = Math.round(0x00266640 * s);
+  const p4 = Math.round(0x00333300 * s);
+
   const x0 = "0000000000000000";
-  const x1 = Math.round(0x6e15 * s).toString(16).padStart(8, '0') + "00000000";
-  const x2 = Math.round(0x400000 * s).toString(16).padStart(8, '0') + "00000000";
-  const x3 = Math.round(0xa00000 * s).toString(16).padStart(8, '0') + "00000000";
-  const x4 = Math.round(0x40000000 * s).toString(16).padStart(8, '0') + "00000000";
-  
-  const yHex = "00000000000000000018000000000000004000000000000000800000000000000000010000000000";
+  const x1 = toLittleEndianHex32(p1) + "00000000";
+  const x2 = toLittleEndianHex32(p2) + "00000000";
+  const x3 = toLittleEndianHex32(p3) + "00000000";
+  const x4 = toLittleEndianHex32(p4) + "00000000";
+
+  const yHex = "0000000000000000000038000000000000007000000000000000a800000000000000e00000000000";
   const xHex = (x0 + x1 + x2 + x3 + x4).padEnd(80, '0').slice(0, 80);
   return { xHex, yHex };
 }
@@ -6453,6 +6488,7 @@ function buildMarkCCurveHex(scalePercent = 100) {
 // ── IPC Handlers: Loord Precision MarkC 1:1 ──
 ipcMain.handle('detect-monitor-scale', () => {
   try {
+    const { screen } = require('electron');
     const sf = screen.getPrimaryDisplay().scaleFactor || 1.0;
     const scalePercent = Math.round(sf * 100);
     return { success: true, scalePercent };
@@ -6470,7 +6506,8 @@ ipcMain.handle('apply-markc-curve', async (_e, scalePercent) => {
       safeExec(`reg add "HKCU\\Control Panel\\Mouse" /v SmoothMouseYCurve /t REG_BINARY /d ${yHex} /f`),
       safeExec('reg add "HKCU\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d "0" /f'),
       safeExec('reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d "0" /f'),
-      safeExec('reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d "0" /f')
+      safeExec('reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d "0" /f'),
+      safeExec('reg add "HKCU\\Control Panel\\Mouse" /v MouseSensitivity /t REG_SZ /d "10" /f')
     ]);
     
     applyRealtimeWindowsMouse(10);
@@ -6582,15 +6619,36 @@ ipcMain.handle('rawaccel:status', () => {
   };
 });
 
-ipcMain.handle('rawaccel:apply-preset', (_e, presetId) => {
+ipcMain.handle('rawaccel:apply-preset', async (_e, presetId) => {
   try {
     const preset = RAWACCEL_PRESETS[presetId] || RAWACCEL_PRESETS['precisao'];
-    const targetDir = path.join(process.env.LOCALAPPDATA || '', 'Raw Accel');
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir, { recursive: true });
+    const candidateDirs = [
+      path.join(process.env.LOCALAPPDATA || '', 'Raw Accel'),
+      path.join(process.env.PROGRAMFILES || 'C:\\Program Files', 'Raw Accel'),
+      path.join(process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)', 'Raw Accel'),
+      'C:\\Raw Accel',
+      path.join(os.homedir(), 'Downloads', 'Raw Accel')
+    ];
+
+    for (const dir of candidateDirs) {
+      try {
+        if (!fs.existsSync(dir)) {
+          if (dir.includes('AppData')) fs.mkdirSync(dir, { recursive: true });
+          else continue;
+        }
+        const settingsPath = path.join(dir, 'settings.json');
+        fs.writeFileSync(settingsPath, JSON.stringify(preset.settings, null, 2), 'utf8');
+
+        const writerExe = path.join(dir, 'writer.exe');
+        if (fs.existsSync(writerExe)) {
+          try { exec(`"${writerExe}" "${settingsPath}"`, { windowsHide: true }); } catch (_) {}
+        }
+      } catch (_) {}
     }
-    const settingsPath = path.join(targetDir, 'settings.json');
-    fs.writeFileSync(settingsPath, JSON.stringify(preset.settings, null, 2), 'utf8');
+
+    const targetSens = preset.settings.sensitivity ? Math.round(preset.settings.sensitivity * 10) : 10;
+    await safeExec(`reg add "HKCU\\Control Panel\\Mouse" /v MouseSensitivity /t REG_SZ /d "${targetSens}" /f`);
+    applyRealtimeWindowsMouse(targetSens);
 
     return {
       success: true,
@@ -6602,22 +6660,49 @@ ipcMain.handle('rawaccel:apply-preset', (_e, presetId) => {
   }
 });
 
-
-// ── IPC Handlers: Loord Timer Resolution (0.5ms) ──
+// ── IPC Handlers: Loord Timer Resolution (0.5ms Persistente em Background) ──
 ipcMain.handle('get-timer-resolution-status', () => {
-  return { active: loordTimerResolutionActive };
+  return { active: loordTimerResolutionActive && loordTimerResolutionWorker && !loordTimerResolutionWorker.killed };
 });
 
 ipcMain.handle('apply-timer-resolution', async (_e, enable) => {
   try {
     const shouldEnable = enable !== false;
-    const psCmd = shouldEnable
-      ? `Add-Type -TypeDefinition '[DllImport(\"ntdll.dll\")] public static extern int NtSetTimerResolution(uint a, bool b, out uint c); [DllImport(\"winmm.dll\")] public static extern int timeBeginPeriod(uint p);' -Name Win32Timer -Namespace Loord; uint $c; [Loord.Win32Timer]::NtSetTimerResolution(5000, $true, [ref]$c); [Loord.Win32Timer]::timeBeginPeriod(1);`
-      : `Add-Type -TypeDefinition '[DllImport(\"ntdll.dll\")] public static extern int NtSetTimerResolution(uint a, bool b, out uint c); [DllImport(\"winmm.dll\")] public static extern int timeEndPeriod(uint p);' -Name Win32Timer -Namespace Loord; uint $c; [Loord.Win32Timer]::NtSetTimerResolution(156250, $false, [ref]$c); [Loord.Win32Timer]::timeEndPeriod(1);`;
-
-    await safeExec(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psCmd}"`);
-    loordTimerResolutionActive = shouldEnable;
-    return { success: true, active: loordTimerResolutionActive, message: shouldEnable ? 'Temporizador travado em 0.5ms (Latência Zero)!' : 'Temporizador restaurado para o padrão do Windows.' };
+    if (shouldEnable) {
+      if (loordTimerResolutionWorker) {
+        try { loordTimerResolutionWorker.kill(); } catch (_) {}
+        loordTimerResolutionWorker = null;
+      }
+      const psCode = `
+        Add-Type -TypeDefinition '[DllImport(\"ntdll.dll\")] public static extern int NtSetTimerResolution(uint a, bool b, out uint c); [DllImport(\"winmm.dll\")] public static extern int timeBeginPeriod(uint p);' -Name Win32Timer -Namespace Loord;
+        uint $c;
+        [Loord.Win32Timer]::NtSetTimerResolution(5000, $true, [ref]$c);
+        [Loord.Win32Timer]::timeBeginPeriod(1);
+        while ($true) { Start-Sleep -Seconds 3600 }
+      `;
+      loordTimerResolutionWorker = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', psCode.replace(/\r?\n/g, ' ')], {
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: true
+      });
+      loordTimerResolutionWorker.unref();
+      loordTimerResolutionActive = true;
+      return { success: true, active: true, message: 'Temporizador travado em 0.5ms (Latência Zero)!' };
+    } else {
+      if (loordTimerResolutionWorker) {
+        try { loordTimerResolutionWorker.kill(); } catch (_) {}
+        loordTimerResolutionWorker = null;
+      }
+      const restoreCode = `
+        Add-Type -TypeDefinition '[DllImport(\"ntdll.dll\")] public static extern int NtSetTimerResolution(uint a, bool b, out uint c); [DllImport(\"winmm.dll\")] public static extern int timeEndPeriod(uint p);' -Name Win32Timer -Namespace Loord;
+        uint $c;
+        [Loord.Win32Timer]::NtSetTimerResolution(156250, $false, [ref]$c);
+        [Loord.Win32Timer]::timeEndPeriod(1);
+      `;
+      await safeExec(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${restoreCode.replace(/\r?\n/g, ' ')}"`);
+      loordTimerResolutionActive = false;
+      return { success: true, active: false, message: 'Temporizador restaurado para o padrão do Windows.' };
+    }
   } catch (err) {
     return { success: false, error: err.message };
   }
