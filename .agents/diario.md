@@ -4,6 +4,20 @@ Este documento registra cronologicamente todas as tarefas, correções, implemen
 
 ---
 
+## 📅 [03/09/2026] — Release Oficial v3.8.7: Correção do Escopo de Sensibilidade & Limpeza Total de Regedits Antigas
+* **Arquivos Modificados:**
+  * [main.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/main.js)
+  * [index.html](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/index.html)
+  * [package.json](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/package.json)
+* **Resumo das Implementações & Publicação:**
+  - **Correção Fatal de `activeSens`:**
+    - Corrigido o escopo da variável `activeSens` no processo principal (`main.js`). A variável agora é declarada no topo do handler `apply-optimizations`, eliminando o erro de runtime `activeSens is not defined`.
+  - **Limpeza e Expulgo Total da Regedit Antiga:**
+    - Antes de aplicar qualquer uma das 18 regedits, o painel executa um expurgo completo de 100% das chaves customizadas, valores legados e subchaves criadas por regedits anteriores no Registro do Windows (`HKCU\Control Panel\Mouse` e colmeias de emuladores).
+    - Garante que a nova regedit selecionada seja aplicada em um ambiente limpo e sem resíduos conflitantes.
+
+---
+
 ## 📅 [03/09/2026] — Release Oficial v3.8.6: Detecção Inteligente e Reinício Exato do Emulador Ativo (MSI vs BlueStacks)
 * **Arquivos Modificados:**
   * [main.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/main.js)
