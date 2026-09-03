@@ -4,6 +4,18 @@ Este documento registra cronologicamente todas as tarefas, correções, implemen
 
 ---
 
+## 📅 [03/09/2026] — Release Oficial v3.8.3: Suíte de Precisão com Execução Real em Kernel (MarkC 1:1, Raw Accel e Timer 0.5ms Persistente)
+* **Arquivos Modificados:**
+  * [main.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/main.js)
+  * [index.html](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/index.html)
+  * [package.json](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/package.json)
+* **Resumo das Implementações & Publicação:**
+  - **MarkC 1:1 Adaptativo Oficial:** Implementado o cálculo exato em Little-Endian Hex 32-bit (`SmoothMouseXCurve` e `SmoothMouseYCurve` com 5 pontos polinomiais oficiais do Windows 10/11) adaptado dinamicamente para 100%, 125%, 150%, 175% e 200% de escala DPI, sincronizado em tempo real no subsistema Win32 `user32.dll` via `SystemParametersInfo(SPI_SETMOUSESPEED / SPI_SETMOUSE)`.
+  - **Loord Raw Accel Engine:** Integração com recarregamento em tempo real do driver de aceleração (`writer.exe`), salvando em diretórios oficiais (`%LOCALAPPDATA%\Raw Accel`, `Program Files`, etc.) e aplicando curva proporcional no registro do Windows.
+  - **Timer Resolution 0.5ms Persistente:** O temporizador do Windows é mantido continuamente travado em 0.5ms (5000 em unidades de 100ns) via worker em background com `NtSetTimerResolution` + `timeBeginPeriod(1)` que não deixa o sistema operacional resetar o tick para 15.6ms.
+
+---
+
 ## 📅 [02/09/2026] — Release Oficial v3.8.2: Estabilidade Total de Inicialização com Blindagem de v3.7.5 & Segurança na Nuvem
 * **Arquivos Modificados / Restaurados:**
   * [scripts/obfuscate.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/scripts/obfuscate.js)
