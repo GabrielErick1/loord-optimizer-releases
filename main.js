@@ -41,7 +41,7 @@ function getIdentityFingerprint() {
   return {
     appName: 'Loord Optimizer',
     appId: 'com.loord.optimizer',
-    appVersion: app.getVersion() || '3.8.4',
+    appVersion: app.getVersion() || '3.8.5',
     isPackaged: app.isPackaged
   };
 }
@@ -726,22 +726,34 @@ ipcMain.handle('adb-shell', async (event, cmd, port) => {
   return { success: ok, output: lastOut };
 });
 
-ipcMain.handle('adb-uninstall', async (event, packages, port) => {
+ipcMain.handle('adb-uninstall', async (event, packages, port, preservePackages = []) => {
   const adb = findAdb();
-  if (!adb) return packages.map(pkg => ({ pkg, ok: false, error: 'ADB não encontrado.' }));
+  if (!adb) return (packages || []).map(pkg => ({ pkg, ok: false, error: 'ADB não encontrado.' }));
 
   const targets = getActiveAdbTargets(port);
-  const pkgList = packages.join(' ');
+  const pkgList = (packages || []).join(' ');
 
-  // Executar tudo em um único comando batch não bloqueante
-  const shellBatch = `for p in ${pkgList}; do pm disable-user --user 0 $p 2>/dev/null; pm disable $p 2>/dev/null; pm hide --user 0 $p 2>/dev/null; pm uninstall --user 0 $p 2>/dev/null; am force-stop $p 2>/dev/null; pm clear $p 2>/dev/null; done; pm clear com.bluestacks.home 2>/dev/null; am force-stop com.bluestacks.home 2>/dev/null; am start -n com.bluestacks.home/.HomeActivity 2>/dev/null`;
+  // 1. Desinstalar / desativar estritamente os pacotes que foram selecionados pelo usuário
+  if (pkgList.trim().length > 0) {
+    const shellBatch = `for p in ${pkgList}; do pm disable-user --user 0 $p 2>/dev/null; pm disable $p 2>/dev/null; pm hide --user 0 $p 2>/dev/null; pm uninstall --user 0 $p 2>/dev/null; am force-stop $p 2>/dev/null; done; pm clear com.bluestacks.home 2>/dev/null; am force-stop com.bluestacks.home 2>/dev/null; am start -n com.bluestacks.home/.HomeActivity 2>/dev/null`;
 
-  for (const t of targets) {
-    await execAsync(`"${adb}" -s ${t} shell "${shellBatch}"`, 6000);
-    await execAsync(`"${adb}" -s ${t} shell su -c "${shellBatch}"`, 6000);
+    for (const t of targets) {
+      await execAsync(`"${adb}" -s ${t} shell "${shellBatch}"`, 6000);
+      await execAsync(`"${adb}" -s ${t} shell su -c "${shellBatch}"`, 6000);
+    }
   }
 
-  return packages.map(pkg => ({ pkg, ok: true, out: 'Success' }));
+  // 2. Reativar e Proteger expressamente qualquer pacote desselecionado (ex: Google Play Store, Play Services, etc.)
+  if (Array.isArray(preservePackages) && preservePackages.length > 0) {
+    const preserveList = preservePackages.join(' ');
+    const restoreBatch = `for p in ${preserveList}; do pm enable --user 0 $p 2>/dev/null; pm enable $p 2>/dev/null; pm unhide --user 0 $p 2>/dev/null; pm default-state --user 0 $p 2>/dev/null; done;`;
+    for (const t of targets) {
+      await execAsync(`"${adb}" -s ${t} shell "${restoreBatch}"`, 4000);
+      await execAsync(`"${adb}" -s ${t} shell su -c "${restoreBatch}"`, 4000);
+    }
+  }
+
+  return (packages || []).map(pkg => ({ pkg, ok: true, out: 'Success' }));
 });
 
 ipcMain.handle('unlock-fps-hz', async (event, hz) => {
@@ -4060,8 +4072,8 @@ function queryOfficialDatabase(endpoint, payload) {
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(data),
-        'User-Agent': `LoordOptimizerClient/${app.getVersion() || '3.8.4'} (Windows NT 10.0; Win64; x64)`,
-        'X-Client-Secure-Ver': app.getVersion() || '3.8.4'
+        'User-Agent': `LoordOptimizerClient/${app.getVersion() || '3.8.5'} (Windows NT 10.0; Win64; x64)`,
+        'X-Client-Secure-Ver': app.getVersion() || '3.8.5'
       }
     };
 

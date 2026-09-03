@@ -1913,40 +1913,82 @@ if (document.readyState === 'loading') {
 
   // ── Desinstalar Bloatware ─────────────────────────────────────────
   const BLOATWARE_MAP = {
-    'uninst-ads': ['com.bluestacks.gamecenter', 'com.bluestacks.appmart', 'com.bluestacks.gamepedia', 'gg.now.ads.service', 'gg.now.billing.service2', 'gg.now.billing.interceptor', 'com.bluestacks.hyperdesk', 'com.bluestacks.search', 'com.bluestacks.bstxservice'],
-    'uninst-google-search': ['com.google.android.googlequicksearchbox', 'com.google.android.apps.searchlite', 'com.google.android.katniss'],
-    'uninst-browser': ['com.android.chrome', 'com.android.browser', 'com.google.android.browser', 'com.sec.android.app.sbrowser', 'org.chromium.chrome'],
-    'uninst-files': ['com.android.documentsui', 'com.android.externalstorage', 'com.estrongs.android.pop', 'com.android.providers.downloads.ui', 'com.bluestacks.filemanager', 'com.bluestacks.windowsfilemanager'],
-    'uninst-telephony': ['com.android.providers.telephony', 'com.android.phone', 'com.android.providers.contacts', 'com.android.captiveportallogin', 'com.android.cellbroadcastreceiver', 'com.android.stk'],
-    'uninst-email': ['com.android.email', 'com.google.android.gm', 'com.android.calendar', 'com.google.android.calendar', 'com.google.android.syncadapters.calendar', 'com.google.android.syncadapters.contacts'],
-    'uninst-media': ['com.google.android.apps.maps', 'com.google.android.youtube', 'com.google.android.music', 'com.android.music', 'com.google.android.apps.youtube.music', 'com.google.android.videos'],
-    'uninst-docs': ['com.google.android.apps.docs', 'com.google.android.apps.docs.editors.docs', 'com.google.android.apps.sheets', 'com.google.android.apps.slides', 'com.google.android.play.games', 'com.google.android.gms.setup'],
-    'uninst-playstore': ['com.android.vending', 'com.google.android.gms', 'com.google.android.gsf', 'com.google.android.feedback', 'com.google.android.partnersetup', 'com.google.android.setupwizard', 'com.google.android.backuptransport', 'com.google.android.onetimeinitializer']
+    'uninst-ads': [
+      'com.bluestacks.gamecenter', 'com.bluestacks.appmart', 'com.bluestacks.gamepedia',
+      'gg.now.ads.service', 'gg.now.billing.service2', 'gg.now.billing.interceptor',
+      'com.bluestacks.hyperdesk', 'com.bluestacks.search', 'com.bluestacks.bstxservice'
+    ],
+    'uninst-google-search': [
+      'com.google.android.googlequicksearchbox', 'com.google.android.apps.searchlite', 'com.google.android.katniss'
+    ],
+    'uninst-browser': [
+      'com.android.chrome', 'com.android.browser', 'com.google.android.browser',
+      'com.sec.android.app.sbrowser', 'org.chromium.chrome'
+    ],
+    'uninst-files': [
+      'com.android.documentsui', 'com.android.externalstorage',
+      'com.estrongs.android.pop', 'com.bluestacks.filemanager', 'com.bluestacks.windowsfilemanager'
+    ],
+    'uninst-telephony': [
+      'com.android.phone', 'com.android.providers.telephony',
+      'com.android.cellbroadcastreceiver', 'com.android.stk'
+    ],
+    'uninst-email': [
+      'com.android.email', 'com.google.android.gm', 'com.android.calendar', 'com.google.android.calendar'
+    ],
+    'uninst-media': [
+      'com.google.android.apps.maps', 'com.google.android.youtube', 'com.google.android.music',
+      'com.android.music', 'com.google.android.apps.youtube.music', 'com.google.android.videos'
+    ],
+    'uninst-docs': [
+      'com.google.android.apps.docs', 'com.google.android.apps.docs.editors.docs',
+      'com.google.android.apps.sheets', 'com.google.android.apps.slides', 'com.google.android.play.games'
+    ],
+    'uninst-playstore': [
+      'com.android.vending', 'com.google.android.gms', 'com.google.android.gsf',
+      'com.google.android.feedback', 'com.google.android.partnersetup',
+      'com.google.android.setupwizard', 'com.google.android.backuptransport',
+      'com.google.android.onetimeinitializer'
+    ]
   };
 
   btnUninstall.addEventListener('click', async () => {
     if (!await requireConnected()) return;
-    if (!confirm('⚠️ Desinstalar os apps selecionados? Essa ação é imediata no emulador!')) return;
+
+    const toUninstall = [];
+    const toPreserve = [];
+
+    for (const [id, pkgs] of Object.entries(BLOATWARE_MAP)) {
+      const checkbox = document.getElementById(id);
+      if (checkbox && checkbox.checked) {
+        toUninstall.push(...pkgs);
+      } else {
+        toPreserve.push(...pkgs);
+      }
+    }
+
+    if (toUninstall.length === 0) {
+      alert('Nenhum aplicativo selecionado para desinstalação. Selecione ao menos um item marcado.');
+      return;
+    }
+
+    if (!confirm(`⚠️ Desinstalar os ${toUninstall.length} pacotes selecionados?\n\nOs itens desmarcados (ex: Google Play Store se estiver desmarcada) serão 100% PRESERVADOS e mantidos ativos!`)) return;
+
     btnUninstall.disabled = true;
     btnUninstall.textContent = 'Desinstalando...';
 
-    const toUninstall = [];
-    for (const [id, pkgs] of Object.entries(BLOATWARE_MAP)) {
-      if (document.getElementById(id)?.checked) toUninstall.push(...pkgs);
-    }
-
-    logAdb(`Desinstalando/Desativando ${toUninstall.length} pacotes no Android...`, '#38bdf8');
-    const results = await window.api.adbUninstall(toUninstall, adbPort);
+    logAdb(`Desinstalando ${toUninstall.length} pacotes selecionados (preservando ${toPreserve.length} desmarcados)...`, '#38bdf8');
+    const results = await window.api.adbUninstall(toUninstall, adbPort, toPreserve);
     let ok = 0, fail = 0;
     for (const r of results) {
       if (r.ok) { logAdb(`✔ ${r.pkg} (removido/desativado)`, '#28c385'); ok++; }
       else { logAdb(`✗ ${r.pkg} (não instalado)`, '#64748b'); fail++; }
     }
-    logAdb(`Concluído: ${ok} pacotes desinstalados/desativados com sucesso!`, '#63cab7');
+    logAdb(`Concluído: ${ok} pacotes desinstalados. Itens desmarcados preservados com sucesso!`, '#63cab7');
     setApplied('badge-adb-uninstall');
     btnUninstall.textContent = '🗑️ Desinstalar Selecionados';
     btnUninstall.disabled = false;
-    if (confirm(`✔ Limpeza Concluída com Sucesso!\n\n• ${ok} pacotes foram desinstalados e desativados no Android.\n• O cache do launcher foi limpo e os ícones foram removidos.\n\n⚠️ Deseja reiniciar o BlueStacks agora para aplicar 100% da tela limpa?`)) {
+    if (confirm(`✔ Limpeza Concluída com Sucesso!\n\n• ${ok} pacotes foram desinstalados no Android.\n• Os pacotes desmarcados foram protegidos e mantidos ativos.\n• O cache do launcher foi limpo.\n\n⚠️ Deseja reiniciar o BlueStacks agora para aplicar 100% da tela limpa?`)) {
       window.api.restartBluestacks();
     }
   });

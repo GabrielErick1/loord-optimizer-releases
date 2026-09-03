@@ -38,7 +38,7 @@ contextBridge.exposeInMainWorld('api', {
   adbConnect: (port) => ipcRenderer.invoke('adb-connect', port),
   adbAutoDetect: () => ipcRenderer.invoke('adb-autodetect'),
   adbShell: (cmd, port) => ipcRenderer.invoke('adb-shell', cmd, port),
-  adbUninstall: (packages, port) => ipcRenderer.invoke('adb-uninstall', packages, port),
+  adbUninstall: (packages, port, preserve) => ipcRenderer.invoke('adb-uninstall', packages, port, preserve),
   removeEmulatorAds: (port) => ipcRenderer.invoke('remove-emulator-ads', port),
   // ─── Touch Engine & Sensibilidade iPhone / Android Real ──────────
   applyTouchEngineProfile: (profile, port) => ipcRenderer.invoke('apply-touch-engine-profile', profile, port),

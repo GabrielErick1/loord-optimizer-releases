@@ -4,6 +4,21 @@ Este documento registra cronologicamente todas as tarefas, correções, implemen
 
 ---
 
+## 📅 [03/09/2026] — Release Oficial v3.8.5: Correção e Proteção Absoluta de Apps Desmarcados (Google Play Store & Serviços)
+* **Arquivos Modificados:**
+  * [main.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/main.js)
+  * [preload.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/preload.js)
+  * [renderer.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/renderer.js)
+  * [index.html](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/index.html)
+  * [package.json](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/package.json)
+* **Resumo das Implementações & Publicação:**
+  - **Proteção Rígida de Aplicativos Desmarcados (`adb-uninstall`):**
+    - Corrigido o fluxo de remoção de bloatware do emulador. Apenas os aplicativos marcados com checkbox são enviados para desinstalação.
+    - Implementada a lista `toPreserve` no `main.js`: qualquer pacote desmarcado pelo usuário (como Google Play Store, Google Play Services, Google Framework, etc.) recebe explicitamente comandos de reativação compulsória (`pm enable`, `pm unhide`, `pm default-state`), garantindo que a loja do Google e os logins nunca sejam afetados se o usuário desmarcar a opção.
+    - Removidas colisões de pacotes de dependência interna das categorias secundárias.
+
+---
+
 ## 📅 [03/09/2026] — Release Oficial v3.8.4: Integração Total das 18 Regedits & Sense em Tempo Real
 * **Arquivos Modificados:**
   * [main.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/main.js)
