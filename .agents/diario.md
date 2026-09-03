@@ -4,6 +4,23 @@ Este documento registra cronologicamente todas as tarefas, correções, implemen
 
 ---
 
+## 📅 [03/09/2026] — Release Oficial v3.8.4: Integração Total das 18 Regedits & Sense em Tempo Real
+* **Arquivos Modificados:**
+  * [main.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/main.js)
+  * [renderer.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/renderer.js)
+  * [index.html](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/index.html)
+  * [package.json](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/package.json)
+* **Resumo das Implementações & Publicação:**
+  - **Mapeamento Completo das 18 Regedits da Aba "Regedits & Sense":**
+    - Todas as 18 opções (`LOORD REGEDIT RANQUEADA`, `LOORD REGEDIT APOSTADO`, `LOORD V3 VIP TED EXE`, `LOORD REGEDIT V.2`, `Regedit do Lord So Capa 4x4`, `Regedit do Flash`, `MIRA CREN LOORD`, `LOORD 4.0 SUPREME VIP`, `GOD OF HEADSHOT 1:1`, `AIM LOCK EXTREME 1:1`, `FULL RED SMG & AR`, `KANT ELITE V1`, `MIRA CLEAN PESADINHO`, `ULTRA EMULATOR BYPASS 1:1`, `ZERO ACCEL RAW INPUT 1:1`, `HYPER SENSE FULL CAPA`, `R!KW!CH PRO HEADSHOT`, `FOV LOCK & MOUSE STICK`) agora possuem injeção atômica de suas chaves dedicadas.
+    - Correção do alias `'mira-clean-loord'` -> `'mira-clean-pesadinho'` garantindo injeção de todas as 43 chaves no Windows e emuladores.
+  - **Atualização Instantânea em Memória RAM (`applyRealtimeWindowsMouse`):**
+    - Disparo compulsório de `SystemParametersInfo(SPI_SETMOUSESPEED / SPI_SETMOUSE)` no `user32.dll` após a aplicação de qualquer um dos 18 perfis, fazendo o usuário sentir a mudança de curva e sensibilidade imediatamente sem precisar reiniciar.
+  - **Tratamento de Erros e Transparência na UI:**
+    - Exibição de mensagem de status com o nome completo e formatado do perfil aplicado, além de captura detalhada de erro caso ocorra qualquer bloqueio de privilégio ou registro.
+
+---
+
 ## 📅 [03/09/2026] — Release Oficial v3.8.3: Suíte de Precisão com Execução Real em Kernel (MarkC 1:1, Raw Accel e Timer 0.5ms Persistente)
 * **Arquivos Modificados:**
   * [main.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/main.js)

@@ -512,32 +512,44 @@ async function applyMouseSettingsOnly() {
   const mouseMode = selectedMouseModeEl ? selectedMouseModeEl.value : 'ff-precision-pixel-perfect';
   const pollingRate = selectPolling ? selectPolling.value : '1000';
 
-  if (tweakStatusText) tweakStatusText.textContent = 'Aplicando Regedit de sensibilidade no Windows...';
-  const res = await window.api.applyOptimizations({
-    mouseMode,
-    pollingRate,
-    scope: 'mouse-only'
-  });
+  if (tweakStatusText) tweakStatusText.textContent = '⏳ Aplicando Regedit e calibrando curva no Windows...';
+  
+  try {
+    const res = await window.api.applyOptimizations({
+      mouseMode,
+      pollingRate,
+      scope: 'mouse-only'
+    });
 
-  if (res && res.success) {
-    const regTitle = res.regName || 'Sensibilidade';
-    if (tweakStatusText) tweakStatusText.textContent = `Regedit (${regTitle}) aplicada com sucesso no Windows!`;
-    const reboot = confirm(
-      `⚡ Regedit (${regTitle}) aplicada com sucesso!\n\n` +
-      `🎯 RECOMENDAÇÃO OFICIAL (FULL LATA / CAPA PERFEITO):\n` +
-      `• Mouse Físico: 1600 DPI | Polling Rate: 1000 Hz\n` +
-      `• Emulador: 480 DPI\n` +
-      `• Sensibilidade Jogo: X = 1.80 | Y = 1.80\n` +
-      `• Campos do Emulador: Campos X: 80 | Campos Y: 62\n` +
-      `• Ajuste: 16458\n\n` +
-      `(Recomendamos manter X e Y padronizados em 1.80 com Campos X: 80, Campos Y: 62 e Ajuste 16458 para puxar Full Capa. Caso sinta a sensibilidade muito alta, adapte como achar melhor).\n\n` +
-      `Deseja REINICIAR o computador agora para que as alterações do sistema entrem em vigor?`
-    );
-    if (reboot) {
-      await window.api.rebootComputer();
+    if (res && res.success) {
+      const regTitle = res.regName || 'Sensibilidade VIP';
+      if (tweakStatusText) {
+        tweakStatusText.innerHTML = `✅ <span style="color:#38bdf8; font-weight:800;">${regTitle}</span> aplicada com sucesso no Windows e Emuladores!`;
+      }
+      
+      const reboot = confirm(
+        `⚡ REGEDIT APLICADA COM SUCESSO!\n\n` +
+        `🎯 Perfil Ativo: ${regTitle}\n` +
+        `• Resposta de Cursor 1:1 ativada em tempo real no Windows (sem precisar reiniciar)!\n\n` +
+        `🎯 RECOMENDAÇÃO OFICIAL (FULL LATA / CAPA PERFEITO):\n` +
+        `• Mouse Físico: 1600 DPI | Polling Rate: 1000 Hz\n` +
+        `• Emulador: 480 DPI\n` +
+        `• Sensibilidade Jogo: X = 1.80 | Y = 1.80\n` +
+        `• Campos do Emulador: Campos X: 80 | Campos Y: 62\n` +
+        `• Ajuste: 16458\n\n` +
+        `Deseja REINICIAR o computador agora para limpar cache do sistema e temporizadores de hardware?`
+      );
+      if (reboot) {
+        await window.api.rebootComputer();
+      }
+    } else {
+      const errMsg = res ? res.error : 'Erro desconhecido ao aplicar regedit.';
+      if (tweakStatusText) tweakStatusText.textContent = `❌ Erro: ${errMsg}`;
+      alert(`Erro ao aplicar regedit:\n\n${errMsg}`);
     }
-  } else {
-    alert(`Erro ao aplicar regedit: ${res ? res.error : 'Desconhecido'}`);
+  } catch (err) {
+    if (tweakStatusText) tweakStatusText.textContent = `❌ Erro inesperado: ${err.message}`;
+    alert(`Erro inesperado:\n\n${err.message}`);
   }
 }
 

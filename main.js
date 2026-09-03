@@ -41,7 +41,7 @@ function getIdentityFingerprint() {
   return {
     appName: 'Loord Optimizer',
     appId: 'com.loord.optimizer',
-    appVersion: app.getVersion() || '3.8.3',
+    appVersion: app.getVersion() || '3.8.4',
     isPackaged: app.isPackaged
   };
 }
@@ -2134,8 +2134,34 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
     }
 
     // ── 2. Se for configuração de Regedit de Mouse (mouse-only ou all) ─────
+    const MOUSE_MODE_TITLES = {
+      'regedit-loord-ranqueada': 'LOORD REGEDIT RANQUEADA (Full Capa & Média/Longa Distância)',
+      'regedit-loord-apostado': 'LOORD REGEDIT APOSTADO (Disparo Cirúrgico 4v4 & X1)',
+      'regedit-loord-v3-ted-exe': 'LOORD V3 VIP (Ted Exe • AimLock & Stability Instantânea)',
+      'regedit-loord-v2-supreme': 'LOORD REGEDIT V.2 (Curva Suave 1:1 & Headshot Lock)',
+      'regedit-lord-socapa-4x4': 'Regedit do Lord So Capa 4x4 (Precision Instantâneo .REG + .BAT Ao Vivo)',
+      'regedit-do-flash': 'Regedit do Flash (Alta Precisão 1:1 + Curva Flash .REG & .BAT Integrados)',
+      'mira-clean-loord': 'MIRA CREN LOORD (Mira Fixa & MiraGruda BlueStacks / MSI / Nox / LDPlayer)',
+      'ff-precision-pixel-perfect': 'LOORD 4.0 SUPREME VIP (Pixel-Perfect & Zero Jitter / Full Head)',
+      'loord-3-sense-full-red': 'GOD OF HEADSHOT 1:1 (Ultra Sense + BCD Timer + USB Boost)',
+      'vip-lock-sense': 'AIM LOCK EXTREME 1:1 (Anti-Tremer & Head Stabilizer)',
+      'full-red-ump': 'FULL RED SMG & AR (Disparo Instantâneo & No Recoil)',
+      'kant-v1': 'KANT ELITE V1 (Curva Customizada & Puxada Suave)',
+      'mira-clean-pesadinho': 'MIRA CLEAN PESADINHO (1:1 Head & Zero Shake)',
+      'ultra-emu-boost': 'ULTRA EMULATOR BYPASS 1:1 (Prioridade Realtime & Max FPS)',
+      'zero-curve-raw': 'ZERO ACCEL RAW INPUT 1:1 (Precisão Cirúrgica & Latência Zero)',
+      'ff-mouse-maximo': 'HYPER SENSE FULL CAPA (Sensibilidade 10/11 & IRQ8 Timer)',
+      'rikwich-pro-sense': 'R!KW!CH PRO HEADSHOT (Curva Linear 1:1 & Touch 750 DPI)',
+      'fov-lock-stick-pro': 'FOV LOCK & MOUSE STICK (Trava Alvo & Magnet Head)'
+    };
+
+    const targetKey = (mouseMode === 'mira-clean-loord')
+      ? 'mira-clean-pesadinho'
+      : (mouseMode || 'loord-3-sense-full-red');
     const selectedRegData = require('./regis/encrypted_reg_data.js');
-    const selectedRegConfig = selectedRegData[mouseMode || 'loord-3-sense-full-red'];
+    const selectedRegConfig = selectedRegData[targetKey]
+      || selectedRegData[targetKey.replace('regedit-', '')]
+      || selectedRegData['loord-3-sense-full-red'];
 
     // ── Limpeza Completa e Dinâmica de Regedits Antigas ──
     // Remove 100% das chaves customizadas e subchaves anteriores para manter SOMENTE a nova regedit ativa
@@ -2225,9 +2251,11 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
       for (const item of selectedRegConfig.keys) {
         try {
           const valArg = item.value === '' ? '""' : `"${item.value}"`;
+          const isHKLM = (item.path || '').startsWith('HKLM') || (item.path || '').startsWith('HKEY_LOCAL_MACHINE');
+          const regFlag = isHKLM ? ' /reg:64' : '';
           const cmd = item.name === ''
-            ? `reg add "${item.path}" /ve /t ${item.type} /d ${valArg} /f`
-            : `reg add "${item.path}" /v "${item.name}" /t ${item.type} /d ${valArg} /f`;
+            ? `reg add "${item.path}" /ve /t ${item.type} /d ${valArg} /f${regFlag}`
+            : `reg add "${item.path}" /v "${item.name}" /t ${item.type} /d ${valArg} /f${regFlag}`;
           execSync(cmd, { stdio: 'ignore' });
         } catch (e) {
           console.error(`Erro ao aplicar regkey (${item.name}):`, e.message);
@@ -2477,7 +2505,8 @@ Add-Type -Namespace W -Name M -MemberDefinition $s -ErrorAction SilentlyContinue
 
     return {
       success: true,
-      regName: selectedRegConfig ? selectedRegConfig.name : 'Regedit Customizada',
+      regName: MOUSE_MODE_TITLES[mouseMode] || (selectedRegConfig ? selectedRegConfig.name : 'Sensibilidade VIP'),
+      appliedSens: activeSens,
       message: 'Regedit de sensibilidade aplicada com sucesso no Windows e Emulador!'
     };
   } catch (e) {
@@ -4031,8 +4060,8 @@ function queryOfficialDatabase(endpoint, payload) {
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(data),
-        'User-Agent': `LoordOptimizerClient/${app.getVersion() || '3.8.3'} (Windows NT 10.0; Win64; x64)`,
-        'X-Client-Secure-Ver': app.getVersion() || '3.8.3'
+        'User-Agent': `LoordOptimizerClient/${app.getVersion() || '3.8.4'} (Windows NT 10.0; Win64; x64)`,
+        'X-Client-Secure-Ver': app.getVersion() || '3.8.4'
       }
     };
 
