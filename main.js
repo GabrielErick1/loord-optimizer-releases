@@ -41,7 +41,7 @@ function getIdentityFingerprint() {
   return {
     appName: 'Loord Optimizer',
     appId: 'com.loord.optimizer',
-    appVersion: app.getVersion() || '3.8.5',
+    appVersion: app.getVersion() || '3.8.6',
     isPackaged: app.isPackaged
   };
 }
@@ -1034,19 +1034,142 @@ ipcMain.handle('change-device-profile', async (event, profile) => {
   return { success: true, modifiedCount, model: targetModel, brand: targetBrand };
 });
 
-ipcMain.handle('restart-bluestacks', async () => {
+// ─── Detecção Inteligente do Emulador Ativo (MSI App Player vs BlueStacks) ────
+let lastKnownActiveEmulator = null;
+
+function getActiveEmulatorInfo(port = null) {
+  const emuConfigs = [
+    {
+      id: 'msi5',
+      name: 'MSI App Player 5',
+      exeCandidates: [
+        'C:\\Program Files\\BlueStacks_msi5\\HD-Player.exe',
+        'C:\\Program Files (x86)\\BlueStacks_msi5\\HD-Player.exe'
+      ],
+      confPath: 'C:\\ProgramData\\BlueStacks_msi5\\bluestacks.conf',
+      bgpConf: 'C:\\ProgramData\\BlueStacks_bgp_msi\\bluestacks.conf'
+    },
+    {
+      id: 'msi4',
+      name: 'MSI App Player 4',
+      exeCandidates: [
+        'C:\\Program Files\\BlueStacks_msi\\HD-Player.exe',
+        'C:\\Program Files (x86)\\BlueStacks_msi\\HD-Player.exe'
+      ],
+      confPath: 'C:\\ProgramData\\BlueStacks_msi\\bluestacks.conf',
+      bgpConf: 'C:\\ProgramData\\BlueStacks_bgp_msi\\bluestacks.conf'
+    },
+    {
+      id: 'bs5',
+      name: 'BlueStacks 5',
+      exeCandidates: [
+        'C:\\Program Files\\BlueStacks_nxt\\HD-Player.exe',
+        'C:\\Program Files (x86)\\BlueStacks_nxt\\HD-Player.exe'
+      ],
+      confPath: 'C:\\ProgramData\\BlueStacks_nxt\\bluestacks.conf',
+      bgpConf: 'C:\\ProgramData\\BlueStacks_bgp\\bluestacks.conf'
+    },
+    {
+      id: 'bs4',
+      name: 'BlueStacks 4',
+      exeCandidates: [
+        'C:\\Program Files\\BlueStacks\\HD-Player.exe',
+        'C:\\Program Files (x86)\\BlueStacks\\HD-Player.exe'
+      ],
+      confPath: 'C:\\ProgramData\\BlueStacks\\bluestacks.conf',
+      bgpConf: 'C:\\ProgramData\\BlueStacks_bgp\\bluestacks.conf'
+    }
+  ];
+
+  // 1. Prioridade Máxima: Se porta ADB foi informada ou está conectada, mapeia a conf e a instância exata
+  if (port) {
+    const targetPortStr = String(port);
+    for (const emu of emuConfigs) {
+      if (fs.existsSync(emu.confPath)) {
+        try {
+          const content = fs.readFileSync(emu.confPath, 'utf8');
+          if (content.includes(`adb_port="${targetPortStr}"`) || content.includes(`status.adb_port="${targetPortStr}"`)) {
+            const match = content.match(new RegExp(`bst\\.instance\\.(.*?)\\.(?:status\\.)?adb_port="${targetPortStr}"`));
+            const instance = match ? match[1] : 'Pie64';
+            for (const exe of emu.exeCandidates) {
+              if (fs.existsSync(exe)) {
+                return { ...emu, exePath: exe, instance, source: 'adb_port_match' };
+              }
+            }
+          }
+        } catch (_) {}
+      }
+    }
+  }
+
+  // 2. Prioridade: Conf mais recente modificado enquanto HD-Player está rodando
+  let newestEmu = null;
+  let newestMtime = 0;
+
+  for (const emu of emuConfigs) {
+    if (fs.existsSync(emu.confPath)) {
+      try {
+        const stat = fs.statSync(emu.confPath);
+        if (stat.mtimeMs > newestMtime) {
+          for (const exe of emu.exeCandidates) {
+            if (fs.existsSync(exe)) {
+              newestMtime = stat.mtimeMs;
+              let instance = 'Pie64';
+              try {
+                const content = fs.readFileSync(emu.confPath, 'utf8');
+                const instMatch = content.match(/bst\.instance\.(.*?)\.status\.adb_port=/i) || content.match(/bst\.instance\.(.*?)\.adb_port=/i);
+                if (instMatch) instance = instMatch[1];
+              } catch (_) {}
+              newestEmu = { ...emu, exePath: exe, instance, source: 'conf_mtime' };
+              break;
+            }
+          }
+        }
+      } catch (_) {}
+    }
+  }
+
+  if (newestEmu) return newestEmu;
+
+  // 3. Fallback: Primeiro emulador com executável existente
+  for (const emu of emuConfigs) {
+    for (const exe of emu.exeCandidates) {
+      if (fs.existsSync(exe)) {
+        return { ...emu, exePath: exe, instance: 'Pie64' };
+      }
+    }
+  }
+
+  return null;
+}
+
+ipcMain.handle('restart-bluestacks', async (event, port = null) => {
   try {
+    // 1. Detecta QUAL emulador está ativo ANTES de fechar o processo
+    const activeEmu = getActiveEmulatorInfo(port) || lastKnownActiveEmulator;
+    if (activeEmu) {
+      lastKnownActiveEmulator = activeEmu;
+    }
+
     try {
-      execSync('taskkill /f /im HD-Player.exe', { stdio: 'ignore' });
+      execSync('taskkill /f /im HD-Player.exe /im HD-Agent.exe /im BlueStacksServices.exe /im BstkSVC.exe >nul 2>&1', { stdio: 'ignore' });
     } catch (_) { }
 
     await new Promise(r => setTimeout(r, 1500));
 
+    // 2. Reabre exatamente o emulador que foi fechado (MSI ou BlueStacks) com a instância correta
+    if (activeEmu && activeEmu.exePath && fs.existsSync(activeEmu.exePath)) {
+      const instArg = activeEmu.instance ? ` --instance ${activeEmu.instance}` : '';
+      exec(`"${activeEmu.exePath}"${instArg}`);
+      return { success: true, emu: activeEmu.name };
+    }
+
+    // 3. Fallback geral respeitando MSI se instalado
     const candidates = [
-      'C:\\Program Files\\BlueStacks_nxt\\HD-Player.exe',
       'C:\\Program Files\\BlueStacks_msi5\\HD-Player.exe',
-      'C:\\Program Files\\BlueStacks\\HD-Player.exe',
-      'C:\\Program Files\\BlueStacks_msi\\HD-Player.exe'
+      'C:\\Program Files\\BlueStacks_nxt\\HD-Player.exe',
+      'C:\\Program Files\\BlueStacks_msi\\HD-Player.exe',
+      'C:\\Program Files\\BlueStacks\\HD-Player.exe'
     ];
     for (const exe of candidates) {
       if (fs.existsSync(exe)) {
@@ -4072,8 +4195,8 @@ function queryOfficialDatabase(endpoint, payload) {
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(data),
-        'User-Agent': `LoordOptimizerClient/${app.getVersion() || '3.8.5'} (Windows NT 10.0; Win64; x64)`,
-        'X-Client-Secure-Ver': app.getVersion() || '3.8.5'
+        'User-Agent': `LoordOptimizerClient/${app.getVersion() || '3.8.6'} (Windows NT 10.0; Win64; x64)`,
+        'X-Client-Secure-Ver': app.getVersion() || '3.8.6'
       }
     };
 

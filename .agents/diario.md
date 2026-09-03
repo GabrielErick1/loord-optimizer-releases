@@ -4,6 +4,22 @@ Este documento registra cronologicamente todas as tarefas, correções, implemen
 
 ---
 
+## 📅 [03/09/2026] — Release Oficial v3.8.6: Detecção Inteligente e Reinício Exato do Emulador Ativo (MSI vs BlueStacks)
+* **Arquivos Modificados:**
+  * [main.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/main.js)
+  * [preload.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/preload.js)
+  * [renderer.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/renderer.js)
+  * [index.html](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/index.html)
+  * [package.json](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/package.json)
+* **Resumo das Implementações & Publicação:**
+  - **Detecção Inteligente do Emulador Conectado (`getActiveEmulatorInfo`):**
+    - Criada a função de detecção dinâmica no `main.js` que identifica qual emulador está em execução ou conectado via ADB (mapeamento por porta ADB, mtime do `bluestacks.conf` do MSI/BlueStacks e instância ativa como `Pie64` ou `Nougat32`).
+    - Corrigido o handler `restart-bluestacks`: agora ele reabre **o executável exato que foi fechado** (`C:\Program Files\BlueStacks_msi5\HD-Player.exe` quando o usuário está no MSI App Player 5, em vez de forçar a abertura do BlueStacks 5).
+  - **Sincronização de Porta no Frontend (`renderer.js`):**
+    - Todas as chamadas de reinício de emulador agora repassam o `adbPort` ativo, garantindo que qualquer otimização reinicie o emulador correto.
+
+---
+
 ## 📅 [03/09/2026] — Release Oficial v3.8.5: Correção e Proteção Absoluta de Apps Desmarcados (Google Play Store & Serviços)
 * **Arquivos Modificados:**
   * [main.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/main.js)

@@ -1661,8 +1661,8 @@ if (document.readyState === 'loading') {
           statusTouchEngine.style.display = 'block';
           statusTouchEngine.textContent = `✔ ${res.profileName} aplicado com sucesso! (Touch 300Hz, Touch Slop 1, DPI ${res.dpi})`;
         }
-        if (confirm(`✨ ${res.profileName} Ativado com Sucesso!\n\n• Resposta ao Toque Ultrarrápida (300Hz)\n• Touch Slop = 1 (Arrasto de capa instantâneo sem delay)\n• DPI do Android ajustada para ${res.dpi}\n\n⚠️ Deseja reiniciar o BlueStacks agora para aplicar 100% no Free Fire?`)) {
-          window.api.restartBluestacks();
+        if (confirm(`✨ ${res.profileName} Ativado com Sucesso!\n\n• Resposta ao Toque Ultrarrápida (300Hz)\n• Touch Slop = 1 (Arrasto de capa instantâneo sem delay)\n• DPI do Android ajustada para ${res.dpi}\n\n⚠️ Deseja reiniciar o emulador (MSI / BlueStacks) agora para aplicar 100% no Free Fire?`)) {
+          window.api.restartBluestacks(adbPort);
         }
       } else {
         logAdb('Falha ao aplicar Touch Engine. Verifique a conexão ADB.', '#ef4444');
@@ -1815,8 +1815,8 @@ if (document.readyState === 'loading') {
         setApplied('badge-device-profile');
         btnApplyDevice.textContent = '✔ Modelo Aplicado!';
         logAdb(`✔ Modelo alterado para ${prof.brand.toUpperCase()} (${prof.model}) em ${res.modifiedCount} instâncias!`, '#28c385');
-        if (confirm(`✔ Modelo de Celular atualizado com sucesso!\n\n• Fabricante: ${prof.manufacturer}\n• Marca: ${prof.brand}\n• Modelo: ${prof.model}\n\n⚠️ O BlueStacks precisa ser reiniciado para o Free Fire carregar o novo modelo.\n\nDeseja reiniciar o BlueStacks agora?`)) {
-          window.api.restartBluestacks();
+        if (confirm(`✔ Modelo de Celular atualizado com sucesso!\n\n• Fabricante: ${prof.manufacturer}\n• Marca: ${prof.brand}\n• Modelo: ${prof.model}\n\n⚠️ O emulador (MSI / BlueStacks) precisa ser reiniciado para o Free Fire carregar o novo modelo.\n\nDeseja reiniciar o emulador agora?`)) {
+          window.api.restartBluestacks(adbPort);
         }
       } else {
         alert('Nenhum arquivo bluestacks.conf encontrado para atualizar o perfil.');
@@ -1866,8 +1866,8 @@ if (document.readyState === 'loading') {
         setApplied('badge-real-android');
         btnConvertReal.textContent = '✔ Android Real Ativo!';
         logAdb(`✔ Modo Android Verdadeiro ativado com sucesso! (${res.appliedCount} módulos configurados)`, '#28c385');
-        if (confirm('✨ Modo Android Verdadeiro Ativado com Sucesso!\n\n• Tela inicial sem anúncios e sem banners do BlueStacks\n• Game Center e propagandas desativados\n• Renderização nativa da GPU ativada\n\n⚠️ Deseja reiniciar o BlueStacks agora para aplicar 100% das alterações?')) {
-          window.api.restartBluestacks();
+        if (confirm('✨ Modo Android Verdadeiro Ativado com Sucesso!\n\n• Tela inicial sem anúncios e sem banners\n• Game Center e propagandas desativados\n• Renderização nativa da GPU ativada\n\n⚠️ Deseja reiniciar o emulador (MSI / BlueStacks) agora para aplicar 100% das alterações?')) {
+          window.api.restartBluestacks(adbPort);
         }
       } else {
         logAdb('Erro ao aplicar Modo Android Real. Verifique a conexão ADB.', '#ef4444');
@@ -1905,8 +1905,8 @@ if (document.readyState === 'loading') {
       btnRemoveEmuAds.textContent = '✔ Anúncios Removidos!';
       setApplied('badge-emu-ads');
       logAdb('✔ Anúncios e recomendações de jogos desativados com sucesso!', '#28c385');
-      if (confirm('🚫 Anúncios e promoções do emulador removidos com sucesso!\n\n⚠️ Deseja reiniciar o BlueStacks agora para ver a tela 100% limpa?')) {
-        window.api.restartBluestacks();
+      if (confirm('🚫 Anúncios e promoções do emulador removidos com sucesso!\n\n⚠️ Deseja reiniciar o emulador (MSI / BlueStacks) agora para ver a tela 100% limpa?')) {
+        window.api.restartBluestacks(adbPort);
       }
     });
   }
@@ -1988,8 +1988,8 @@ if (document.readyState === 'loading') {
     setApplied('badge-adb-uninstall');
     btnUninstall.textContent = '🗑️ Desinstalar Selecionados';
     btnUninstall.disabled = false;
-    if (confirm(`✔ Limpeza Concluída com Sucesso!\n\n• ${ok} pacotes foram desinstalados no Android.\n• Os pacotes desmarcados foram protegidos e mantidos ativos.\n• O cache do launcher foi limpo.\n\n⚠️ Deseja reiniciar o BlueStacks agora para aplicar 100% da tela limpa?`)) {
-      window.api.restartBluestacks();
+    if (confirm(`✔ Limpeza Concluída com Sucesso!\n\n• ${ok} pacotes foram desinstalados no Android.\n• Os pacotes desmarcados foram protegidos e mantidos ativos.\n• O cache do launcher foi limpo.\n\n⚠️ Deseja reiniciar o emulador (MSI / BlueStacks) agora para aplicar 100% da tela limpa?`)) {
+      window.api.restartBluestacks(adbPort);
     }
   });
 
