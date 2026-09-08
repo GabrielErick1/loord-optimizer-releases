@@ -4,6 +4,20 @@ Este documento registra cronologicamente todas as tarefas, correções, implemen
 
 ---
 
+## 📅 [07/09/2026] — Release Oficial v3.8.9: Remoção das 3 Regedits Antigas (Hyper Sense, R!KW!CH e FOV Lock)
+* **Arquivos Modificados:**
+  * [index.html](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/index.html)
+  * [main.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/main.js)
+  * [package.json](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/package.json)
+* **Resumo das Implementações & Publicação:**
+  - **Remoção Completa das 3 Regedits:**
+    - `HYPER SENSE FULL CAPA (Sensibilidade 10/11 & IRQ8 Timer)`
+    - `R!KW!CH PRO HEADSHOT (Curva Linear 1:1 & Touch 750 DPI)`
+    - `FOV LOCK & MOUSE STICK (Trava Alvo & Magnet Head)`
+    - Removidas da interface (`index.html`) e do mapa de títulos do backend (`main.js`).
+
+---
+
 ## 📅 [07/09/2026] — Release Oficial v3.8.8: Redesign Completo "Preto e Azul Marinho" & Ícones Vetoriais SVG Gamer
 * **Arquivos Modificados:**
   * [index.html](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/index.html)

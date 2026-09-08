@@ -41,7 +41,7 @@ function getIdentityFingerprint() {
   return {
     appName: 'Loord Optimizer',
     appId: 'com.loord.optimizer',
-    appVersion: app.getVersion() || '3.8.8',
+    appVersion: app.getVersion() || '3.8.9',
     isPackaged: app.isPackaged
   };
 }
@@ -2284,10 +2284,7 @@ ipcMain.handle('apply-optimizations', async (event, config) => {
       'kant-v1': 'KANT ELITE V1 (Curva Customizada & Puxada Suave)',
       'mira-clean-pesadinho': 'MIRA CLEAN PESADINHO (1:1 Head & Zero Shake)',
       'ultra-emu-boost': 'ULTRA EMULATOR BYPASS 1:1 (Prioridade Realtime & Max FPS)',
-      'zero-curve-raw': 'ZERO ACCEL RAW INPUT 1:1 (Precisão Cirúrgica & Latência Zero)',
-      'ff-mouse-maximo': 'HYPER SENSE FULL CAPA (Sensibilidade 10/11 & IRQ8 Timer)',
-      'rikwich-pro-sense': 'R!KW!CH PRO HEADSHOT (Curva Linear 1:1 & Touch 750 DPI)',
-      'fov-lock-stick-pro': 'FOV LOCK & MOUSE STICK (Trava Alvo & Magnet Head)'
+      'zero-curve-raw': 'ZERO ACCEL RAW INPUT 1:1 (Precisão Cirúrgica & Latência Zero)'
     };
 
     const targetKey = (mouseMode === 'mira-clean-loord')
@@ -4100,8 +4097,8 @@ function queryOfficialDatabase(endpoint, payload) {
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(data),
-        'User-Agent': `LoordOptimizerClient/${app.getVersion() || '3.8.8'} (Windows NT 10.0; Win64; x64)`,
-        'X-Client-Secure-Ver': app.getVersion() || '3.8.8'
+        'User-Agent': `LoordOptimizerClient/${app.getVersion() || '3.8.9'} (Windows NT 10.0; Win64; x64)`,
+        'X-Client-Secure-Ver': app.getVersion() || '3.8.9'
       }
     };
 
