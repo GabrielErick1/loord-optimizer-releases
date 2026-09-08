@@ -66,6 +66,7 @@ if (btnLockCls) btnLockCls.addEventListener('click', () => window.api.windowCont
 
 
 // Tab System
+const headingElem = document.getElementById('page-heading');
 function activateNavTab(item) {
   navItems.forEach(nav => nav.classList.remove('active'));
   tabContents.forEach(content => content.classList.remove('active'));
@@ -76,10 +77,8 @@ function activateNavTab(item) {
   if (target) {
     target.classList.add('active');
   }
-
-  const headingElem = document.getElementById('current-tab-heading');
+  const tabName = item.querySelector('span:last-child')?.textContent || item.textContent;
   if (headingElem) {
-    const tabName = item.querySelector('span:last-child')?.textContent || item.textContent;
     headingElem.textContent = tabName.trim();
   }
 }
