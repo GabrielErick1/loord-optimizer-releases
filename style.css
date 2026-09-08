@@ -645,6 +645,32 @@ body {
   transform: translateY(1px) scale(0.98);
 }
 
+.btn-gpu-action {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #ffffff;
+  padding: 11px 18px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.84rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.22s ease;
+}
+
+.btn-gpu-action:hover {
+  background: rgba(14, 165, 233, 0.15);
+  border-color: #38bdf8;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-gpu-action:active {
+  transform: translateY(1px) scale(0.98);
+}
+
 /* ─── FOOTER DO APP ────────── */
 .app-main-footer {
   text-align: center;

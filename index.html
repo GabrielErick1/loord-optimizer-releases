@@ -145,7 +145,7 @@
             </span>
             <span>Otimização</span>
           </button>
-          <button class="nav-item" data-tab="pc-fraco">
+          <button class="nav-item" data-tab="placa-de-video">
             <span class="nav-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="2" y="3" width="20" height="14" rx="2" />
@@ -610,6 +610,81 @@
               style="margin-top: 10px; font-size: 0.82rem; color: #4ade80; line-height: 1.6; display: none; background: rgba(34, 197, 94, 0.1); padding: 10px; border-radius: 6px; border: 1px solid rgba(34, 197, 94, 0.3);">
             </div>
           </div>
+        </section>
+
+        <!-- TAB: PLACA DE VÍDEO (GPU) -->
+        <section id="tab-placa-de-video" class="tab-content">
+          
+          <!-- HERO CARD: PAINEL DE CONTROLE DE GPU -->
+          <div class="card" style="border: 1px solid rgba(56, 189, 248, 0.28); background: #0c152a; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(14, 165, 233, 0.15);">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" />
+                <line x1="8" y1="21" x2="16" y2="21" />
+                <line x1="12" y1="17" x2="12" y2="21" />
+              </svg>
+              <h2 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #ffffff;">Painel de Controle de GPU</h2>
+            </div>
+            <p style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 18px; line-height: 1.4;">
+              Otimizações de placa gráfica para DirectX, NVIDIA, AMD e Intel. Elimine quedas de quadros.
+            </p>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <button id="btn-clean-shader-cache" type="button" class="btn-gpu-action" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(56, 189, 248, 0.35); color: #ffffff; padding: 11px 18px; border-radius: 8px; font-weight: 700; font-size: 0.84rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                <span>Limpar Shader Cache (DirectX &amp; Drivers)</span>
+              </button>
+              <button id="btn-gpu-max-priority" type="button" class="btn-gpu-action" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(56, 189, 248, 0.35); color: #ffffff; padding: 11px 18px; border-radius: 8px; font-weight: 700; font-size: 0.84rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <span>Prioridade Máxima de GPU em Jogos</span>
+              </button>
+            </div>
+            <div id="gpu-hero-status" style="margin-top: 12px; font-size: 0.8rem; font-weight: 700; display: none;"></div>
+          </div>
+
+          <!-- GRID 2 COLUNAS: AJUSTES DE RENDERIZAÇÃO & CARGA ATUAL DA GPU -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            
+            <!-- CARD 1: AJUSTES DE RENDERIZAÇÃO -->
+            <div class="card" style="border: 1px solid rgba(56, 189, 248, 0.22); background: #0c152a; border-radius: 12px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <h3 style="margin: 0 0 14px 0; font-size: 0.95rem; font-weight: 800; color: #ffffff;">Ajustes de Renderização</h3>
+                <ul style="list-style: none; padding: 0; margin: 0 0 18px 0; display: flex; flex-direction: column; gap: 8px; font-size: 0.8rem; color: #94a3b8;">
+                  <li style="display: flex; align-items: center; gap: 6px;">
+                    <span style="color: #38bdf8;">•</span> Cache D3D / DXCache: Limpeza profunda
+                  </li>
+                  <li style="display: flex; align-items: center; gap: 6px;">
+                    <span style="color: #38bdf8;">•</span> Modo de Baixa Latência no driver: Ativado
+                  </li>
+                  <li style="display: flex; align-items: center; gap: 6px;">
+                    <span style="color: #38bdf8;">•</span> Otimizações de tela inteira: Ajustadas
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <button id="btn-apply-rendering-tweaks" type="button" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(56, 189, 248, 0.4); color: #ffffff; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 0.84rem; cursor: pointer; transition: all 0.2s;">
+                  Aplicar Ajustes Gráficos
+                </button>
+                <div id="rendering-status" style="margin-top: 8px; font-size: 0.78rem; font-weight: 700; display: none;"></div>
+              </div>
+            </div>
+
+            <!-- CARD 2: CARGA ATUAL DA GPU -->
+            <div class="card" style="border: 1px solid rgba(56, 189, 248, 0.22); background: #0c152a; border-radius: 12px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <h3 style="margin: 0 0 8px 0; font-size: 0.95rem; font-weight: 800; color: #ffffff;">Carga Atual da GPU</h3>
+                <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">Utilização da placa gráfica em tempo real:</p>
+                <div id="gpu-live-usage-display" style="font-size: 2.2rem; font-weight: 900; color: #38bdf8; text-shadow: 0 0 20px rgba(56, 189, 248, 0.5); letter-spacing: 0.5px;">
+                  18% Em Uso
+                </div>
+              </div>
+              <div style="margin-top: 16px; display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: #64748b;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981;"></span>
+                <span id="gpu-detected-model">Detectando GPU...</span>
+              </div>
+            </div>
+
+          </div>
+
         </section>
 
         <!-- TAB: SEMI PRECISION REGIS (RARE FIX VIP ENGINE) -->

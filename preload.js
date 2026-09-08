@@ -62,7 +62,11 @@ contextBridge.exposeInMainWorld('api', {
   startMacro: (speed, active) => ipcRenderer.invoke('start-macro', speed, active),
   prepareMacro: (speed) => ipcRenderer.invoke('prepare-macro', speed),
   setMacroSpeed: (speed) => ipcRenderer.invoke('set-macro-speed', speed),
-  stopMacro: () => ipcRenderer.invoke('stop-macro'),
+  // ─── Otimizações de Placa de Vídeo (GPU) ────────────────────────
+  cleanShaderCache: () => ipcRenderer.invoke('clean-shader-cache'),
+  applyGpuPriority: () => ipcRenderer.invoke('apply-gpu-priority'),
+  applyRenderingTweaks: () => ipcRenderer.invoke('apply-rendering-tweaks'),
+  getGpuLiveStats: () => ipcRenderer.invoke('get-gpu-live-stats'),
   // ─── Game Booster Turbo ──────────────────────────────────────────
   boostGameTurbo: () => ipcRenderer.invoke('boost-game-turbo'),
   // ─── PC Fraco / 1ª Geração (Ultra FPS) ───────────────────────────

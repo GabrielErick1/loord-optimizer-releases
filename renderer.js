@@ -5215,6 +5215,120 @@ if (window.api && window.api.onLicenseRevoked) {
     });
   }
 
+  // ─── ABA: PLACA DE VÍDEO (GPU) ─────────────────────────────────────────────
+  (function initGpuTab() {
+    const btnCleanShader = document.getElementById('btn-clean-shader-cache');
+    const btnGpuMaxPriority = document.getElementById('btn-gpu-max-priority');
+    const btnApplyRendering = document.getElementById('btn-apply-rendering-tweaks');
+    const heroStatus = document.getElementById('gpu-hero-status');
+    const renderingStatus = document.getElementById('rendering-status');
+    const gpuUsageDisplay = document.getElementById('gpu-live-usage-display');
+    const gpuDetectedModel = document.getElementById('gpu-detected-model');
+
+    function showGpuHeroStatus(msg, isSuccess = true) {
+      if (!heroStatus) return;
+      heroStatus.style.display = 'block';
+      heroStatus.style.color = isSuccess ? '#10b981' : '#ef4444';
+      heroStatus.textContent = msg;
+      setTimeout(() => {
+        heroStatus.style.display = 'none';
+      }, 5000);
+    }
+
+    function showRenderingStatus(msg, isSuccess = true) {
+      if (!renderingStatus) return;
+      renderingStatus.style.display = 'block';
+      renderingStatus.style.color = isSuccess ? '#10b981' : '#ef4444';
+      renderingStatus.textContent = msg;
+      setTimeout(() => {
+        renderingStatus.style.display = 'none';
+      }, 5000);
+    }
+
+    // 1. Limpar Shader Cache
+    if (btnCleanShader) {
+      btnCleanShader.addEventListener('click', async () => {
+        btnCleanShader.disabled = true;
+        const originalHtml = btnCleanShader.innerHTML;
+        btnCleanShader.innerHTML = '<span>⏳ Limpando Shaders...</span>';
+        try {
+          const res = await window.api.cleanShaderCache();
+          if (res && res.success) {
+            showGpuHeroStatus(`✔ ${res.message || 'Shader Cache limpo com sucesso!'}`, true);
+          } else {
+            showGpuHeroStatus(`Erro: ${res?.error || 'Falha ao limpar shader cache.'}`, false);
+          }
+        } catch (err) {
+          showGpuHeroStatus(`Erro: ${err.message}`, false);
+        }
+        btnCleanShader.innerHTML = originalHtml;
+        btnCleanShader.disabled = false;
+      });
+    }
+
+    // 2. Prioridade Máxima de GPU em Jogos
+    if (btnGpuMaxPriority) {
+      btnGpuMaxPriority.addEventListener('click', async () => {
+        btnGpuMaxPriority.disabled = true;
+        const originalHtml = btnGpuMaxPriority.innerHTML;
+        btnGpuMaxPriority.innerHTML = '<span>⚡ Aplicando HAGS...</span>';
+        try {
+          const res = await window.api.applyGpuPriority();
+          if (res && res.success) {
+            showGpuHeroStatus(`✔ ${res.message || 'Prioridade Máxima de GPU & HAGS ativados!'}`, true);
+          } else {
+            showGpuHeroStatus(`Erro: ${res?.error || 'Falha ao aplicar prioridade.'}`, false);
+          }
+        } catch (err) {
+          showGpuHeroStatus(`Erro: ${err.message}`, false);
+        }
+        btnGpuMaxPriority.innerHTML = originalHtml;
+        btnGpuMaxPriority.disabled = false;
+      });
+    }
+
+    // 3. Ajustes de Renderização
+    if (btnApplyRendering) {
+      btnApplyRendering.addEventListener('click', async () => {
+        btnApplyRendering.disabled = true;
+        btnApplyRendering.textContent = '⏳ Aplicando...';
+        try {
+          const res = await window.api.applyRenderingTweaks();
+          if (res && res.success) {
+            showRenderingStatus(`✔ ${res.message || 'Ajustes gráficos aplicados!'}`, true);
+          } else {
+            showRenderingStatus(`Erro: ${res?.error || 'Falha ao aplicar ajustes.'}`, false);
+          }
+        } catch (err) {
+          showRenderingStatus(`Erro: ${err.message}`, false);
+        }
+        btnApplyRendering.textContent = 'Aplicar Ajustes Gráficos';
+        btnApplyRendering.disabled = false;
+      });
+    }
+
+    // 4. Polling ao vivo de Carga da GPU
+    async function updateGpuStats() {
+      try {
+        const stats = await window.api.getGpuLiveStats();
+        if (stats && stats.success) {
+          if (gpuUsageDisplay) {
+            gpuUsageDisplay.textContent = `${stats.usage}% Em Uso`;
+          }
+          if (gpuDetectedModel && stats.name) {
+            gpuDetectedModel.textContent = stats.name;
+          }
+        }
+      } catch (_) { }
+    }
+
+    // Inicia leitura e agenda polling a cada 3 segundos
+    updateGpuStats();
+    setInterval(() => {
+      const tabVideo = document.getElementById('tab-placa-de-video');
+      if (tabVideo && tabVideo.classList.contains('active')) {
+        updateGpuStats();
+      }
+    }, 3000);
+  })();
 })();
-
-

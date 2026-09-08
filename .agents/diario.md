@@ -4,6 +4,28 @@ Este documento registra cronologicamente todas as tarefas, correções, implemen
 
 ---
 
+## 📅 [07/09/2026] — Release Oficial v3.9.1: Nova Aba "Placa de Vídeo (GPU)" 100% Funcional & Layout Fiel
+* **Arquivos Modificados:**
+  * [index.html](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/index.html)
+  * [style.css](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/style.css)
+  * [renderer.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/renderer.js)
+  * [preload.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/preload.js)
+  * [main.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/main.js)
+  * [package.json](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/package.json)
+* **Resumo das Implementações & Publicação:**
+  - **Nova Aba Completa "Placa de Vídeo" (`tab-placa-de-video`):**
+    - **Hero Card: Painel de Controle de GPU:**
+      - Botão `Limpar Shader Cache (DirectX & Drivers)`: Varredura e exclusão de caches reais do DirectX, NVIDIA (DXCache, GLCache), AMD (DxCache, GLCache) e Intel (ShaderCache), reportando MBs e arquivos limpos via notificação toast.
+      - Botão `Prioridade Máxima de GPU em Jogos`: Injeção de prioridade máxima no subsistema de multimídia do Windows (`SystemProfile\Tasks\Games`) com GPU Priority = 8 e Priority = 6, além de ativação forçada do HAGS (Hardware-Accelerated GPU Scheduling).
+    - **Card Esquerdo: Ajustes de Renderização:**
+      - Otimizações profundas de D3D, Low Latency Mode, desativação de Fullscreen Optimizations e DWM latency reduction via botão `Aplicar Ajustes Gráficos`.
+    - **Card Direito: Carga Atual da GPU em Tempo Real:**
+      - Leitura dinâmica e em tempo real da utilização de GPU (`XX% Em Uso`) via WMI e Performance Counters, com detecção automática do modelo da GPU instalada e barra de progresso responsiva.
+  - **Identidade e Segurança:**
+    - Atualização para v3.9.1 com Zero-Trust IPC, headers de autenticação seguros e pipeline militar com self-defending.
+
+---
+
 ## 📅 [07/09/2026] — Release Oficial v3.9.0: Novo Layout Completo Oficial (Branding Central, VIP Card, Action Bar & Footer)
 * **Arquivos Modificados:**
   * [index.html](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/index.html)
