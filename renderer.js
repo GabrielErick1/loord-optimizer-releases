@@ -76,6 +76,12 @@ function activateNavTab(item) {
   if (target) {
     target.classList.add('active');
   }
+
+  const headingElem = document.getElementById('current-tab-heading');
+  if (headingElem) {
+    const tabName = item.querySelector('span:last-child')?.textContent || item.textContent;
+    headingElem.textContent = tabName.trim();
+  }
 }
 
 // ─── TERMO DE RESPONSABILIDADE E CONSENTIMENTO DE OVERCLOCK ──────────────────

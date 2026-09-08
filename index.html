@@ -94,25 +94,29 @@
       </div>
     </div>
 
-    <!-- Titlebar Custom (Frame-less look com Preto e Azul Marinho) -->
+    <!-- Titlebar Custom (Loord Client) -->
     <header class="titlebar">
-      <div class="logo">
-        <span class="logo-white" style="letter-spacing: 1.5px; font-weight: 800; font-size: 0.85rem; color: #f8fafc;">LOORD OPTIMIZER</span>
+      <div class="logo" style="display: flex; align-items: center; gap: 8px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.5">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+        <span class="logo-title" style="font-weight: 800; font-size: 0.85rem; color: #f8fafc; letter-spacing: 0.5px;">Loord Client</span>
+        <span class="logo-ver" style="font-size: 0.72rem; color: #64748b; font-weight: 700;">v1.0.0</span>
       </div>
       <div class="window-controls">
-        <button class="win-ctrl-btn circle-ctrl btn-min" id="btn-minimize" title="Minimizar (—)" aria-label="Minimizar">
-          <svg width="8" height="2" viewBox="0 0 8 2" fill="currentColor">
-            <rect width="8" height="2" rx="1" />
+        <button class="win-ctrl-btn btn-min" id="btn-minimize" title="Minimizar (—)" aria-label="Minimizar">
+          <svg width="11" height="2" viewBox="0 0 11 2" fill="currentColor">
+            <rect width="11" height="2" rx="1" />
           </svg>
         </button>
-        <button class="win-ctrl-btn circle-ctrl btn-max" id="btn-maximize" title="Maximizar / Restaurar (▢)" aria-label="Maximizar">
-          <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.3">
-            <rect x="0.8" y="0.8" width="6.4" height="6.4" rx="1.2" />
+        <button class="win-ctrl-btn btn-max" id="btn-maximize" title="Maximizar / Restaurar (▢)" aria-label="Maximizar">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6">
+            <rect x="0.8" y="0.8" width="8.4" height="8.4" rx="1.5" />
           </svg>
         </button>
-        <button class="win-ctrl-btn circle-ctrl btn-cls" id="btn-close" title="Fechar (✕)" aria-label="Fechar">
-          <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
-            <path d="M1 1L7 7M7 1L1 7" />
+        <button class="win-ctrl-btn btn-cls" id="btn-close" title="Fechar (✕)" aria-label="Fechar">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+            <path d="M1.5 1.5L8.5 8.5M8.5 1.5L1.5 8.5" />
           </svg>
         </button>
       </div>
@@ -120,88 +124,130 @@
 
     <div class="main-layout" id="main-app-layout"
       style="display: none !important; opacity: 0; pointer-events: none; visibility: hidden;">
-      <!-- Sidebar Navigation (Preto & Azul Marinho com Ícones Vetoriais SVG) -->
+      <!-- Sidebar Navigation (Estilo Oficial Preto & Azul Marinho Gamer) -->
       <aside class="sidebar">
-        <div class="sidebar-header">
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-            <div class="sidebar-logo-icon"
-              style="width: 38px; height: 38px; border-radius: 50%; background: rgba(37, 99, 235, 0.12); border: 1.5px solid rgba(255, 255, 255, 0.85); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
-              </svg>
-            </div>
-            <div>
-              <div class="title-main"
-                style="font-size: 1.12rem; font-weight: 800; color: #ffffff; letter-spacing: 0.5px;">Loord Optimizer
-              </div>
-              <div class="title-sub" style="font-size: 0.78rem; font-weight: 700; color: #38bdf8;">LoordOpt</div>
-            </div>
-          </div>
-
-          <!-- Seletor de Idioma (Pill Azul Marinho) -->
-          <div class="lang-selector-wrapper" id="lang-selector-wrapper">
-            <button type="button" class="btn-lang-toggle" id="btn-lang-toggle"
-              title="Selecionar Idioma / Select Language">
-              <span class="gear-icon" style="display: flex; align-items: center;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                </svg>
-              </span>
-              <span id="current-lang-display">BR</span>
-              <span class="dropdown-chevron" style="font-size: 0.7rem;">▾</span>
-            </button>
-            <div class="lang-dropdown" id="lang-dropdown">
-              <div class="lang-dropdown-header">🌐 IDIOMA / LANGUAGE</div>
-              <button type="button" class="lang-option-btn active" data-lang="pt">
-                <span class="lang-flag">🇧🇷</span>
-                <span class="lang-label">Português</span>
-                <span class="check">✓</span>
-              </button>
-              <button type="button" class="lang-option-btn" data-lang="en">
-                <span class="lang-flag">🇺🇸</span>
-                <span class="lang-label">English</span>
-                <span class="check"></span>
-              </button>
-              <button type="button" class="lang-option-btn" data-lang="es">
-                <span class="lang-flag">🇪🇸</span>
-                <span class="lang-label">Español</span>
-                <span class="check"></span>
-              </button>
-            </div>
-          </div>
-        </div>
-
         <nav class="nav-menu">
+          <button class="nav-item active" data-tab="regedit-adaptativa">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
+            </span>
+            <span>Início</span>
+          </button>
+          <button class="nav-item" data-tab="otimizar-pc">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+                <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-4 11a22.35 22.35 0 0 1-4 2z" />
+              </svg>
+            </span>
+            <span>Otimização</span>
+          </button>
+          <button class="nav-item" data-tab="pc-fraco">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" />
+                <line x1="8" y1="21" x2="16" y2="21" />
+                <line x1="12" y1="17" x2="12" y2="21" />
+              </svg>
+            </span>
+            <span>Placa de vídeo</span>
+          </button>
+          <button class="nav-item" data-tab="pc-fraco">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="4" width="16" height="16" rx="2" />
+                <rect x="9" y="9" width="6" height="6" />
+                <line x1="9" y1="1" x2="9" y2="4" />
+                <line x1="15" y1="1" x2="15" y2="4" />
+                <line x1="9" y1="20" x2="9" y2="23" />
+                <line x1="15" y1="20" x2="15" y2="23" />
+                <line x1="20" y1="9" x2="23" y2="9" />
+                <line x1="20" y1="14" x2="23" y2="14" />
+                <line x1="1" y1="9" x2="4" y2="9" />
+                <line x1="1" y1="14" x2="4" y2="14" />
+              </svg>
+            </span>
+            <span>CPU</span>
+          </button>
+          <button class="nav-item" data-tab="rede-latencia">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+              </svg>
+            </span>
+            <span>Processos</span>
+          </button>
+          <button class="nav-item" data-tab="overclock">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="7" y1="17" x2="17" y2="7" />
+                <polyline points="7 7 17 7 17 17" />
+              </svg>
+            </span>
+            <span>Overclock</span>
+          </button>
           <button class="nav-item" data-tab="semi-precision-regis">
             <span class="nav-icon">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <circle cx="12" cy="12" r="6" />
                 <circle cx="12" cy="12" r="2" />
               </svg>
             </span>
-            <span>Semi Precision Regis</span>
+            <span>Sensibilidade</span>
           </button>
-          <button class="nav-item active" data-tab="regedit-adaptativa">
+          <button class="nav-item" data-tab="rede-latencia">
             <span class="nav-icon">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 15c6.667-6 13.333 0 20-6" />
-                <path d="M9 22c1.798-1.998 2.518-3.995 2.807-5.993" />
-                <path d="M15 2c-1.798 1.998-2.518 3.995-2.807 5.993" />
-                <path d="M17 6l-2.5-2.5" />
-                <path d="M14 8l-1-1" />
-                <path d="M7 18l2.5 2.5" />
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+                <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+                <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+                <line x1="12" y1="20" x2="12.01" y2="20" />
               </svg>
             </span>
-            <span>Regedit Adaptativa</span>
+            <span>Rede</span>
+          </button>
+          <button class="nav-item" data-tab="minha-config">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </span>
+            <span>Limpeza</span>
+          </button>
+          <button class="nav-item" data-tab="emulador">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="6" width="20" height="12" rx="2" />
+                <path d="M6 12h4m-2-2v4" />
+                <circle cx="15" cy="11" r="1" />
+                <circle cx="17" cy="13" r="1" />
+              </svg>
+            </span>
+            <span>Emulador + FPS</span>
+          </button>
+          <button class="nav-item" data-tab="calculadora">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="2" width="16" height="20" rx="2" />
+                <line x1="8" y1="6" x2="16" y2="6" />
+                <line x1="16" y1="14" x2="16" y2="18" />
+                <path d="M16 10h.01M12 10h.01M8 10h.01M12 14h.01M8 14h.01M12 18h.01M8 18h.01" />
+              </svg>
+            </span>
+            <span>Calculadora Sense</span>
           </button>
           <button class="nav-item" data-tab="ia-gamer"
             style="position: relative; display: flex; align-items: center; justify-content: space-between;">
             <span style="display: flex; align-items: center; gap: 10px;">
               <span class="nav-icon">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="3" y="11" width="18" height="10" rx="2" />
                   <circle cx="12" cy="5" r="2" />
                   <path d="M12 7v4M8 16h.01M16 16h.01" />
@@ -212,133 +258,60 @@
             <span
               style="background: linear-gradient(135deg, #10b981, #06b6d4); color: #fff; font-size: 0.6rem; font-weight: 900; padding: 2px 6px; border-radius: 10px; box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);">GRÁTIS</span>
           </button>
-          <button class="nav-item" data-tab="calculadora">
-            <span class="nav-icon">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="22" y1="12" x2="18" y2="12" />
-                <line x1="6" y1="12" x2="2" y2="12" />
-                <line x1="12" y1="6" x2="12" y2="2" />
-                <line x1="12" y1="22" x2="12" y2="18" />
-              </svg>
-            </span>
-            <span>Calculadora Sense</span>
-          </button>
-          <button class="nav-item" data-tab="mouse-config">
-            <span class="nav-icon">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="6" y="3" width="12" height="18" rx="6" />
-                <line x1="12" y1="7" x2="12" y2="11" />
-              </svg>
-            </span>
-            <span>Regedits &amp; Sense</span>
-          </button>
-          <button class="nav-item" data-tab="otimizar-pc">
-            <span class="nav-icon">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2" y="3" width="20" height="14" rx="2" />
-                <line x1="8" y1="21" x2="16" y2="21" />
-                <line x1="12" y1="17" x2="12" y2="21" />
-              </svg>
-            </span>
-            <span>Otimizar PC</span>
-          </button>
-          <button class="nav-item" data-tab="rede-latencia">
-            <span class="nav-icon">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-              </svg>
-            </span>
-            <span>Rede &amp; Latência</span>
-          </button>
-          <button class="nav-item" data-tab="emulador">
-            <span class="nav-icon">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2" y="6" width="20" height="12" rx="2" />
-                <path d="M6 12h4m-2-2v4" />
-                <circle cx="15" cy="11" r="1" />
-                <circle cx="17" cy="13" r="1" />
-              </svg>
-            </span>
-            <span>Emulador + FPS</span>
-          </button>
-          <button class="nav-item" data-tab="minha-config"
-            style="position: relative; display: flex; align-items: center; justify-content: space-between;">
-            <span style="display: flex; align-items: center; gap: 10px;">
-              <span class="nav-icon">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                </svg>
-              </span>
-              <span>Minha Configuração</span>
-            </span>
-            <span id="nav-update-badge"
-              style="display: none; background: linear-gradient(135deg, #1d4ed8, #38bdf8); color: #fff; font-size: 0.65rem; font-weight: 900; padding: 2px 7px; border-radius: 20px; box-shadow: 0 0 10px rgba(56, 189, 248, 0.5); animation: pulseUpdate 1.8s infinite; margin-left: 6px;">v3.8.9
-              🔥</span>
-          </button>
-          <button class="nav-item" data-tab="pc-fraco">
-            <span class="nav-icon">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
-                <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-4 11a22.35 22.35 0 0 1-4 2z" />
-              </svg>
-            </span>
-            <span>PC Fraco (Ultra FPS)</span>
-          </button>
-          <button class="nav-item" data-tab="overclock">
-            <span class="nav-icon">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
-              </svg>
-            </span>
-            <span>Overclock &amp; Boost</span>
-          </button>
         </nav>
 
-        <div class="sidebar-footer">
-          <div class="version-label" id="sidebar-vip-label" style="display: flex; align-items: center; gap: 6px;">
-            <span style="color: #f59e0b;">★</span> VIP ATIVO
+        <!-- Card VIP do Cliente (Idêntico ao Screenshot) -->
+        <div class="sidebar-vip-card">
+          <div class="vip-user-row">
+            <div class="vip-avatar-circle">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+            <div>
+              <div class="vip-name" id="sidebar-client-name">Cliente VIP</div>
+              <div class="vip-role">PRO USER</div>
+            </div>
           </div>
-          <div class="version-sub" id="sidebar-client-name">👤 Carregando...</div>
-          <div id="sidebar-validity"
-            style="font-size: 0.65rem; color: #38bdf8; margin-top: 2px; letter-spacing: 0.3px;"></div>
-          <div
-            style="font-size: 0.65rem; color: #64748b; margin-top: 8px; display: flex; align-items: center; gap: 6px;">
-            <span
-              style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10b981; box-shadow: 0 0 6px #10b981;"></span>
-            <span>Executando como Administrador • Otimizações prontas</span>
+          <div class="vip-status-row">
+            <span class="vip-status-dot"></span>
+            <span class="vip-status-label">KEY ATIVA:</span>
           </div>
+          <div class="vip-plan" id="sidebar-vip-label">Plano Mensal (30 Dias)</div>
+          <div class="vip-validity" id="sidebar-validity">29d 23h 58m</div>
+          <div class="vip-hwid" id="sidebar-hwid-short">HWID: LOORD-B850-15EB-2876</div>
+          <button type="button" class="btn-disconnect-key" id="btn-disconnect-key"
+            onclick="if(confirm('Deseja desconectar sua chave VIP deste computador?')){localStorage.removeItem('loord_vip_key');location.reload();}">
+            Desconectar Key
+          </button>
         </div>
       </aside>
 
       <!-- Content Area -->
       <main class="content-area">
 
-        <!-- BANNER GLOBAL DE ATUALIZAÇÃO NO TOPO (100% DINÂMICO VIA GITHUB) -->
-        <div id="global-update-alert"
-          style="display: none; margin-bottom: 16px; background: linear-gradient(90deg, #dc2626, #f59e0b); border: 2px solid #fbbf24; border-radius: 10px; padding: 12px 18px; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4); animation: slideDownAlert 0.35s ease-out; align-items: center; justify-content: space-between; gap: 12px;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="font-size: 1.8rem; animation: pulseUpdate 1.5s infinite;">🚀</div>
-            <div>
-              <div
-                style="font-weight: 900; font-size: 0.95rem; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;"
-                id="global-update-title">
-                🔥 NOVA VERSÃO DISPONÍVEL!
-              </div>
-              <div style="font-size: 0.78rem; color: #fef08a; margin-top: 2px;" id="global-update-desc">
-                Uma nova versão com melhorias de sensibilidade e otimização foi lançada no GitHub.
-              </div>
-            </div>
+        <!-- Top Header Center Branding (Loord / PAINEL DE OTIMIZAÇÃO) -->
+        <div class="header-center-branding">
+          <div class="header-brand-title"><span class="brand-blue-gradient">Loord</span></div>
+          <div class="header-brand-subtitle">PAINEL DE OTIMIZAÇÃO</div>
+        </div>
+
+        <!-- Barra Superior de Ação da Aba Ativa -->
+        <div class="tab-action-bar">
+          <div class="tab-action-left">
+            <h1 class="tab-main-heading" id="current-tab-heading">Safe Overclock &amp; Perfis de Boost</h1>
+            <span class="badge-system-opt">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Sistema otimizado
+            </span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <button id="btn-global-update-now"
-              style="background: #ffffff; color: #d97706; border: none; font-size: 0.82rem; font-weight: 900; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.25); display: flex; align-items: center; gap: 4px;">
-              ⚡ ATUALIZAR (<span id="global-update-btn-ver">...</span>)
-            </button>
-            <button id="btn-global-update-close"
-              style="background: rgba(0, 0, 0, 0.25); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 6px; padding: 6px 10px; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.2s;">
-              ✕
+          <div class="tab-action-right">
+            <button class="btn-optimize-now" id="btn-quick-optimize-now"
+              onclick="document.getElementById('btn-apply-adaptive-profile')?.click();">
+              Otimizar agora →
             </button>
           </div>
         </div>
@@ -3031,11 +3004,17 @@
 
         </section>
 
+        <!-- App Footer Oficial -->
+        <footer class="app-main-footer">
+          <div class="footer-brand-title">Loord</div>
+          <div class="footer-tagline">MAIS CONTROLE, MAIS PRODUTIVIDADE.</div>
+        </footer>
+
       </main>
     </div>
 
     <!-- Muted bottom bar -->
-    <footer class="statusbar">
+    <footer class="statusbar" style="display: none;">
       <span id="status-message">Pronto para otimizar. Execute o aplicativo como Administrador.</span>
     </footer>
 

@@ -440,29 +440,243 @@ body {
   cursor: pointer;
 }
 
-.sidebar-footer {
-  padding: 0 18px;
+/* ─── CARD VIP DO CLIENTE (SIDEBAR BOTTOM) ────────── */
+.sidebar-vip-card {
+  margin: 12px 14px 4px 14px;
+  background: rgba(10, 18, 36, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), inset 0 0 12px rgba(56, 189, 248, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.version-label {
-  font-size: 0.82rem;
+.vip-user-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 2px;
+}
+
+.vip-avatar-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(14, 165, 233, 0.15);
+  border: 1.5px solid rgba(56, 189, 248, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+}
+
+.vip-name {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.vip-role {
+  font-size: 0.68rem;
   font-weight: 800;
   color: #38bdf8;
   letter-spacing: 0.5px;
 }
 
-.version-sub {
+.vip-status-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.vip-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  display: inline-block;
+}
+
+.vip-status-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+}
+
+.vip-plan {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #10b981;
+}
+
+.vip-validity {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.vip-hwid {
+  font-size: 0.65rem;
+  color: #475569;
+  font-family: monospace;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-disconnect-key {
+  margin-top: 6px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.btn-disconnect-key:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
+}
+
+/* ─── BRANDING CENTRAL NO TOPO ────────── */
+.header-center-branding {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.header-brand-title {
+  font-size: 2.2rem;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+}
+
+.brand-blue-gradient {
+  background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 50%, #2563eb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 20px rgba(14, 165, 233, 0.45));
+}
+
+.header-brand-subtitle {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: 3.5px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* ─── BARRA SUPERIOR DE AÇÃO DA ABA ────────── */
+.tab-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.tab-action-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tab-main-heading {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+  margin: 0;
+}
+
+.badge-system-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  color: #10b981;
   font-size: 0.75rem;
-  color: var(--text-muted);
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 20px;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+}
+
+.btn-optimize-now {
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  border: none;
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 800;
+  padding: 9px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 0 18px rgba(14, 165, 233, 0.4);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-optimize-now:hover {
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+  box-shadow: 0 0 24px rgba(14, 165, 233, 0.65);
+  transform: translateY(-1px);
+}
+
+.btn-optimize-now:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* ─── FOOTER DO APP ────────── */
+.app-main-footer {
+  text-align: center;
+  margin-top: 40px;
+  padding-bottom: 12px;
+}
+
+.footer-brand-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #475569;
+  letter-spacing: 0.5px;
+}
+
+.footer-tagline {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #334155;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
   margin-top: 2px;
 }
 
 /* Content Area */
 .content-area {
   flex: 1;
-  padding: 28px;
+  padding: 24px 32px;
   overflow-y: auto;
   background-color: var(--bg-content);
+  background-image: 
+    radial-gradient(circle at 20% 15%, rgba(14, 165, 233, 0.05), transparent 45%),
+    radial-gradient(circle at 80% 85%, rgba(29, 78, 216, 0.05), transparent 45%);
 }
 
 /* Tab Animation */
