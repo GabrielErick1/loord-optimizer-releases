@@ -4,6 +4,70 @@ Este documento registra cronologicamente todas as tarefas, correções, implemen
 
 ---
 
+## 📅 [08/09/2026] — Release Oficial v3.9.3: Restauração Completa das Abas de Regedit, Sense & Navegação
+* **Arquivos Modificados:**
+  * [index.html](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/index.html)
+  * [main.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/main.js)
+  * [package.json](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/package.json)
+* **Resumo das Implementações & Publicação:**
+  - **Restauração Completa da Navegação Lateral (Sidebar):**
+    - `Regedit Adaptativa`: Otimizador de mouse e desempenho BlueStacks.
+    - `Semi Precision Regis`: Curvas de resposta de aceleração 1:1 e estabilizadores de mira.
+    - `Regedits & Sense`: Recomendações de sensibilidade para Full Lata, Loord Regedit Ranqueada, Apostado e Extreme.
+    - `Placa de vídeo`: Shader Cache cleaner, Prioridade de GPU e Monitor em tempo real.
+    - Todas as demais abas essenciais mantidas e perfeitamente linkadas aos seus respectivos conteúdos.
+  - **Identidade e Segurança:**
+    - Atualização para v3.9.3 com Zero-Trust e publicação oficial no GitHub Releases.
+
+---
+
+## 📅 [08/09/2026] — Correção Crítica de Layout & Compatibilidade Total de Eventos de Clique (v4.0.1)
+* **Arquivos Modificados:**
+  * `LOORD-PAINEL-NOVO/src/LoordOptimizerApp.cs`
+  * `LOORD-PAINEL-NOVO/assets/style.css`
+  * `LOORD-PAINEL-NOVO/assets/renderer.js`
+  * `LOORD-PAINEL-NOVO/assets/i18n.js`
+  * `LOORD-PAINEL-NOVO/assets/polyfills.js`
+  * `LOORD-PAINEL-NOVO/assets/index.html`
+  * `LOORD-PAINEL-NOVO/installer.nsi`
+  * `dist/Loord-Optimizer-Setup-v4.0.0.exe`
+* **Resumo das Correções & Otimizações:**
+  - **Correção da Quebra de Cliques nos Botões e Abas:**
+    - Transpilação de todo o `renderer.js` e `i18n.js` com Babel para pure ES5 (compatibilidade 100% com o motor do WebBrowser Control / IE11), eliminando erros de sintaxe decorrentes de arrow functions, default parameters e syntax features modernas que impediam o carregamento dos event listeners.
+    - Criação de `polyfills.js` com suporte a `Promise`, `Object.assign`, `Element.closest` e `Element.matches`.
+  - **Correção do Layout e Expansão da Janela (Tela Toda):**
+    - Remoção de barras de rolagem nativas cinzas do Windows (`_browser.ScrollBarsEnabled = false;`).
+    - Ajuste de `style.css` para que `.app-container` preencha 100% da viewport sem bordas ou margens rígidas que causavam corte do conteúdo.
+    - Implementação de `ToggleMaximize()` e ajuste de `MaximizedBounds` no host C# para maximização responsiva e fluida.
+  - **Recompilação e Empacotamento:**
+    - Binário C# recompilado e instalador NSIS reconstruído em `LOORD-PAINEL-NOVO/dist/` e `dist/`.
+
+---
+
+## 📅 [07/09/2026] — Versão Nativa em Linguagem C (v4.0.0): Integração Total com Servidor de Chaves VIP e Hardware ID Real
+* **Pasta Criada & Estruturada:**
+  * [LOORD-PAINEL-NOVO/](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/LOORD-PAINEL-NOVO)
+* **Arquivos do Ecossistema em C & Bridge:**
+  * `src/LoordOptimizerApp.cs`: Ponte nativa Win32 / C# 100% implementada com `MachineGuid` oficial (`HKLM\SOFTWARE\Microsoft\Cryptography\MachineGuid`), cálculo de salt `FFOptimizerSecure2026`, consulta HTTPS ao endpoint `/api/client-check` da Vercel e transição instantânea de desbloqueio visual da interface.
+  * `installer.nsi`: Script de instalação Modern UI 2 (MUI2) com suporte a atalhos na Área de Trabalho e Menu Iniciar, ícone oficial (`icon.ico`) e desinstalador limpo.
+  * `dist/`: [Loord-Optimizer-Setup-v4.0.0.exe](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/LOORD-PAINEL-NOVO/dist/Loord-Optimizer-Setup-v4.0.0.exe) (~205 KB)
+  * `bin/`: [LoordOptimizer.exe](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/LOORD-PAINEL-NOVO/bin/LoordOptimizer.exe)
+* **Resumo das Implementações & Validação:**
+  - **Identificação de Hardware (HWID Real):**
+    - Corrigida a identificação para utilizar o `MachineGuid` nativo do Windows (`5971ea07-ef9d-4dfc-b3cd-43f0b25ab34e`), garantindo correspondência 100% exata com o gerador de chaves web da Vercel e com a chave do usuário (`95BE-A86E-86E3-7AC7`).
+  - **Validação Dupla de Licença (Online + Offline Instantâneo):**
+    - O validador consulta tanto a API oficial (`https://web-key-generator.vercel.app/api/client-check`) quanto o algoritmo criptográfico de chave local com SHA-256 e salt de segurança (`FFOptimizerSecure2026`).
+  - **35 Módulos de Otimização & Recursos Completos:**
+    - Incorporados todos os 35 módulos individuais do painel (latência de teclado, MarkC 1:1, DWM low latency, prioridade MMCSS de GPU e CSRSS, BCD timer 0ms, disable HPET, energy saver GPO off, Win32PrioritySeparation 28 hex / 40 dec / 26 hex, disable background apps, svchost split, prefetch/sysmain off, Nagle algorithm TCPNoDelay, Ultimate Performance power scheme, HAGS, GPU power mizer, etc.).
+  - **Emulador, Sensibilidade e Free Fire:**
+    - Ajuste de FPS (Métodos 1 e 2 com patch em `bluestacks.conf`), remoção de delay recursivo em `InputMapper` (`ExclusiveDelay: 1ms`), injeção de perfis de aparelhos e tweaks ADB.
+  - **Módulos de Formatação ISO & Overclock:**
+    - Suporte a verificação de planos ISO, Pix, particionamento e rotinas de boot na BIOS / UEFI.
+  - **Compilação do Instalador:**
+    - Binário compilado com privilégios de Administrador (`app.manifest`), ícone gamer oficial (`icon.ico`) e instalador executável `.exe` gerado em `LOORD-PAINEL-NOVO/dist/Loord-Optimizer-Setup-v4.0.0.exe` (~208 KB).
+
+---
+
 ## 📅 [07/09/2026] — Release Oficial v3.9.2: Remoção da Barra Superior de Ação (Badge 'Sistema Otimizado' & Botão 'Otimizar Agora')
 * **Arquivos Modificados:**
   * [index.html](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/index.html)

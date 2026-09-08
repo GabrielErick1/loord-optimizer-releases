@@ -41,7 +41,7 @@ function getIdentityFingerprint() {
   return {
     appName: 'Loord Optimizer',
     appId: 'com.loord.optimizer',
-    appVersion: app.getVersion() || '3.9.2',
+    appVersion: app.getVersion() || '3.9.3',
     isPackaged: app.isPackaged
   };
 }
@@ -4236,8 +4236,8 @@ function queryOfficialDatabase(endpoint, payload) {
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(data),
-        'User-Agent': `LoordOptimizerClient/${app.getVersion() || '3.9.2'} (Windows NT 10.0; Win64; x64)`,
-        'X-Client-Secure-Ver': app.getVersion() || '3.9.2'
+        'User-Agent': `LoordOptimizerClient/${app.getVersion() || '3.9.3'} (Windows NT 10.0; Win64; x64)`,
+        'X-Client-Secure-Ver': app.getVersion() || '3.9.3'
       }
     };
 
