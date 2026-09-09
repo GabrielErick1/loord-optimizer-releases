@@ -2,6 +2,20 @@
 
 Este documento registra cronologicamente todas as tarefas, correções, implementações e publicações realizadas no projeto. Toda nova sessão de trabalho deve adicionar seu registro aqui ao final da execução.
 
+## 📅 [09/09/2026] — Release Oficial v3.9.4: Restauração do Seletor Multilíngue (Português, Inglês e Espanhol)
+* **Arquivos Modificados:**
+  * [index.html](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/index.html)
+  * [i18n.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/i18n.js)
+  * [main.js](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/main.js)
+  * [package.json](file:///c:/Users/Gabriel/Downloads/Configuração emulador/Nova pasta (4)/package.json)
+* **Resumo das Implementações & Publicação:**
+  - **Restauração do Seletor de Idioma (i18n):**
+    - Botão de engrenagem (`⚙️ Idioma`) e menu dropdown interativo na sidebar (Português 🇧🇷, English 🇺🇸, Español 🇪🇸).
+    - Card dedicado na aba **"Minha Config & Atualizações"** para alternar de idioma com 1 clique e persistência automática.
+  - **Sincronização de Build e Auto-Update:**
+    - Versão oficial atualizada para **v3.9.4**.
+    - Compilação com pipeline de ofuscação militar e publicação direta no GitHub Releases para todos os usuários receberem o update automático.
+
 ---
 
 ## 📅 [08/09/2026] — Release Oficial v3.9.3: Restauração Completa das Abas de Regedit, Sense & Navegação
