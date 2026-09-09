@@ -3027,18 +3027,7 @@ document.addEventListener('DOMContentLoaded', setupAdaptiveRegeditUI);
 setupAdaptiveRegeditUI();
 
 // ─── OTIMIZADOR COMPETITIVO DE PAN & BLUESTACKS/MSI HANDLER ─────────────────
-async function loadHardwareSpecsForEmulator() {
-  try {
-    const optCpuRamAuto = document.getElementById('opt-cpu-ram-auto');
-    if (window.api && window.api.getSystemHardwareInfo && optCpuRamAuto) {
-      const info = await window.api.getSystemHardwareInfo();
-      if (info) {
-        optCpuRamAuto.textContent = `⚡ Automático (Seu PC: ${info.totalCores}C / ${info.totalRamGB}GB RAM -> Alocar: ${info.recommendedCores}C / ${info.recommendedRamMB / 1024}GB)`;
-      }
-    }
-  } catch (_) { }
-}
-loadHardwareSpecsForEmulator();
+
 
 function parseSensValue(val, fallback = 1.0) {
   if (val === undefined || val === null || val === '') return fallback;

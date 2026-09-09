@@ -83,6 +83,12 @@ module.exports = async (req, res) => {
     const qrCode = txData ? txData.qr_code : null;
     const qrCodeBase64 = txData ? txData.qr_code_base64 : null;
 
+    let authUser = null;
+    try {
+      authUser = await verifyAuth(req);
+    } catch (_) {}
+    const creator = authUser ? authUser.username : (body.resellerUsername || 'mercadopago_pix');
+
     await savePayment(paymentId, {
       paymentId,
       status: 'pending',
@@ -93,6 +99,7 @@ module.exports = async (req, res) => {
       price: price,
       clientName: clientClean,
       uuid: (uuid || '').trim().toLowerCase() || null,
+      createdBy: creator,
       createdAt: Date.now(),
       fulfilled: false
     });

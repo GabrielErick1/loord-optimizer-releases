@@ -15,6 +15,9 @@
   "build": {
     "appId": "com.loord.optimizer",
     "productName": "Loord Optimizer",
+    "directories": {
+      "output": "dist-release"
+    },
     "asar": true,
     "asarUnpack": [
       "bin/**"

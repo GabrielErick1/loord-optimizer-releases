@@ -239,10 +239,27 @@ module.exports = async (req, res) => {
         return;
       }
 
+      // Se o usuário for vendedor e tiver débito ativo, bloqueia geração direta sem PIX!
+      if (!isOwnerOrAdmin && user.isoWithDebit !== false) {
+        res.status(403).json({
+          success: false,
+          error: 'Cobrança de débito ativa para este vendedor. O pagamento via PIX é obrigatório para gerar chaves de formatação ISO.'
+        });
+        return;
+      }
+
       const cleanClientName = (clientName && clientName.trim()) ? clientName.trim() : 'Cliente ISO';
       const cleanUuid = (uuid && uuid.trim()) ? uuid.trim().toLowerCase() : null;
       const usesCount = Math.max(1, parseInt(uses, 10) || 1);
-      const cleanPrice = typeof price === 'number' ? price : (parseFloat(price) || 50.00);
+      
+      let finalPrice = typeof price === 'number' ? price : (parseFloat(price) || 50.00);
+      if (!isOwnerOrAdmin || price === undefined || price === null || price === '') {
+        const isoCfg = await getIsoConfig();
+        const matchedPlan = (isoCfg.plans || []).find(p => Number(p.uses) === Number(usesCount) && p.enabled !== false);
+        if (matchedPlan && matchedPlan.price !== undefined) {
+          finalPrice = Number(matchedPlan.price);
+        }
+      }
 
       const rawUuid = cleanUuid || `iso_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
       const baseKey = generateActivationKey(rawUuid);
@@ -260,7 +277,7 @@ module.exports = async (req, res) => {
         activationMode: 'single',
         isoUsesTotal: usesCount,
         isoUsesRemaining: usesCount,
-        pricePaid: cleanPrice,
+        pricePaid: finalPrice,
         buyerInfo: buyerInfo || cleanClientName,
         createdBy: user.username,
         createdAt: Date.now(),

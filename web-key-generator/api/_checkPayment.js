@@ -83,7 +83,7 @@ module.exports = async (req, res) => {
           isoUsesRemaining: paymentRecord.uses || 1,
           pricePaid: paymentRecord.price,
           buyerInfo: paymentRecord.clientName || 'Cliente ISO',
-          createdBy: 'mercadopago_pix',
+          createdBy: paymentRecord.createdBy || 'mercadopago_pix',
           createdAt: Date.now(),
           status: 'pending',
           activatedAt: null,

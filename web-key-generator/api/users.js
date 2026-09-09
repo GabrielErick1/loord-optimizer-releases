@@ -50,6 +50,7 @@ module.exports = async (req, res) => {
         allowedPlans: Array.isArray(u.allowedPlans) ? u.allowedPlans : [],
         directPlans: Array.isArray(u.directPlans) ? u.directPlans : [],
         allPlansDirect: !!u.allPlansDirect,
+        isoWithDebit: u.isoWithDebit !== undefined ? !!u.isoWithDebit : (uRole === 'vendedor'),
         freeDailyLimit: typeof u.freeDailyLimit === 'number' ? u.freeDailyLimit : 5,
         freeUsageToday: todayUsage
       };
@@ -73,7 +74,7 @@ module.exports = async (req, res) => {
 
     try {
       const body = await parseRequestBody(req);
-      const { action, usernameToUpdate, newPassword, usernameToToggle, newUsername, newRole, newIsAdmin, allowedPlans, directPlans, allPlansDirect, freeDailyLimit, syncUsers } = body;
+      const { action, usernameToUpdate, newPassword, usernameToToggle, newUsername, newRole, newIsAdmin, allowedPlans, directPlans, allPlansDirect, isoWithDebit, freeDailyLimit, syncUsers } = body;
 
       // 0. Ação de Excluir Usuário via POST (100% compatível com qualquer navegador/proxy)
       if (action === 'delete-user' || action === 'delete') {
@@ -178,6 +179,10 @@ module.exports = async (req, res) => {
         // Apenas o Worn pode conceder liberação direta de chaves sem autorização
         if (allPlansDirect !== undefined && isOwner) {
           target.allPlansDirect = !!allPlansDirect;
+        }
+
+        if (isoWithDebit !== undefined) {
+          target.isoWithDebit = !!isoWithDebit;
         }
 
         if (freeDailyLimit !== undefined) {
@@ -334,6 +339,7 @@ module.exports = async (req, res) => {
         allowedPlans: Array.isArray(allowedPlans) ? allowedPlans : [],
         directPlans: Array.isArray(directPlans) ? directPlans : (isResolvedAdmin ? ['all'] : []),
         allPlansDirect: isOwner ? (allPlansDirect !== undefined ? !!allPlansDirect : isResolvedAdmin) : false,
+        isoWithDebit: isoWithDebit !== undefined ? !!isoWithDebit : (resolvedRole === 'vendedor'),
         freeDailyLimit: parsedLimit,
         freeUsageToday: { date: new Date().toISOString().slice(0, 10), count: 0 }
       };

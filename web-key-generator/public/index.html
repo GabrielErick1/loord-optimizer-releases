@@ -279,6 +279,15 @@
                   <!-- Checkboxes gerados dinamicamente via JS -->
                 </div>
               </div>
+
+              <div class="form-group" style="margin-top: 12px;">
+                <label style="display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8; margin-bottom:6px;">💳 Cobrança de Chaves de Formatação ISO:</label>
+                <select id="new-user-iso-debit" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 0.85rem; font-weight: 600;">
+                  <option value="with_debit" selected>🔒 Com Débito (Obrigatório Pagar PIX antes de Gerar Key)</option>
+                  <option value="no_debit">🟢 Sem Débito (Gera Key Direto sem Cobrança PIX)</option>
+                </select>
+                <span style="font-size: 0.72rem; color: #64748b; margin-top: 4px; display: block;">Vendedores com débito ativo só recebem a chave da ISO após confirmação do pagamento PIX.</span>
+              </div>
             </div>
             
             <div id="create-user-error" class="error-text" style="display: none; margin-bottom: 12px;"></div>
@@ -464,7 +473,7 @@
         </div>
 
         <!-- Banner Master: Status Global da Formatação ISO -->
-        <div class="card" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9)); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 14px; padding: 18px 22px; margin-bottom: 24px;">
+        <div id="iso-global-rule-card" class="card" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9)); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 14px; padding: 18px 22px; margin-bottom: 24px;">
           <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
             <div style="display: flex; align-items: center; gap: 14px;">
               <span style="font-size: 2.2rem;">⚡</span>
@@ -484,9 +493,9 @@
         </div>
 
         <!-- Grid: Gerador de Chave de ISO e Tabela de Planos & Preços -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+        <div id="iso-top-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
           <!-- Card: Gerador de Chaves de ISO -->
-          <div class="card">
+          <div id="iso-generator-card" class="card">
             <h3 style="margin: 0 0 8px 0; color: #f8fafc; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
               <span>⚡</span> Gerador de Chaves de Formatação ISO
             </h3>
@@ -497,18 +506,33 @@
               <input type="text" id="iso-client-name" placeholder="Ex: Lucas Gabriel" autocomplete="off">
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-              <div class="form-group">
-                <label for="iso-uses-count">Quantidade de Usos (Formatações):</label>
-                <input type="number" id="iso-uses-count" min="1" max="100" value="1">
+            <!-- Seletor de Plano da ISO (Opção para Vendedor e Admin) -->
+            <div id="iso-plan-select-group" class="form-group" style="margin-bottom: 12px;">
+              <label for="iso-plan-select">Plano de Formatação ISO:</label>
+              <select id="iso-plan-select" onchange="onIsoPlanSelected(this.value)" style="width: 100%; box-sizing: border-box; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; color: white; font-size: 0.88rem; font-weight: 700;">
+                <!-- Preenchido dinamicamente via JS -->
+              </select>
+            </div>
+
+            <!-- Inputs de Usos & Preço (Personalizáveis para Admin/Owner) -->
+            <div id="iso-admin-inputs-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px;">
+              <div class="form-group" id="iso-uses-count-group">
+                <label for="iso-uses-count">Quantidade de Usos:</label>
+                <input type="number" id="iso-uses-count" min="1" max="100" value="1" oninput="onIsoUsesChanged(this.value)">
               </div>
-              <div class="form-group">
+              <div class="form-group" id="iso-price-paid-group">
                 <label for="iso-price-paid">Valor Cobrado (R$):</label>
                 <input type="number" id="iso-price-paid" step="0.01" value="50.00">
               </div>
             </div>
 
-            <button id="btn-gen-iso-key" onclick="generateIsoKey()" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+            <!-- Box com Valor da Chave para o Vendedor -->
+            <div id="iso-vendor-price-box" style="display: none; background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; align-items: center; justify-content: space-between;">
+              <span style="font-size: 0.82rem; color: #94a3b8; font-weight: 600;">💰 Valor do Plano (PIX):</span>
+              <span id="iso-vendor-price-display" style="font-size: 1.15rem; color: #38bdf8; font-weight: 800;">R$ 50,00</span>
+            </div>
+
+            <button id="btn-gen-iso-key" onclick="generateIsoKey()" class="btn btn-primary" style="width: 100%; margin-top: 6px;">
               🎯 Gerar Chave de ISO
             </button>
 
@@ -521,8 +545,8 @@
             </div>
           </div>
 
-          <!-- Card: Gerenciador de Planos & Preços da ISO -->
-          <div class="card">
+          <!-- Card: Gerenciador de Planos & Preços da ISO (Apenas Admin / Owner / Worn) -->
+          <div id="iso-plans-card" class="card">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
               <div>
                 <h3 style="margin: 0; color: #f8fafc; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
@@ -670,6 +694,14 @@
           <div id="edit-modal-plans-list" style="display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px;">
             <!-- Gerado via JS -->
           </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label style="display:block; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8; margin-bottom:6px;">💳 Cobrança de Chaves de Formatação ISO:</label>
+          <select id="edit-user-iso-debit" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid rgba(99,102,241,0.25); border-radius: 8px; padding: 10px 14px; color: white; font-size: 0.85rem; font-weight: 600;">
+            <option value="with_debit">🔒 Com Débito (Obrigatório Pagar PIX)</option>
+            <option value="no_debit">🟢 Sem Débito (Gera Direto)</option>
+          </select>
         </div>
       </div>
 

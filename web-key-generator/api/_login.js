@@ -76,7 +76,8 @@ module.exports = async (req, res) => {
       token,
       username: user.username,
       isAdmin: isAdm,
-      role: userRole
+      role: userRole,
+      isoWithDebit: user.isoWithDebit !== undefined ? !!user.isoWithDebit : (!isAdm && userRole === 'vendedor')
     });
   } catch (e) {
     console.error(e);

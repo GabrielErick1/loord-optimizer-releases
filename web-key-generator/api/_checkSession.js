@@ -18,7 +18,8 @@ module.exports = async (req, res) => {
         success: true,
         username: user.username,
         isAdmin: !!user.isAdmin,
-        role: user.role || (user.isAdmin ? 'admin' : 'vendedor')
+        role: user.role || (user.isAdmin ? 'admin' : 'vendedor'),
+        isoWithDebit: user.isoWithDebit !== undefined ? !!user.isoWithDebit : (!user.isAdmin && (user.role || 'vendedor') === 'vendedor')
       });
     } else {
       res.status(401).json({ success: false, error: 'Sessão inválida ou expirada.' });

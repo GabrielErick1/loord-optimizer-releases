@@ -170,6 +170,7 @@ btnLogin.addEventListener('click', async () => {
       localStorage.setItem('admin_username', data.username);
       localStorage.setItem('admin_is_admin', data.isAdmin);
       localStorage.setItem('admin_role', data.role || (data.isAdmin ? 'admin' : 'vendedor'));
+      localStorage.setItem('admin_iso_with_debit', String(data.isoWithDebit !== false));
 
       initDashboard(data.username, data.isAdmin, data.role);
     } else {
@@ -192,6 +193,7 @@ function forceLogout(reason) {
   localStorage.removeItem('admin_username');
   localStorage.removeItem('admin_is_admin');
   localStorage.removeItem('admin_role');
+  localStorage.removeItem('admin_iso_with_debit');
   if (activePixPollTimer) clearInterval(activePixPollTimer);
   dashboardContainer.style.display = 'none';
   loginContainer.style.display = 'flex';
@@ -256,6 +258,7 @@ function initDashboard(username, isAdmin, role) {
     if (containerDirectToggle) containerDirectToggle.style.display = 'none';
   }
 
+  setupIsoTabVisibility(userRole);
   loadPlans();
   loadLicenses();
   if (isWorn || userRole === 'admin') loadUsers();
@@ -284,6 +287,7 @@ function initDashboard(username, isAdmin, role) {
       localStorage.setItem('admin_username', data.username);
       localStorage.setItem('admin_is_admin', String(data.isAdmin));
       localStorage.setItem('admin_role', data.role);
+      localStorage.setItem('admin_iso_with_debit', String(data.isoWithDebit !== false));
       initDashboard(data.username, data.isAdmin, data.role);
     } else {
       forceLogout('Sessão expirada. Por favor, faça login novamente.');
@@ -757,12 +761,22 @@ function startPixPaymentPolling(paymentId, params) {
         
         setTimeout(() => {
           closePixModal();
-          renderGeneratedKeyResult({
-            key: data.key,
-            clientName: data.clientName,
-            licenseType: params.planName,
-            uuid: params.uuid
-          }, params.planId, params.customVal);
+          if (params.isIsoPayment || data.isIsoPayment) {
+            renderGeneratedIsoKeyResult({
+              key: data.key,
+              clientName: data.clientName || params.clientName,
+              isoUsesTotal: data.isoUsesTotal || params.uses || 1,
+              pricePaid: data.pricePaid || params.price
+            });
+            loadIsoKeys();
+          } else {
+            renderGeneratedKeyResult({
+              key: data.key,
+              clientName: data.clientName,
+              licenseType: params.planName,
+              uuid: params.uuid
+            }, params.planId, params.customVal);
+          }
         }, 1200);
       }
     } catch (e) {}
@@ -1190,6 +1204,12 @@ function renderUsersTable(users) {
       ? '<span style="color:#38bdf8; font-size: 0.75rem; font-weight: 700; margin-left: 4px;">🔓 Direto</span>' 
       : '<span style="color:#f59e0b; font-size: 0.75rem; font-weight: 700; margin-left: 4px;">⏳ Com Aprovação</span>';
 
+    const isoDebitBadge = (role === 'vendedor') 
+      ? (u.isoWithDebit !== false 
+          ? '<span style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); padding: 2px 6px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; margin-left: 4px;">🔒 ISO c/ Débito</span>' 
+          : '<span style="background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.35); padding: 2px 6px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; margin-left: 4px;">🟢 ISO s/ Débito</span>')
+      : '';
+
     // Ações permitidas: apenas Owner ou o próprio criador
     const canEdit = isOwner || (!isMaster && role === 'vendedor');
 
@@ -1198,7 +1218,7 @@ function renderUsersTable(users) {
         ${escapeHtml(u.username)}
         ${isMaster ? '<span style="font-size:0.7rem; color:#f59e0b; margin-left:4px;">(Principal)</span>' : ''}
       </td>
-      <td>${roleBadge} ${authDirectLabel}</td>
+      <td>${roleBadge} ${authDirectLabel} ${isoDebitBadge}</td>
       <td>${statusLabel}</td>
       <td style="font-size: 0.85rem; color: #e2e8f0;">${limitLabel}</td>
       <td><span style="font-weight: 700; color: #38bdf8;">${u.totalKeys || 0}</span> keys</td>
@@ -1222,6 +1242,8 @@ if (btnCreateUser) {
     const newPassword = newPasswordInput.value.trim();
     const freeDailyLimit = parseInt(newFreeLimitInput.value, 10) || 5;
     const allPlansDirect = newAllDirect ? newAllDirect.checked : false;
+    const isoDebitSelect = document.getElementById('new-user-iso-debit');
+    const isoWithDebit = isoDebitSelect ? (isoDebitSelect.value !== 'without_debit') : true;
 
     createUserError.style.display = 'none';
     createUserSuccess.style.display = 'none';
@@ -1256,6 +1278,7 @@ if (btnCreateUser) {
           newIsAdmin: currentNewUserRole === 'owner' || currentNewUserRole === 'admin',
           allPlansDirect,
           allowedPlans,
+          isoWithDebit,
           freeDailyLimit
         })
       });
@@ -1305,6 +1328,11 @@ window.openEditUserModal = function(username) {
 
   if (editModalAllDirect) {
     editModalAllDirect.checked = !!user.allPlansDirect;
+  }
+
+  const editIsoDebitSelect = document.getElementById('edit-user-iso-debit');
+  if (editIsoDebitSelect) {
+    editIsoDebitSelect.value = (user.isoWithDebit !== false) ? 'with_debit' : 'without_debit';
   }
 
   const editFreeLimitInput = document.getElementById('edit-modal-free-limit');
@@ -1420,6 +1448,8 @@ window.saveUserEdit = async function() {
   const newPassword = document.getElementById('edit-modal-new-password').value.trim();
   const freeDailyLimit = parseInt(document.getElementById('edit-modal-free-limit').value, 10) || 5;
   const allPlansDirect = editModalAllDirect ? editModalAllDirect.checked : false;
+  const editIsoDebitSelect = document.getElementById('edit-user-iso-debit');
+  const isoWithDebit = editIsoDebitSelect ? (editIsoDebitSelect.value !== 'without_debit') : true;
   const msgEl = document.getElementById('edit-modal-msg');
   const saveBtn = document.getElementById('btn-save-edit');
 
@@ -1445,6 +1475,7 @@ window.saveUserEdit = async function() {
         allPlansDirect: isWorn ? allPlansDirect : false,
         newPassword: newPassword || undefined,
         allowedPlans,
+        isoWithDebit,
         freeDailyLimit
       })
     });
@@ -1771,7 +1802,49 @@ let currentIsoConfig = { isFree: false, plans: [] };
 let currentIsoKeys = [];
 let generatedIsoKeyGlobal = '';
 
+function setupIsoTabVisibility(userRole) {
+  const isWorn = userRole === 'worn' || userRole === 'owner';
+  const isAdmin = userRole === 'admin';
+  const isVendor = !isWorn && !isAdmin;
+
+  const globalRuleCard = document.getElementById('iso-global-rule-card');
+  const plansCard = document.getElementById('iso-plans-card');
+  const topGrid = document.getElementById('iso-top-grid');
+  const adminInputsGroup = document.getElementById('iso-admin-inputs-group');
+  const pricePaidGroup = document.getElementById('iso-price-paid-group');
+  const vendorPriceBox = document.getElementById('iso-vendor-price-box');
+  const vendorFilter = document.getElementById('filter-iso-vendor');
+
+  if (isVendor) {
+    if (globalRuleCard) globalRuleCard.style.display = 'none';
+    if (plansCard) plansCard.style.display = 'none';
+    if (topGrid) {
+      topGrid.style.gridTemplateColumns = '1fr';
+      topGrid.style.maxWidth = '580px';
+      topGrid.style.margin = '0 auto 24px auto';
+    }
+    if (adminInputsGroup) adminInputsGroup.style.display = 'none';
+    if (pricePaidGroup) pricePaidGroup.style.display = 'none';
+    if (vendorPriceBox) vendorPriceBox.style.display = 'flex';
+    if (vendorFilter && vendorFilter.parentElement) vendorFilter.parentElement.style.display = 'none';
+  } else {
+    if (globalRuleCard) globalRuleCard.style.display = 'block';
+    if (plansCard) plansCard.style.display = 'block';
+    if (topGrid) {
+      topGrid.style.gridTemplateColumns = '1fr 1fr';
+      topGrid.style.maxWidth = '100%';
+      topGrid.style.margin = '0 0 24px 0';
+    }
+    if (adminInputsGroup) adminInputsGroup.style.display = 'grid';
+    if (pricePaidGroup) pricePaidGroup.style.display = 'block';
+    if (vendorPriceBox) vendorPriceBox.style.display = 'none';
+    if (vendorFilter && vendorFilter.parentElement) vendorFilter.parentElement.style.display = 'block';
+  }
+}
+
 async function loadIsoData() {
+  const myRole = localStorage.getItem('admin_role') || 'vendedor';
+  setupIsoTabVisibility(myRole);
   await Promise.all([loadIsoPlans(), loadIsoKeys()]);
 }
 
@@ -1783,14 +1856,73 @@ async function loadIsoPlans() {
     const data = await res.json();
     if (data.success) {
       currentIsoConfig.isFree = !!data.isFree;
-      currentIsoConfig.plans = Array.isArray(data.plans) ? data.plans : [];
+      currentIsoConfig.plans = Array.isArray(data.plans) && data.plans.length > 0 ? data.plans : [
+        { id: 'iso_1', name: '1 Formatação (1 Uso)', uses: 1, price: 52.99, enabled: true },
+        { id: 'iso_2', name: '2 Formatações (2 Usos)', uses: 2, price: 82.99, enabled: true },
+        { id: 'iso_3', name: '3 Formatações (3 Usos)', uses: 3, price: 102.99, enabled: true }
+      ];
       renderIsoGlobalModeButtons(currentIsoConfig.isFree);
       renderIsoPlansTable(currentIsoConfig.plans);
+      renderIsoPlanSelectOptions(currentIsoConfig.plans);
     }
   } catch (e) {
     console.error('Erro ao carregar planos da ISO:', e);
   }
 }
+
+function renderIsoPlanSelectOptions(plans) {
+  const select = document.getElementById('iso-plan-select');
+  if (!select) return;
+
+  const activePlans = plans.filter(p => p.enabled !== false);
+  const currentVal = select.value;
+  select.innerHTML = '';
+
+  activePlans.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = `${p.name} — R$ ${Number(p.price).toFixed(2).replace('.', ',')}`;
+    select.appendChild(opt);
+  });
+
+  if (activePlans.length > 0) {
+    const targetVal = activePlans.some(p => String(p.id) === String(currentVal)) ? currentVal : activePlans[0].id;
+    select.value = targetVal;
+    onIsoPlanSelected(targetVal);
+  }
+}
+
+window.onIsoPlanSelected = function(planId) {
+  const plan = currentIsoConfig.plans.find(p => String(p.id) === String(planId));
+  if (!plan) return;
+
+  const usesInput = document.getElementById('iso-uses-count');
+  const priceInput = document.getElementById('iso-price-paid');
+  const vendorPriceDisplay = document.getElementById('iso-vendor-price-display');
+
+  if (usesInput) usesInput.value = plan.uses || 1;
+  if (priceInput) priceInput.value = Number(plan.price || 0).toFixed(2);
+  if (vendorPriceDisplay) vendorPriceDisplay.textContent = `R$ ${Number(plan.price || 0).toFixed(2).replace('.', ',')}`;
+};
+
+window.onIsoUsesChanged = function(usesVal) {
+  const uses = parseInt(usesVal, 10) || 1;
+  const matchingPlan = currentIsoConfig.plans.find(p => p.uses === uses && p.enabled !== false);
+  const priceInput = document.getElementById('iso-price-paid');
+  const vendorPriceDisplay = document.getElementById('iso-vendor-price-display');
+  const planSelect = document.getElementById('iso-plan-select');
+
+  if (matchingPlan) {
+    if (priceInput) priceInput.value = Number(matchingPlan.price).toFixed(2);
+    if (vendorPriceDisplay) vendorPriceDisplay.textContent = `R$ ${Number(matchingPlan.price).toFixed(2).replace('.', ',')}`;
+    if (planSelect) planSelect.value = matchingPlan.id;
+  } else {
+    // Estimativa proporcional caso não encontre plano exato
+    const estPrice = (uses * 35.00).toFixed(2);
+    if (priceInput) priceInput.value = estPrice;
+    if (vendorPriceDisplay) vendorPriceDisplay.textContent = `R$ ${Number(estPrice).toFixed(2).replace('.', ',')}`;
+  }
+};
 
 function renderIsoGlobalModeButtons(isFree) {
   const btnFree = document.getElementById('btn-iso-mode-free');
@@ -1881,6 +2013,7 @@ function renderIsoPlansTable(plans) {
 window.updateIsoPlanField = function(idx, field, value) {
   if (currentIsoConfig.plans[idx]) {
     currentIsoConfig.plans[idx][field] = value;
+    renderIsoPlanSelectOptions(currentIsoConfig.plans);
   }
 };
 
@@ -1894,11 +2027,13 @@ window.addNewIsoPlanRow = function() {
     enabled: true
   });
   renderIsoPlansTable(currentIsoConfig.plans);
+  renderIsoPlanSelectOptions(currentIsoConfig.plans);
 };
 
 window.deleteIsoPlanRow = function(idx) {
   currentIsoConfig.plans.splice(idx, 1);
   renderIsoPlansTable(currentIsoConfig.plans);
+  renderIsoPlanSelectOptions(currentIsoConfig.plans);
 };
 
 window.saveIsoPlansConfig = async function() {
@@ -1920,6 +2055,7 @@ window.saveIsoPlansConfig = async function() {
     const data = await res.json();
     if (data.success) {
       alert('✔️ Tabela de Planos e Preços da ISO salva com sucesso!');
+      renderIsoPlanSelectOptions(currentIsoConfig.plans);
     } else {
       alert(`❌ Erro: ${data.error || 'Não foi possível salvar os planos.'}`);
     }
@@ -1930,16 +2066,54 @@ window.saveIsoPlansConfig = async function() {
   }
 };
 
+function renderGeneratedIsoKeyResult(license) {
+  generatedIsoKeyGlobal = license.key;
+  const box = document.getElementById('iso-generated-box');
+  const keyEl = document.getElementById('iso-generated-key');
+  const detailsEl = document.getElementById('iso-generated-details');
+
+  if (box && keyEl && detailsEl) {
+    keyEl.textContent = license.key;
+    detailsEl.textContent = `Cliente: ${license.clientName || 'Cliente'} | Usos: ${license.isoUsesTotal || 1}x | Valor: R$ ${Number(license.pricePaid || 0).toFixed(2)}`;
+    box.style.display = 'block';
+  }
+}
+
 window.generateIsoKey = async function() {
   const nameInput = document.getElementById('iso-client-name');
   const usesInput = document.getElementById('iso-uses-count');
   const priceInput = document.getElementById('iso-price-paid');
+  const planSelect = document.getElementById('iso-plan-select');
   const btn = document.getElementById('btn-gen-iso-key');
 
-  const clientName = (nameInput?.value || '').trim();
-  const uses = parseInt(usesInput?.value || '1', 10) || 1;
-  const price = parseFloat(priceInput?.value || '50.00') || 50.00;
+  const clientName = (nameInput?.value || '').trim() || 'Cliente ISO';
+  const selectedPlanId = planSelect?.value;
+  const selectedPlan = currentIsoConfig.plans.find(p => String(p.id) === String(selectedPlanId));
 
+  let uses = parseInt(usesInput?.value || (selectedPlan ? selectedPlan.uses : '1'), 10) || 1;
+  let price = parseFloat(priceInput?.value || (selectedPlan ? selectedPlan.price : '50.00')) || 50.00;
+  let planName = selectedPlan ? selectedPlan.name : `${uses} Formatação(ões)`;
+
+  const myUsername = (localStorage.getItem('admin_username') || '').toLowerCase();
+  const myRole = (myUsername === 'gabriel') ? 'worn' : (localStorage.getItem('admin_role') || 'vendedor');
+  const isWorn = myRole === 'worn' || myRole === 'owner' || myUsername === 'gabriel';
+  const isAdmin = myRole === 'admin';
+  const isoWithDebit = localStorage.getItem('admin_iso_with_debit') !== 'false';
+
+  // Se for vendedor COM DÉBITO: gera cobrança PIX no valor do plano
+  if (!isWorn && !isAdmin && isoWithDebit) {
+    openPixModal({
+      isIsoPayment: true,
+      planId: selectedPlanId || `iso_plan_${uses}`,
+      planName: `Formatação ISO - ${planName}`,
+      price: price,
+      clientName: clientName,
+      uses: uses
+    });
+    return;
+  }
+
+  // Admin, Worn ou vendedor SEM DÉBITO: gera chave diretamente
   if (btn) { btn.disabled = true; btn.textContent = 'Gerando...'; }
 
   try {
@@ -1949,22 +2123,12 @@ window.generateIsoKey = async function() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${userToken}`
       },
-      body: JSON.stringify({ clientName, uses, price })
+      body: JSON.stringify({ clientName, uses, price, planId: selectedPlanId })
     });
     const data = await res.json();
 
     if (data.success && data.license) {
-      generatedIsoKeyGlobal = data.license.key;
-      const box = document.getElementById('iso-generated-box');
-      const keyEl = document.getElementById('iso-generated-key');
-      const detailsEl = document.getElementById('iso-generated-details');
-
-      if (box && keyEl && detailsEl) {
-        keyEl.textContent = data.license.key;
-        detailsEl.textContent = `Cliente: ${data.license.clientName} | Usos: ${data.license.isoUsesTotal}x | Valor: R$ ${Number(data.license.pricePaid).toFixed(2)}`;
-        box.style.display = 'block';
-      }
-
+      renderGeneratedIsoKeyResult(data.license);
       if (nameInput) nameInput.value = '';
       loadIsoKeys();
     } else {

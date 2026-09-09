@@ -342,6 +342,7 @@ async function verifyAuth(req) {
       allowedPlans: Array.isArray(dbUser.allowedPlans) ? dbUser.allowedPlans : [],
       directPlans: Array.isArray(dbUser.directPlans) ? dbUser.directPlans : [],
       allPlansDirect: !!dbUser.allPlansDirect,
+      isoWithDebit: dbUser.isoWithDebit !== undefined ? !!dbUser.isoWithDebit : (!currentIsAdmin && currentRole === 'vendedor'),
       freeDailyLimit: dbUser.freeDailyLimit !== undefined ? dbUser.freeDailyLimit : 5,
       freeUsageToday: dbUser.freeUsageToday || null
     };
