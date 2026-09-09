@@ -258,6 +258,32 @@
           </button>
         </nav>
 
+        <!-- Seletor de Idioma no Sidebar (Engrenagem) -->
+        <div class="lang-selector-wrapper" id="lang-selector-wrapper" style="padding: 0 14px 10px 14px;">
+          <button type="button" class="btn-lang-toggle" id="btn-lang-toggle">
+            <span style="display: flex; align-items: center; gap: 6px;">
+              <span class="gear-icon">⚙️</span>
+              <span id="current-lang-display">🇧🇷 Português</span>
+            </span>
+            <span class="dropdown-chevron">▼</span>
+          </button>
+          <div class="lang-dropdown" id="lang-dropdown">
+            <div class="lang-dropdown-header">SELECIONE O IDIOMA</div>
+            <button type="button" class="lang-option-btn active" data-lang="pt">
+              <span>🇧🇷 Português</span>
+              <span class="check">✓</span>
+            </button>
+            <button type="button" class="lang-option-btn" data-lang="en">
+              <span>🇺🇸 English</span>
+              <span class="check"></span>
+            </button>
+            <button type="button" class="lang-option-btn" data-lang="es">
+              <span>🇪🇸 Español</span>
+              <span class="check"></span>
+            </button>
+          </div>
+        </div>
+
         <!-- Card VIP do Cliente (Idêntico ao Screenshot) -->
         <div class="sidebar-vip-card">
           <div class="vip-user-row">
@@ -2446,6 +2472,32 @@
           <h2 data-i18n="configTabTitle">Minha Config & Atualizações</h2>
           <p class="subtitle" data-i18n="configTabSubtitle">Gerencie suas configurações, restaure backups e mantenha seu
             app atualizado</p>
+
+          <!-- Card de Idioma / Language Settings -->
+          <div class="card" style="border: 1px solid rgba(56, 189, 248, 0.35); background: linear-gradient(135deg, rgba(56, 189, 248, 0.05) 0%, rgba(17, 24, 39, 0.8) 100%); margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h3 style="margin: 0 0 4px 0; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+                  <span>🌐</span> <span data-i18n="languageCardTitle">Idioma do Painel</span>
+                </h3>
+                <p style="margin: 0; font-size: 12px; color: #94a3b8;" data-i18n="languageCardDesc">
+                  Selecione o idioma da interface do Loord Optimizer (Português, Inglês ou Espanhol)
+                </p>
+              </div>
+              <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 800;">i18n</span>
+            </div>
+            <div style="margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+              <button type="button" class="btn btn-secondary lang-choice-btn" data-lang="pt" onclick="window.i18n && window.i18n.setLanguage('pt')" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; font-weight: 800; font-size: 0.88rem; border-radius: 10px; cursor: pointer; border: 1.5px solid #38bdf8; background: rgba(56, 189, 248, 0.2); color: #fff; transition: all 0.2s;">
+                <span>🇧🇷</span> Português
+              </button>
+              <button type="button" class="btn btn-secondary lang-choice-btn" data-lang="en" onclick="window.i18n && window.i18n.setLanguage('en')" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; font-weight: 800; font-size: 0.88rem; border-radius: 10px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.04); color: #94a3b8; transition: all 0.2s;">
+                <span>🇺🇸</span> English
+              </button>
+              <button type="button" class="btn btn-secondary lang-choice-btn" data-lang="es" onclick="window.i18n && window.i18n.setLanguage('es')" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; font-weight: 800; font-size: 0.88rem; border-radius: 10px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.04); color: #94a3b8; transition: all 0.2s;">
+                <span>🇪🇸</span> Español
+              </button>
+            </div>
+          </div>
 
           <!-- VIP License Card -->
           <div class="card"

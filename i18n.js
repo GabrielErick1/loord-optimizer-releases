@@ -40,6 +40,8 @@ const i18n = {
       // Minha Config & Atualizações
       configTabTitle: 'Minha Config & Atualizações',
       configTabSubtitle: 'Gerencie suas configurações, restaure backups e mantenha seu app atualizado',
+      languageCardTitle: 'Idioma do Painel',
+      languageCardDesc: 'Selecione o idioma da interface do Loord Optimizer (Português, Inglês ou Espanhol)',
       vipLicenseCardTitle: '👑 LICENÇA & ACESSO VIP',
       vipLicenseCardDesc: 'Status de ativação da sua chave no computador',
       connectedKeyLabel: 'CHAVE CONECTADA:',
@@ -157,6 +159,8 @@ const i18n = {
       // Minha Config & Atualizações
       configTabTitle: 'My Config & Updates',
       configTabSubtitle: 'Manage your settings, restore backups, and keep your app up to date',
+      languageCardTitle: 'Panel Language',
+      languageCardDesc: 'Select the Loord Optimizer interface language (Portuguese, English, or Spanish)',
       vipLicenseCardTitle: '👑 VIP LICENSE & ACCESS',
       vipLicenseCardDesc: 'Activation status of your license on this computer',
       connectedKeyLabel: 'CONNECTED KEY:',
@@ -274,6 +278,8 @@ const i18n = {
       // Minha Config & Atualizações
       configTabTitle: 'Mi Config & Actualizaciones',
       configTabSubtitle: 'Administre su configuración, restaure copias de seguridad y mantenga la app actualizada',
+      languageCardTitle: 'Idioma del Panel',
+      languageCardDesc: 'Seleccione el idioma de la interfaz de Loord Optimizer (Portugués, Inglés o Español)',
       vipLicenseCardTitle: '👑 LICENCIA Y ACCESO VIP',
       vipLicenseCardDesc: 'Estado de activación de su clave en este equipo',
       connectedKeyLabel: 'CLAVE CONECTADA:',
@@ -375,7 +381,7 @@ const i18n = {
     const dict = this.locales[lang];
 
     // Atualiza indicador da engrenagem no sidebar
-    const currentLangDisplay = document.getElementById('current-lang-display');
+    const currentLangDisplay = document.getElementById('current-lang-display') || document.getElementById('current-lang-label');
     if (currentLangDisplay) {
       currentLangDisplay.innerHTML = `${dict.langFlag} ${dict.langName}`;
     }
@@ -391,6 +397,21 @@ const i18n = {
       } else {
         btn.classList.remove('active');
         if (checkEl) checkEl.textContent = '';
+      }
+    });
+
+    // Atualiza botões de escolha direta de idioma se existirem na aba Minha Config
+    const choiceBtns = document.querySelectorAll('.lang-choice-btn');
+    choiceBtns.forEach(btn => {
+      const bLang = btn.getAttribute('data-lang');
+      if (bLang === lang) {
+        btn.style.borderColor = '#38bdf8';
+        btn.style.background = 'rgba(56, 189, 248, 0.2)';
+        btn.style.color = '#ffffff';
+      } else {
+        btn.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+        btn.style.background = 'rgba(255, 255, 255, 0.04)';
+        btn.style.color = '#94a3b8';
       }
     });
 
